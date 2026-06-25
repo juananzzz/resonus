@@ -48,8 +48,5 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit"
   },
-  "private": true,
-  "pnpm": {
-    "onlyBuiltDependencies": ["unrs-resolver"]
-  }
+  "private": true
 }
