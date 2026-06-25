@@ -12,7 +12,9 @@
       "bundleIdentifier": "com.juananzzz.resonus",
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -42,7 +44,10 @@
         }
       ],
       "expo-audio",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font",
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": false,
