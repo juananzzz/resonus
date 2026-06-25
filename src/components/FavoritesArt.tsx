@@ -7,7 +7,7 @@ import { radius } from '@/theme';
 export function FavoritesArt({ size }: { size: number }) {
   return (
     <LinearGradient
-      colors={['#3ad6c0', '#159e7a'] as const}
+      colors={['#3be477', '#10803f'] as const}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{
