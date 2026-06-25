@@ -1,10 +1,12 @@
 /**
  * Navegación principal por pestañas: Inicio, Buscar y Biblioteca.
- * El MiniPlayer se coloca flotando justo encima de la barra de pestañas.
+ * Estilo Spotify: barra sin borde con un degradado que se funde a oscuro
+ * abajo para que los iconos se lean bien sobre el contenido.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme';
@@ -20,8 +22,15 @@ export default function TabsLayout() {
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: colors.text,
-          tabBarInactiveTintColor: colors.textMuted,
+          tabBarInactiveTintColor: colors.textSecondary,
           sceneStyle: { backgroundColor: colors.background },
+          tabBarBackground: () => (
+            <LinearGradient
+              colors={['transparent', colors.background, colors.background] as const}
+              locations={[0, 0.4, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+          ),
           tabBarStyle: {
             position: 'absolute',
             backgroundColor: 'transparent',
@@ -37,8 +46,8 @@ export default function TabsLayout() {
           name="index"
           options={{
             title: 'Inicio',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="home" color={color} size={size} />
+            tabBarIcon: ({ focused, color, size }) => (
+              <Ionicons name={focused ? 'home' : 'home-outline'} color={color} size={size} />
             ),
           }}
         />
@@ -46,8 +55,8 @@ export default function TabsLayout() {
           name="search"
           options={{
             title: 'Buscar',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="search" color={color} size={size} />
+            tabBarIcon: ({ focused, color, size }) => (
+              <Ionicons name={focused ? 'search' : 'search-outline'} color={color} size={size} />
             ),
           }}
         />
@@ -55,8 +64,8 @@ export default function TabsLayout() {
           name="library"
           options={{
             title: 'Biblioteca',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="library" color={color} size={size} />
+            tabBarIcon: ({ focused, color, size }) => (
+              <Ionicons name={focused ? 'library' : 'library-outline'} color={color} size={size} />
             ),
           }}
         />
