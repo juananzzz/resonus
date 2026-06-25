@@ -1,5 +1,5 @@
 /** Inicio de sesión: elección de tipo de servidor + credenciales. */
-import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -23,13 +23,12 @@ type ServerKey = 'navidrome' | 'opensubsonic' | 'jellyfin';
 const SERVERS: {
   key: ServerKey;
   name: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
+  logo: number;
   soon?: boolean;
 }[] = [
-  { key: 'navidrome', name: 'Navidrome', icon: 'cloud', color: '#2A5DF0' },
-  { key: 'opensubsonic', name: 'OpenSubsonic', icon: 'pulse', color: '#1DB954' },
-  { key: 'jellyfin', name: 'Jellyfin', icon: 'play-circle', color: '#A35BD6', soon: true },
+  { key: 'navidrome', name: 'Navidrome', logo: require('@/assets/images/servers/navidrome.png') },
+  { key: 'opensubsonic', name: 'OpenSubsonic', logo: require('@/assets/images/servers/opensubsonic.png') },
+  { key: 'jellyfin', name: 'Jellyfin', logo: require('@/assets/images/servers/jellyfin.png'), soon: true },
 ];
 
 export default function LoginScreen() {
@@ -84,9 +83,11 @@ export default function LoginScreen() {
                   style={[styles.serverCard, active && styles.serverCardActive]}
                   onPress={() => setServer(s.key)}
                 >
-                  <View style={[styles.serverIcon, { backgroundColor: s.color }]}>
-                    <Ionicons name={s.icon} size={26} color="#fff" />
-                  </View>
+                  <Image
+                    source={s.logo}
+                    style={styles.serverIcon}
+                    contentFit="contain"
+                  />
                   <Text style={styles.serverName} numberOfLines={1}>
                     {s.name}
                   </Text>
@@ -182,9 +183,6 @@ const styles = StyleSheet.create({
   serverIcon: {
     width: 48,
     height: 48,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   serverName: { color: colors.text, fontSize: fontSize.xs, fontWeight: '600' },
   soon: { color: colors.textMuted, fontSize: 10 },
