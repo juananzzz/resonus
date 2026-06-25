@@ -1,9 +1,11 @@
 /** Fila de una canción dentro de una lista (álbum, playlist, resultados). */
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { type Song } from '@/api/subsonic';
 import { formatDuration } from '@/lib/format';
 import { usePlayerStore } from '@/store/player';
+import { useSongMenu } from '@/store/songMenu';
 import { colors, fontSize, spacing } from '@/theme';
 import { FavoriteButton } from './FavoriteButton';
 import { NowPlayingBars } from './NowPlayingBars';
@@ -18,6 +20,7 @@ interface Props {
 
 export function TrackRow({ song, position, isCurrent, onPress }: Props) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const openMenu = useSongMenu((s) => s.open);
 
   return (
     <Pressable
@@ -48,6 +51,9 @@ export function TrackRow({ song, position, isCurrent, onPress }: Props) {
 
       <FavoriteButton id={song.id} starred={!!song.starred} size={20} />
       <Text style={styles.duration}>{formatDuration(song.duration)}</Text>
+      <Pressable hitSlop={8} onPress={() => openMenu(song)}>
+        <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
+      </Pressable>
     </Pressable>
   );
 }

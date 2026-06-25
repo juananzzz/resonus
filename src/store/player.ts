@@ -37,6 +37,10 @@ interface PlayerState {
   cycleRepeat: () => void;
   /** Reproduce una lista de canciones empezando en `startIndex`. */
   playQueue: (songs: Song[], startIndex?: number) => Promise<void>;
+  /** Añade una canción al final de la cola (o la reproduce si está vacía). */
+  addToQueue: (song: Song) => void;
+  /** Inserta una canción justo después de la actual. */
+  playNext: (song: Song) => void;
   toggle: () => void;
   next: () => void;
   previous: () => void;
@@ -125,6 +129,26 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       originalQueue: null,
     });
     await loadCurrent();
+  },
+
+  addToQueue: (song) => {
+    const { queue } = get();
+    if (queue.length === 0) {
+      void get().playQueue([song], 0);
+      return;
+    }
+    set({ queue: [...queue, song] });
+  },
+
+  playNext: (song) => {
+    const { queue, index } = get();
+    if (queue.length === 0) {
+      void get().playQueue([song], 0);
+      return;
+    }
+    const next = [...queue];
+    next.splice(index + 1, 0, song);
+    set({ queue: next });
   },
 
   toggle: () => {

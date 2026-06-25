@@ -10,6 +10,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { GlobalMiniPlayer } from '@/components/GlobalMiniPlayer';
+import { SongMenuSheet } from '@/components/SongMenuSheet';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
 import { colors } from '@/theme';
@@ -56,6 +57,7 @@ export default function RootLayout() {
               </Stack.Protected>
             </Stack>
             {auth ? <GlobalMiniPlayer /> : null}
+            {auth ? <SongMenuSheet /> : null}
           </View>
         )}
       </QueryClientProvider>
