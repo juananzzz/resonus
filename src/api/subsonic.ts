@@ -28,6 +28,8 @@ export interface Song {
   coverArt?: string;
   duration?: number;
   track?: number;
+  /** Marca de tiempo de cuándo se marcó como favorita; ausente si no lo es. */
+  starred?: string;
 }
 
 export interface Album {
@@ -38,6 +40,7 @@ export interface Album {
   coverArt?: string;
   songCount?: number;
   year?: number;
+  starred?: string;
 }
 
 export interface Artist {
@@ -45,6 +48,7 @@ export interface Artist {
   name: string;
   coverArt?: string;
   albumCount?: number;
+  starred?: string;
 }
 
 export interface Playlist {
@@ -197,6 +201,72 @@ export async function search(
     albums: r.album ?? [],
     songs: r.song ?? [],
   };
+}
+
+export async function getArtists(auth: SubsonicAuth): Promise<Artist[]> {
+  const res = await request<{
+    artists?: { index?: { artist?: Artist[] }[] };
+  }>(auth, 'getArtists.view');
+  // La respuesta agrupa los artistas por letra inicial; los aplanamos.
+  return (res.artists?.index ?? []).flatMap((i) => i.artist ?? []);
+}
+
+export async function getArtist(
+  auth: SubsonicAuth,
+  id: string,
+): Promise<{ artist: Artist; albums: Album[] }> {
+  const res = await request<{ artist: Artist & { album?: Album[] } }>(
+    auth,
+    'getArtist.view',
+    { id },
+  );
+  const { album, ...artist } = res.artist;
+  return { artist, albums: album ?? [] };
+}
+
+export interface Starred {
+  songs: Song[];
+  albums: Album[];
+  artists: Artist[];
+}
+
+export async function getStarred(auth: SubsonicAuth): Promise<Starred> {
+  const res = await request<{
+    starred2?: { song?: Song[]; album?: Album[]; artist?: Artist[] };
+  }>(auth, 'getStarred2.view');
+  const s = res.starred2 ?? {};
+  return {
+    songs: s.song ?? [],
+    albums: s.album ?? [],
+    artists: s.artist ?? [],
+  };
+}
+
+export type StarType = 'song' | 'album' | 'artist';
+
+function starParam(id: string, type: StarType): Record<string, string> {
+  // Subsonic usa un parámetro distinto según el tipo de elemento.
+  if (type === 'album') return { albumId: id };
+  if (type === 'artist') return { artistId: id };
+  return { id };
+}
+
+/** Marca un elemento como favorito. */
+export async function star(
+  auth: SubsonicAuth,
+  id: string,
+  type: StarType = 'song',
+): Promise<void> {
+  await request(auth, 'star.view', starParam(id, type));
+}
+
+/** Quita un elemento de favoritos. */
+export async function unstar(
+  auth: SubsonicAuth,
+  id: string,
+  type: StarType = 'song',
+): Promise<void> {
+  await request(auth, 'unstar.view', starParam(id, type));
 }
 
 /** Informa al servidor de que se ha reproducido una canción (scrobble). */

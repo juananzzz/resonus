@@ -3,7 +3,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { type Song } from '@/api/subsonic';
 import { formatDuration } from '@/lib/format';
+import { usePlayerStore } from '@/store/player';
 import { colors, fontSize, spacing } from '@/theme';
+import { FavoriteButton } from './FavoriteButton';
+import { NowPlayingBars } from './NowPlayingBars';
 
 interface Props {
   song: Song;
@@ -14,14 +17,21 @@ interface Props {
 }
 
 export function TrackRow({ song, position, isCurrent, onPress }: Props) {
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+
   return (
     <Pressable
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       onPress={onPress}
     >
-      {position !== undefined ? (
-        <Text style={styles.position}>{position}</Text>
+      {isCurrent ? (
+        <View style={styles.leftSlot}>
+          <NowPlayingBars playing={isPlaying} />
+        </View>
+      ) : position !== undefined ? (
+        <Text style={[styles.position, styles.leftSlot]}>{position}</Text>
       ) : null}
+
       <View style={styles.info}>
         <Text
           style={[styles.title, isCurrent && styles.current]}
@@ -35,6 +45,8 @@ export function TrackRow({ song, position, isCurrent, onPress }: Props) {
           </Text>
         ) : null}
       </View>
+
+      <FavoriteButton id={song.id} starred={!!song.starred} size={20} />
       <Text style={styles.duration}>{formatDuration(song.duration)}</Text>
     </Pressable>
   );
@@ -53,8 +65,12 @@ const styles = StyleSheet.create({
   position: {
     color: colors.textMuted,
     fontSize: fontSize.sm,
-    width: 24,
     textAlign: 'center',
+  },
+  leftSlot: {
+    width: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   info: {
     flex: 1,

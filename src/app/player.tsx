@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { coverArtUrl } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
+import { FavoriteButton } from '@/components/FavoriteButton';
 import { formatDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
@@ -19,10 +20,12 @@ export default function PlayerScreen() {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const positionSec = usePlayerStore((s) => s.positionSec);
   const durationSec = usePlayerStore((s) => s.durationSec);
+  const volume = usePlayerStore((s) => s.volume);
   const toggle = usePlayerStore((s) => s.toggle);
   const next = usePlayerStore((s) => s.next);
   const previous = usePlayerStore((s) => s.previous);
   const seekTo = usePlayerStore((s) => s.seekTo);
+  const setVolume = usePlayerStore((s) => s.setVolume);
 
   if (!song) {
     router.back();
@@ -39,7 +42,9 @@ export default function PlayerScreen() {
           <Ionicons name="chevron-down" size={28} color={colors.text} />
         </Pressable>
         <Text style={styles.topTitle}>Reproduciendo</Text>
-        <View style={{ width: 28 }} />
+        <Pressable hitSlop={12} onPress={() => router.push('/queue')}>
+          <Ionicons name="list" size={26} color={colors.text} />
+        </Pressable>
       </View>
 
       <View style={styles.coverWrap}>
@@ -47,12 +52,15 @@ export default function PlayerScreen() {
       </View>
 
       <View style={styles.meta}>
-        <Text style={styles.title} numberOfLines={1}>
-          {song.title}
-        </Text>
-        <Text style={styles.artist} numberOfLines={1}>
-          {song.artist ?? 'Desconocido'}
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title} numberOfLines={1}>
+            {song.title}
+          </Text>
+          <Text style={styles.artist} numberOfLines={1}>
+            {song.artist ?? 'Desconocido'}
+          </Text>
+        </View>
+        <FavoriteButton id={song.id} starred={!!song.starred} size={28} />
       </View>
 
       <View style={styles.progress}>
@@ -86,6 +94,21 @@ export default function PlayerScreen() {
           <Ionicons name="play-skip-forward" size={36} color={colors.text} />
         </Pressable>
       </View>
+
+      <View style={styles.volume}>
+        <Ionicons name="volume-low" size={20} color={colors.textMuted} />
+        <Slider
+          style={{ flex: 1 }}
+          minimumValue={0}
+          maximumValue={1}
+          value={volume}
+          onValueChange={setVolume}
+          minimumTrackTintColor={colors.textSecondary}
+          maximumTrackTintColor={colors.surfaceHighlight}
+          thumbTintColor={colors.text}
+        />
+        <Ionicons name="volume-high" size={20} color={colors.textMuted} />
+      </View>
     </SafeAreaView>
   );
 }
@@ -113,6 +136,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     marginBottom: spacing.lg,
   },
   title: {
@@ -149,5 +175,11 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  volume: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.xl,
   },
 });

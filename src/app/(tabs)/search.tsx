@@ -1,9 +1,11 @@
 /** Búsqueda de álbumes y canciones en el servidor. */
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,9 +14,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { search } from '@/api/subsonic';
+import { coverArtUrl, search } from '@/api/subsonic';
 import { AlbumCard } from '@/components/AlbumCard';
+import { Cover } from '@/components/Cover';
 import { TrackRow } from '@/components/TrackRow';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, radius, spacing } from '@/theme';
@@ -22,13 +26,14 @@ import { colors, fontSize, radius, spacing } from '@/theme';
 export default function SearchScreen() {
   const auth = useAuthStore((s) => s.auth);
   const [query, setQuery] = useState('');
+  const debouncedQuery = useDebounce(query.trim(), 350);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
   const { data, isFetching } = useQuery({
-    queryKey: ['search', query],
-    queryFn: () => search(auth!, query),
-    enabled: !!auth && query.trim().length > 1,
+    queryKey: ['search', debouncedQuery],
+    queryFn: () => search(auth!, debouncedQuery),
+    enabled: !!auth && debouncedQuery.length > 1,
   });
 
   return (
@@ -53,6 +58,32 @@ export default function SearchScreen() {
       >
         {isFetching ? (
           <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
+        ) : null}
+
+        {data && data.artists.length > 0 ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Artistas</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.albumRow}
+            >
+              {data.artists.map((artist) => (
+                <Link key={artist.id} href={`/artist/${artist.id}`} asChild>
+                  <Pressable style={styles.artist}>
+                    <Cover
+                      uri={coverArtUrl(auth!, artist.coverArt ?? artist.id, 200)}
+                      size={110}
+                      rounded
+                    />
+                    <Text style={styles.artistName} numberOfLines={1}>
+                      {artist.name}
+                    </Text>
+                  </Pressable>
+                </Link>
+              ))}
+            </ScrollView>
+          </View>
         ) : null}
 
         {data && data.albums.length > 0 ? (
@@ -123,5 +154,16 @@ const styles = StyleSheet.create({
   },
   albumRow: {
     gap: spacing.md,
+  },
+  artist: {
+    width: 110,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  artistName: {
+    color: colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
