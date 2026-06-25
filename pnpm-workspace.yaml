@@ -18,3 +18,4 @@ minimumReleaseAgeExclude:
   - expo-splash-screen@55.0.22
   - expo-system-ui@55.0.19
   - expo-web-browser@55.0.17
+  - expo-linear-gradient@55.0.15

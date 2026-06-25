@@ -17,6 +17,8 @@ import { useAuthStore } from './auth';
 let player: AudioPlayer | null = null;
 let configured = false;
 
+export type RepeatMode = 'off' | 'all' | 'one';
+
 interface PlayerState {
   queue: Song[];
   index: number;
@@ -25,6 +27,14 @@ interface PlayerState {
   durationSec: number;
   /** Volumen de 0 a 1. */
   volume: number;
+  /** Si está activo, la cola se reproduce en orden aleatorio. */
+  shuffle: boolean;
+  /** Modo de repetición: ninguno, toda la cola o la canción actual. */
+  repeat: RepeatMode;
+  /** Orden original guardado mientras shuffle está activo. */
+  originalQueue: Song[] | null;
+  toggleShuffle: () => void;
+  cycleRepeat: () => void;
   /** Reproduce una lista de canciones empezando en `startIndex`. */
   playQueue: (songs: Song[], startIndex?: number) => Promise<void>;
   toggle: () => void;
@@ -66,7 +76,16 @@ function onStatus(status: AudioStatus) {
     positionSec: status.currentTime ?? 0,
     durationSec: status.duration ?? 0,
   });
-  if (status.didJustFinish) usePlayerStore.getState().next();
+  if (status.didJustFinish) {
+    const state = usePlayerStore.getState();
+    if (state.repeat === 'one') {
+      // Repetir la misma canción.
+      player?.seekTo(0);
+      player?.play();
+    } else {
+      state.next();
+    }
+  }
 }
 
 /** Carga la canción del índice actual en el reproductor y la arranca. */
@@ -90,10 +109,21 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   positionSec: 0,
   durationSec: 0,
   volume: 1,
+  shuffle: false,
+  repeat: 'off',
+  originalQueue: null,
 
   playQueue: async (songs, startIndex = 0) => {
     if (songs.length === 0) return;
-    set({ queue: songs, index: startIndex, positionSec: 0, durationSec: 0 });
+    // Una cola nueva siempre arranca en orden; el shuffle se desactiva.
+    set({
+      queue: songs,
+      index: startIndex,
+      positionSec: 0,
+      durationSec: 0,
+      shuffle: false,
+      originalQueue: null,
+    });
     await loadCurrent();
   },
 
@@ -104,11 +134,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   next: () => {
-    const { index, queue } = get();
-    if (index < queue.length - 1) {
-      set({ index: index + 1, positionSec: 0 });
-      void loadCurrent();
+    const { index, queue, repeat } = get();
+    if (queue.length === 0) return;
+    let nextIndex = index + 1;
+    if (nextIndex >= queue.length) {
+      if (repeat === 'all') nextIndex = 0;
+      else return; // fin de la cola sin repetición
     }
+    set({ index: nextIndex, positionSec: 0 });
+    void loadCurrent();
   },
 
   previous: () => {
@@ -131,6 +165,49 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const volume = Math.max(0, Math.min(1, v));
     if (player) player.volume = volume;
     set({ volume });
+  },
+
+  toggleShuffle: () => {
+    const { shuffle, queue, index, originalQueue } = get();
+    const current = queue[index];
+
+    if (!shuffle) {
+      // Activar: guardamos el orden original y barajamos el resto, dejando
+      // la canción actual la primera para no cortar la reproducción.
+      const rest = queue.filter((_, i) => i !== index);
+      for (let i = rest.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rest[i], rest[j]] = [rest[j], rest[i]];
+      }
+      set({
+        shuffle: true,
+        originalQueue: queue,
+        queue: current ? [current, ...rest] : rest,
+        index: 0,
+      });
+    } else {
+      // Desactivar: restauramos el orden original, manteniendo la actual.
+      if (originalQueue && current) {
+        const newIndex = Math.max(
+          0,
+          originalQueue.findIndex((s) => s.id === current.id),
+        );
+        set({
+          shuffle: false,
+          queue: originalQueue,
+          index: newIndex,
+          originalQueue: null,
+        });
+      } else {
+        set({ shuffle: false, originalQueue: null });
+      }
+    }
+  },
+
+  cycleRepeat: () => {
+    const order: RepeatMode[] = ['off', 'all', 'one'];
+    const current = order.indexOf(get().repeat);
+    set({ repeat: order[(current + 1) % order.length] });
   },
 
   jumpTo: (index) => {

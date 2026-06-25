@@ -1,8 +1,16 @@
 /** Reproductor a pantalla completa (modal): carátula, progreso y controles. */
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Dimensions,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type GestureResponderEvent,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { coverArtUrl } from '@/api/subsonic';
@@ -11,7 +19,23 @@ import { FavoriteButton } from '@/components/FavoriteButton';
 import { formatDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
-import { colors, fontSize, spacing } from '@/theme';
+import { colors, fontSize, radius, spacing } from '@/theme';
+
+const COVER = Dimensions.get('window').width - spacing.xl * 2;
+
+function CircleButton({
+  name,
+  onPress,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  onPress: (e: GestureResponderEvent) => void;
+}) {
+  return (
+    <Pressable style={styles.circle} hitSlop={8} onPress={onPress}>
+      <Ionicons name={name} size={22} color={colors.text} />
+    </Pressable>
+  );
+}
 
 export default function PlayerScreen() {
   const router = useRouter();
@@ -20,12 +44,14 @@ export default function PlayerScreen() {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const positionSec = usePlayerStore((s) => s.positionSec);
   const durationSec = usePlayerStore((s) => s.durationSec);
-  const volume = usePlayerStore((s) => s.volume);
+  const shuffle = usePlayerStore((s) => s.shuffle);
+  const repeat = usePlayerStore((s) => s.repeat);
   const toggle = usePlayerStore((s) => s.toggle);
   const next = usePlayerStore((s) => s.next);
   const previous = usePlayerStore((s) => s.previous);
   const seekTo = usePlayerStore((s) => s.seekTo);
-  const setVolume = usePlayerStore((s) => s.setVolume);
+  const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
+  const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
 
   if (!song) {
     router.back();
@@ -34,152 +60,170 @@ export default function PlayerScreen() {
 
   const cover = coverArtUrl(auth!, song.coverArt ?? song.albumId, 600);
   const duration = durationSec || song.duration || 0;
+  const repeatActive = repeat !== 'off';
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.topBar}>
-        <Pressable hitSlop={12} onPress={() => router.back()}>
-          <Ionicons name="chevron-down" size={28} color={colors.text} />
-        </Pressable>
-        <Text style={styles.topTitle}>Reproduciendo</Text>
-        <Pressable hitSlop={12} onPress={() => router.push('/queue')}>
-          <Ionicons name="list" size={26} color={colors.text} />
-        </Pressable>
-      </View>
-
-      <View style={styles.coverWrap}>
-        <Cover uri={cover} size={300} />
-      </View>
-
-      <View style={styles.meta}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title} numberOfLines={1}>
-            {song.title}
-          </Text>
-          <Text style={styles.artist} numberOfLines={1}>
-            {song.artist ?? 'Desconocido'}
-          </Text>
-        </View>
-        <FavoriteButton id={song.id} starred={!!song.starred} size={28} />
-      </View>
-
-      <View style={styles.progress}>
-        <Slider
-          minimumValue={0}
-          maximumValue={duration}
-          value={positionSec}
-          onSlidingComplete={seekTo}
-          minimumTrackTintColor={colors.accent}
-          maximumTrackTintColor={colors.surfaceHighlight}
-          thumbTintColor={colors.text}
-        />
-        <View style={styles.times}>
-          <Text style={styles.time}>{formatDuration(positionSec)}</Text>
-          <Text style={styles.time}>{formatDuration(duration)}</Text>
-        </View>
-      </View>
-
-      <View style={styles.controls}>
-        <Pressable hitSlop={12} onPress={previous}>
-          <Ionicons name="play-skip-back" size={36} color={colors.text} />
-        </Pressable>
-        <Pressable style={styles.playButton} onPress={toggle}>
-          <Ionicons
-            name={isPlaying ? 'pause' : 'play'}
-            size={36}
-            color="#000"
+    <View style={styles.root}>
+      <LinearGradient
+        colors={['#3a4042', colors.background] as const}
+        style={StyleSheet.absoluteFill}
+      />
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.topBar}>
+          <CircleButton name="chevron-down" onPress={() => router.back()} />
+          <Text style={styles.topTitle}>REPRODUCIENDO</Text>
+          <CircleButton
+            name="ellipsis-vertical"
+            onPress={() =>
+              song.albumId ? router.push(`/album/${song.albumId}`) : undefined
+            }
           />
-        </Pressable>
-        <Pressable hitSlop={12} onPress={next}>
-          <Ionicons name="play-skip-forward" size={36} color={colors.text} />
-        </Pressable>
-      </View>
+        </View>
 
-      <View style={styles.volume}>
-        <Ionicons name="volume-low" size={20} color={colors.textMuted} />
-        <Slider
-          style={{ flex: 1 }}
-          minimumValue={0}
-          maximumValue={1}
-          value={volume}
-          onValueChange={setVolume}
-          minimumTrackTintColor={colors.textSecondary}
-          maximumTrackTintColor={colors.surfaceHighlight}
-          thumbTintColor={colors.text}
-        />
-        <Ionicons name="volume-high" size={20} color={colors.textMuted} />
-      </View>
-    </SafeAreaView>
+        <View style={styles.coverWrap}>
+          <Cover uri={cover} size={COVER} />
+        </View>
+
+        <View style={styles.bottom}>
+          <View style={styles.meta}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title} numberOfLines={1}>
+                {song.title}
+              </Text>
+              <Text style={styles.artist} numberOfLines={1}>
+                {song.artist ?? 'Desconocido'}
+              </Text>
+            </View>
+            <FavoriteButton id={song.id} starred={!!song.starred} size={26} />
+          </View>
+
+          <View style={styles.progress}>
+            <Slider
+              minimumValue={0}
+              maximumValue={duration}
+              value={positionSec}
+              onSlidingComplete={seekTo}
+              minimumTrackTintColor={colors.text}
+              maximumTrackTintColor={colors.surfaceHighlight}
+              thumbTintColor={colors.text}
+            />
+            <View style={styles.times}>
+              <Text style={styles.time}>{formatDuration(positionSec)}</Text>
+              <Text style={styles.time}>{formatDuration(duration)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.controls}>
+            <Pressable hitSlop={10} onPress={toggleShuffle}>
+              <Ionicons
+                name="shuffle"
+                size={26}
+                color={shuffle ? colors.accent : colors.text}
+              />
+            </Pressable>
+            <Pressable hitSlop={10} onPress={previous}>
+              <Ionicons name="play-skip-back" size={34} color={colors.text} />
+            </Pressable>
+            <Pressable style={styles.playButton} onPress={toggle}>
+              <Ionicons
+                name={isPlaying ? 'pause' : 'play'}
+                size={34}
+                color="#101010"
+                style={!isPlaying && { marginLeft: 3 }}
+              />
+            </Pressable>
+            <Pressable hitSlop={10} onPress={next}>
+              <Ionicons name="play-skip-forward" size={34} color={colors.text} />
+            </Pressable>
+            <Pressable hitSlop={10} onPress={cycleRepeat}>
+              <MaterialIcons
+                name={repeat === 'one' ? 'repeat-one' : 'repeat'}
+                size={26}
+                color={repeatActive ? colors.accent : colors.text}
+              />
+            </Pressable>
+          </View>
+
+          <View style={styles.bottomRow}>
+            <MaterialIcons name="cast" size={22} color={colors.textMuted} />
+            <MaterialIcons name="speaker" size={22} color={colors.textMuted} />
+            <Pressable hitSlop={10} onPress={() => router.push('/queue')}>
+              <MaterialIcons name="queue-music" size={24} color={colors.text} />
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.xl,
-  },
+  root: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1, paddingHorizontal: spacing.xl },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
   },
+  circle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   topTitle: {
     color: colors.text,
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 1.5,
   },
   coverWrap: {
     alignItems: 'center',
-    marginTop: spacing.xl,
-    marginBottom: spacing.xxl,
+    justifyContent: 'center',
+    marginTop: spacing.lg,
+  },
+  bottom: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: spacing.lg,
   },
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
-  title: {
-    color: colors.text,
-    fontSize: fontSize.xl,
-    fontWeight: '800',
-  },
+  title: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800' },
   artist: {
     color: colors.textSecondary,
     fontSize: fontSize.md,
     marginTop: spacing.xs,
   },
-  progress: {
-    marginBottom: spacing.xl,
-  },
-  times: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  time: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
-  },
+  progress: { marginBottom: spacing.md },
+  times: { flexDirection: 'row', justifyContent: 'space-between' },
+  time: { color: colors.textMuted, fontSize: fontSize.xs },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xxl,
+    justifyContent: 'space-between',
+    marginVertical: spacing.lg,
   },
   playButton: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.text,
     width: 72,
     height: 72,
     borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  volume: {
+  bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.xl,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.sm,
+    marginTop: spacing.sm,
   },
 });
