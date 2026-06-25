@@ -7,7 +7,6 @@ import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MiniPlayer } from '@/components/MiniPlayer';
 import { colors } from '@/theme';
 
 const TAB_BAR_HEIGHT = 60;
@@ -60,18 +59,6 @@ export default function TabsLayout() {
           }}
         />
       </Tabs>
-
-      <View
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: TAB_BAR_HEIGHT + insets.bottom,
-        }}
-        pointerEvents="box-none"
-      >
-        <MiniPlayer />
-      </View>
     </View>
   );
 }

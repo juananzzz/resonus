@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { GlobalMiniPlayer } from '@/components/GlobalMiniPlayer';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
 import { colors } from '@/theme';
@@ -38,20 +39,23 @@ export default function RootLayout() {
             <ActivityIndicator color={colors.accent} size="large" />
           </View>
         ) : (
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-            <Stack.Protected guard={!!auth}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="album/[id]" />
-              <Stack.Screen name="playlist/[id]" />
-              <Stack.Screen name="artist/[id]" />
-              <Stack.Screen name="settings" />
-              <Stack.Screen name="player" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
-            </Stack.Protected>
-            <Stack.Protected guard={!auth}>
-              <Stack.Screen name="login" />
-            </Stack.Protected>
-          </Stack>
+          <View style={{ flex: 1 }}>
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+              <Stack.Protected guard={!!auth}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="album/[id]" />
+                <Stack.Screen name="playlist/[id]" />
+                <Stack.Screen name="artist/[id]" />
+                <Stack.Screen name="settings" />
+                <Stack.Screen name="player" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
+              </Stack.Protected>
+              <Stack.Protected guard={!auth}>
+                <Stack.Screen name="login" />
+              </Stack.Protected>
+            </Stack>
+            {auth ? <GlobalMiniPlayer /> : null}
+          </View>
         )}
       </QueryClientProvider>
     </GestureHandlerRootView>
