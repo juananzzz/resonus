@@ -2,7 +2,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { coverArtUrl, star } from '@/api/subsonic';
@@ -49,6 +49,11 @@ export function SongMenuSheet() {
     router.push(path);
   };
 
+  const soon = () => {
+    close();
+    Alert.alert('Próximamente', 'Esta función llegará pronto.');
+  };
+
   return (
     <Modal transparent animationType="fade" visible onRequestClose={close}>
       <Pressable style={styles.backdrop} onPress={close} />
@@ -68,6 +73,21 @@ export function SongMenuSheet() {
         </View>
         <View style={styles.divider} />
 
+        <Action icon="add-circle-outline" label="Añadir a una playlist" onPress={soon} />
+        {song.artistId ? (
+          <Action
+            icon="person"
+            label="Ir al artista"
+            onPress={() => go(`/artist/${song.artistId}`)}
+          />
+        ) : null}
+        {song.albumId ? (
+          <Action
+            icon="disc"
+            label="Ir al álbum"
+            onPress={() => go(`/album/${song.albumId}`)}
+          />
+        ) : null}
         <Action
           icon="play-forward"
           label="Reproducir a continuación"
@@ -96,20 +116,9 @@ export function SongMenuSheet() {
             close();
           }}
         />
-        {song.albumId ? (
-          <Action
-            icon="disc"
-            label="Ir al álbum"
-            onPress={() => go(`/album/${song.albumId}`)}
-          />
-        ) : null}
-        {song.artistId ? (
-          <Action
-            icon="person"
-            label="Ir al artista"
-            onPress={() => go(`/artist/${song.artistId}`)}
-          />
-        ) : null}
+        <Action icon="musical-notes-outline" label="Letra" onPress={soon} />
+        <Action icon="download-outline" label="Descargar" onPress={soon} />
+        <Action icon="moon-outline" label="Temporizador de apagado" onPress={soon} />
       </View>
     </Modal>
   );

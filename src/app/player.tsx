@@ -19,6 +19,7 @@ import { FavoriteButton } from '@/components/FavoriteButton';
 import { formatDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
+import { useSongMenu } from '@/store/songMenu';
 import { colors, fontSize, radius, spacing } from '@/theme';
 
 const COVER = Dimensions.get('window').width - spacing.xl * 2;
@@ -52,6 +53,7 @@ export default function PlayerScreen() {
   const seekTo = usePlayerStore((s) => s.seekTo);
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
   const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
+  const openMenu = useSongMenu((s) => s.open);
 
   if (!song) {
     router.back();
@@ -72,12 +74,7 @@ export default function PlayerScreen() {
         <View style={styles.topBar}>
           <CircleButton name="chevron-down" onPress={() => router.back()} />
           <Text style={styles.topTitle}>REPRODUCIENDO</Text>
-          <CircleButton
-            name="ellipsis-vertical"
-            onPress={() =>
-              song.albumId ? router.push(`/album/${song.albumId}`) : undefined
-            }
-          />
+          <CircleButton name="ellipsis-vertical" onPress={() => openMenu(song)} />
         </View>
 
         <View style={styles.coverWrap}>
