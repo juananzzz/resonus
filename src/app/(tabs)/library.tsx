@@ -1,4 +1,4 @@
-/** Biblioteca: listas, artistas y favoritos. Acceso a ajustes. */
+/** Biblioteca: listas (con acceso fijo a Favoritos) y artistas. Ajustes. */
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouter } from 'expo-router';
@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -23,18 +22,40 @@ import {
   type Playlist,
 } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
-import { TrackRow } from '@/components/TrackRow';
+import { FavoritesArt } from '@/components/FavoritesArt';
 import { useAuthStore } from '@/store/auth';
-import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, spacing } from '@/theme';
 
-type Segment = 'playlists' | 'artists' | 'favorites';
+type Segment = 'playlists' | 'artists';
 
 const SEGMENTS: { key: Segment; label: string }[] = [
   { key: 'playlists', label: 'Listas' },
   { key: 'artists', label: 'Artistas' },
-  { key: 'favorites', label: 'Favoritos' },
 ];
+
+function FavoritesEntry() {
+  const auth = useAuthStore((s) => s.auth);
+  const { data } = useQuery({
+    queryKey: ['starred'],
+    queryFn: () => getStarred(auth!),
+    enabled: !!auth,
+  });
+  const count = data?.songs.length ?? 0;
+
+  return (
+    <Link href="/favorites" asChild>
+      <Pressable style={styles.row}>
+        <FavoritesArt size={56} />
+        <View style={styles.rowInfo}>
+          <Text style={styles.rowTitle}>Favoritos</Text>
+          <Text style={styles.rowSub}>
+            {count} canción{count === 1 ? '' : 'es'}
+          </Text>
+        </View>
+      </Pressable>
+    </Link>
+  );
+}
 
 function PlaylistsTab() {
   const auth = useAuthStore((s) => s.auth);
@@ -49,6 +70,7 @@ function PlaylistsTab() {
       data={data ?? []}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
+      ListHeaderComponent={<FavoritesEntry />}
       renderItem={({ item }: { item: Playlist }) => (
         <Link href={`/playlist/${item.id}`} asChild>
           <Pressable style={styles.row}>
@@ -62,7 +84,6 @@ function PlaylistsTab() {
           </Pressable>
         </Link>
       )}
-      ListEmptyComponent={<Empty text="No hay listas de reproducción." />}
     />
   );
 }
@@ -101,33 +122,6 @@ function ArtistsTab() {
       )}
       ListEmptyComponent={<Empty text="No hay artistas." />}
     />
-  );
-}
-
-function FavoritesTab() {
-  const auth = useAuthStore((s) => s.auth);
-  const playing = usePlayerStore(currentSong);
-  const playQueue = usePlayerStore((s) => s.playQueue);
-  const { data, isLoading } = useQuery({
-    queryKey: ['starred'],
-    queryFn: () => getStarred(auth!),
-    enabled: !!auth,
-  });
-  if (isLoading) return <Loader />;
-  if (!data || data.songs.length === 0) {
-    return <Empty text="Aún no tienes canciones favoritas." />;
-  }
-  return (
-    <ScrollView contentContainerStyle={styles.list}>
-      {data.songs.map((song, i) => (
-        <TrackRow
-          key={song.id}
-          song={song}
-          isCurrent={playing?.id === song.id}
-          onPress={() => playQueue(data.songs, i)}
-        />
-      ))}
-    </ScrollView>
   );
 }
 
@@ -170,9 +164,7 @@ export default function LibraryScreen() {
       </View>
 
       <View style={{ flex: 1 }}>
-        {segment === 'playlists' ? <PlaylistsTab /> : null}
-        {segment === 'artists' ? <ArtistsTab /> : null}
-        {segment === 'favorites' ? <FavoritesTab /> : null}
+        {segment === 'playlists' ? <PlaylistsTab /> : <ArtistsTab />}
       </View>
     </SafeAreaView>
   );

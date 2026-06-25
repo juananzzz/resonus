@@ -23,8 +23,10 @@ export default function TabsLayout() {
           tabBarInactiveTintColor: colors.textMuted,
           sceneStyle: { backgroundColor: colors.background },
           tabBarStyle: {
-            backgroundColor: colors.surface,
-            borderTopColor: colors.border,
+            position: 'absolute',
+            backgroundColor: 'transparent',
+            borderTopWidth: 0,
+            elevation: 0,
             height: TAB_BAR_HEIGHT + insets.bottom,
             paddingTop: 6,
             paddingBottom: insets.bottom,
