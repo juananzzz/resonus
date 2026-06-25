@@ -282,6 +282,20 @@ export async function unstar(
   await request(auth, 'unstar.view', starParam(id, type));
 }
 
+/** Obtiene la letra de una canción (puede venir vacía si no hay). */
+export async function getLyrics(
+  auth: SubsonicAuth,
+  artist: string,
+  title: string,
+): Promise<string> {
+  const res = await request<{ lyrics?: { value?: string } }>(
+    auth,
+    'getLyrics.view',
+    { artist, title },
+  );
+  return res.lyrics?.value?.trim() ?? '';
+}
+
 /** Informa al servidor de que se ha reproducido una canción (scrobble). */
 export async function scrobble(auth: SubsonicAuth, id: string): Promise<void> {
   try {

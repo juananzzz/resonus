@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -19,6 +18,7 @@ import { addToPlaylist, coverArtUrl, getPlaylists, star } from '@/api/subsonic';
 import { useAuthStore } from '@/store/auth';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu } from '@/store/songMenu';
+import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing } from '@/theme';
 import { Cover } from './Cover';
 
@@ -54,8 +54,9 @@ export function SongMenuSheet() {
   const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
   const cancelSleepTimer = usePlayerStore((s) => s.cancelSleepTimer);
   const sleepTimerMinutes = usePlayerStore((s) => s.sleepTimerMinutes);
+  const toast = useToast((s) => s.show);
 
-  const [mode, setMode] = useState<'actions' | 'playlists'>('actions');
+  const [mode, setMode] = useState<'actions' | 'playlists' | 'sleep'>('actions');
 
   // Al abrir el menú para una canción, volvemos siempre a la vista de acciones.
   useEffect(() => {
@@ -81,42 +82,15 @@ export function SongMenuSheet() {
     try {
       await addToPlaylist(auth, playlistId, song.id);
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
-      Alert.alert('Añadida', `Se añadió a "${playlistName}".`);
+      toast(`Añadida a "${playlistName}"`);
     } catch {
-      Alert.alert('Error', 'No se pudo añadir a la lista.');
+      toast('No se pudo añadir a la lista');
     }
   }
 
   const soon = () => {
     close();
-    Alert.alert('Próximamente', 'Esta función llegará pronto.');
-  };
-
-  const openSleepTimer = () => {
-    close();
-    const minutes = [15, 30, 45, 60];
-    Alert.alert(
-      'Temporizador de apagado',
-      sleepTimerMinutes
-        ? `Activo: la música se pausará en ~${sleepTimerMinutes} min.`
-        : 'Pausar la música tras…',
-      [
-        ...minutes.map((m) => ({
-          text: `${m} min`,
-          onPress: () => setSleepTimer(m),
-        })),
-        ...(sleepTimerMinutes
-          ? [
-              {
-                text: 'Desactivar',
-                style: 'destructive' as const,
-                onPress: cancelSleepTimer,
-              },
-            ]
-          : []),
-        { text: 'Cancelar', style: 'cancel' as const },
-      ],
-    );
+    toast('Próximamente 🚧');
   };
 
   return (
@@ -166,6 +140,42 @@ export function SongMenuSheet() {
               </ScrollView>
             )}
           </View>
+        ) : mode === 'sleep' ? (
+          <View>
+            <Pressable style={styles.action} onPress={() => setMode('actions')}>
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+              <Text style={styles.actionText}>Temporizador de apagado</Text>
+            </Pressable>
+            {[15, 30, 45, 60].map((m) => (
+              <Pressable
+                key={m}
+                style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+                onPress={() => {
+                  setSleepTimer(m);
+                  toast(`Se pausará en ${m} min`);
+                  close();
+                }}
+              >
+                <Ionicons name="time-outline" size={24} color={colors.text} />
+                <Text style={styles.actionText}>{m} minutos</Text>
+              </Pressable>
+            ))}
+            {sleepTimerMinutes ? (
+              <Pressable
+                style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+                onPress={() => {
+                  cancelSleepTimer();
+                  toast('Temporizador desactivado');
+                  close();
+                }}
+              >
+                <Ionicons name="close-circle-outline" size={24} color={colors.danger} />
+                <Text style={[styles.actionText, { color: colors.danger }]}>
+                  Desactivar
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
         ) : (
           <>
             <Action
@@ -212,10 +222,15 @@ export function SongMenuSheet() {
                     queryClient.invalidateQueries({ queryKey: ['starred'] }),
                   );
                 }
+                toast('Añadida a favoritos');
                 close();
               }}
             />
-            <Action icon="musical-notes-outline" label="Letra" onPress={soon} />
+            <Action
+              icon="musical-notes-outline"
+              label="Letra"
+              onPress={() => go('/lyrics')}
+            />
             <Action icon="download-outline" label="Descargar" onPress={soon} />
             <Action
               icon="moon-outline"
@@ -224,7 +239,7 @@ export function SongMenuSheet() {
                   ? `Temporizador (${sleepTimerMinutes} min)`
                   : 'Temporizador de apagado'
               }
-              onPress={openSleepTimer}
+              onPress={() => setMode('sleep')}
             />
           </>
         )}

@@ -11,6 +11,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { GlobalMiniPlayer } from '@/components/GlobalMiniPlayer';
 import { SongMenuSheet } from '@/components/SongMenuSheet';
+import { Toast } from '@/components/Toast';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
 import { colors } from '@/theme';
@@ -49,6 +50,7 @@ export default function RootLayout() {
                 <Stack.Screen name="artist/[id]" />
                 <Stack.Screen name="favorites" />
                 <Stack.Screen name="settings" />
+                <Stack.Screen name="lyrics" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="player" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
               </Stack.Protected>
@@ -58,6 +60,7 @@ export default function RootLayout() {
             </Stack>
             {auth ? <GlobalMiniPlayer /> : null}
             {auth ? <SongMenuSheet /> : null}
+            <Toast />
           </View>
         )}
       </QueryClientProvider>

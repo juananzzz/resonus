@@ -20,7 +20,7 @@ export function GlobalMiniPlayer() {
   const root = segments[0];
 
   // Oculto sobre los modales a pantalla completa.
-  if (root === 'player' || root === 'queue') return null;
+  if (root === 'player' || root === 'queue' || root === 'lyrics') return null;
 
   const inTabs = root === '(tabs)' || root === undefined;
   const bottom = inTabs
