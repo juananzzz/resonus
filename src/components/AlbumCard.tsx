@@ -18,7 +18,9 @@ export function AlbumCard({ album, width = 150 }: Props) {
 
   return (
     <Link href={`/album/${album.id}`} asChild>
-      <Pressable style={[styles.container, { width }]}>
+      {/* expo-router fusiona el estilo del Link en este hijo; debe ser un
+          único objeto, no un array, así que lo aplanamos. */}
+      <Pressable style={StyleSheet.flatten([styles.container, { width }])}>
         <Cover uri={cover} size={width} />
         <Text style={styles.title} numberOfLines={1}>
           {album.name}
