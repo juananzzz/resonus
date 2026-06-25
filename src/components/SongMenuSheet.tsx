@@ -41,6 +41,9 @@ export function SongMenuSheet() {
   const close = useSongMenu((s) => s.close);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const playNext = usePlayerStore((s) => s.playNext);
+  const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
+  const cancelSleepTimer = usePlayerStore((s) => s.cancelSleepTimer);
+  const sleepTimerMinutes = usePlayerStore((s) => s.sleepTimerMinutes);
 
   if (!song) return null;
 
@@ -52,6 +55,33 @@ export function SongMenuSheet() {
   const soon = () => {
     close();
     Alert.alert('Próximamente', 'Esta función llegará pronto.');
+  };
+
+  const openSleepTimer = () => {
+    close();
+    const minutes = [15, 30, 45, 60];
+    Alert.alert(
+      'Temporizador de apagado',
+      sleepTimerMinutes
+        ? `Activo: la música se pausará en ~${sleepTimerMinutes} min.`
+        : 'Pausar la música tras…',
+      [
+        ...minutes.map((m) => ({
+          text: `${m} min`,
+          onPress: () => setSleepTimer(m),
+        })),
+        ...(sleepTimerMinutes
+          ? [
+              {
+                text: 'Desactivar',
+                style: 'destructive' as const,
+                onPress: cancelSleepTimer,
+              },
+            ]
+          : []),
+        { text: 'Cancelar', style: 'cancel' as const },
+      ],
+    );
   };
 
   return (
@@ -118,7 +148,15 @@ export function SongMenuSheet() {
         />
         <Action icon="musical-notes-outline" label="Letra" onPress={soon} />
         <Action icon="download-outline" label="Descargar" onPress={soon} />
-        <Action icon="moon-outline" label="Temporizador de apagado" onPress={soon} />
+        <Action
+          icon="moon-outline"
+          label={
+            sleepTimerMinutes
+              ? `Temporizador (${sleepTimerMinutes} min)`
+              : 'Temporizador de apagado'
+          }
+          onPress={openSleepTimer}
+        />
       </View>
     </Modal>
   );

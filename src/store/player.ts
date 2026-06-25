@@ -16,6 +16,7 @@ import { useAuthStore } from './auth';
 
 let player: AudioPlayer | null = null;
 let configured = false;
+let sleepTimeout: ReturnType<typeof setTimeout> | null = null;
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
@@ -35,6 +36,10 @@ interface PlayerState {
   originalQueue: Song[] | null;
   toggleShuffle: () => void;
   cycleRepeat: () => void;
+  /** Minutos restantes del temporizador de apagado, o null si está apagado. */
+  sleepTimerMinutes: number | null;
+  setSleepTimer: (minutes: number) => void;
+  cancelSleepTimer: () => void;
   /** Reproduce una lista de canciones empezando en `startIndex`. */
   playQueue: (songs: Song[], startIndex?: number) => Promise<void>;
   /** Añade una canción al final de la cola (o la reproduce si está vacía). */
@@ -116,6 +121,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   shuffle: false,
   repeat: 'off',
   originalQueue: null,
+  sleepTimerMinutes: null,
 
   playQueue: async (songs, startIndex = 0) => {
     if (songs.length === 0) return;
@@ -232,6 +238,22 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const order: RepeatMode[] = ['off', 'all', 'one'];
     const current = order.indexOf(get().repeat);
     set({ repeat: order[(current + 1) % order.length] });
+  },
+
+  setSleepTimer: (minutes) => {
+    if (sleepTimeout) clearTimeout(sleepTimeout);
+    sleepTimeout = setTimeout(() => {
+      player?.pause();
+      sleepTimeout = null;
+      set({ isPlaying: false, sleepTimerMinutes: null });
+    }, minutes * 60_000);
+    set({ sleepTimerMinutes: minutes });
+  },
+
+  cancelSleepTimer: () => {
+    if (sleepTimeout) clearTimeout(sleepTimeout);
+    sleepTimeout = null;
+    set({ sleepTimerMinutes: null });
   },
 
   jumpTo: (index) => {
