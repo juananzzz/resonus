@@ -237,6 +237,33 @@ export async function getArtist(
   return { artist, albums: album ?? [] };
 }
 
+/** Canciones más populares de un artista (por nombre). */
+export async function getTopSongs(
+  auth: SubsonicAuth,
+  artist: string,
+  count = 10,
+): Promise<Song[]> {
+  const res = await request<{ topSongs?: { song?: Song[] } }>(
+    auth,
+    'getTopSongs.view',
+    { artist, count },
+  );
+  return res.topSongs?.song ?? [];
+}
+
+/** Artistas similares (de getArtistInfo2). */
+export async function getSimilarArtists(
+  auth: SubsonicAuth,
+  id: string,
+): Promise<Artist[]> {
+  const res = await request<{ artistInfo2?: { similarArtist?: Artist[] } }>(
+    auth,
+    'getArtistInfo2.view',
+    { id },
+  );
+  return res.artistInfo2?.similarArtist ?? [];
+}
+
 export interface Starred {
   songs: Song[];
   albums: Album[];

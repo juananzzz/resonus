@@ -1,36 +1,54 @@
-/** Detalle de un artista: su carátula y la cuadrícula de álbumes. */
+/** Detalle de artista: populares, álbumes y artistas similares. */
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActivityIndicator,
-  Dimensions,
-  FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { coverArtUrl, getArtist } from '@/api/subsonic';
+import {
+  coverArtUrl,
+  getArtist,
+  getSimilarArtists,
+  getTopSongs,
+} from '@/api/subsonic';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { TrackRow } from '@/components/TrackRow';
 import { useAuthStore } from '@/store/auth';
+import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, spacing } from '@/theme';
-
-const GAP = spacing.md;
-const CARD_WIDTH = (Dimensions.get('window').width - spacing.lg * 2 - GAP) / 2;
 
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const auth = useAuthStore((s) => s.auth);
+  const playing = usePlayerStore(currentSong);
+  const playQueue = usePlayerStore((s) => s.playQueue);
 
   const { data, isLoading } = useQuery({
     queryKey: ['artist', id],
     queryFn: () => getArtist(auth!, id),
+    enabled: !!auth && !!id,
+  });
+  const name = data?.artist.name;
+
+  const { data: topSongs } = useQuery({
+    queryKey: ['topSongs', name],
+    queryFn: () => getTopSongs(auth!, name!),
+    enabled: !!auth && !!name,
+  });
+
+  const { data: similar } = useQuery({
+    queryKey: ['similar', id],
+    queryFn: () => getSimilarArtists(auth!, id),
     enabled: !!auth && !!id,
   });
 
@@ -42,44 +60,85 @@ export default function ArtistScreen() {
     );
   }
 
+  const top = (topSongs ?? []).slice(0, 5);
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <Pressable style={styles.back} hitSlop={12} onPress={() => router.back()}>
         <Ionicons name="chevron-back" size={28} color={colors.text} />
       </Pressable>
 
-      <FlatList
-        data={data.albums}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={{ gap: GAP }}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Cover
-              uri={coverArtUrl(auth!, data.artist.coverArt ?? data.artist.id, 400)}
-              size={160}
-              rounded
-            />
-            <Text style={styles.name}>{data.artist.name}</Text>
-            <View style={styles.headerRow}>
-              <Text style={styles.count}>
-                {data.albums.length} álbum{data.albums.length === 1 ? '' : 'es'}
-              </Text>
-              <FavoriteButton
-                id={data.artist.id}
-                type="artist"
-                starred={!!data.artist.starred}
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <Cover
+            uri={coverArtUrl(auth!, data.artist.coverArt ?? data.artist.id, 400)}
+            size={160}
+            rounded
+          />
+          <Text style={styles.name}>{data.artist.name}</Text>
+          <FavoriteButton
+            id={data.artist.id}
+            type="artist"
+            starred={!!data.artist.starred}
+          />
+        </View>
+
+        {top.length > 0 ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Populares</Text>
+            {top.map((song, i) => (
+              <TrackRow
+                key={song.id}
+                song={song}
+                position={i + 1}
+                isCurrent={playing?.id === song.id}
+                onPress={() => playQueue(top, i)}
               />
-            </View>
+            ))}
           </View>
-        }
-        renderItem={({ item }) => (
-          <View style={{ marginBottom: GAP }}>
-            <AlbumCard album={item} width={CARD_WIDTH} />
+        ) : null}
+
+        {data.albums.length > 0 ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Álbumes</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.row}
+            >
+              {data.albums.map((album) => (
+                <AlbumCard key={album.id} album={album} />
+              ))}
+            </ScrollView>
           </View>
-        )}
-      />
+        ) : null}
+
+        {similar && similar.length > 0 ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Artistas similares</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.row}
+            >
+              {similar.map((a) => (
+                <Link key={a.id} href={`/artist/${a.id}`} asChild>
+                  <Pressable style={styles.similar}>
+                    <Cover
+                      uri={coverArtUrl(auth!, a.coverArt ?? a.id, 200)}
+                      size={110}
+                      rounded
+                    />
+                    <Text style={styles.similarName} numberOfLines={1}>
+                      {a.name}
+                    </Text>
+                  </Pressable>
+                </Link>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -92,7 +151,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   back: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 140 },
+  content: { paddingBottom: 140 },
   header: { alignItems: 'center', paddingVertical: spacing.lg, gap: spacing.sm },
   name: {
     color: colors.text,
@@ -100,11 +159,22 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
     marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
+  section: { marginBottom: spacing.xl },
+  sectionTitle: {
+    color: colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
-  count: { color: colors.textSecondary, fontSize: fontSize.md },
+  row: { paddingHorizontal: spacing.lg, gap: spacing.md },
+  similar: { width: 110, alignItems: 'center', gap: spacing.xs },
+  similarName: {
+    color: colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 });
