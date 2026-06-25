@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { coverArtUrl } from '@/api/subsonic';
+import { useDominantColor } from '@/hooks/useDominantColor';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, radius, spacing } from '@/theme';
@@ -19,12 +20,18 @@ export function MiniPlayer() {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const toggle = usePlayerStore((s) => s.toggle);
 
+  const cover = song
+    ? coverArtUrl(auth!, song.coverArt ?? song.albumId, 100)
+    : undefined;
+  const bg = useDominantColor(cover);
+
   if (!song) return null;
 
-  const cover = coverArtUrl(auth!, song.coverArt ?? song.albumId, 100);
-
   return (
-    <Pressable style={styles.container} onPress={() => router.push('/player')}>
+    <Pressable
+      style={[styles.container, { backgroundColor: bg }]}
+      onPress={() => router.push('/player')}
+    >
       <Cover uri={cover} size={44} />
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={1}>
