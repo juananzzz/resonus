@@ -342,7 +342,17 @@ export function coverArtUrl(
   return buildUrl(auth, 'getCoverArt.view', { id, size });
 }
 
-/** URL de streaming de una canción, lista para pasar al reproductor. */
-export function streamUrl(auth: SubsonicAuth, id: string): string {
-  return buildUrl(auth, 'stream.view', { id });
+/**
+ * URL de streaming de una canción. Si `maxBitRate` > 0, el servidor
+ * transcodifica a ese bitrate (kbps) para ahorrar datos.
+ */
+export function streamUrl(
+  auth: SubsonicAuth,
+  id: string,
+  maxBitRate = 0,
+): string {
+  return buildUrl(auth, 'stream.view', {
+    id,
+    maxBitRate: maxBitRate > 0 ? maxBitRate : undefined,
+  });
 }

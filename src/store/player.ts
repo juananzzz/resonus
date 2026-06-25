@@ -13,6 +13,7 @@ import { create } from 'zustand';
 
 import { scrobble, streamUrl, type Song } from '@/api/subsonic';
 import { useAuthStore } from './auth';
+import { useSettings } from './settings';
 
 let player: AudioPlayer | null = null;
 let configured = false;
@@ -105,7 +106,7 @@ async function loadCurrent() {
   if (!auth || !song) return;
 
   const p = await ensurePlayer();
-  p.replace({ uri: streamUrl(auth, song.id) });
+  p.replace({ uri: streamUrl(auth, song.id, useSettings.getState().maxBitRate) });
   p.volume = usePlayerStore.getState().volume;
   p.play();
   scrobble(auth, song.id);

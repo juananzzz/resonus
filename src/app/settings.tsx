@@ -1,11 +1,17 @@
-/** Ajustes: datos de la conexión y cierre de sesión. */
+/** Ajustes: servidor, reproducción, almacenamiento, acerca de y sesión. */
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
+import { BITRATE_OPTIONS, useSettings } from '@/store/settings';
+import { useToast } from '@/store/toast';
 import { colors, fontSize, radius, spacing } from '@/theme';
+
+const REPO_URL = 'https://github.com/juananzzz/resonus';
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -22,6 +28,15 @@ export default function SettingsScreen() {
   const router = useRouter();
   const auth = useAuthStore((s) => s.auth);
   const logout = useAuthStore((s) => s.logout);
+  const maxBitRate = useSettings((s) => s.maxBitRate);
+  const setMaxBitRate = useSettings((s) => s.setMaxBitRate);
+  const toast = useToast((s) => s.show);
+
+  async function clearCache() {
+    queryClient.clear();
+    await Promise.all([Image.clearMemoryCache(), Image.clearDiskCache()]).catch(() => {});
+    toast('Caché limpiada');
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -33,7 +48,7 @@ export default function SettingsScreen() {
         <View style={{ width: 28 }} />
       </View>
 
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.sectionTitle}>Servidor</Text>
         <View style={styles.card}>
           <Field label="URL" value={auth?.serverUrl ?? '—'} />
@@ -41,22 +56,58 @@ export default function SettingsScreen() {
           <Field label="Usuario" value={auth?.username ?? '—'} />
         </View>
 
+        <Text style={styles.sectionTitle}>Calidad de streaming</Text>
+        <View style={styles.chips}>
+          {BITRATE_OPTIONS.map((opt) => {
+            const active = opt.value === maxBitRate;
+            return (
+              <Pressable
+                key={opt.value}
+                style={[styles.chip, active && styles.chipActive]}
+                onPress={() => {
+                  setMaxBitRate(opt.value);
+                  toast(`Calidad: ${opt.label}`);
+                }}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {opt.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text style={styles.hint}>
+          "Original" usa la máxima calidad; bajar el bitrate ahorra datos.
+        </Text>
+
+        <Text style={styles.sectionTitle}>Almacenamiento</Text>
+        <Pressable style={styles.rowButton} onPress={clearCache}>
+          <Ionicons name="trash-outline" size={22} color={colors.text} />
+          <Text style={styles.rowText}>Limpiar caché</Text>
+        </Pressable>
+
+        <Text style={styles.sectionTitle}>Acerca de</Text>
+        <View style={styles.card}>
+          <Field label="Versión" value="Resonus 1.0.0" />
+          <View style={styles.divider} />
+          <Pressable style={styles.linkRow} onPress={() => Linking.openURL(REPO_URL)}>
+            <Ionicons name="logo-github" size={22} color={colors.text} />
+            <Text style={styles.rowText}>Ver en GitHub</Text>
+            <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+          </Pressable>
+        </View>
+
         <Pressable style={styles.logout} onPress={() => logout()}>
           <Ionicons name="log-out-outline" size={22} color={colors.danger} />
           <Text style={styles.logoutText}>Cerrar sesión</Text>
         </Pressable>
-
-        <Text style={styles.version}>Resonus · v1.0.0</Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  safe: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -64,41 +115,46 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  title: {
-    color: colors.text,
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-  },
-  content: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
+  title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
+  content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: 140 },
   sectionTitle: {
     color: colors.textSecondary,
     fontSize: fontSize.sm,
     textTransform: 'uppercase',
     letterSpacing: 1,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
   },
-  card: {
+  card: { backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: spacing.lg },
+  field: { paddingVertical: spacing.md },
+  fieldLabel: { color: colors.textMuted, fontSize: fontSize.xs, marginBottom: 2 },
+  fieldValue: { color: colors.text, fontSize: fontSize.md },
+  divider: { height: 1, backgroundColor: colors.border },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chip: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceHighlight,
+  },
+  chipActive: { backgroundColor: colors.accent },
+  chipText: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '600' },
+  chipTextActive: { color: '#000' },
+  hint: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: spacing.xs },
+  rowButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
+    padding: spacing.lg,
   },
-  field: {
+  rowText: { color: colors.text, fontSize: fontSize.md, flex: 1 },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     paddingVertical: spacing.md,
-  },
-  fieldLabel: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
-    marginBottom: 2,
-  },
-  fieldValue: {
-    color: colors.text,
-    fontSize: fontSize.md,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
   },
   logout: {
     flexDirection: 'row',
@@ -108,15 +164,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
+    marginTop: spacing.xl,
   },
-  logoutText: {
-    color: colors.danger,
-    fontSize: fontSize.md,
-    fontWeight: '600',
-  },
-  version: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
-    textAlign: 'center',
-  },
+  logoutText: { color: colors.danger, fontSize: fontSize.md, fontWeight: '600' },
 });

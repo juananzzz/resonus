@@ -14,6 +14,7 @@ import { SongMenuSheet } from '@/components/SongMenuSheet';
 import { Toast } from '@/components/Toast';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
+import { useSettings } from '@/store/settings';
 import { colors } from '@/theme';
 
 export default function RootLayout() {
@@ -23,6 +24,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     hydrate();
+    useSettings.getState().hydrate();
   }, [hydrate]);
 
   return (
