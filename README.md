@@ -1,66 +1,73 @@
 # Resonus 🎵
 
-Reproductor de música para Android que se conecta a tu propio servidor
-[Navidrome](https://www.navidrome.org/) (a través de la API Subsonic). Una
-alternativa sencilla y de código abierto, con la estética de un reproductor
-moderno pero centrada en lo esencial.
+An open-source Android music player that connects to your own
+[Navidrome](https://www.navidrome.org/) server (via the Subsonic API). A simple,
+Spotify-style client focused on the essentials.
 
-> Hecho con [Expo](https://expo.dev) (React Native + TypeScript).
+> Built with [Expo](https://expo.dev) (React Native + TypeScript).
+>
+> ⚡ **Vibe-coded** — this whole app was built collaboratively with an AI coding
+> assistant ([Claude Code](https://claude.com/claude-code)), prompt by prompt.
 
-## Características (MVP)
+## Features
 
-- 🔐 Inicio de sesión contra cualquier servidor Navidrome/Subsonic. Las
-  credenciales se guardan cifradas en el dispositivo (token, nunca la
-  contraseña en claro).
-- 🏠 Inicio con álbumes recientes, más escuchados y aleatorios.
-- 🔎 Búsqueda de álbumes y canciones.
-- 📚 Tus listas de reproducción.
-- ▶️ Reproductor con cola, play/pausa, anterior/siguiente, barra de progreso
-  y reproducción en segundo plano.
+- 🔐 Log in to any Navidrome/Subsonic server. Credentials are stored encrypted
+  on the device (token-based auth — the password never travels in clear text).
+- 🏠 Home with recently added, most played and random albums.
+- 🔎 Search for songs, albums and artists (debounced).
+- 🎤 Browse artists and their albums.
+- 📚 Library with playlists, artists and a pinned **Favorites** shortcut.
+- ❤️ Favorite/unfavorite tracks and artists (Subsonic star/unstar).
+- ▶️ Player with queue, shuffle, repeat (off/all/one), progress bar, background
+  playback and an always-visible mini player (Spotify-style).
 
-### Todavía no incluido
+### Not included (yet)
 
-Descargas offline, letras, scrobbling a Last.fm, ecualizador y controles
-completos en la pantalla de bloqueo (esto último requiere migrar a
-`react-native-track-player` con un *dev build*).
+Offline downloads, lyrics, Last.fm scrobbling, equalizer, and full lock-screen
+media controls (the latter needs migrating from `expo-audio` to
+`react-native-track-player`).
 
-## Requisitos
+## Requirements
 
-- [Node.js](https://nodejs.org) 20+ y [pnpm](https://pnpm.io).
-- La app [Expo Go](https://expo.dev/go) en tu móvil Android (para desarrollo).
-- Un servidor Navidrome accesible.
+- [Node.js](https://nodejs.org) 20+ and [pnpm](https://pnpm.io).
+- A running Navidrome server reachable from the device.
+- An Android emulator or device (see below).
 
-## Puesta en marcha
+## Getting started
 
 ```bash
 pnpm install
-pnpm start
+pnpm android   # builds and runs on a connected emulator/device
 ```
 
-Escanea el código QR con la app **Expo Go** (móvil y PC en la misma red). En la
-pantalla de login introduce la URL de tu servidor, usuario y contraseña.
+For the dev server only: `pnpm start`. On the login screen enter your server
+URL, username and password.
 
-## Generar el APK
+## Build a standalone APK
 
-No hace falta el SDK de Android en local: se compila en la nube con
-[EAS Build](https://docs.expo.dev/build/introduction/).
+The whole Android toolchain is local — no cloud required:
 
 ```bash
-pnpm dlx eas-cli build -p android --profile preview
+# from the project, with an Android SDK + JDK 17 installed:
+pnpm android --variant release
 ```
 
-## Estructura
+(Or use [EAS Build](https://docs.expo.dev/build/introduction/) with
+`pnpm dlx eas-cli build -p android` for a cloud build.)
+
+## Project structure
 
 ```
 src/
-├── api/subsonic.ts     Cliente de la API Subsonic (auth, álbumes, búsqueda…)
-├── store/              Estado global con Zustand (sesión y reproductor)
-├── lib/                Utilidades (cliente de queries, formato)
-├── components/         Componentes de UI reutilizables
-├── theme/              Colores, espaciados y tipografías
-└── app/                Pantallas y navegación (expo-router)
+├── api/subsonic.ts     Subsonic API client (auth, albums, artists, search, star…)
+├── store/              Global state with Zustand (session and player)
+├── lib/                Utilities (query client, storage, formatting)
+├── hooks/              Reusable hooks (e.g. useDebounce)
+├── components/         Reusable UI components
+├── theme/              Colors, spacing and typography
+└── app/                Screens and navigation (expo-router)
 ```
 
-## Licencia
+## License
 
 [MIT](./LICENSE) © juananzzz
