@@ -1,56 +1,66 @@
-# Welcome to your Expo app 👋
+# Resonus 🎵
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Reproductor de música para Android que se conecta a tu propio servidor
+[Navidrome](https://www.navidrome.org/) (a través de la API Subsonic). Una
+alternativa sencilla y de código abierto, con la estética de un reproductor
+moderno pero centrada en lo esencial.
 
-## Get started
+> Hecho con [Expo](https://expo.dev) (React Native + TypeScript).
 
-1. Install dependencies
+## Características (MVP)
 
-   ```bash
-   npm install
-   ```
+- 🔐 Inicio de sesión contra cualquier servidor Navidrome/Subsonic. Las
+  credenciales se guardan cifradas en el dispositivo (token, nunca la
+  contraseña en claro).
+- 🏠 Inicio con álbumes recientes, más escuchados y aleatorios.
+- 🔎 Búsqueda de álbumes y canciones.
+- 📚 Tus listas de reproducción.
+- ▶️ Reproductor con cola, play/pausa, anterior/siguiente, barra de progreso
+  y reproducción en segundo plano.
 
-2. Start the app
+### Todavía no incluido
 
-   ```bash
-   npx expo start
-   ```
+Descargas offline, letras, scrobbling a Last.fm, ecualizador y controles
+completos en la pantalla de bloqueo (esto último requiere migrar a
+`react-native-track-player` con un *dev build*).
 
-In the output, you'll find options to open the app in a
+## Requisitos
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- [Node.js](https://nodejs.org) 20+ y [pnpm](https://pnpm.io).
+- La app [Expo Go](https://expo.dev/go) en tu móvil Android (para desarrollo).
+- Un servidor Navidrome accesible.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Puesta en marcha
 
 ```bash
-npm run reset-project
+pnpm install
+pnpm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Escanea el código QR con la app **Expo Go** (móvil y PC en la misma red). En la
+pantalla de login introduce la URL de tu servidor, usuario y contraseña.
 
-### Other setup steps
+## Generar el APK
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+No hace falta el SDK de Android en local: se compila en la nube con
+[EAS Build](https://docs.expo.dev/build/introduction/).
 
-## Learn more
+```bash
+pnpm dlx eas-cli build -p android --profile preview
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Estructura
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```
+src/
+├── api/subsonic.ts     Cliente de la API Subsonic (auth, álbumes, búsqueda…)
+├── store/              Estado global con Zustand (sesión y reproductor)
+├── lib/                Utilidades (cliente de queries, formato)
+├── components/         Componentes de UI reutilizables
+├── theme/              Colores, espaciados y tipografías
+└── app/                Pantallas y navegación (expo-router)
+```
 
-## Join the community
+## Licencia
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+[MIT](./LICENSE) © juananzzz

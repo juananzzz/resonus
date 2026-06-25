@@ -1,0 +1,50 @@
+/** Tarjeta de álbum para las cuadrículas/carruseles del inicio y la búsqueda. */
+import { Link } from 'expo-router';
+import { Pressable, StyleSheet, Text } from 'react-native';
+
+import { coverArtUrl, type Album } from '@/api/subsonic';
+import { useAuthStore } from '@/store/auth';
+import { colors, fontSize, spacing } from '@/theme';
+import { Cover } from './Cover';
+
+interface Props {
+  album: Album;
+  width?: number;
+}
+
+export function AlbumCard({ album, width = 150 }: Props) {
+  const auth = useAuthStore((s) => s.auth);
+  const cover = coverArtUrl(auth!, album.coverArt ?? album.id, 300);
+
+  return (
+    <Link href={`/album/${album.id}`} asChild>
+      <Pressable style={[styles.container, { width }]}>
+        <Cover uri={cover} size={width} />
+        <Text style={styles.title} numberOfLines={1}>
+          {album.name}
+        </Text>
+        {album.artist ? (
+          <Text style={styles.artist} numberOfLines={1}>
+            {album.artist}
+          </Text>
+        ) : null}
+      </Pressable>
+    </Link>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    gap: spacing.xs,
+  },
+  title: {
+    color: colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    marginTop: spacing.xs,
+  },
+  artist: {
+    color: colors.textSecondary,
+    fontSize: fontSize.xs,
+  },
+});
