@@ -1,11 +1,21 @@
 /** Hoja inferior con acciones para una canción (menú ⋯). */
 import { Ionicons } from '@expo/vector-icons';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { coverArtUrl, star } from '@/api/subsonic';
+import { addToPlaylist, coverArtUrl, getPlaylists, star } from '@/api/subsonic';
 import { useAuthStore } from '@/store/auth';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu } from '@/store/songMenu';
@@ -45,12 +55,37 @@ export function SongMenuSheet() {
   const cancelSleepTimer = usePlayerStore((s) => s.cancelSleepTimer);
   const sleepTimerMinutes = usePlayerStore((s) => s.sleepTimerMinutes);
 
+  const [mode, setMode] = useState<'actions' | 'playlists'>('actions');
+
+  // Al abrir el menú para una canción, volvemos siempre a la vista de acciones.
+  useEffect(() => {
+    if (song) setMode('actions');
+  }, [song]);
+
+  const { data: playlists, isLoading: loadingPlaylists } = useQuery({
+    queryKey: ['playlists'],
+    queryFn: () => getPlaylists(auth!),
+    enabled: !!auth && mode === 'playlists',
+  });
+
   if (!song) return null;
 
   const go = (path: string) => {
     close();
     router.push(path);
   };
+
+  async function addTo(playlistId: string, playlistName: string) {
+    if (!auth || !song) return;
+    close();
+    try {
+      await addToPlaylist(auth, playlistId, song.id);
+      queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
+      Alert.alert('Añadida', `Se añadió a "${playlistName}".`);
+    } catch {
+      Alert.alert('Error', 'No se pudo añadir a la lista.');
+    }
+  }
 
   const soon = () => {
     close();
@@ -103,60 +138,96 @@ export function SongMenuSheet() {
         </View>
         <View style={styles.divider} />
 
-        <Action icon="add-circle-outline" label="Añadir a una playlist" onPress={soon} />
-        {song.artistId ? (
-          <Action
-            icon="person"
-            label="Ir al artista"
-            onPress={() => go(`/artist/${song.artistId}`)}
-          />
-        ) : null}
-        {song.albumId ? (
-          <Action
-            icon="disc"
-            label="Ir al álbum"
-            onPress={() => go(`/album/${song.albumId}`)}
-          />
-        ) : null}
-        <Action
-          icon="play-forward"
-          label="Reproducir a continuación"
-          onPress={() => {
-            playNext(song);
-            close();
-          }}
-        />
-        <Action
-          icon="list"
-          label="Añadir a la cola"
-          onPress={() => {
-            addToQueue(song);
-            close();
-          }}
-        />
-        <Action
-          icon="heart-outline"
-          label="Añadir a favoritos"
-          onPress={() => {
-            if (auth) {
-              star(auth, song.id).then(() =>
-                queryClient.invalidateQueries({ queryKey: ['starred'] }),
-              );
-            }
-            close();
-          }}
-        />
-        <Action icon="musical-notes-outline" label="Letra" onPress={soon} />
-        <Action icon="download-outline" label="Descargar" onPress={soon} />
-        <Action
-          icon="moon-outline"
-          label={
-            sleepTimerMinutes
-              ? `Temporizador (${sleepTimerMinutes} min)`
-              : 'Temporizador de apagado'
-          }
-          onPress={openSleepTimer}
-        />
+        {mode === 'playlists' ? (
+          <View style={{ maxHeight: 360 }}>
+            <Pressable
+              style={styles.action}
+              onPress={() => setMode('actions')}
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+              <Text style={styles.actionText}>Añadir a una playlist</Text>
+            </Pressable>
+            {loadingPlaylists ? (
+              <ActivityIndicator style={{ marginVertical: spacing.lg }} color={colors.accent} />
+            ) : (
+              <ScrollView>
+                {(playlists ?? []).map((p) => (
+                  <Pressable
+                    key={p.id}
+                    style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+                    onPress={() => addTo(p.id, p.name)}
+                  >
+                    <Cover uri={coverArtUrl(auth!, p.coverArt ?? p.id, 100)} size={40} />
+                    <Text style={styles.actionText} numberOfLines={1}>
+                      {p.name}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        ) : (
+          <>
+            <Action
+              icon="add-circle-outline"
+              label="Añadir a una playlist"
+              onPress={() => setMode('playlists')}
+            />
+            {song.artistId ? (
+              <Action
+                icon="person"
+                label="Ir al artista"
+                onPress={() => go(`/artist/${song.artistId}`)}
+              />
+            ) : null}
+            {song.albumId ? (
+              <Action
+                icon="disc"
+                label="Ir al álbum"
+                onPress={() => go(`/album/${song.albumId}`)}
+              />
+            ) : null}
+            <Action
+              icon="play-forward"
+              label="Reproducir a continuación"
+              onPress={() => {
+                playNext(song);
+                close();
+              }}
+            />
+            <Action
+              icon="list"
+              label="Añadir a la cola"
+              onPress={() => {
+                addToQueue(song);
+                close();
+              }}
+            />
+            <Action
+              icon="heart-outline"
+              label="Añadir a favoritos"
+              onPress={() => {
+                if (auth) {
+                  star(auth, song.id).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['starred'] }),
+                  );
+                }
+                close();
+              }}
+            />
+            <Action icon="musical-notes-outline" label="Letra" onPress={soon} />
+            <Action icon="download-outline" label="Descargar" onPress={soon} />
+            <Action
+              icon="moon-outline"
+              label={
+                sleepTimerMinutes
+                  ? `Temporizador (${sleepTimerMinutes} min)`
+                  : 'Temporizador de apagado'
+              }
+              onPress={openSleepTimer}
+            />
+          </>
+        )}
       </View>
     </Modal>
   );

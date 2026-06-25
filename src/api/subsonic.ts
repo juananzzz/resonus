@@ -183,6 +183,18 @@ export async function getPlaylist(
   return { playlist, songs: entry ?? [] };
 }
 
+/** Añade una canción a una lista de reproducción existente. */
+export async function addToPlaylist(
+  auth: SubsonicAuth,
+  playlistId: string,
+  songId: string,
+): Promise<void> {
+  await request(auth, 'updatePlaylist.view', {
+    playlistId,
+    songIdToAdd: songId,
+  });
+}
+
 export interface SearchResult {
   artists: Artist[];
   albums: Album[];
