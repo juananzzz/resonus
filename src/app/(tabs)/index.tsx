@@ -135,13 +135,16 @@ function AlbumSection({
 const EXPLORE: { href: string; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
   { href: '/browse/albums', icon: 'disc-outline', label: 'Álbumes' },
   { href: '/browse/artists', icon: 'people-outline', label: 'Artistas' },
+  { href: '/genres', icon: 'pricetags-outline', label: 'Géneros' },
   { href: '/radio', icon: 'radio-outline', label: 'Radio' },
 ];
 
+// En local solo hay álbumes y artistas (radio y géneros son de servidor).
+const OFFLINE_HREFS = new Set(['/browse/albums', '/browse/artists']);
+
 function ExploreChips({ offline }: { offline: boolean }) {
   const t = useT();
-  // En local no hay radio (es solo de servidor).
-  const chips = offline ? EXPLORE.filter((c) => c.href !== '/radio') : EXPLORE;
+  const chips = offline ? EXPLORE.filter((c) => OFFLINE_HREFS.has(c.href)) : EXPLORE;
   return (
     <ScrollView
       horizontal

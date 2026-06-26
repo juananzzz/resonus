@@ -64,6 +64,8 @@ export default function RootLayout() {
                 <Stack.Screen name="artist/discography/[id]" />
                 <Stack.Screen name="browse/albums" />
                 <Stack.Screen name="browse/artists" />
+                <Stack.Screen name="genres" />
+                <Stack.Screen name="genre/[name]" />
                 <Stack.Screen name="radio" />
                 <Stack.Screen name="favorites" />
                 <Stack.Screen name="settings/index" />

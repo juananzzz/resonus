@@ -5,6 +5,7 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,8 +16,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { coverArtUrl, search } from '@/api/data';
+import { getGenres } from '@/api/subsonic';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
+import { GenreCard } from '@/components/GenreCard';
 import { TrackRow } from '@/components/TrackRow';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useT } from '@/i18n';
@@ -25,8 +28,11 @@ import { currentSong, usePlayerStore } from '@/store/player';
 import { useRecentSearches } from '@/store/recentSearches';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
+const GENRE_W = (Dimensions.get('window').width - spacing.lg * 2 - spacing.sm) / 2;
+
 export default function SearchScreen() {
   const canSearch = useAuthStore((s) => !!s.auth || s.offline);
+  const auth = useAuthStore((s) => s.auth);
   const t = useT();
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
@@ -44,7 +50,16 @@ export default function SearchScreen() {
     enabled: canSearch && debouncedQuery.length > 1,
   });
 
-  const showRecent = focused && query.trim().length === 0 && recent.length > 0;
+  // Géneros para "Explorar todo" (solo servidor) cuando no hay búsqueda activa.
+  const { data: genres } = useQuery({
+    queryKey: ['genres'],
+    queryFn: () => getGenres(auth!),
+    enabled: !!auth,
+  });
+
+  const isEmpty = query.trim().length === 0;
+  const showRecent = focused && isEmpty && recent.length > 0;
+  const showBrowse = isEmpty && !showRecent && !!genres && genres.length > 0;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -97,6 +112,17 @@ export default function SearchScreen() {
                     <Ionicons name="close" size={20} color={colors.textMuted} />
                   </Pressable>
                 </Pressable>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {showBrowse ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('Explorar todo')}</Text>
+            <View style={styles.genreGrid}>
+              {genres!.map((g) => (
+                <GenreCard key={g.value} name={g.value} width={GENRE_W} />
               ))}
             </View>
           </View>
@@ -216,6 +242,11 @@ const styles = StyleSheet.create({
   recentText: { flex: 1, color: colors.text, fontSize: fontSize.md },
   albumRow: {
     gap: spacing.md,
+  },
+  genreGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
   },
   artist: {
     width: 110,

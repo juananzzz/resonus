@@ -194,6 +194,11 @@ const en: Record<string, string> = {
   'Caché limpiada': 'Cache cleared',
   // Radio
   Radio: 'Radio',
+  Géneros: 'Genres',
+  'Explorar todo': 'Browse all',
+  'No se pudieron cargar los géneros.': "Couldn't load genres.",
+  'No hay géneros.': 'No genres.',
+  'No hay álbumes de este género.': 'No albums in this genre.',
   Atrás: 'Back',
   'Por artista': 'By artist',
   'A-Z': 'A-Z',

@@ -200,6 +200,31 @@ export async function getAlbumList(
   return res.albumList2?.album ?? [];
 }
 
+export interface Genre {
+  value: string;
+  songCount?: number;
+  albumCount?: number;
+}
+
+export async function getGenres(auth: SubsonicAuth): Promise<Genre[]> {
+  const res = await request<{ genres?: { genre?: Genre[] } }>(auth, 'getGenres.view');
+  return (res.genres?.genre ?? []).filter((g) => g.value);
+}
+
+export async function getAlbumsByGenre(
+  auth: SubsonicAuth,
+  genre: string,
+  size = 30,
+  offset = 0,
+): Promise<Album[]> {
+  const res = await request<{ albumList2?: { album?: Album[] } }>(
+    auth,
+    'getAlbumList2.view',
+    { type: 'byGenre', genre, size, offset },
+  );
+  return res.albumList2?.album ?? [];
+}
+
 export async function getAlbum(
   auth: SubsonicAuth,
   id: string,
