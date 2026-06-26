@@ -23,25 +23,22 @@ import {
   getStarred,
   type Playlist,
 } from '@/api/data';
-import { getRadioStations, type RadioStation } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
 import { Dialog } from '@/components/Dialog';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { albumsLabel, songsLabel, useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
-import { usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
-type Segment = 'playlists' | 'albums' | 'artists' | 'radio';
+type Segment = 'playlists' | 'albums' | 'artists';
 
 const SEGMENTS: { key: Segment; label: string }[] = [
   { key: 'playlists', label: 'Listas' },
   { key: 'albums', label: 'Álbumes' },
   { key: 'artists', label: 'Artistas' },
-  { key: 'radio', label: 'Radio' },
 ];
 
 function FavoritesEntry() {
@@ -194,57 +191,6 @@ function AlbumsTab() {
   );
 }
 
-function RadioTab() {
-  const auth = useAuthStore((s) => s.auth);
-  const playQueue = usePlayerStore((s) => s.playQueue);
-  const t = useT();
-  const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ['radioStations'],
-    queryFn: () => getRadioStations(auth!),
-    enabled: !!auth,
-  });
-  if (isLoading) return <Loader />;
-  if (isError) return <Message text={t('No se pudieron cargar las emisoras.')} onRetry={() => refetch()} />;
-  return (
-    <FlatList
-      data={data ?? []}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.list}
-      refreshControl={
-        <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.accent} />
-      }
-      renderItem={({ item }: { item: RadioStation }) => (
-        <Pressable
-          style={styles.row}
-          onPress={() =>
-            playQueue(
-              [{ id: item.id, title: item.name, url: item.streamUrl, artist: item.homePageUrl ?? '' }],
-              0,
-              item.name,
-            )
-          }
-        >
-          <View style={styles.radioIcon}>
-            <Ionicons name="radio" size={22} color={colors.accent} />
-          </View>
-          <View style={styles.rowInfo}>
-            <Text style={styles.rowTitle} numberOfLines={1}>
-              {item.name}
-            </Text>
-            {item.homePageUrl ? (
-              <Text style={styles.rowSub} numberOfLines={1}>
-                {item.homePageUrl}
-              </Text>
-            ) : null}
-          </View>
-          <Ionicons name="play-circle" size={28} color={colors.accent} />
-        </Pressable>
-      )}
-      ListEmptyComponent={<Empty text={t('No hay emisoras de radio.')} />}
-    />
-  );
-}
-
 function Loader() {
   return <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />;
 }
@@ -263,9 +209,7 @@ export default function LibraryScreen() {
   const [segment, setSegment] = useState<Segment>(offline ? 'albums' : 'playlists');
   const [creating, setCreating] = useState(false);
 
-  const visibleSegments = offline
-    ? SEGMENTS.filter((s) => s.key !== 'radio')
-    : SEGMENTS;
+  const visibleSegments = SEGMENTS;
 
   async function onCreate(name: string) {
     setCreating(false);
@@ -331,10 +275,8 @@ export default function LibraryScreen() {
           <PlaylistsTab />
         ) : segment === 'albums' ? (
           <AlbumsTab />
-        ) : segment === 'artists' ? (
-          <ArtistsTab />
         ) : (
-          <RadioTab />
+          <ArtistsTab />
         )}
       </View>
     </SafeAreaView>
@@ -382,13 +324,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     textAlign: 'center',
     marginTop: spacing.xl,
-  },
-  radioIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.surfaceHighlight,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

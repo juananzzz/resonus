@@ -194,6 +194,10 @@ const en: Record<string, string> = {
   'Caché limpiada': 'Cache cleared',
   // Radio
   Radio: 'Radio',
+  Atrás: 'Back',
+  'Por artista': 'By artist',
+  'A-Z': 'A-Z',
+  'Filtrar artistas': 'Filter artists',
   'No hay emisoras de radio.': 'No radio stations.',
   'No se pudieron cargar las emisoras.': "Couldn't load radio stations.",
   // Audio quality

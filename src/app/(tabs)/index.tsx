@@ -1,4 +1,5 @@
 /** Inicio estilo Spotify: accesos rápidos + carruseles de álbumes. */
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { useState } from 'react';
@@ -131,6 +132,33 @@ function AlbumSection({
   );
 }
 
+const EXPLORE: { href: string; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+  { href: '/browse/albums', icon: 'disc-outline', label: 'Álbumes' },
+  { href: '/browse/artists', icon: 'people-outline', label: 'Artistas' },
+  { href: '/radio', icon: 'radio-outline', label: 'Radio' },
+];
+
+function ExploreChips() {
+  const t = useT();
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.chipsRow}
+      contentContainerStyle={styles.chips}
+    >
+      {EXPLORE.map((c) => (
+        <Link key={c.href} href={c.href} asChild>
+          <Pressable style={styles.chip}>
+            <Ionicons name={c.icon} size={16} color={colors.text} />
+            <Text style={styles.chipText}>{t(c.label)}</Text>
+          </Pressable>
+        </Link>
+      ))}
+    </ScrollView>
+  );
+}
+
 function ScanningPanel() {
   const t = useT();
   const count = useScanProgress((s) => s.count);
@@ -189,6 +217,8 @@ export default function HomeScreen() {
 
         {offline && scanning ? <ScanningPanel /> : null}
 
+        {!offline ? <ExploreChips /> : null}
+
         <QuickGrid />
 
         {offline ? (
@@ -231,6 +261,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
+  chipsRow: { flexGrow: 0, marginBottom: spacing.lg },
+  chips: { gap: spacing.sm, paddingHorizontal: spacing.lg },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 999,
+    backgroundColor: colors.surfaceHighlight,
+  },
+  chipText: { color: colors.text, fontSize: fontSize.sm, fontWeight: '600' },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

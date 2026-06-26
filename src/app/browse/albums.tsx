@@ -1,0 +1,140 @@
+/** Explorar todos los álbumes del servidor, con orden y scroll infinito. */
+import { Ionicons } from '@expo/vector-icons';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { getAlbumList, type AlbumListType } from '@/api/subsonic';
+import { AlbumCard } from '@/components/AlbumCard';
+import { Message } from '@/components/Message';
+import { useT } from '@/i18n';
+import { useAuthStore } from '@/store/auth';
+import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
+
+const PAGE = 30;
+const COLUMNS = 2;
+const GAP = spacing.sm;
+const CARD = (Dimensions.get('window').width - spacing.lg * 2 - GAP * (COLUMNS - 1)) / COLUMNS;
+
+const SORTS: { key: AlbumListType; label: string }[] = [
+  { key: 'newest', label: 'Recientes' },
+  { key: 'alphabeticalByName', label: 'A-Z' },
+  { key: 'alphabeticalByArtist', label: 'Artista' },
+  { key: 'frequent', label: 'Más escuchados' },
+  { key: 'random', label: 'Aleatorio' },
+];
+
+export default function BrowseAlbumsScreen() {
+  const router = useRouter();
+  const t = useT();
+  const auth = useAuthStore((s) => s.auth);
+  const [sort, setSort] = useState<AlbumListType>('newest');
+
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ['browseAlbums', sort],
+      queryFn: ({ pageParam }) => getAlbumList(auth!, sort, PAGE, pageParam),
+      initialPageParam: 0,
+      getNextPageParam: (last, pages) =>
+        last.length === PAGE ? pages.length * PAGE : undefined,
+      enabled: !!auth,
+    });
+
+  const albums = data?.pages.flat() ?? [];
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.header}>
+        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel={t('Atrás')}>
+          <Ionicons name="chevron-back" size={26} color={colors.text} />
+        </Pressable>
+        <Text style={styles.title}>{t('Álbumes')}</Text>
+        <View style={{ width: 26 }} />
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chips}
+        style={styles.chipsRow}
+      >
+        {SORTS.map((s) => {
+          const active = s.key === sort;
+          return (
+            <Pressable
+              key={s.key}
+              style={[styles.chip, active && styles.chipActive]}
+              onPress={() => setSort(s.key)}
+            >
+              <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                {t(s.label)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {isLoading ? (
+        <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
+      ) : isError ? (
+        <Message text={t('No se pudieron cargar los álbumes.')} onRetry={() => refetch()} />
+      ) : (
+        <FlatList
+          data={albums}
+          key={sort}
+          keyExtractor={(item, i) => `${item.id}-${i}`}
+          numColumns={COLUMNS}
+          columnWrapperStyle={{ gap: GAP }}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => <AlbumCard album={item} width={CARD} />}
+          onEndReached={() => hasNextPage && fetchNextPage()}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <ActivityIndicator style={{ marginVertical: spacing.lg }} color={colors.accent} />
+            ) : null
+          }
+        />
+      )}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '800' },
+  chipsRow: { flexGrow: 0 },
+  chips: { gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
+  chip: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: 999,
+    backgroundColor: colors.surfaceHighlight,
+  },
+  chipActive: { backgroundColor: colors.accent },
+  chipText: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '600' },
+  chipTextActive: { color: '#000' },
+  list: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: SCREEN_BOTTOM_PADDING,
+    gap: GAP,
+  },
+});

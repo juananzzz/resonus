@@ -177,15 +177,25 @@ export async function ping(auth: SubsonicAuth): Promise<void> {
   await request(auth, 'ping.view');
 }
 
+export type AlbumListType =
+  | 'newest'
+  | 'recent'
+  | 'frequent'
+  | 'random'
+  | 'alphabeticalByName'
+  | 'alphabeticalByArtist'
+  | 'starred';
+
 export async function getAlbumList(
   auth: SubsonicAuth,
-  type: 'newest' | 'recent' | 'frequent' | 'random' = 'newest',
+  type: AlbumListType = 'newest',
   size = 20,
+  offset = 0,
 ): Promise<Album[]> {
   const res = await request<{ albumList2?: { album?: Album[] } }>(
     auth,
     'getAlbumList2.view',
-    { type, size },
+    { type, size, offset },
   );
   return res.albumList2?.album ?? [];
 }
