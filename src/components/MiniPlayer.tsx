@@ -19,6 +19,8 @@ export function MiniPlayer() {
   const auth = useAuthStore((s) => s.auth);
   const song = usePlayerStore(currentSong);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const positionSec = usePlayerStore((s) => s.positionSec);
+  const durationSec = usePlayerStore((s) => s.durationSec);
   const toggle = usePlayerStore((s) => s.toggle);
 
   const cover = song
@@ -27,6 +29,9 @@ export function MiniPlayer() {
   const bg = useDominantColor(cover);
 
   if (!song) return null;
+
+  const duration = durationSec || song.duration || 0;
+  const progress = duration > 0 ? Math.min(1, positionSec / duration) : 0;
 
   return (
     <Pressable
@@ -58,6 +63,10 @@ export function MiniPlayer() {
           color={colors.text}
         />
       </Pressable>
+
+      <View style={styles.progressTrack} pointerEvents="none">
+        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+      </View>
     </Pressable>
   );
 }
@@ -71,7 +80,17 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.sm,
     padding: spacing.sm,
     borderRadius: radius.md,
+    overflow: 'hidden',
   },
+  progressTrack: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 2,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  progressFill: { height: 2, backgroundColor: colors.text },
   info: {
     flex: 1,
   },
