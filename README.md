@@ -24,16 +24,16 @@ Spotify-style client focused on the essentials.
 - 📝 **Lyrics** view (Subsonic `getLyrics`).
 - ▶️ Player with editable queue, shuffle, repeat (off/all/one), volume, sleep
   timer and an always-visible mini player (dynamic colour from the artwork).
-- 🔊 Background playback and **scrobbling** to the server (which can forward to
-  Last.fm if your Navidrome is configured for it).
+- 🔊 Background playback with **lock-screen / notification media controls**
+  (powered by `react-native-track-player`).
+- 📡 **Scrobbling** to the server (which can forward to Last.fm if your
+  Navidrome is configured for it).
 - ⚙️ Settings: streaming quality (bitrate), library scan status, clear cache.
 
 ### Not included (yet)
 
-Offline downloads, equalizer, crossfade, and full lock-screen / notification
-media controls. The last three need a native audio engine
-(`react-native-track-player`) instead of `expo-audio`; offline downloads need a
-local file/store layer.
+Offline downloads, equalizer and crossfade. Equalizer and crossfade would need
+custom native audio work; offline downloads need a local file/store layer.
 
 ## Requirements
 
