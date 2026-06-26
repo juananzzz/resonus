@@ -2,127 +2,77 @@
   <img src="./assets/images/icon-transparent.png" width="120" alt="Resonus icon" />
 </p>
 
-<h1 align="center">Resonus 🎵</h1>
+<h1 align="center">Resonus</h1>
 
 <p align="center">
-  An open-source Android music player for your own self-hosted music server.<br/>
-  A clean, Spotify-style client focused on the essentials.
+  A clean Android client for your self-hosted music server.
 </p>
 
-Works with **Navidrome** and any **OpenSubsonic**-compatible server (Subsonic
-API). Jellyfin support is planned.
+---
 
-> ⚡ **Vibe-coded** — this whole app was built collaboratively with an AI coding
-> assistant ([Claude Code](https://claude.com/claude-code)), prompt by prompt.
-
-## Features
-
-- 🔐 **Log in** to any Navidrome / OpenSubsonic server (token-based auth, stored
-  encrypted). **Multiple saved profiles** to switch between accounts.
-- 🏠 **Home** with recently played, recently added and most played albums, plus
-  quick-access shortcuts.
-- 🔎 **Search** for songs, albums and artists (debounced).
-- 🎤 **Artist** pages with top songs, an album grid and similar artists.
-- 📚 **Library** with playlists, artists and a pinned Favorites shortcut.
-- ❤️ **Favorites** — star/unstar tracks and artists (Subsonic star/unstar).
-- 🎶 **Per-track menu**: add to playlist, play next, add to queue, go to
-  album/artist, lyrics, sleep timer.
-- 📝 **Lyrics** view.
-- ▶️ **Player** with editable queue, shuffle, repeat (off/all/one), volume, a
-  sleep timer and an always-visible mini player (dynamic colour from the
-  artwork).
-- 🔊 **Background playback** with lock-screen / notification media controls.
-- 📡 **Scrobbling** to the server (which can forward to Last.fm if your server
-  is configured for it).
-- 🌍 **Spanish & English** (in-app language switch; easy to add more).
-- ⚙️ **Settings**: streaming quality (bitrate), library scan status, clear cache.
-
-### Not included (yet)
-
-Offline downloads, equalizer and crossfade. The latter two need custom native
-audio work; offline downloads need a local file/store layer.
-
-## Tech stack
-
-- [Expo](https://expo.dev) SDK 55 (React Native 0.83, New Architecture) + TypeScript
-- [expo-router](https://docs.expo.dev/router/introduction/) for file-based navigation
-- [react-native-track-player](https://rntp.dev/) for audio + media controls
-- [Zustand](https://zustand-demo.pmnd.rs/) for state, [TanStack Query](https://tanstack.com/query) for data fetching
-- A small hand-rolled Subsonic API client and i18n layer
-
-## Requirements
-
-- [Node.js](https://nodejs.org) 20+ and [pnpm](https://pnpm.io)
-- A running Navidrome / OpenSubsonic server reachable from the device
-- An Android emulator or device
+Resonus connects to **Navidrome** or any **OpenSubsonic**-compatible server (Subsonic API). Browse your library, search, manage playlists, and play music with background playback and lock-screen controls.
 
 ## Getting started
 
+Node.js 20+ and [pnpm](https://pnpm.io) required.
+
 ```bash
 pnpm install
-pnpm android   # builds and runs on a connected emulator/device
+pnpm android    # builds and runs on a connected device/emulator
 ```
 
-For just the dev server: `pnpm start`. On the login screen pick your server
-type and enter its URL, username and password.
+On the login screen, enter your server URL, username and password.
 
-## Build a standalone APK
-
-The whole Android toolchain is local — no cloud account required:
+## Build an APK
 
 ```bash
-# with an Android SDK + JDK 17 installed:
 pnpm android --variant release
 ```
 
-(Or use [EAS Build](https://docs.expo.dev/build/introduction/) with
-`pnpm dlx eas-cli build -p android` for a cloud build.)
+Requires Android SDK and JDK 17 locally. For cloud builds, use `pnpm dlx eas-cli build -p android`.
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Framework | [Expo](https://expo.dev) SDK 55 + React Native 0.83 |
+| Navigation | [expo-router](https://docs.expo.dev/router/introduction/) |
+| Audio | [react-native-track-player](https://rntp.dev/) |
+| State | [Zustand](https://zustand-demo.pmnd.rs/) |
+| Data | [TanStack Query](https://tanstack.com/query) |
+| Language | TypeScript |
 
 ## Project structure
 
 ```
 src/
-├── api/          Subsonic API client (auth, albums, artists, search, star…)
-├── app/          Screens and navigation (expo-router)
+├── api/          Subsonic API client
+├── app/          Screens and navigation
 ├── components/   Reusable UI components
-├── hooks/        Reusable hooks (useDebounce, useDominantColor)
-├── i18n/         Translations and the useT() hook
-├── lib/          Utilities (query client, storage, playback service, format)
-├── store/        Global state with Zustand (auth, player, settings, …)
-└── theme/        Colors, spacing, typography and layout constants
+├── hooks/        Shared hooks
+├── i18n/         Translations (Spanish / English)
+├── lib/          Utilities
+├── store/        Zustand stores
+└── theme/        Colors, spacing, typography
 ```
 
 ## Scripts
 
 | Command | Description |
 |---|---|
+| `pnpm start` | Start Metro dev server |
 | `pnpm android` | Build and run on Android |
-| `pnpm start` | Start the Metro dev server |
 | `pnpm lint` | Run ESLint |
-| `pnpm typecheck` | Type-check with `tsc` |
+| `pnpm typecheck` | Type-check with TypeScript |
 
 ## Roadmap
 
-Things planned / still to do:
-
-- [ ] **Android Auto** — plan documented in [docs/ANDROID_AUTO.md](./docs/ANDROID_AUTO.md)
-      (custom Media3 `MediaLibraryService` native module, à la
-      [wavio](https://github.com/Joel-Mercier/wavio))
-- [ ] Offline downloads (local file/store layer)
-- [ ] Equalizer (needs a native audio-effects module)
-- [ ] Crossfade between tracks
-- [ ] Jellyfin support (separate API client)
-- [x] ~~Create / edit / delete playlists from the app~~ ✅ (create, rename,
-      delete, add/remove songs)
-- [ ] "Recently played" history on Home
-- [ ] More languages (the i18n layer is ready — just add a dictionary)
-- [ ] Unit tests (Subsonic client, player store)
-- [ ] iOS support (the codebase is cross-platform; only Android is tested)
-- [ ] Polish: translate the error-boundary screen, richer empty states
-
-Contributions and ideas are welcome. 🙌
-
-hola soy deepseek
+- [ ] Android Auto
+- [ ] Offline downloads
+- [ ] Equalizer and crossfade
+- [ ] Jellyfin support
+- [ ] iOS support
+- [ ] Unit tests
 
 ## License
 
