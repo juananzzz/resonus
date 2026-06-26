@@ -23,6 +23,8 @@ interface Props {
   currentId?: string;
   /** Numera las pistas (útil en álbumes). */
   numbered?: boolean;
+  /** Si se indica, muestra un botón ⋯ arriba a la derecha. */
+  onMenu?: () => void;
   onPlay: (startIndex: number) => void;
 }
 
@@ -34,6 +36,7 @@ export function TrackListView({
   songs,
   currentId,
   numbered,
+  onMenu,
   onPlay,
 }: Props) {
   const router = useRouter();
@@ -41,9 +44,21 @@ export function TrackListView({
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <Pressable style={styles.back} hitSlop={12} onPress={() => router.back()}>
-        <Ionicons name="chevron-down" size={28} color={colors.text} />
-      </Pressable>
+      <View style={styles.topBar}>
+        <Pressable hitSlop={12} onPress={() => router.back()}>
+          <Ionicons name="chevron-down" size={28} color={colors.text} />
+        </Pressable>
+        {onMenu ? (
+          <Pressable
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t('Más opciones')}
+            onPress={onMenu}
+          >
+            <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
+          </Pressable>
+        ) : null}
+      </View>
 
       <FlatList
         data={songs}
@@ -96,7 +111,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  back: {
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },

@@ -216,6 +216,43 @@ export async function addToPlaylist(
   });
 }
 
+/** Crea una lista de reproducción vacía con el nombre dado. */
+export async function createPlaylist(
+  auth: SubsonicAuth,
+  name: string,
+): Promise<void> {
+  await request(auth, 'createPlaylist.view', { name });
+}
+
+/** Elimina una lista de reproducción. */
+export async function deletePlaylist(
+  auth: SubsonicAuth,
+  id: string,
+): Promise<void> {
+  await request(auth, 'deletePlaylist.view', { id });
+}
+
+/** Renombra una lista de reproducción. */
+export async function renamePlaylist(
+  auth: SubsonicAuth,
+  id: string,
+  name: string,
+): Promise<void> {
+  await request(auth, 'updatePlaylist.view', { playlistId: id, name });
+}
+
+/** Quita una canción de una lista por su índice (posición en la lista). */
+export async function removeFromPlaylist(
+  auth: SubsonicAuth,
+  id: string,
+  index: number,
+): Promise<void> {
+  await request(auth, 'updatePlaylist.view', {
+    playlistId: id,
+    songIndexToRemove: index,
+  });
+}
+
 export interface SearchResult {
   artists: Artist[];
   albums: Album[];
