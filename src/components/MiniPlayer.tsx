@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { coverArtUrl } from '@/api/subsonic';
+import { coverArtUrl } from '@/api/data';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { useT } from '@/i18n';
@@ -28,7 +28,7 @@ export function MiniPlayer() {
 
   const cover =
     song && auth && !song.localUri
-      ? coverArtUrl(auth, song.coverArt ?? song.albumId, 100)
+      ? coverArtUrl( song.coverArt ?? song.albumId, 100)
       : undefined;
   const bg = useDominantColor(cover);
   const favIds = useFavoriteIds(!!song && !song.localUri);

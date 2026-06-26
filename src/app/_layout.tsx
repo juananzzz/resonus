@@ -22,8 +22,10 @@ import { colors } from '@/theme';
 export default function RootLayout() {
   const auth = useAuthStore((s) => s.auth);
   const offline = useAuthStore((s) => s.offline);
+  const offlineSource = useAuthStore((s) => s.offlineSource);
   const hydrating = useAuthStore((s) => s.hydrating);
   const hydrate = useAuthStore((s) => s.hydrate);
+  const ready = !!auth || (offline && !!offlineSource);
 
   useEffect(() => {
     hydrate();
@@ -50,7 +52,7 @@ export default function RootLayout() {
           <ErrorBoundary>
           <View style={{ flex: 1 }}>
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-              <Stack.Protected guard={!!auth}>
+              <Stack.Protected guard={ready}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="album/[id]" />
                 <Stack.Screen name="playlist/[id]" />
@@ -64,7 +66,7 @@ export default function RootLayout() {
                 <Stack.Screen name="settings/display" />
                 <Stack.Screen name="settings/about" />
               </Stack.Protected>
-              <Stack.Protected guard={offline}>
+              <Stack.Protected guard={offline && !offlineSource}>
                 <Stack.Screen name="offline" />
               </Stack.Protected>
               <Stack.Protected guard={!auth && !offline}>
@@ -76,7 +78,7 @@ export default function RootLayout() {
               <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
             </Stack>
             {auth || offline ? <GlobalMiniPlayer /> : null}
-            {auth ? <SongMenuSheet /> : null}
+            {auth || offline ? <SongMenuSheet /> : null}
             <Toast />
           </View>
           </ErrorBoundary>

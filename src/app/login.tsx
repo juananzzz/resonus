@@ -5,6 +5,7 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -15,7 +16,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useAuthStore } from '@/store/auth';
+import {
+  type OfflineProfile,
+  type Profile,
+  type ServerProfile,
+  useAuthStore,
+} from '@/store/auth';
 import { useToast } from '@/store/toast';
 import { useT } from '@/i18n';
 import { colors, fontSize, radius, spacing } from '@/theme';
@@ -37,6 +43,68 @@ function logoFor(type?: string): number {
   return SERVERS.find((s) => s.key === type)?.logo ?? SERVERS[0].logo;
 }
 
+function isServer(p: Profile): p is ServerProfile {
+  return p._type === 'server';
+}
+
+function isOffline(p: Profile): p is OfflineProfile {
+  return p._type === 'offline';
+}
+
+function ProfileRow({ profile, onTap, onRemove }: {
+  profile: Profile;
+  onTap: () => void;
+  onRemove: () => void;
+}) {
+  const t = useT();
+  if (isOffline(profile)) {
+    return (
+      <View style={styles.profileRow}>
+        <Pressable style={styles.profileMain} onPress={onTap}>
+          <View style={styles.offlineIcon}>
+            <Ionicons name="cloud-offline-outline" size={22} color={colors.accent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.profileUser} numberOfLines={1}>
+              {t('Modo sin conexión')}
+            </Text>
+            <Text style={styles.profileUrl} numberOfLines={1}>
+              {profile.name}
+            </Text>
+          </View>
+        </Pressable>
+        <Pressable hitSlop={10} onPress={onRemove}>
+          <Ionicons name="close" size={20} color={colors.textMuted} />
+        </Pressable>
+      </View>
+    );
+  }
+  return (
+    <View style={styles.profileRow}>
+      <Pressable style={styles.profileMain} onPress={onTap}>
+        <Image
+          source={logoFor(profile.serverType)}
+          style={styles.profileLogo}
+          contentFit="contain"
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.profileUser} numberOfLines={1}>
+            {profile.username}
+          </Text>
+          <Text style={styles.profileUrl} numberOfLines={1}>
+            {profile.serverUrl}
+          </Text>
+        </View>
+      </Pressable>
+      <Pressable hitSlop={10} onPress={onRemove}>
+        <Ionicons name="close" size={20} color={colors.textMuted} />
+      </Pressable>
+    </View>
+  );
+}
+
+const MAX_VISIBLE = 3;
+
 export default function LoginScreen() {
   const login = useAuthStore((s) => s.login);
   const profiles = useAuthStore((s) => s.profiles);
@@ -51,9 +119,12 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   const isJellyfin = server === 'jellyfin';
   const canSubmit = serverUrl.trim() && username.trim() && password && !loading;
+  const visible = profiles.slice(0, MAX_VISIBLE);
+  const overflow = profiles.length > MAX_VISIBLE;
 
   async function onSubmit() {
     if (isJellyfin) {
@@ -63,13 +134,26 @@ export default function LoginScreen() {
     setError(null);
     setLoading(true);
     try {
-      // Navidrome y OpenSubsonic comparten la API Subsonic.
       await login(serverUrl, username, password, server);
     } catch (e) {
       setError(e instanceof Error ? e.message : t('No se pudo iniciar sesión'));
     } finally {
       setLoading(false);
     }
+  }
+
+  async function onProfileTap(p: Profile) {
+    try {
+      await switchProfile(p);
+    } catch {
+      if (isServer(p)) {
+        toast(t('No se pudo entrar; revisa la cuenta'));
+      }
+    }
+  }
+
+  function onProfileRemove(p: Profile) {
+    removeProfile(p);
   }
 
   return (
@@ -88,37 +172,22 @@ export default function LoginScreen() {
           {profiles.length > 0 ? (
             <View style={styles.profiles}>
               <Text style={styles.groupTitle}>{t('Perfiles guardados')}</Text>
-              {profiles.map((p) => (
-                <View key={`${p.serverUrl}-${p.username}`} style={styles.profileRow}>
-                  <Pressable
-                    style={styles.profileMain}
-                    onPress={async () => {
-                      try {
-                        await switchProfile(p);
-                      } catch {
-                        toast(t('No se pudo entrar; revisa la cuenta'));
-                      }
-                    }}
-                  >
-                    <Image
-                      source={logoFor(p.serverType)}
-                      style={styles.profileLogo}
-                      contentFit="contain"
-                    />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.profileUser} numberOfLines={1}>
-                        {p.username}
-                      </Text>
-                      <Text style={styles.profileUrl} numberOfLines={1}>
-                        {p.serverUrl}
-                      </Text>
-                    </View>
-                  </Pressable>
-                  <Pressable hitSlop={10} onPress={() => removeProfile(p)}>
-                    <Ionicons name="close" size={20} color={colors.textMuted} />
-                  </Pressable>
-                </View>
+              {visible.map((p, i) => (
+                <ProfileRow
+                  key={isOffline(p) ? `offline-${i}` : `${p.serverUrl}-${p.username}`}
+                  profile={p}
+                  onTap={() => onProfileTap(p)}
+                  onRemove={() => onProfileRemove(p)}
+                />
               ))}
+              {overflow ? (
+                <Pressable style={styles.showMore} onPress={() => setShowAll(true)}>
+                  <Text style={styles.showMoreText}>
+                    {t('Mostrar todos')} ({profiles.length})
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color={colors.accent} />
+                </Pressable>
+              ) : null}
               <Text style={styles.groupTitle}>{t('Añadir otra cuenta')}</Text>
             </View>
           ) : null}
@@ -210,6 +279,35 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={showAll}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowAll(false)}
+      >
+        <SafeAreaView style={styles.modalSafe} edges={['top']}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{t('Perfiles guardados')}</Text>
+            <Pressable hitSlop={12} onPress={() => setShowAll(false)}>
+              <Text style={styles.modalDone}>{t('Cerrar')}</Text>
+            </Pressable>
+          </View>
+          <ScrollView contentContainerStyle={styles.modalList}>
+            {profiles.map((p, i) => (
+              <ProfileRow
+                key={isOffline(p) ? `all-offline-${i}` : `all-${p.serverUrl}-${p.username}`}
+                profile={p}
+                onTap={() => {
+                  setShowAll(false);
+                  void onProfileTap(p);
+                }}
+                onRemove={() => onProfileRemove(p)}
+              />
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -254,6 +352,22 @@ const styles = StyleSheet.create({
   profileLogo: { width: 36, height: 36 },
   profileUser: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
   profileUrl: { color: colors.textMuted, fontSize: fontSize.xs },
+  offlineIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surfaceHighlight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  showMore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+  },
+  showMoreText: { color: colors.accent, fontSize: fontSize.sm, fontWeight: '600' },
   servers: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl },
   serverCard: {
     flex: 1,
@@ -266,10 +380,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   serverCardActive: { borderColor: colors.accent },
-  serverIcon: {
-    width: 48,
-    height: 48,
-  },
+  serverIcon: { width: 48, height: 48 },
   serverName: { color: colors.text, fontSize: fontSize.xs, fontWeight: '600' },
   soon: { color: colors.textMuted, fontSize: 10 },
   form: { gap: spacing.md },
@@ -318,4 +429,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xs,
   },
+  modalSafe: { flex: 1, backgroundColor: colors.background },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  modalTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
+  modalDone: { color: colors.accent, fontSize: fontSize.md, fontWeight: '600' },
+  modalList: { paddingHorizontal: spacing.xl, gap: spacing.sm, paddingBottom: spacing.xl },
 });

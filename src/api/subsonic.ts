@@ -33,6 +33,8 @@ export interface Song {
   track?: number;
   /** Marca de tiempo de cuándo se marcó como favorita; ausente si no lo es. */
   starred?: string;
+  /** URL de streaming directa (usado para radio; evita generar URL Subsonic). */
+  url?: string;
   /** Formato del archivo (mp3, flac, aac…). */
   suffix?: string;
   /** Bitrate en kbps. */
@@ -41,8 +43,14 @@ export interface Song {
   bitDepth?: number;
   /** Frecuencia de muestreo en Hz (44100, 48000, 96000…). */
   samplingRate?: number;
+  /** Carátula embebida en base64 (modo sin conexión). */
+  coverBase64?: string;
+  /** MIME de la carátula embebida (image/jpeg, image/png…). */
+  coverMime?: string;
   /** URI de fichero local (modo sin conexión); si está, se reproduce sin servidor. */
   localUri?: string;
+  /** Año de la canción (desde ID3, modo sin conexión). */
+  year?: number;
 }
 
 export interface Album {
@@ -442,6 +450,23 @@ export async function scrobble(auth: SubsonicAuth, id: string): Promise<void> {
   } catch {
     // El scrobble es opcional; ignoramos sus errores.
   }
+}
+
+export interface RadioStation {
+  id: string;
+  name: string;
+  streamUrl: string;
+  homePageUrl?: string;
+}
+
+/** Devuelve las emisoras de radio guardadas en el servidor. */
+export async function getRadioStations(
+  auth: SubsonicAuth,
+): Promise<RadioStation[]> {
+  const res = await request<{
+    internetRadioStations?: { internetRadioStation?: RadioStation[] };
+  }>(auth, 'getInternetRadioStations.view');
+  return res.internetRadioStations?.internetRadioStation ?? [];
 }
 
 /** URL de la carátula. `id` puede venir de un álbum, canción o playlist. */

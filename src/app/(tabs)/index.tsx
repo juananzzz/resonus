@@ -20,7 +20,7 @@ import {
   getAlbumList,
   getPlaylists,
   type Album,
-} from '@/api/subsonic';
+} from '@/api/data';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { FavoritesArt } from '@/components/FavoritesArt';
@@ -58,26 +58,40 @@ function QuickTile({
 }
 
 function QuickGrid() {
-  const auth = useAuthStore((s) => s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
+  const offline = useAuthStore((s) => s.offline);
   const t = useT();
-  const { data } = useQuery({
+  const { data: playlists } = useQuery({
     queryKey: ['playlists'],
-    queryFn: () => getPlaylists(auth!),
-    enabled: !!auth,
+    queryFn: () => getPlaylists(),
+    enabled: !offline && canFetch,
   });
-  const playlists = (data ?? []).slice(0, 7);
+  const { data: albums } = useQuery({
+    queryKey: ['albumList', 'newest'],
+    queryFn: () => getAlbumList('newest', 7),
+    enabled: offline && canFetch,
+  });
 
   return (
     <View style={styles.grid}>
       <QuickTile href="/favorites" name={t('Favoritos')} favorites />
-      {playlists.map((p) => (
-        <QuickTile
-          key={p.id}
-          href={`/playlist/${p.id}`}
-          name={p.name}
-          cover={coverArtUrl(auth!, p.coverArt ?? p.id, 100)}
-        />
-      ))}
+      {offline
+        ? (albums ?? []).map((a) => (
+            <QuickTile
+              key={a.id}
+              href={`/album/${a.id}`}
+              name={a.name}
+              cover={coverArtUrl(a.coverArt ?? a.id, 100)}
+            />
+          ))
+        : (playlists ?? []).slice(0, 7).map((p) => (
+            <QuickTile
+              key={p.id}
+              href={`/playlist/${p.id}`}
+              name={p.name}
+              cover={coverArtUrl(p.coverArt ?? p.id, 100)}
+            />
+          ))}
     </View>
   );
 }
@@ -89,11 +103,11 @@ function AlbumSection({
   title: string;
   type: 'recent' | 'newest' | 'frequent';
 }) {
-  const auth = useAuthStore((s) => s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const { data, isLoading } = useQuery({
     queryKey: ['albumList', type],
-    queryFn: () => getAlbumList(auth!, type),
-    enabled: !!auth,
+    queryFn: () => getAlbumList(type),
+    enabled: canFetch,
   });
 
   if (isLoading) {
@@ -118,10 +132,11 @@ function AlbumSection({
 
 export default function HomeScreen() {
   const auth = useAuthStore((s) => s.auth);
+  const offline = useAuthStore((s) => s.offline);
   const queryClient = useQueryClient();
   const t = useT();
   const [refreshing, setRefreshing] = useState(false);
-  const initial = (auth?.username ?? '?').charAt(0).toUpperCase();
+  const initial = offline ? 'O' : (auth?.username ?? '?').charAt(0).toUpperCase();
 
   async function onRefresh() {
     setRefreshing(true);
@@ -142,7 +157,14 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.greeting}>{t('Tu música')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+            <Text style={styles.greeting}>{t('Tu música')}</Text>
+            {offline ? (
+              <View style={styles.offlineBadge}>
+                <Text style={styles.offlineBadgeText}>Sin conexión</Text>
+              </View>
+            ) : null}
+          </View>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initial}</Text>
           </View>
@@ -213,4 +235,15 @@ const styles = StyleSheet.create({
   },
   rowContent: { paddingHorizontal: spacing.lg, gap: spacing.md },
   rowLoader: { marginVertical: spacing.xl },
+  offlineBadge: {
+    backgroundColor: colors.surfaceHighlight,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  offlineBadgeText: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '600',
+  },
 });

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 
-import { coverArtUrl, getAlbum } from '@/api/subsonic';
+import { coverArtUrl, getAlbum } from '@/api/data';
 import { Message } from '@/components/Message';
 import { TrackListView } from '@/components/TrackListView';
 import { songsLabel, useT } from '@/i18n';
@@ -15,7 +15,7 @@ import { colors } from '@/theme';
 
 export default function AlbumScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const auth = useAuthStore((s) => s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
   const playing = usePlayerStore(currentSong);
@@ -23,8 +23,8 @@ export default function AlbumScreen() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['album', id],
-    queryFn: () => getAlbum(auth!, id),
-    enabled: !!auth && !!id,
+    queryFn: () => getAlbum(id),
+    enabled: canFetch && !!id,
   });
 
   if (isLoading) {
@@ -55,7 +55,7 @@ export default function AlbumScreen() {
       subtitle={data.album.artist}
       artistId={data.album.artistId}
       meta={metaParts.join(' · ')}
-      coverUri={coverArtUrl(auth!, data.album.coverArt ?? data.album.id, 500)}
+      coverUri={coverArtUrl(data.album.coverArt ?? data.album.id, 500)}
       songs={data.songs}
       currentId={playing?.id}
       numbered

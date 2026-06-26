@@ -20,7 +20,8 @@ import {
   getPlaylists,
   removeFromPlaylist,
   star,
-} from '@/api/subsonic';
+} from '@/api/data';
+import { normKey } from '@/lib/localLibrary';
 import { useAuthStore } from '@/store/auth';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu } from '@/store/songMenu';
@@ -53,6 +54,7 @@ export function SongMenuSheet() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const auth = useAuthStore((s) => s.auth);
+  const offline = useAuthStore((s) => s.offline);
   const queryClient = useQueryClient();
   const song = useSongMenu((s) => s.song);
   const context = useSongMenu((s) => s.context);
@@ -74,7 +76,7 @@ export function SongMenuSheet() {
 
   const { data: playlists, isLoading: loadingPlaylists } = useQuery({
     queryKey: ['playlists'],
-    queryFn: () => getPlaylists(auth!),
+    queryFn: () => getPlaylists(),
     enabled: !!auth && mode === 'playlists',
   });
 
@@ -89,7 +91,7 @@ export function SongMenuSheet() {
     if (!auth || !song) return;
     close();
     try {
-      await addToPlaylist(auth, playlistId, song.id);
+      await addToPlaylist(playlistId, song.id);
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
       toast(t('Añadida a «{name}»', { name: playlistName }));
     } catch {
@@ -106,7 +108,7 @@ export function SongMenuSheet() {
     if (!auth || !context) return;
     close();
     try {
-      await removeFromPlaylist(auth, context.playlistId, context.index);
+      await removeFromPlaylist(context.playlistId, context.index);
       queryClient.invalidateQueries({ queryKey: ['playlist', context.playlistId] });
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       toast(t('Quitada de la lista'));
@@ -120,7 +122,7 @@ export function SongMenuSheet() {
       <Pressable style={styles.backdrop} onPress={close} />
       <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}>
         <View style={styles.headerRow}>
-          <Cover uri={coverArtUrl(auth!, song.coverArt ?? song.albumId, 100)} size={48} />
+          <Cover uri={coverArtUrl( song.coverArt ?? song.albumId, 100)} size={48} />
           <View style={{ flex: 1 }}>
             <Text style={styles.title} numberOfLines={1}>
               {song.title}
@@ -153,7 +155,7 @@ export function SongMenuSheet() {
                     style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
                     onPress={() => addTo(p.id, p.name)}
                   >
-                    <Cover uri={coverArtUrl(auth!, p.coverArt ?? p.id, 100)} size={40} />
+                    <Cover uri={coverArtUrl( p.coverArt ?? p.id, 100)} size={40} />
                     <Text style={styles.actionText} numberOfLines={1}>
                       {p.name}
                     </Text>
@@ -200,30 +202,41 @@ export function SongMenuSheet() {
           </View>
         ) : (
           <>
-            <Action
-              icon="add-circle-outline"
-              label={t('Añadir a una playlist')}
-              onPress={() => setMode('playlists')}
-            />
-            {context ? (
+            {!offline ? (
+              <Action
+                icon="add-circle-outline"
+                label={t('Añadir a una playlist')}
+                onPress={() => setMode('playlists')}
+              />
+            ) : null}
+            {!offline && context ? (
               <Action
                 icon="remove-circle-outline"
                 label={t('Quitar de la lista')}
                 onPress={removeFromList}
               />
             ) : null}
-            {song.artistId ? (
+            {(song.artistId || song.artist) ? (
               <Action
                 icon="person"
                 label={t('Ir al artista')}
-                onPress={() => go(`/artist/${song.artistId}`)}
+                onPress={() => {
+                  const id = song.artistId ?? (song.artist ? normKey(song.artist) : '');
+                  if (id) go(`/artist/${id}`);
+                }}
               />
             ) : null}
-            {song.albumId ? (
+            {(song.albumId || song.album) ? (
               <Action
                 icon="disc"
                 label={t('Ir al álbum')}
-                onPress={() => go(`/album/${song.albumId}`)}
+                onPress={() => {
+                  if (song.albumId) { go(`/album/${song.albumId}`); return; }
+                  if (song.album) {
+                    const key = normKey(song.album) + '|' + normKey(song.artist || '');
+                    go(`/album/${key}`);
+                  }
+                }}
               />
             ) : null}
             <Action
@@ -242,25 +255,27 @@ export function SongMenuSheet() {
                 close();
               }}
             />
-            <Action
-              icon="heart-outline"
-              label={t('Añadir a favoritos')}
-              onPress={() => {
-                if (auth) {
-                  star(auth, song.id).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['starred'] }),
-                  );
-                }
-                toast(t('Añadida a favoritos'));
-                close();
-              }}
-            />
+            {!offline ? (
+              <Action
+                icon="heart-outline"
+                label={t('Añadir a favoritos')}
+                onPress={() => {
+                  if (auth) {
+                    star(song.id).then(() =>
+                      queryClient.invalidateQueries({ queryKey: ['starred'] }),
+                    );
+                  }
+                  toast(t('Añadida a favoritos'));
+                  close();
+                }}
+              />
+            ) : null}
             <Action
               icon="musical-notes-outline"
               label={t('Letra')}
               onPress={() => go('/lyrics')}
             />
-            <Action icon="download-outline" label={t('Descargar')} onPress={soon} />
+            {!offline ? <Action icon="download-outline" label={t('Descargar')} onPress={soon} /> : null}
             <Action
               icon="moon-outline"
               label={

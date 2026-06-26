@@ -36,6 +36,17 @@ let sleepTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /** Convierte una canción al formato de pista de RNTP. */
 function toTrack(song: Song): Track {
+  // URL directa (radio, streams externos): se usa tal cual, sin procesar.
+  if (song.url) {
+    return {
+      id: song.id,
+      url: song.url,
+      title: song.title,
+      artist: song.artist ?? 'Desconocido',
+      album: song.album,
+      duration: song.duration,
+    };
+  }
   // Modo sin conexión: el fichero es local, no hay servidor ni carátula remota.
   if (song.localUri) {
     return {

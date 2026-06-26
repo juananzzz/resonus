@@ -109,6 +109,7 @@ const en: Record<string, string> = {
   'Ver menos': 'Show less',
   Discografía: 'Discography',
   'Mostrar todo': 'Show all',
+  'Mostrar todos': 'Show all',
   'Artistas similares': 'Similar artists',
   // Player
   REPRODUCIENDO: 'NOW PLAYING',
@@ -178,6 +179,10 @@ const en: Record<string, string> = {
   'Escaneo iniciado': 'Scan started',
   'No se pudo iniciar el escaneo': "Couldn't start the scan",
   'Caché limpiada': 'Cache cleared',
+  // Radio
+  Radio: 'Radio',
+  'No hay emisoras de radio.': 'No radio stations.',
+  'No se pudieron cargar las emisoras.': "Couldn't load radio stations.",
   // Audio quality
   'Formato y calidad': 'Format & quality',
   'Muestra el formato de audio, bitrate y etiquetas Lossless / Hi-Res junto a cada canción.':

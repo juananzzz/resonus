@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { coverArtUrl, search } from '@/api/subsonic';
+import { coverArtUrl, search } from '@/api/data';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { TrackRow } from '@/components/TrackRow';
@@ -26,7 +26,7 @@ import { useRecentSearches } from '@/store/recentSearches';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 export default function SearchScreen() {
-  const auth = useAuthStore((s) => s.auth);
+  const canSearch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
@@ -40,8 +40,8 @@ export default function SearchScreen() {
 
   const { data, isFetching } = useQuery({
     queryKey: ['search', debouncedQuery],
-    queryFn: () => search(auth!, debouncedQuery),
-    enabled: !!auth && debouncedQuery.length > 1,
+    queryFn: () => search(debouncedQuery),
+    enabled: canSearch && debouncedQuery.length > 1,
   });
 
   const showRecent = focused && query.trim().length === 0 && recent.length > 0;
@@ -118,7 +118,7 @@ export default function SearchScreen() {
                 <Link key={artist.id} href={`/artist/${artist.id}`} asChild>
                   <Pressable style={styles.artist} onPress={() => addRecent(debouncedQuery)}>
                     <Cover
-                      uri={coverArtUrl(auth!, artist.coverArt ?? artist.id, 200)}
+                      uri={coverArtUrl(artist.coverArt ?? artist.id, 200)}
                       size={110}
                       rounded
                     />

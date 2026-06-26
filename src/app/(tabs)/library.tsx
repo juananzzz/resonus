@@ -17,37 +17,42 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   coverArtUrl,
   createPlaylist,
+  getAlbumList,
+  getArtists,
   getPlaylists,
   getStarred,
   type Artist,
   type Playlist,
-} from '@/api/subsonic';
+} from '@/api/data';
+import { getRadioStations, type RadioStation } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
 import { Dialog } from '@/components/Dialog';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { albumsLabel, songsLabel, useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
+import { usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
-type Segment = 'playlists' | 'albums' | 'artists';
+type Segment = 'playlists' | 'albums' | 'artists' | 'radio';
 
 const SEGMENTS: { key: Segment; label: string }[] = [
   { key: 'playlists', label: 'Listas' },
   { key: 'albums', label: 'Álbumes' },
   { key: 'artists', label: 'Artistas' },
+  { key: 'radio', label: 'Radio' },
 ];
 
 function FavoritesEntry() {
-  const auth = useAuthStore((s) => s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
   const { data } = useQuery({
     queryKey: ['starred'],
-    queryFn: () => getStarred(auth!),
-    enabled: !!auth,
+    queryFn: () => getStarred(),
+    enabled: canFetch,
   });
   const count = data?.songs.length ?? 0;
 
@@ -65,13 +70,13 @@ function FavoritesEntry() {
 }
 
 function PlaylistsTab() {
-  const auth = useAuthStore((s) => s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['playlists'],
-    queryFn: () => getPlaylists(auth!),
-    enabled: !!auth,
+    queryFn: () => getPlaylists(),
+    enabled: canFetch,
   });
   if (isLoading) return <Loader />;
   if (isError) return <Message text={t('No se pudieron cargar las listas.')} onRetry={() => refetch()} />;
@@ -87,7 +92,7 @@ function PlaylistsTab() {
       renderItem={({ item }: { item: Playlist }) => (
         <Link href={`/playlist/${item.id}`} asChild>
           <Pressable style={styles.row}>
-            <Cover uri={coverArtUrl(auth!, item.coverArt ?? item.id, 100)} size={56} />
+            <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={56} />
             <View style={styles.rowInfo}>
               <Text style={styles.rowTitle} numberOfLines={1}>
                 {item.name}
@@ -102,62 +107,77 @@ function PlaylistsTab() {
 }
 
 function ArtistsTab() {
-  const auth = useAuthStore((s) => s.auth);
+  const offline = useAuthStore((s) => s.offline);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
-  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+  const starredQuery = useQuery({
     queryKey: ['starred'],
-    queryFn: () => getStarred(auth!),
-    enabled: !!auth,
+    queryFn: () => getStarred(),
+    enabled: !offline && canFetch,
   });
+  const localQuery = useQuery({
+    queryKey: ['artists', 'local'],
+    queryFn: () => getArtists(),
+    enabled: offline && canFetch,
+  });
+  const artists: Artist[] = offline ? (localQuery.data ?? []) : (starredQuery.data?.artists ?? []);
+  const isLoading = offline ? localQuery.isLoading : starredQuery.isLoading;
+  const isError = offline ? localQuery.isError : starredQuery.isError;
+  const refetch = offline ? localQuery.refetch : starredQuery.refetch;
+  const isFetching = offline ? localQuery.isFetching : starredQuery.isFetching;
+
   if (isLoading) return <Loader />;
   if (isError) return <Message text={t('No se pudieron cargar los artistas.')} onRetry={() => refetch()} />;
   return (
     <FlatList
-      data={data?.artists ?? []}
+      data={artists}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
       refreshControl={
         <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.accent} />
       }
-      renderItem={({ item }: { item: Artist }) => (
+      renderItem={({ item }) => (
         <Link href={`/artist/${item.id}`} asChild>
           <Pressable style={styles.row}>
-            <Cover
-              uri={coverArtUrl(auth!, item.coverArt ?? item.id, 100)}
-              size={56}
-              rounded
-            />
+            <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={56} rounded />
             <View style={styles.rowInfo}>
-              <Text style={styles.rowTitle} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <Text style={styles.rowSub}>
-                {albumsLabel(item.albumCount ?? 0, lang)}
-              </Text>
+              <Text style={styles.rowTitle} numberOfLines={1}>{item.name}</Text>
+              <Text style={styles.rowSub}>{albumsLabel(item.albumCount ?? 0, lang)}</Text>
             </View>
           </Pressable>
         </Link>
       )}
-      ListEmptyComponent={<Empty text={t('No hay artistas guardados.')} />}
+      ListEmptyComponent={<Empty text={t('No hay artistas.')} />}
     />
   );
 }
 
 function AlbumsTab() {
-  const auth = useAuthStore((s) => s.auth);
+  const offline = useAuthStore((s) => s.offline);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
-  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+  const starredQuery = useQuery({
     queryKey: ['starred'],
-    queryFn: () => getStarred(auth!),
-    enabled: !!auth,
+    queryFn: () => getStarred(),
+    enabled: !offline && canFetch,
   });
+  const localQuery = useQuery({
+    queryKey: ['albumList', 'newest', 'local'],
+    queryFn: () => getAlbumList('newest', 200),
+    enabled: offline && canFetch,
+  });
+  const albums = offline ? (localQuery.data ?? []) : (starredQuery.data?.albums ?? []);
+  const isLoading = offline ? localQuery.isLoading : starredQuery.isLoading;
+  const isError = offline ? localQuery.isError : starredQuery.isError;
+  const refetch = offline ? localQuery.refetch : starredQuery.refetch;
+  const isFetching = offline ? localQuery.isFetching : starredQuery.isFetching;
+
   if (isLoading) return <Loader />;
-  if (isError)
-    return <Message text={t('No se pudieron cargar los álbumes.')} onRetry={() => refetch()} />;
+  if (isError) return <Message text={t('No se pudieron cargar los álbumes.')} onRetry={() => refetch()} />;
   return (
     <FlatList
-      data={data?.albums ?? []}
+      data={albums}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
       refreshControl={
@@ -166,21 +186,68 @@ function AlbumsTab() {
       renderItem={({ item }) => (
         <Link href={`/album/${item.id}`} asChild>
           <Pressable style={styles.row}>
-            <Cover uri={coverArtUrl(auth!, item.coverArt ?? item.id, 100)} size={56} />
+            <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={56} />
             <View style={styles.rowInfo}>
-              <Text style={styles.rowTitle} numberOfLines={1}>
-                {item.name}
-              </Text>
+              <Text style={styles.rowTitle} numberOfLines={1}>{item.name}</Text>
               {item.artist ? (
-                <Text style={styles.rowSub} numberOfLines={1}>
-                  {item.artist}
-                </Text>
+                <Text style={styles.rowSub} numberOfLines={1}>{item.artist}</Text>
               ) : null}
             </View>
           </Pressable>
         </Link>
       )}
-      ListEmptyComponent={<Empty text={t('No hay álbumes guardados.')} />}
+      ListEmptyComponent={<Empty text={t('No hay álbumes.')} />}
+    />
+  );
+}
+
+function RadioTab() {
+  const auth = useAuthStore((s) => s.auth);
+  const playQueue = usePlayerStore((s) => s.playQueue);
+  const t = useT();
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+    queryKey: ['radioStations'],
+    queryFn: () => getRadioStations(auth!),
+    enabled: !!auth,
+  });
+  if (isLoading) return <Loader />;
+  if (isError) return <Message text={t('No se pudieron cargar las emisoras.')} onRetry={() => refetch()} />;
+  return (
+    <FlatList
+      data={data ?? []}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.list}
+      refreshControl={
+        <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.accent} />
+      }
+      renderItem={({ item }: { item: RadioStation }) => (
+        <Pressable
+          style={styles.row}
+          onPress={() =>
+            playQueue(
+              [{ id: item.id, title: item.name, url: item.streamUrl, artist: item.homePageUrl ?? '' }],
+              0,
+              item.name,
+            )
+          }
+        >
+          <View style={styles.radioIcon}>
+            <Ionicons name="radio" size={22} color={colors.accent} />
+          </View>
+          <View style={styles.rowInfo}>
+            <Text style={styles.rowTitle} numberOfLines={1}>
+              {item.name}
+            </Text>
+            {item.homePageUrl ? (
+              <Text style={styles.rowSub} numberOfLines={1}>
+                {item.homePageUrl}
+              </Text>
+            ) : null}
+          </View>
+          <Ionicons name="play-circle" size={28} color={colors.accent} />
+        </Pressable>
+      )}
+      ListEmptyComponent={<Empty text={t('No hay emisoras de radio.')} />}
     />
   );
 }
@@ -197,16 +264,21 @@ export default function LibraryScreen() {
   const router = useRouter();
   const t = useT();
   const auth = useAuthStore((s) => s.auth);
+  const offline = useAuthStore((s) => s.offline);
   const queryClient = useQueryClient();
   const toast = useToast((s) => s.show);
   const [segment, setSegment] = useState<Segment>('playlists');
   const [creating, setCreating] = useState(false);
 
+  const visibleSegments = offline
+    ? SEGMENTS.filter((s) => s.key !== 'radio')
+    : SEGMENTS;
+
   async function onCreate(name: string) {
     setCreating(false);
     if (!auth) return;
     try {
-      await createPlaylist(auth, name);
+      await createPlaylist(name);
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       toast(t('Lista creada'));
     } catch {
@@ -219,14 +291,16 @@ export default function LibraryScreen() {
       <View style={styles.header}>
         <Text style={styles.heading}>{t('Biblioteca')}</Text>
         <View style={styles.headerActions}>
-          <Pressable
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel={t('Nueva lista')}
-            onPress={() => setCreating(true)}
-          >
-            <Ionicons name="add" size={28} color={colors.text} />
-          </Pressable>
+          {!offline ? (
+            <Pressable
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={t('Nueva lista')}
+              onPress={() => setCreating(true)}
+            >
+              <Ionicons name="add" size={28} color={colors.text} />
+            </Pressable>
+          ) : null}
           <Pressable hitSlop={12} onPress={() => router.push('/settings')}>
             <Ionicons name="settings-outline" size={24} color={colors.textSecondary} />
           </Pressable>
@@ -243,7 +317,7 @@ export default function LibraryScreen() {
       />
 
       <View style={styles.segments}>
-        {SEGMENTS.map((s) => {
+        {visibleSegments.map((s) => {
           const active = s.key === segment;
           return (
             <Pressable
@@ -264,8 +338,10 @@ export default function LibraryScreen() {
           <PlaylistsTab />
         ) : segment === 'albums' ? (
           <AlbumsTab />
-        ) : (
+        ) : segment === 'artists' ? (
           <ArtistsTab />
+        ) : (
+          <RadioTab />
         )}
       </View>
     </SafeAreaView>
@@ -313,5 +389,13 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     textAlign: 'center',
     marginTop: spacing.xl,
+  },
+  radioIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.surfaceHighlight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

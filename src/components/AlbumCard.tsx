@@ -2,8 +2,7 @@
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { coverArtUrl, type Album } from '@/api/subsonic';
-import { useAuthStore } from '@/store/auth';
+import { coverArtUrl, type Album } from '@/api/data';
 import { colors, fontSize, spacing } from '@/theme';
 import { Cover } from './Cover';
 
@@ -13,8 +12,7 @@ interface Props {
 }
 
 export function AlbumCard({ album, width = 150 }: Props) {
-  const auth = useAuthStore((s) => s.auth);
-  const cover = coverArtUrl(auth!, album.coverArt ?? album.id, 300);
+  const cover = coverArtUrl(album.coverArt ?? album.id, 300);
 
   return (
     <Link href={`/album/${album.id}`} asChild>

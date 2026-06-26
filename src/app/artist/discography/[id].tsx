@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getArtist } from '@/api/subsonic';
+import { getArtist } from '@/api/data';
 import { AlbumGrid } from '@/components/AlbumGrid';
 import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
@@ -15,13 +15,13 @@ import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 export default function DiscographyScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const auth = useAuthStore((s) => s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['artist', id],
-    queryFn: () => getArtist(auth!, id),
-    enabled: !!auth && !!id,
+    queryFn: () => getArtist(id),
+    enabled: canFetch && !!id,
   });
 
   const albums = [...(data?.albums ?? [])].sort((a, b) => (b.year ?? 0) - (a.year ?? 0));

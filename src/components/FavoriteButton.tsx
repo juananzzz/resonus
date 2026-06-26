@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Pressable, type GestureResponderEvent } from 'react-native';
 
-import { star, unstar, type StarType } from '@/api/subsonic';
+import { star, unstar, type StarType } from '@/api/data';
 import { useAuthStore } from '@/store/auth';
 import { useT } from '@/i18n';
 import { colors } from '@/theme';
@@ -37,8 +37,8 @@ export function FavoriteButton({ id, type = 'song', starred, size = 22 }: Props)
     setFav(nextFav); // actualización optimista
     setBusy(true);
     try {
-      if (nextFav) await star(auth, id, type);
-      else await unstar(auth, id, type);
+      if (nextFav) await star(id, type);
+      else await unstar(id, type);
       // Refresca la lista de favoritos si está abierta.
       queryClient.invalidateQueries({ queryKey: ['starred'] });
     } catch {

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { coverArtUrl } from '@/api/subsonic';
+import { coverArtUrl } from '@/api/data';
 import { AudioQualityBadge } from '@/components/AudioQualityBadge';
 import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
@@ -81,7 +81,7 @@ export default function PlayerScreen() {
   const isLocal = !!song.localUri;
   const favorited = !!song.starred || (favIds?.has(song.id) ?? false);
   const cover =
-    isLocal || !auth ? undefined : coverArtUrl(auth, song.coverArt ?? song.albumId, 600);
+    isLocal || !auth ? undefined : coverArtUrl(song.coverArt ?? song.albumId, 600);
   const duration = durationSec || song.duration || 0;
   const repeatActive = repeat !== 'off';
 

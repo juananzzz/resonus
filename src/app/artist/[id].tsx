@@ -21,7 +21,7 @@ import {
   getArtist,
   getArtistInfo,
   getTopSongs,
-} from '@/api/subsonic';
+} from '@/api/data';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
@@ -40,14 +40,14 @@ export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const auth = useAuthStore((s) => s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
   const [bioExpanded, setBioExpanded] = useState(false);
   const [songsExpanded, setSongsExpanded] = useState(false);
-  const dominant = useDominantColor(auth ? coverArtUrl(auth, id, 400) : undefined);
+  const dominant = useDominantColor(canFetch ? coverArtUrl(id, 400) : undefined);
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const barContentOpacity = scrollY.interpolate({
@@ -73,21 +73,21 @@ export default function ArtistScreen() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['artist', id],
-    queryFn: () => getArtist(auth!, id),
-    enabled: !!auth && !!id,
+    queryFn: () => getArtist(id),
+    enabled: canFetch && !!id,
   });
   const name = data?.artist.name;
 
   const { data: topSongs } = useQuery({
     queryKey: ['topSongs', name],
-    queryFn: () => getTopSongs(auth!, name!, 20),
-    enabled: !!auth && !!name,
+    queryFn: () => getTopSongs(name!, 20),
+    enabled: canFetch && !!name,
   });
 
   const { data: info } = useQuery({
     queryKey: ['artistInfo', id],
-    queryFn: () => getArtistInfo(auth!, id),
-    enabled: !!auth && !!id,
+    queryFn: () => getArtistInfo(id),
+    enabled: canFetch && !!id,
   });
 
   if (isLoading) {
@@ -109,7 +109,7 @@ export default function ArtistScreen() {
   const top = topSongs ?? [];
   const albums = [...data.albums].sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
   const headerUri =
-    info?.imageUrl ?? coverArtUrl(auth!, data.artist.coverArt ?? data.artist.id, 800);
+    info?.imageUrl ?? coverArtUrl( data.artist.coverArt ?? data.artist.id, 800);
 
   async function shufflePlay() {
     if (top.length === 0) return;
@@ -241,7 +241,7 @@ export default function ArtistScreen() {
               {info.similarArtists.map((a) => (
                 <Link key={a.id} href={`/artist/${a.id}`} asChild>
                   <Pressable style={styles.similar}>
-                    <Cover uri={coverArtUrl(auth!, a.coverArt ?? a.id, 200)} size={110} rounded />
+                    <Cover uri={coverArtUrl( a.coverArt ?? a.id, 200)} size={110} rounded />
                     <Text style={styles.similarName} numberOfLines={1}>
                       {a.name}
                     </Text>

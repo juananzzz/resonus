@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { getStarred } from '@/api/subsonic';
+import { getStarred } from '@/api/data';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { TrackListView } from '@/components/TrackListView';
@@ -15,7 +15,7 @@ import { useSettings } from '@/store/settings';
 import { colors } from '@/theme';
 
 export default function FavoritesScreen() {
-  const auth = useAuthStore((s) => s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
   const playing = usePlayerStore(currentSong);
@@ -23,8 +23,8 @@ export default function FavoritesScreen() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['starred'],
-    queryFn: () => getStarred(auth!),
-    enabled: !!auth,
+    queryFn: () => getStarred(),
+    enabled: canFetch,
   });
 
   const { songs: displaySongs, openSort, sortSheet } = useSongSort(data?.songs ?? []);
