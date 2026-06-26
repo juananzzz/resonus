@@ -27,7 +27,8 @@ import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, spacing } from '@/theme';
 
-const CARD_W = (Dimensions.get('window').width - spacing.lg * 2 - spacing.md) / 2;
+const CARD_W =
+  (Dimensions.get('window').width - spacing.lg * 2 - spacing.sm * 3) / 4;
 
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: spacing.lg,
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   similar: { width: 110, alignItems: 'center', gap: spacing.xs },
   similarName: {
