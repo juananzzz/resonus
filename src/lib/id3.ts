@@ -16,16 +16,28 @@ function int32BE(b: Uint8Array, offset: number): number {
   return (b[offset] << 24) | (b[offset + 1] << 16) | (b[offset + 2] << 8) | b[offset + 3];
 }
 
-function int16BE(b: Uint8Array, offset: number): number {
-  return (b[offset] << 8) | b[offset + 1];
-}
-
 const utf8Decoder = new TextDecoder('utf-8');
 
 function decodeLatin1(bytes: Uint8Array): string {
   let out = '';
   for (let i = 0; i < bytes.length; i++) {
     out += String.fromCharCode(bytes[i]);
+  }
+  return out;
+}
+
+/**
+ * Decodifica UTF-16 manualmente (Hermes no soporta `TextDecoder('utf-16le')`
+ * y lanzaría excepción, haciendo fallar todo el parseo ID3v2). Lee unidades de
+ * 2 bytes; los pares suplentes se reconstruyen solos al concatenar.
+ */
+function decodeUtf16(bytes: Uint8Array, littleEndian: boolean): string {
+  let out = '';
+  for (let i = 0; i + 1 < bytes.length; i += 2) {
+    const code = littleEndian
+      ? bytes[i] | (bytes[i + 1] << 8)
+      : (bytes[i] << 8) | bytes[i + 1];
+    out += String.fromCharCode(code);
   }
   return out;
 }
@@ -44,13 +56,13 @@ function decodeText(b: Uint8Array, start: number, end: number): string {
       break;
     case 0x01: {
       if (data.length < 2) return '';
-      const bom = int16BE(data, 0);
-      const dec = new TextDecoder(bom === 0xfffe ? 'utf-16le' : 'utf-16be');
-      text = dec.decode(data.subarray(2));
+      // BOM: FF FE = little-endian, FE FF = big-endian.
+      const littleEndian = data[0] === 0xff && data[1] === 0xfe;
+      text = decodeUtf16(data.subarray(2), littleEndian);
       break;
     }
     case 0x02:
-      text = new TextDecoder('utf-16be').decode(data);
+      text = decodeUtf16(data, false); // UTF-16BE sin BOM
       break;
     default:
       text = decodeLatin1(data);
