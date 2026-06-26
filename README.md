@@ -112,7 +112,8 @@ Things planned / still to do:
 - [ ] Equalizer (needs a native audio-effects module)
 - [ ] Crossfade between tracks
 - [ ] Jellyfin support (separate API client)
-- [ ] Create / edit / delete playlists from the app
+- [x] ~~Create / edit / delete playlists from the app~~ ✅ (create, rename,
+      delete, add/remove songs)
 - [ ] "Recently played" history on Home
 - [ ] More languages (the i18n layer is ready — just add a dictionary)
 - [ ] Unit tests (Subsonic client, player store)
