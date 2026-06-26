@@ -122,6 +122,8 @@ Things planned / still to do:
 
 Contributions and ideas are welcome. 🙌
 
+hola soy deepseek
+
 ## License
 
 [MIT](./LICENSE) © juananzzz
