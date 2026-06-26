@@ -17,7 +17,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   coverArtUrl,
   createPlaylist,
-  getArtists,
   getPlaylists,
   getStarred,
   type Artist,
@@ -107,15 +106,15 @@ function ArtistsTab() {
   const t = useT();
   const lang = useSettings((s) => s.language);
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ['artists'],
-    queryFn: () => getArtists(auth!),
+    queryKey: ['starred'],
+    queryFn: () => getStarred(auth!),
     enabled: !!auth,
   });
   if (isLoading) return <Loader />;
   if (isError) return <Message text={t('No se pudieron cargar los artistas.')} onRetry={() => refetch()} />;
   return (
     <FlatList
-      data={data ?? []}
+      data={data?.artists ?? []}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
       refreshControl={
@@ -140,7 +139,7 @@ function ArtistsTab() {
           </Pressable>
         </Link>
       )}
-      ListEmptyComponent={<Empty text={t('No hay artistas.')} />}
+      ListEmptyComponent={<Empty text={t('No hay artistas guardados.')} />}
     />
   );
 }
