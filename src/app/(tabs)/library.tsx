@@ -17,8 +17,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   coverArtUrl,
   createPlaylist,
-  getAllAlbums,
-  getArtists,
   getPlaylists,
   getStarred,
   type Playlist,
@@ -103,23 +101,16 @@ function PlaylistsTab() {
 }
 
 function ArtistsTab() {
-  const offline = useAuthStore((s) => s.offline);
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
-  // Online: artistas favoritos. Offline: todos los artistas locales.
-  const starredQuery = useQuery({
+  // Solo artistas favoritos (lo explorable está en Inicio).
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['starred'],
     queryFn: () => getStarred(),
-    enabled: canFetch && !offline,
+    enabled: canFetch,
   });
-  const localQuery = useQuery({
-    queryKey: ['localArtists'],
-    queryFn: () => getArtists(),
-    enabled: canFetch && offline,
-  });
-  const { isLoading, isError, refetch, isFetching } = offline ? localQuery : starredQuery;
-  const artists = offline ? (localQuery.data ?? []) : (starredQuery.data?.artists ?? []);
+  const artists = data?.artists ?? [];
   if (isLoading) return <Loader />;
   if (isError) return <Message text={t('No se pudieron cargar los artistas.')} onRetry={() => refetch()} />;
   return (
@@ -141,28 +132,21 @@ function ArtistsTab() {
           </Pressable>
         </Link>
       )}
-      ListEmptyComponent={<Empty text={offline ? t('No se encontró música en el dispositivo.') : t('No hay artistas guardados.')} />}
+      ListEmptyComponent={<Empty text={t('Marca artistas como favoritos para verlos aquí.')} />}
     />
   );
 }
 
 function AlbumsTab() {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
-  const offline = useAuthStore((s) => s.offline);
   const t = useT();
-  // Online: álbumes favoritos. Offline: todos los álbumes locales.
-  const starredQuery = useQuery({
+  // Solo álbumes favoritos (lo explorable está en Inicio).
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['starred'],
     queryFn: () => getStarred(),
-    enabled: canFetch && !offline,
+    enabled: canFetch,
   });
-  const localQuery = useQuery({
-    queryKey: ['localAlbums'],
-    queryFn: () => getAllAlbums(),
-    enabled: canFetch && offline,
-  });
-  const { isLoading, isError, refetch, isFetching } = offline ? localQuery : starredQuery;
-  const albums = offline ? (localQuery.data ?? []) : (starredQuery.data?.albums ?? []);
+  const albums = data?.albums ?? [];
   if (isLoading) return <Loader />;
   if (isError) return <Message text={t('No se pudieron cargar los álbumes.')} onRetry={() => refetch()} />;
   return (
@@ -186,7 +170,7 @@ function AlbumsTab() {
           </Pressable>
         </Link>
       )}
-      ListEmptyComponent={<Empty text={offline ? t('No se encontró música en el dispositivo.') : t('No hay álbumes guardados.')} />}
+      ListEmptyComponent={<Empty text={t('Marca álbumes como favoritos para verlos aquí.')} />}
     />
   );
 }
@@ -206,7 +190,7 @@ export default function LibraryScreen() {
   const offline = useAuthStore((s) => s.offline);
   const queryClient = useQueryClient();
   const toast = useToast((s) => s.show);
-  const [segment, setSegment] = useState<Segment>(offline ? 'albums' : 'playlists');
+  const [segment, setSegment] = useState<Segment>('playlists');
   const [creating, setCreating] = useState(false);
 
   const visibleSegments = SEGMENTS;

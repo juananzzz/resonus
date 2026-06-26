@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getAlbumList, type AlbumListType } from '@/api/subsonic';
+import { getAlbumList, type AlbumListType } from '@/api/data';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
@@ -38,17 +38,17 @@ const SORTS: { key: AlbumListType; label: string }[] = [
 export default function BrowseAlbumsScreen() {
   const router = useRouter();
   const t = useT();
-  const auth = useAuthStore((s) => s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const [sort, setSort] = useState<AlbumListType>('newest');
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
       queryKey: ['browseAlbums', sort],
-      queryFn: ({ pageParam }) => getAlbumList(auth!, sort, PAGE, pageParam),
+      queryFn: ({ pageParam }) => getAlbumList(sort, PAGE, pageParam),
       initialPageParam: 0,
       getNextPageParam: (last, pages) =>
         last.length === PAGE ? pages.length * PAGE : undefined,
-      enabled: !!auth,
+      enabled: canFetch,
     });
 
   const albums = data?.pages.flat() ?? [];

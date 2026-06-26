@@ -10,7 +10,7 @@ import * as Local from '@/lib/localQueries';
 function isOffline() { return useAuthStore.getState().offline; }
 function auth() { return useAuthStore.getState().auth!; }
 
-export type { Album, Artist, ArtistInfo, Playlist, RadioStation, SearchResult, Song, StarType, Starred, SubsonicAuth } from './subsonic';
+export type { Album, AlbumListType, Artist, ArtistInfo, Playlist, RadioStation, SearchResult, Song, StarType, Starred, SubsonicAuth } from './subsonic';
 export { normalizeUrl } from './subsonic';
 
 export function coverArtUrl(id: string | undefined, _size?: number): string | undefined {
@@ -18,9 +18,9 @@ export function coverArtUrl(id: string | undefined, _size?: number): string | un
   return Subsonic.coverArtUrl(auth(), id, _size);
 }
 
-export function getAlbumList(type: 'newest' | 'recent' | 'frequent' | 'random', size?: number): Promise<Subsonic.Album[]> {
-  if (isOffline()) return Local.getAlbumList(type, size);
-  return Subsonic.getAlbumList(auth(), type, size);
+export function getAlbumList(type: Subsonic.AlbumListType = 'newest', size?: number, offset?: number): Promise<Subsonic.Album[]> {
+  if (isOffline()) return Local.getAlbumList(type, size, offset);
+  return Subsonic.getAlbumList(auth(), type, size, offset);
 }
 
 export function getAlbum(id: string): Promise<{ album: Subsonic.Album; songs: Subsonic.Song[] }> {

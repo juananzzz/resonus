@@ -142,34 +142,42 @@ function toArtist(local: { id: string; name: string; coverBase64?: string; cover
   };
 }
 
-export async function getAlbumList(type: string, size = 20): Promise<Album[]> {
+export async function getAlbumList(type: string, size = 20, offset = 0): Promise<Album[]> {
   const c = await ensureCatalog();
   if (!c) return [];
-  const albums = [...c.albums];
-  if (type === 'newest') {
-    // Añadidos recientemente: por fecha del fichero (si falta, por año).
-    albums.sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0) || (b.year ?? 0) - (a.year ?? 0));
-  } else if (type === 'frequent') {
-    // Más escuchados: por nº de reproducciones locales acumuladas del álbum.
-    const counts = usePlayCounts.getState().counts;
-    const albumPlays = new Map<string, number>();
-    for (const s of c.songs) {
-      const n = counts[s.id] ?? 0;
-      if (n > 0 && s.albumId) albumPlays.set(s.albumId, (albumPlays.get(s.albumId) ?? 0) + n);
+  let albums = [...c.albums];
+  switch (type) {
+    case 'newest':
+    case 'recent':
+      // Añadidos recientemente: por fecha del fichero (si falta, por año).
+      albums.sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0) || (b.year ?? 0) - (a.year ?? 0));
+      break;
+    case 'frequent': {
+      // Más escuchados: por nº de reproducciones locales acumuladas del álbum.
+      const counts = usePlayCounts.getState().counts;
+      const albumPlays = new Map<string, number>();
+      for (const s of c.songs) {
+        const n = counts[s.id] ?? 0;
+        if (n > 0 && s.albumId) albumPlays.set(s.albumId, (albumPlays.get(s.albumId) ?? 0) + n);
+      }
+      albums = albums
+        .filter((a) => (albumPlays.get(a.id) ?? 0) > 0)
+        .sort((a, b) => (albumPlays.get(b.id) ?? 0) - (albumPlays.get(a.id) ?? 0));
+      break;
     }
-    const played = albums
-      .filter((a) => (albumPlays.get(a.id) ?? 0) > 0)
-      .sort((a, b) => (albumPlays.get(b.id) ?? 0) - (albumPlays.get(a.id) ?? 0));
-    return played.slice(0, size).map(toAlbum);
-  } else if (type === 'random') {
-    for (let i = albums.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [albums[i], albums[j]] = [albums[j], albums[i]];
-    }
-  } else {
-    albums.sort((a, b) => a.name.localeCompare(b.name));
+    case 'random':
+      for (let i = albums.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [albums[i], albums[j]] = [albums[j], albums[i]];
+      }
+      break;
+    case 'alphabeticalByArtist':
+      albums.sort((a, b) => (a.artist ?? '').localeCompare(b.artist ?? '') || a.name.localeCompare(b.name));
+      break;
+    default: // alphabeticalByName
+      albums.sort((a, b) => a.name.localeCompare(b.name));
   }
-  return albums.slice(0, size).map(toAlbum);
+  return albums.slice(offset, offset + size).map(toAlbum);
 }
 
 /** Todos los álbumes del catálogo local, ordenados alfabéticamente. */

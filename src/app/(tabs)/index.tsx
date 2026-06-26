@@ -138,8 +138,10 @@ const EXPLORE: { href: string; icon: keyof typeof Ionicons.glyphMap; label: stri
   { href: '/radio', icon: 'radio-outline', label: 'Radio' },
 ];
 
-function ExploreChips() {
+function ExploreChips({ offline }: { offline: boolean }) {
   const t = useT();
+  // En local no hay radio (es solo de servidor).
+  const chips = offline ? EXPLORE.filter((c) => c.href !== '/radio') : EXPLORE;
   return (
     <ScrollView
       horizontal
@@ -147,7 +149,7 @@ function ExploreChips() {
       style={styles.chipsRow}
       contentContainerStyle={styles.chips}
     >
-      {EXPLORE.map((c) => (
+      {chips.map((c) => (
         <Link key={c.href} href={c.href} asChild>
           <Pressable style={styles.chip}>
             <Ionicons name={c.icon} size={16} color={colors.text} />
@@ -217,7 +219,7 @@ export default function HomeScreen() {
 
         {offline && scanning ? <ScanningPanel /> : null}
 
-        {!offline ? <ExploreChips /> : null}
+        <ExploreChips offline={offline} />
 
         <QuickGrid />
 

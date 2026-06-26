@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { coverArtUrl, getArtists } from '@/api/subsonic';
+import { coverArtUrl, getArtists } from '@/api/data';
 import { Cover } from '@/components/Cover';
 import { Message } from '@/components/Message';
 import { albumsLabel, useT } from '@/i18n';
@@ -26,13 +26,13 @@ export default function BrowseArtistsScreen() {
   const router = useRouter();
   const t = useT();
   const lang = useSettings((s) => s.language);
-  const auth = useAuthStore((s) => s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const [query, setQuery] = useState('');
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['allArtists'],
-    queryFn: () => getArtists(auth!),
-    enabled: !!auth,
+    queryFn: () => getArtists(),
+    enabled: canFetch,
   });
 
   const artists = useMemo(() => {
@@ -81,7 +81,7 @@ export default function BrowseArtistsScreen() {
           renderItem={({ item }) => (
             <Link href={`/artist/${item.id}`} asChild>
               <Pressable style={styles.row}>
-                <Cover uri={coverArtUrl(auth!, item.coverArt ?? item.id, 100)} size={52} rounded />
+                <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={52} rounded />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rowTitle} numberOfLines={1}>{item.name}</Text>
                   <Text style={styles.rowSub}>{albumsLabel(item.albumCount ?? 0, lang)}</Text>
