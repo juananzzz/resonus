@@ -40,3 +40,12 @@ export const fontSize = {
   xl: 24,
   xxl: 32,
 } as const;
+
+/** Altura de la barra de pestañas (sin contar el safe-area inferior). */
+export const TAB_BAR_HEIGHT = 60;
+
+/**
+ * Espacio inferior que dejan las listas para no quedar tapadas por el
+ * MiniPlayer flotante + la barra de pestañas.
+ */
+export const SCREEN_BOTTOM_PADDING = 140;

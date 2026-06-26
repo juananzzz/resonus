@@ -9,9 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '@/theme';
-
-const TAB_BAR_HEIGHT = 60;
+import { colors, TAB_BAR_HEIGHT } from '@/theme';
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();

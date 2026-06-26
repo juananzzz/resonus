@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getLyrics } from '@/api/subsonic';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
-import { colors, fontSize, spacing } from '@/theme';
+import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 export default function LyricsScreen() {
   const router = useRouter();
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   titleBox: { flex: 1, alignItems: 'center' },
   title: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
   artist: { color: colors.textSecondary, fontSize: fontSize.xs },
-  content: { padding: spacing.xl, paddingBottom: 140 },
+  content: { padding: spacing.xl, paddingBottom: SCREEN_BOTTOM_PADDING },
   lyrics: { color: colors.text, fontSize: fontSize.lg, lineHeight: 32 },
   empty: {
     color: colors.textMuted,

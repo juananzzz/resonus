@@ -8,7 +8,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { type Song } from '@/api/subsonic';
-import { colors, fontSize, radius, spacing } from '@/theme';
+import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 import { Cover } from './Cover';
 import { TrackRow } from './TrackRow';
 
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: 140,
+    paddingBottom: SCREEN_BOTTOM_PADDING,
   },
   header: {
     alignItems: 'center',

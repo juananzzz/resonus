@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActivityIndicator,
-  Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,17 +18,14 @@ import {
   getSimilarArtists,
   getTopSongs,
 } from '@/api/subsonic';
-import { AlbumCard } from '@/components/AlbumCard';
+import { AlbumGrid } from '@/components/AlbumGrid';
 import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { Message } from '@/components/Message';
 import { TrackRow } from '@/components/TrackRow';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
-import { colors, fontSize, spacing } from '@/theme';
-
-const CARD_W =
-  (Dimensions.get('window').width - spacing.lg * 2 - spacing.sm * 3) / 4;
+import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -114,11 +110,7 @@ export default function ArtistScreen() {
         {data.albums.length > 0 ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Álbumes</Text>
-            <View style={styles.grid}>
-              {data.albums.map((album) => (
-                <AlbumCard key={album.id} album={album} width={CARD_W} />
-              ))}
-            </View>
+            <AlbumGrid albums={data.albums} columns={4} />
           </View>
         ) : null}
 
@@ -160,7 +152,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   back: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
-  content: { paddingBottom: 140 },
+  content: { paddingBottom: SCREEN_BOTTOM_PADDING },
   header: { alignItems: 'center', paddingVertical: spacing.lg, gap: spacing.sm },
   name: {
     color: colors.text,
@@ -179,12 +171,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   row: { paddingHorizontal: spacing.lg, gap: spacing.md },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
   similar: { width: 110, alignItems: 'center', gap: spacing.xs },
   similarName: {
     color: colors.text,

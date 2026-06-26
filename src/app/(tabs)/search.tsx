@@ -21,7 +21,7 @@ import { TrackRow } from '@/components/TrackRow';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
-import { colors, fontSize, radius, spacing } from '@/theme';
+import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 export default function SearchScreen() {
   const auth = useAuthStore((s) => s.auth);
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: 140,
+    paddingBottom: SCREEN_BOTTOM_PADDING,
   },
   section: {
     marginBottom: spacing.xl,

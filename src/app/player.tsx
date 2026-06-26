@@ -26,13 +26,21 @@ const COVER = Dimensions.get('window').width - spacing.xl * 2;
 
 function CircleButton({
   name,
+  label,
   onPress,
 }: {
   name: keyof typeof Ionicons.glyphMap;
+  label: string;
   onPress: (e: GestureResponderEvent) => void;
 }) {
   return (
-    <Pressable style={styles.circle} hitSlop={8} onPress={onPress}>
+    <Pressable
+      style={styles.circle}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+    >
       <Ionicons name={name} size={22} color={colors.text} />
     </Pressable>
   );
@@ -72,9 +80,9 @@ export default function PlayerScreen() {
       />
       <SafeAreaView style={styles.safe}>
         <View style={styles.topBar}>
-          <CircleButton name="chevron-down" onPress={() => router.back()} />
+          <CircleButton name="chevron-down" label="Cerrar" onPress={() => router.back()} />
           <Text style={styles.topTitle}>REPRODUCIENDO</Text>
-          <CircleButton name="ellipsis-vertical" onPress={() => openMenu(song)} />
+          <CircleButton name="ellipsis-vertical" label="Más opciones" onPress={() => openMenu(song)} />
         </View>
 
         <View style={styles.coverWrap}>
@@ -122,17 +130,32 @@ export default function PlayerScreen() {
           </View>
 
           <View style={styles.controls}>
-            <Pressable hitSlop={10} onPress={toggleShuffle}>
+            <Pressable
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Aleatorio"
+              onPress={toggleShuffle}
+            >
               <Ionicons
                 name="shuffle"
                 size={26}
                 color={shuffle ? colors.accent : colors.text}
               />
             </Pressable>
-            <Pressable hitSlop={10} onPress={previous}>
+            <Pressable
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Anterior"
+              onPress={previous}
+            >
               <Ionicons name="play-skip-back" size={34} color={colors.text} />
             </Pressable>
-            <Pressable style={styles.playButton} onPress={toggle}>
+            <Pressable
+              style={styles.playButton}
+              accessibilityRole="button"
+              accessibilityLabel={isPlaying ? 'Pausar' : 'Reproducir'}
+              onPress={toggle}
+            >
               <Ionicons
                 name={isPlaying ? 'pause' : 'play'}
                 size={34}
@@ -140,10 +163,20 @@ export default function PlayerScreen() {
                 style={!isPlaying && { marginLeft: 3 }}
               />
             </Pressable>
-            <Pressable hitSlop={10} onPress={next}>
+            <Pressable
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Siguiente"
+              onPress={next}
+            >
               <Ionicons name="play-skip-forward" size={34} color={colors.text} />
             </Pressable>
-            <Pressable hitSlop={10} onPress={cycleRepeat}>
+            <Pressable
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Repetir"
+              onPress={cycleRepeat}
+            >
               <MaterialIcons
                 name={repeat === 'one' ? 'repeat-one' : 'repeat'}
                 size={26}
@@ -155,7 +188,12 @@ export default function PlayerScreen() {
           <View style={styles.bottomRow}>
             <MaterialIcons name="cast" size={22} color={colors.textMuted} />
             <MaterialIcons name="speaker" size={22} color={colors.textMuted} />
-            <Pressable hitSlop={10} onPress={() => router.push('/queue')}>
+            <Pressable
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Ver la cola"
+              onPress={() => router.push('/queue')}
+            >
               <MaterialIcons name="queue-music" size={24} color={colors.text} />
             </Pressable>
           </View>

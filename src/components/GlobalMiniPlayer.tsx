@@ -8,11 +8,8 @@ import { useSegments } from 'expo-router';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { spacing } from '@/theme';
+import { spacing, TAB_BAR_HEIGHT } from '@/theme';
 import { MiniPlayer } from './MiniPlayer';
-
-// Debe coincidir con la altura de la barra en (tabs)/_layout.tsx.
-const TAB_BAR_HEIGHT = 60;
 
 export function GlobalMiniPlayer() {
   const insets = useSafeAreaInsets();

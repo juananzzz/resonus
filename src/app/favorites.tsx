@@ -19,7 +19,7 @@ import { Message } from '@/components/Message';
 import { TrackRow } from '@/components/TrackRow';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
-import { colors, fontSize, radius, spacing } from '@/theme';
+import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 export default function FavoritesScreen() {
   const router = useRouter();
@@ -91,7 +91,7 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   back: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 140 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: SCREEN_BOTTOM_PADDING },
   header: { alignItems: 'center', paddingVertical: spacing.lg, gap: spacing.sm },
   title: {
     color: colors.text,

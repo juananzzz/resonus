@@ -26,7 +26,7 @@ import { Cover } from '@/components/Cover';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { useAuthStore } from '@/store/auth';
-import { colors, fontSize, spacing } from '@/theme';
+import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 type Segment = 'playlists' | 'artists';
 
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   segmentTextActive: { color: '#000' },
   list: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: 140,
+    paddingBottom: SCREEN_BOTTOM_PADDING,
     gap: spacing.md,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

@@ -11,7 +11,7 @@ import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
 import { BITRATE_OPTIONS, useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
-import { colors, fontSize, radius, spacing } from '@/theme';
+import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 const REPO_URL = 'https://github.com/juananzzz/resonus';
 
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
-  content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: 140 },
+  content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: SCREEN_BOTTOM_PADDING },
   sectionTitle: {
     color: colors.textSecondary,
     fontSize: fontSize.sm,

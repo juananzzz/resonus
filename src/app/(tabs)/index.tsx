@@ -25,7 +25,7 @@ import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { useAuthStore } from '@/store/auth';
-import { colors, fontSize, radius, spacing } from '@/theme';
+import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 const TILE_W = (Dimensions.get('window').width - spacing.lg * 2 - spacing.sm) / 2;
 
@@ -158,7 +158,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingVertical: spacing.md, paddingBottom: 140 },
+  content: { paddingVertical: spacing.md, paddingBottom: SCREEN_BOTTOM_PADDING },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

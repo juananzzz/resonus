@@ -51,7 +51,12 @@ export function TrackRow({ song, position, isCurrent, onPress }: Props) {
 
       <FavoriteButton id={song.id} starred={!!song.starred} size={20} />
       <Text style={styles.duration}>{formatDuration(song.duration)}</Text>
-      <Pressable hitSlop={8} onPress={() => openMenu(song)}>
+      <Pressable
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Más opciones"
+        onPress={() => openMenu(song)}
+      >
         <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
       </Pressable>
     </Pressable>

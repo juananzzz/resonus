@@ -52,6 +52,8 @@ export function MiniPlayer() {
       <FavoriteButton id={song.id} starred={!!song.starred} size={24} />
       <Pressable
         hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel={isPlaying ? 'Pausar' : 'Reproducir'}
         onPress={(e) => {
           e.stopPropagation();
           toggle();
