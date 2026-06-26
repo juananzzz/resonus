@@ -50,6 +50,7 @@ export default function RootLayout() {
                 <Stack.Screen name="album/[id]" />
                 <Stack.Screen name="playlist/[id]" />
                 <Stack.Screen name="artist/[id]" />
+                <Stack.Screen name="genre/[name]" />
                 <Stack.Screen name="favorites" />
                 <Stack.Screen name="settings" />
                 <Stack.Screen name="lyrics" options={{ presentation: 'modal' }} />

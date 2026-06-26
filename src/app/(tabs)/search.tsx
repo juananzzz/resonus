@@ -5,6 +5,7 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { coverArtUrl, search } from '@/api/subsonic';
+import { coverArtUrl, getGenres, search } from '@/api/subsonic';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { TrackRow } from '@/components/TrackRow';
@@ -23,17 +24,37 @@ import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, radius, spacing } from '@/theme';
 
+const TILE_W = (Dimensions.get('window').width - spacing.lg * 2 - spacing.sm) / 2;
+
+const GENRE_COLORS = [
+  '#E13300', '#1E3264', '#7358FF', '#503750', '#477D95', '#8D67AB',
+  '#E8115B', '#148A08', '#BC5900', '#0D72EC', '#B49BC8', '#A56752',
+];
+
+function genreColor(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return GENRE_COLORS[h % GENRE_COLORS.length];
+}
+
 export default function SearchScreen() {
   const auth = useAuthStore((s) => s.auth);
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query.trim(), 350);
+  const browsing = debouncedQuery.length <= 1;
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
   const { data, isFetching } = useQuery({
     queryKey: ['search', debouncedQuery],
     queryFn: () => search(auth!, debouncedQuery),
-    enabled: !!auth && debouncedQuery.length > 1,
+    enabled: !!auth && !browsing,
+  });
+
+  const { data: genres } = useQuery({
+    queryKey: ['genres'],
+    queryFn: () => getGenres(auth!),
+    enabled: !!auth && browsing,
   });
 
   return (
@@ -60,6 +81,29 @@ export default function SearchScreen() {
           <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
         ) : null}
 
+        {browsing ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Explorar todo</Text>
+            <View style={styles.genreGrid}>
+              {(genres ?? []).map((g) => (
+                <Link
+                  key={g.name}
+                  href={`/genre/${encodeURIComponent(g.name)}`}
+                  asChild
+                >
+                  <Pressable
+                    style={[styles.genreCard, { backgroundColor: genreColor(g.name) }]}
+                  >
+                    <Text style={styles.genreText} numberOfLines={2}>
+                      {g.name}
+                    </Text>
+                  </Pressable>
+                </Link>
+              ))}
+            </View>
+          </View>
+        ) : (
+          <>
         {data && data.artists.length > 0 ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Artistas</Text>
@@ -114,6 +158,8 @@ export default function SearchScreen() {
             ))}
           </View>
         ) : null}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -165,5 +211,22 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  genreGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  genreCard: {
+    width: TILE_W,
+    height: 96,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    overflow: 'hidden',
+  },
+  genreText: {
+    color: colors.text,
+    fontSize: fontSize.md,
+    fontWeight: '800',
   },
 });
