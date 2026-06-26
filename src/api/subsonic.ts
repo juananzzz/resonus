@@ -198,35 +198,6 @@ export async function addToPlaylist(
   });
 }
 
-export interface Genre {
-  name: string;
-  albumCount?: number;
-}
-
-/** Lista de géneros de la biblioteca. */
-export async function getGenres(auth: SubsonicAuth): Promise<Genre[]> {
-  const res = await request<{
-    genres?: { genre?: { value?: string; albumCount?: number }[] };
-  }>(auth, 'getGenres.view');
-  return (res.genres?.genre ?? [])
-    .map((g) => ({ name: g.value ?? '', albumCount: g.albumCount }))
-    .filter((g) => g.name);
-}
-
-/** Álbumes de un género concreto. */
-export async function getAlbumsByGenre(
-  auth: SubsonicAuth,
-  genre: string,
-  size = 100,
-): Promise<Album[]> {
-  const res = await request<{ albumList2?: { album?: Album[] } }>(
-    auth,
-    'getAlbumList2.view',
-    { type: 'byGenre', genre, size },
-  );
-  return res.albumList2?.album ?? [];
-}
-
 export interface SearchResult {
   artists: Artist[];
   albums: Album[];
