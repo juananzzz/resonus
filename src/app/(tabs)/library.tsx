@@ -33,10 +33,11 @@ import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
-type Segment = 'playlists' | 'artists';
+type Segment = 'playlists' | 'albums' | 'artists';
 
 const SEGMENTS: { key: Segment; label: string }[] = [
   { key: 'playlists', label: 'Listas' },
+  { key: 'albums', label: 'Álbumes' },
   { key: 'artists', label: 'Artistas' },
 ];
 
@@ -144,6 +145,47 @@ function ArtistsTab() {
   );
 }
 
+function AlbumsTab() {
+  const auth = useAuthStore((s) => s.auth);
+  const t = useT();
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+    queryKey: ['starred'],
+    queryFn: () => getStarred(auth!),
+    enabled: !!auth,
+  });
+  if (isLoading) return <Loader />;
+  if (isError)
+    return <Message text={t('No se pudieron cargar los álbumes.')} onRetry={() => refetch()} />;
+  return (
+    <FlatList
+      data={data?.albums ?? []}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.list}
+      refreshControl={
+        <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.accent} />
+      }
+      renderItem={({ item }) => (
+        <Link href={`/album/${item.id}`} asChild>
+          <Pressable style={styles.row}>
+            <Cover uri={coverArtUrl(auth!, item.coverArt ?? item.id, 100)} size={56} />
+            <View style={styles.rowInfo}>
+              <Text style={styles.rowTitle} numberOfLines={1}>
+                {item.name}
+              </Text>
+              {item.artist ? (
+                <Text style={styles.rowSub} numberOfLines={1}>
+                  {item.artist}
+                </Text>
+              ) : null}
+            </View>
+          </Pressable>
+        </Link>
+      )}
+      ListEmptyComponent={<Empty text={t('No hay álbumes guardados.')} />}
+    />
+  );
+}
+
 function Loader() {
   return <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />;
 }
@@ -219,7 +261,13 @@ export default function LibraryScreen() {
       </View>
 
       <View style={{ flex: 1 }}>
-        {segment === 'playlists' ? <PlaylistsTab /> : <ArtistsTab />}
+        {segment === 'playlists' ? (
+          <PlaylistsTab />
+        ) : segment === 'albums' ? (
+          <AlbumsTab />
+        ) : (
+          <ArtistsTab />
+        )}
       </View>
     </SafeAreaView>
   );

@@ -63,6 +63,8 @@ const en: Record<string, string> = {
   'No se pudo completar la acción': "Couldn't complete the action",
   'No hay listas de reproducción.': 'No playlists.',
   'No hay artistas.': 'No artists.',
+  'No hay álbumes guardados.': 'No saved albums.',
+  'No se pudieron cargar los álbumes.': "Couldn't load albums.",
   'No se pudieron cargar las listas.': "Couldn't load playlists.",
   'No se pudieron cargar los artistas.': "Couldn't load artists.",
   Reintentar: 'Retry',
