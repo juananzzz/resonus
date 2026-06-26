@@ -26,12 +26,14 @@ export default function RootLayout() {
   const hydrating = useAuthStore((s) => s.hydrating);
   const hydrate = useAuthStore((s) => s.hydrate);
   const ready = !!auth || (offline && !!offlineSource);
+  // Perfil activo identificado para recargar búsquedas recientes al cambiar
+  const activeProfile = auth ? `${auth.serverUrl}|${auth.username}` : offline ? 'offline' : '';
 
   useEffect(() => {
     hydrate();
     useSettings.getState().hydrate();
     useRecentSearches.getState().hydrate();
-  }, [hydrate]);
+  }, [hydrate, activeProfile]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>

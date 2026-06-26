@@ -53,8 +53,10 @@ function cacheKey(sourceMode: string, uri?: string): string {
 // ── Lectura de ID3 desde archivo ───────────────────────────────────────────
 
 /** Lee el tag ID3v2 completo: primero la cabecera, luego el resto. */
-async function readID3Full(uri: string): Promise<Uint8Array | null> {
+async function readID3Full(uri: string): Promise<{ buf: Uint8Array; fileSize: number } | null> {
   try {
+    const info = await FileSystem.getInfoAsync(uri);
+    const fileSize = (info.exists && (info as any).size) ? (info as any).size as number : 0;
     // Leer solo la cabecera (10 bytes)
     const headB64 = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
@@ -63,29 +65,48 @@ async function readID3Full(uri: string): Promise<Uint8Array | null> {
     });
     const head = base64ToUint8(headB64);
     if (head.length < 10 || head[0] !== 0x49 || head[1] !== 0x44 || head[2] !== 0x33) {
-      // Sin ID3v2, leer primeros 128 B para intentar ID3v1 al final
-      return head;
+      return { buf: head, fileSize };
     }
-    // Calcular tamaño total del tag
     const tagSize = ((head[6] & 0x7f) << 21) | ((head[7] & 0x7f) << 14) | ((head[8] & 0x7f) << 7) | (head[9] & 0x7f);
     const total = 10 + tagSize;
-    // Leer el tag completo (máx 2 MB para evitar OOM con tags corruptos)
     const limit = Math.min(total, 2_000_000);
     const fullB64 = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
       length: limit,
       position: 0,
     });
-    return base64ToUint8(fullB64);
+    return { buf: base64ToUint8(fullB64), fileSize };
   } catch {
     return null;
   }
 }
 
 async function readID3(uri: string): Promise<ID3Tags | null> {
-  const buf = await readID3Full(uri);
-  if (!buf) return null;
-  return parseID3(buf);
+  const result = await readID3Full(uri);
+  if (!result) return null;
+  const tags = parseID3(result.buf);
+  // Si ID3v2 no encontró título y el archivo es > 128 B, intenta ID3v1 al final
+  if (!tags.title && result.fileSize > 128) {
+    try {
+      const tailB64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+        length: 128,
+        position: result.fileSize - 128,
+      });
+      const tail = base64ToUint8(tailB64);
+      const v1 = parseID3(tail);
+      if (v1.title) {
+        tags.title = v1.title;
+        tags.artist = tags.artist || v1.artist;
+        tags.album = tags.album || v1.album;
+        tags.track = tags.track ?? v1.track;
+        tags.year = tags.year ?? v1.year;
+      }
+    } catch {
+      // ignorar errores leyendo el final
+    }
+  }
+  return tags;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
