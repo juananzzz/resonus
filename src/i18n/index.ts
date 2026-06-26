@@ -178,6 +178,15 @@ const en: Record<string, string> = {
   'Escaneo iniciado': 'Scan started',
   'No se pudo iniciar el escaneo': "Couldn't start the scan",
   'Caché limpiada': 'Cache cleared',
+  // Audio quality
+  'Formato y calidad': 'Format & quality',
+  'Muestra el formato de audio, bitrate y etiquetas Lossless / Hi-Res junto a cada canción.':
+    'Displays the audio format, bitrate, and Lossless / Hi-Res labels next to each song.',
+  No: 'No',
+  'Solo reproductor': 'Player only',
+  'En todas partes': 'Everywhere',
+  Lossless: 'Lossless',
+  'Hi-Res': 'Hi-Res',
   // Error boundary
   'Algo ha fallado': 'Something went wrong',
   // Misc placeholders / dynamic

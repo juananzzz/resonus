@@ -14,12 +14,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { coverArtUrl } from '@/api/subsonic';
+import { AudioQualityBadge } from '@/components/AudioQualityBadge';
 import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, SOURCE_FAVORITES, usePlayerStore } from '@/store/player';
+import { useSettings } from '@/store/settings';
 import { useSongMenu } from '@/store/songMenu';
 import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
@@ -67,6 +69,8 @@ export default function PlayerScreen() {
   const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
+  const showQuality = useSettings((s) => s.showAudioQuality);
+  const showQualityBadge = showQuality === 'player' || showQuality === 'everywhere';
   const favIds = useFavoriteIds(!!song && !song?.localUri);
 
   if (!song) {
@@ -120,6 +124,11 @@ export default function PlayerScreen() {
 
         <View style={styles.coverWrap}>
           <Cover uri={cover} size={COVER} />
+          {showQualityBadge ? (
+            <View style={styles.qualityWrap}>
+              <AudioQualityBadge song={song} />
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.bottom}>
@@ -314,6 +323,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  qualityWrap: { alignItems: 'center', marginTop: spacing.md },
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',

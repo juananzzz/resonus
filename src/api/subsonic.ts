@@ -33,6 +33,14 @@ export interface Song {
   track?: number;
   /** Marca de tiempo de cuándo se marcó como favorita; ausente si no lo es. */
   starred?: string;
+  /** Formato del archivo (mp3, flac, aac…). */
+  suffix?: string;
+  /** Bitrate en kbps. */
+  bitRate?: number;
+  /** Profundidad de bits (16, 24…). */
+  bitDepth?: number;
+  /** Frecuencia de muestreo en Hz (44100, 48000, 96000…). */
+  samplingRate?: number;
   /** URI de fichero local (modo sin conexión); si está, se reproduce sin servidor. */
   localUri?: string;
 }

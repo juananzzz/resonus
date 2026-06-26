@@ -7,8 +7,10 @@ import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu, type SongMenuContext } from '@/store/songMenu';
+import { useSettings } from '@/store/settings';
 import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
+import { AudioQualityBadge } from './AudioQualityBadge';
 import { FavoriteButton } from './FavoriteButton';
 import { NowPlayingBars } from './NowPlayingBars';
 
@@ -42,6 +44,7 @@ export function TrackRow({
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
+  const showQuality = useSettings((s) => s.showAudioQuality);
 
   // Favorito = marcado por el endpoint o presente en la lista central de
   // favoritos (fiable), ya que no todos los endpoints traen `starred`.
@@ -76,6 +79,7 @@ export function TrackRow({
       </View>
 
       {favorited ? <FavoriteButton id={song.id} starred size={20} /> : null}
+      {showQuality === 'everywhere' ? <AudioQualityBadge song={song} /> : null}
       <Text style={styles.duration}>{formatDuration(song.duration)}</Text>
       {showMenu ? (
         <Pressable

@@ -15,30 +15,46 @@ export const BITRATE_OPTIONS = [
 
 export type Language = 'es' | 'en';
 
+export type AudioQualityMode = 'off' | 'player' | 'everywhere';
+
+export const AUDIO_QUALITY_OPTIONS: { label: string; value: AudioQualityMode }[] = [
+  { label: 'No', value: 'off' },
+  { label: 'Solo reproductor', value: 'player' },
+  { label: 'En todas partes', value: 'everywhere' },
+];
+
 interface SettingsState {
   maxBitRate: number;
   language: Language;
+  showAudioQuality: AudioQualityMode;
   setMaxBitRate: (value: number) => void;
   setLanguage: (language: Language) => void;
+  setShowAudioQuality: (mode: AudioQualityMode) => void;
   hydrate: () => Promise<void>;
 }
 
-function persist(state: { maxBitRate: number; language: Language }) {
+function persist(state: { maxBitRate: number; language: Language; showAudioQuality: AudioQualityMode }) {
   void setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
 export const useSettings = create<SettingsState>((set, get) => ({
   maxBitRate: 0,
   language: 'es',
+  showAudioQuality: 'off',
 
   setMaxBitRate: (maxBitRate) => {
     set({ maxBitRate });
-    persist({ maxBitRate, language: get().language });
+    persist({ maxBitRate, language: get().language, showAudioQuality: get().showAudioQuality });
   },
 
   setLanguage: (language) => {
     set({ language });
-    persist({ maxBitRate: get().maxBitRate, language });
+    persist({ maxBitRate: get().maxBitRate, language, showAudioQuality: get().showAudioQuality });
+  },
+
+  setShowAudioQuality: (showAudioQuality) => {
+    set({ showAudioQuality });
+    persist({ maxBitRate: get().maxBitRate, language: get().language, showAudioQuality });
   },
 
   hydrate: async () => {
@@ -48,12 +64,20 @@ export const useSettings = create<SettingsState>((set, get) => ({
         const parsed = JSON.parse(raw) as Partial<{
           maxBitRate: number;
           language: Language;
+          showAudioQuality: AudioQualityMode | boolean;
         }>;
         if (typeof parsed.maxBitRate === 'number') {
           set({ maxBitRate: parsed.maxBitRate });
         }
         if (parsed.language === 'es' || parsed.language === 'en') {
           set({ language: parsed.language });
+        }
+        if (parsed.showAudioQuality === 'off' || parsed.showAudioQuality === 'player' || parsed.showAudioQuality === 'everywhere') {
+          set({ showAudioQuality: parsed.showAudioQuality });
+        } else if (parsed.showAudioQuality === true) {
+          set({ showAudioQuality: 'everywhere' });
+        } else if (parsed.showAudioQuality === false) {
+          set({ showAudioQuality: 'off' });
         }
       }
     } catch {
