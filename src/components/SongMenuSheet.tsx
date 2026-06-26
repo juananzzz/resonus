@@ -14,7 +14,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { addToPlaylist, coverArtUrl, getPlaylists, star } from '@/api/subsonic';
+import {
+  addToPlaylist,
+  coverArtUrl,
+  getPlaylists,
+  removeFromPlaylist,
+  star,
+} from '@/api/subsonic';
 import { useAuthStore } from '@/store/auth';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu } from '@/store/songMenu';
@@ -49,6 +55,7 @@ export function SongMenuSheet() {
   const auth = useAuthStore((s) => s.auth);
   const queryClient = useQueryClient();
   const song = useSongMenu((s) => s.song);
+  const context = useSongMenu((s) => s.context);
   const close = useSongMenu((s) => s.close);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const playNext = usePlayerStore((s) => s.playNext);
@@ -94,6 +101,19 @@ export function SongMenuSheet() {
     close();
     toast(t('Próximamente 🚧'));
   };
+
+  async function removeFromList() {
+    if (!auth || !context) return;
+    close();
+    try {
+      await removeFromPlaylist(auth, context.playlistId, context.index);
+      queryClient.invalidateQueries({ queryKey: ['playlist', context.playlistId] });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      toast(t('Quitada de la lista'));
+    } catch {
+      toast(t('No se pudo completar la acción'));
+    }
+  }
 
   return (
     <Modal transparent animationType="fade" visible onRequestClose={close}>
@@ -185,6 +205,13 @@ export function SongMenuSheet() {
               label={t('Añadir a una playlist')}
               onPress={() => setMode('playlists')}
             />
+            {context ? (
+              <Action
+                icon="remove-circle-outline"
+                label={t('Quitar de la lista')}
+                onPress={removeFromList}
+              />
+            ) : null}
             {song.artistId ? (
               <Action
                 icon="person"

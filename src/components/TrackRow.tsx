@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { type Song } from '@/api/subsonic';
 import { formatDuration } from '@/lib/format';
 import { usePlayerStore } from '@/store/player';
-import { useSongMenu } from '@/store/songMenu';
+import { useSongMenu, type SongMenuContext } from '@/store/songMenu';
 import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
 import { FavoriteButton } from './FavoriteButton';
@@ -16,10 +16,12 @@ interface Props {
   /** Número opcional a la izquierda (p. ej. la pista en un álbum). */
   position?: number;
   isCurrent?: boolean;
+  /** Contexto de playlist (para permitir "quitar de la lista" en el menú). */
+  menuContext?: SongMenuContext;
   onPress: () => void;
 }
 
-export function TrackRow({ song, position, isCurrent, onPress }: Props) {
+export function TrackRow({ song, position, isCurrent, menuContext, onPress }: Props) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
@@ -57,7 +59,7 @@ export function TrackRow({ song, position, isCurrent, onPress }: Props) {
         hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel={t('Más opciones')}
-        onPress={() => openMenu(song)}
+        onPress={() => openMenu(song, menuContext)}
       >
         <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
       </Pressable>

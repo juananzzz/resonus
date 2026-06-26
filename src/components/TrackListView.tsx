@@ -25,6 +25,8 @@ interface Props {
   numbered?: boolean;
   /** Si se indica, muestra un botón ⋯ arriba a la derecha. */
   onMenu?: () => void;
+  /** Si se indica, el menú de cada canción permite quitarla de esta playlist. */
+  playlistId?: string;
   onPlay: (startIndex: number) => void;
 }
 
@@ -37,6 +39,7 @@ export function TrackListView({
   currentId,
   numbered,
   onMenu,
+  playlistId,
   onPlay,
 }: Props) {
   const router = useRouter();
@@ -98,6 +101,7 @@ export function TrackListView({
             song={item}
             position={numbered ? item.track ?? index + 1 : undefined}
             isCurrent={currentId === item.id}
+            menuContext={playlistId ? { playlistId, index } : undefined}
             onPress={() => onPlay(index)}
           />
         )}

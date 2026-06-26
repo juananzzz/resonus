@@ -98,6 +98,8 @@ const en: Record<string, string> = {
     'No lyrics available for this song.',
   // Song menu
   'Añadir a una playlist': 'Add to a playlist',
+  'Quitar de la lista': 'Remove from playlist',
+  'Quitada de la lista': 'Removed from playlist',
   'Ir al artista': 'Go to artist',
   'Ir al álbum': 'Go to album',
   'Reproducir a continuación': 'Play next',

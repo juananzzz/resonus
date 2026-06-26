@@ -102,6 +102,7 @@ export default function PlaylistScreen() {
         songs={data.songs}
         currentId={playing?.id}
         onMenu={() => setMenuOpen(true)}
+        playlistId={id}
         onPlay={(start) => playQueue(data.songs, start)}
       />
 
