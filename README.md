@@ -1,7 +1,13 @@
-# Resonus 🎵
+<p align="center">
+  <img src="./assets/images/icon.png" width="120" alt="Resonus icon" />
+</p>
 
-An open-source Android music player for your own self-hosted music server.
-A clean, Spotify-style client focused on the essentials.
+<h1 align="center">Resonus 🎵</h1>
+
+<p align="center">
+  An open-source Android music player for your own self-hosted music server.<br/>
+  A clean, Spotify-style client focused on the essentials.
+</p>
 
 Works with **Navidrome** and any **OpenSubsonic**-compatible server (Subsonic
 API). Jellyfin support is planned.
@@ -94,6 +100,23 @@ src/
 | `pnpm start` | Start the Metro dev server |
 | `pnpm lint` | Run ESLint |
 | `pnpm typecheck` | Type-check with `tsc` |
+
+## Roadmap
+
+Things planned / still to do:
+
+- [ ] Offline downloads (local file/store layer)
+- [ ] Equalizer (needs a native audio-effects module)
+- [ ] Crossfade between tracks
+- [ ] Jellyfin support (separate API client)
+- [ ] Create / edit / delete playlists from the app
+- [ ] "Recently played" history on Home
+- [ ] More languages (the i18n layer is ready — just add a dictionary)
+- [ ] Unit tests (Subsonic client, player store)
+- [ ] iOS support (the codebase is cross-platform; only Android is tested)
+- [ ] Polish: translate the error-boundary screen, richer empty states
+
+Contributions and ideas are welcome. 🙌
 
 ## License
 

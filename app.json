@@ -8,7 +8,6 @@
     "scheme": "resonus",
     "userInterfaceStyle": "dark",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.juananzzz.resonus",
       "supportsTablet": true,
       "infoPlist": {
@@ -21,13 +20,10 @@
       "package": "com.juananzzz.resonus",
       "adaptiveIcon": {
         "backgroundColor": "#121212",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
@@ -43,9 +39,12 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#121212",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 180,
           "android": {
+            "backgroundColor": "#121212",
             "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
+            "imageWidth": 180
           }
         }
       ],
