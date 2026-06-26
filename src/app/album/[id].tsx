@@ -33,6 +33,7 @@ export default function AlbumScreen() {
     <TrackListView
       title={data.album.name}
       subtitle={data.album.artist}
+      artistId={data.album.artistId}
       coverUri={coverArtUrl(auth!, data.album.coverArt ?? data.album.id, 500)}
       songs={data.songs}
       currentId={playing?.id}

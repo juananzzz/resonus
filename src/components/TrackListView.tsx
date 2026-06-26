@@ -15,6 +15,8 @@ import { TrackRow } from './TrackRow';
 interface Props {
   title: string;
   subtitle?: string;
+  /** Si se indica, el subtítulo lleva al artista al pulsarlo. */
+  artistId?: string;
   coverUri?: string;
   songs: Song[];
   currentId?: string;
@@ -26,6 +28,7 @@ interface Props {
 export function TrackListView({
   title,
   subtitle,
+  artistId,
   coverUri,
   songs,
   currentId,
@@ -50,7 +53,20 @@ export function TrackListView({
             <Text style={styles.title} numberOfLines={2}>
               {title}
             </Text>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+            {subtitle ? (
+              artistId ? (
+                <Pressable
+                  hitSlop={6}
+                  onPress={() => router.push(`/artist/${artistId}`)}
+                >
+                  <Text style={[styles.subtitle, styles.subtitleLink]}>
+                    {subtitle}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Text style={styles.subtitle}>{subtitle}</Text>
+              )
+            ) : null}
             <Pressable
               style={styles.playButton}
               onPress={() => songs.length > 0 && onPlay(0)}
@@ -101,6 +117,10 @@ const styles = StyleSheet.create({
   subtitle: {
     color: colors.textSecondary,
     fontSize: fontSize.md,
+  },
+  subtitleLink: {
+    color: colors.text,
+    fontWeight: '700',
   },
   playButton: {
     flexDirection: 'row',

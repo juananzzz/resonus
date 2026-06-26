@@ -87,9 +87,20 @@ export default function PlayerScreen() {
               <Text style={styles.title} numberOfLines={1}>
                 {song.title}
               </Text>
-              <Text style={styles.artist} numberOfLines={1}>
-                {song.artist ?? 'Desconocido'}
-              </Text>
+              {song.artistId ? (
+                <Pressable
+                  hitSlop={6}
+                  onPress={() => router.push(`/artist/${song.artistId}`)}
+                >
+                  <Text style={styles.artist} numberOfLines={1}>
+                    {song.artist ?? 'Desconocido'}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Text style={styles.artist} numberOfLines={1}>
+                  {song.artist ?? 'Desconocido'}
+                </Text>
+              )}
             </View>
             <FavoriteButton id={song.id} starred={!!song.starred} size={26} />
           </View>
