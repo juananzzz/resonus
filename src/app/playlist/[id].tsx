@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { coverArtUrl, deletePlaylist, getPlaylist, renamePlaylist } from '@/api/subsonic';
+import { coverArtUrl, deletePlaylist, getPlaylist, renamePlaylist } from '@/api/data';
 import { Dialog } from '@/components/Dialog';
 import { Message } from '@/components/Message';
 import { TrackListView } from '@/components/TrackListView';
@@ -37,7 +37,7 @@ export default function PlaylistScreen() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['playlist', id],
-    queryFn: () => getPlaylist(auth!, id),
+    queryFn: () => getPlaylist(id),
     enabled: !!auth && !!id,
   });
 
@@ -49,7 +49,7 @@ export default function PlaylistScreen() {
     setRenaming(false);
     if (!auth) return;
     try {
-      await renamePlaylist(auth, id, name);
+      await renamePlaylist(id, name);
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       toast(t('Lista renombrada'));
@@ -62,7 +62,7 @@ export default function PlaylistScreen() {
     setDeleting(false);
     if (!auth) return;
     try {
-      await deletePlaylist(auth, id);
+      await deletePlaylist(id);
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       toast(t('Lista eliminada'));
       router.back();
@@ -96,7 +96,7 @@ export default function PlaylistScreen() {
       <TrackListView
         title={data.playlist.name}
         meta={metaParts.join(' · ')}
-        coverUri={coverArtUrl(auth!, data.playlist.coverArt ?? data.playlist.id, 500)}
+        coverUri={coverArtUrl(data.playlist.coverArt ?? data.playlist.id, 500)}
         songs={displaySongs}
         playlistIndices={playlistIndices}
         currentId={playing?.id}

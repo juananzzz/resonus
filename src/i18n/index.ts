@@ -176,6 +176,7 @@ const en: Record<string, string> = {
   Versión: 'Version',
   'Ver en GitHub': 'View on GitHub',
   'Cerrar sesión': 'Sign out',
+  'Salir del modo sin conexión': 'Exit offline mode',
   'Escaneo iniciado': 'Scan started',
   'No se pudo iniciar el escaneo': "Couldn't start the scan",
   'Caché limpiada': 'Cache cleared',
@@ -192,6 +193,18 @@ const en: Record<string, string> = {
   'En todas partes': 'Everywhere',
   Lossless: 'Lossless',
   'Hi-Res': 'Hi-Res',
+  'Marca artistas como favoritos para verlos aquí.':
+    'Star artists to see them here.',
+  'Marca álbumes como favoritos para verlos aquí.':
+    'Star albums to see them here.',
+  // Offline specifics
+  'Los favoritos no están disponibles sin conexión al servidor.':
+    'Favorites are not available offline.',
+  'La letra no está disponible en modo sin conexión.':
+    'Lyrics are not available in offline mode.',
+  'Estás reproduciendo música almacenada en tu dispositivo.':
+    'You are playing music stored on your device.',
+  Origen: 'Source',
   // Error boundary
   'Algo ha fallado': 'Something went wrong',
   // Misc placeholders / dynamic

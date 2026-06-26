@@ -18,6 +18,7 @@ interface Props {
 
 export function FavoriteButton({ id, type = 'song', starred, size = 22 }: Props) {
   const auth = useAuthStore((s) => s.auth);
+  const offline = useAuthStore((s) => s.offline);
   const queryClient = useQueryClient();
   const t = useT();
   const [fav, setFav] = useState(!!starred);
@@ -32,7 +33,7 @@ export function FavoriteButton({ id, type = 'song', starred, size = 22 }: Props)
 
   async function toggle(e?: GestureResponderEvent) {
     e?.stopPropagation();
-    if (!auth || busy) return;
+    if ((!auth && !offline) || busy) return;
     const nextFav = !fav;
     setFav(nextFav); // actualización optimista
     setBusy(true);

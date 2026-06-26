@@ -33,12 +33,17 @@ export default function SettingsScreen() {
   const router = useRouter();
   const t = useT();
   const logout = useAuthStore((s) => s.logout);
+  const offline = useAuthStore((s) => s.offline);
+
+  const visible = offline
+    ? SECTIONS.filter((s) => s.key !== 'account' && s.key !== 'library')
+    : SECTIONS;
 
   return (
     <SafeAreaView style={settingsStyles.safe} edges={['top']}>
       <ScreenHeader title={t('Ajustes')} />
       <ScrollView contentContainerStyle={settingsStyles.content}>
-        {SECTIONS.map((s) => (
+        {visible.map((s) => (
           <Pressable
             key={s.key}
             style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
@@ -56,8 +61,8 @@ export default function SettingsScreen() {
         ))}
 
         <Pressable style={settingsStyles.logout} onPress={() => logout()}>
-          <Ionicons name="log-out-outline" size={22} color={colors.danger} />
-          <Text style={settingsStyles.logoutText}>{t('Cerrar sesión')}</Text>
+          <Ionicons name={offline ? 'exit-outline' : 'log-out-outline'} size={22} color={colors.danger} />
+          <Text style={settingsStyles.logoutText}>{offline ? t('Salir del modo sin conexión') : t('Cerrar sesión')}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

@@ -15,6 +15,9 @@ import { colors } from '@/theme';
 export default function LibrarySettings() {
   const t = useT();
   const auth = useAuthStore((s) => s.auth);
+  const offline = useAuthStore((s) => s.offline);
+  const source = useAuthStore((s) => s.offlineSource);
+  const setSource = useAuthStore((s) => s.setOfflineSource);
   const toast = useToast((s) => s.show);
 
   const { data: scan, refetch: refetchScan } = useQuery({
@@ -43,18 +46,36 @@ export default function LibrarySettings() {
   return (
     <SettingsPage title={t('Biblioteca')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
-        <Text style={settingsStyles.sectionTitle}>{t('Biblioteca')}</Text>
-        <View style={settingsStyles.card}>
-          <Field
-            label={t('Estado del escaneo')}
-            value={scan?.scanning ? t('Escaneando…') : t('{n} elementos', { n: scan?.count ?? 0 })}
-          />
-          <View style={settingsStyles.divider} />
-          <Pressable style={settingsStyles.linkRow} onPress={scanNow}>
-            <Ionicons name="refresh" size={22} color={colors.text} />
-            <Text style={settingsStyles.rowText}>{t('Escanear ahora')}</Text>
-          </Pressable>
-        </View>
+        {offline ? (
+          <>
+            <Text style={settingsStyles.sectionTitle}>{t('Modo sin conexión')}</Text>
+            <View style={settingsStyles.card}>
+              <Field label={t('Origen')} value={source?.mode === 'folder' ? 'Carpeta' : 'Dispositivo'} />
+            </View>
+            <Pressable
+              style={settingsStyles.rowButton}
+              onPress={() => { void setSource(null); }}
+            >
+              <Ionicons name="swap-horizontal" size={22} color={colors.text} />
+              <Text style={settingsStyles.rowText}>{t('Cambiar origen')}</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={settingsStyles.sectionTitle}>{t('Biblioteca')}</Text>
+            <View style={settingsStyles.card}>
+              <Field
+                label={t('Estado del escaneo')}
+                value={scan?.scanning ? t('Escaneando…') : t('{n} elementos', { n: scan?.count ?? 0 })}
+              />
+              <View style={settingsStyles.divider} />
+              <Pressable style={settingsStyles.linkRow} onPress={scanNow}>
+                <Ionicons name="refresh" size={22} color={colors.text} />
+                <Text style={settingsStyles.rowText}>{t('Escanear ahora')}</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
 
         <Text style={settingsStyles.sectionTitle}>{t('Almacenamiento')}</Text>
         <Pressable style={settingsStyles.rowButton} onPress={clearCache}>

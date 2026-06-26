@@ -51,6 +51,8 @@ export default function LyricsScreen() {
 
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: spacing.xxl }} color={colors.accent} />
+      ) : !auth ? (
+        <Text style={styles.empty}>{t('La letra no está disponible en modo sin conexión.')}</Text>
       ) : data ? (
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.lyrics}>{data}</Text>

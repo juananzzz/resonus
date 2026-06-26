@@ -28,10 +28,13 @@ export function MiniPlayer() {
 
   const cover =
     song && auth && !song.localUri
-      ? coverArtUrl( song.coverArt ?? song.albumId, 100)
-      : undefined;
+      ? coverArtUrl(song.coverArt ?? song.albumId, 100)
+      : song?.coverBase64
+        ? `data:${song.coverMime || 'image/jpeg'};base64,${song.coverBase64}`
+        : undefined;
   const bg = useDominantColor(cover);
-  const favIds = useFavoriteIds(!!song && !song.localUri);
+  const offline = useAuthStore((s) => s.offline);
+  const favIds = useFavoriteIds(!!song && (!song.localUri || offline));
 
   if (!song) return null;
 
@@ -55,7 +58,7 @@ export function MiniPlayer() {
           </Text>
         ) : null}
       </View>
-      {song.localUri ? null : (
+      {(song.localUri && !offline) ? null : (
         <FavoriteButton id={song.id} starred={favorited} size={24} />
       )}
       <Pressable

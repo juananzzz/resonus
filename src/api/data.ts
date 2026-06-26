@@ -54,23 +54,23 @@ export function getPlaylists(): Promise<Subsonic.Playlist[]> {
 }
 
 export function getStarred(): Promise<Subsonic.Starred> {
-  if (isOffline()) return Promise.resolve(Local.getStarred());
+  if (isOffline()) return Local.getStarred();
   return Subsonic.getStarred(auth());
+}
+
+export function star(id: string, type?: Subsonic.StarType): Promise<void> {
+  if (isOffline()) return Local.starLocal(id, type);
+  return Subsonic.star(auth(), id, type);
+}
+
+export function unstar(id: string, type?: Subsonic.StarType): Promise<void> {
+  if (isOffline()) return Local.unstarLocal(id, type);
+  return Subsonic.unstar(auth(), id, type);
 }
 
 export function search(query: string): Promise<Subsonic.SearchResult> {
   if (isOffline()) return Local.search(query);
   return Subsonic.search(auth(), query);
-}
-
-export function star(id: string, type?: Subsonic.StarType): Promise<void> {
-  if (isOffline()) return Promise.resolve();
-  return Subsonic.star(auth(), id, type);
-}
-
-export function unstar(id: string, type?: Subsonic.StarType): Promise<void> {
-  if (isOffline()) return Promise.resolve();
-  return Subsonic.unstar(auth(), id, type);
 }
 
 export function scrobble(id: string): Promise<void> {
@@ -94,13 +94,16 @@ export function deletePlaylist(id: string): Promise<void> {
 }
 
 export function getPlaylist(id: string): Promise<{ playlist: Subsonic.Playlist; songs: Subsonic.Song[] }> {
+  if (isOffline()) return Promise.resolve({ playlist: { id, name: id }, songs: [] });
   return Subsonic.getPlaylist(auth(), id);
 }
 
 export function renamePlaylist(id: string, name: string): Promise<void> {
+  if (isOffline()) return Promise.resolve();
   return Subsonic.renamePlaylist(auth(), id, name);
 }
 
 export function removeFromPlaylist(id: string, index: number): Promise<void> {
+  if (isOffline()) return Promise.resolve();
   return Subsonic.removeFromPlaylist(auth(), id, index);
 }

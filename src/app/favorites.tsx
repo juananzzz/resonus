@@ -16,6 +16,7 @@ import { colors } from '@/theme';
 
 export default function FavoritesScreen() {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
+  const offline = useAuthStore((s) => s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
   const playing = usePlayerStore(currentSong);
@@ -41,6 +42,14 @@ export default function FavoritesScreen() {
     return (
       <View style={styles.center}>
         <Message text={t('No se pudieron cargar los favoritos.')} onRetry={() => refetch()} />
+      </View>
+    );
+  }
+
+  if (displaySongs.length === 0 && offline) {
+    return (
+      <View style={styles.center}>
+        <Message text={t('Los favoritos no están disponibles sin conexión al servidor.')} />
       </View>
     );
   }

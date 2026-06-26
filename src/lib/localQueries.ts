@@ -3,7 +3,8 @@
  * Si el catálogo aún no se ha cargado, lo carga bajo demanda.
  */
 import { useAuthStore } from '@/store/auth';
-import { type Album, type Artist, type ArtistInfo, type Playlist, type SearchResult, type Song, type Starred } from '@/api/subsonic';
+import { type Album, type Artist, type ArtistInfo, type Playlist, type SearchResult, type Song, type StarType, type Starred } from '@/api/subsonic';
+import { getItem, setItem } from '@/lib/storage';
 import {
   getLocalAlbums,
   getLocalAlbumSongs,
@@ -15,6 +16,64 @@ import {
   normKey,
   registerCover,
 } from './localLibrary';
+
+const FAVS_KEY = 'resonus.localFavorites';
+
+interface LocalFavStore {
+  songs: string[];
+  albums: string[];
+  artists: string[];
+}
+
+let favCache: LocalFavStore | null = null;
+
+async function loadFavs(): Promise<LocalFavStore> {
+  if (favCache) return favCache;
+  try {
+    const raw = await getItem(FAVS_KEY);
+    favCache = raw ? (JSON.parse(raw) as LocalFavStore) : { songs: [], albums: [], artists: [] };
+  } catch {
+    favCache = { songs: [], albums: [], artists: [] };
+  }
+  return favCache;
+}
+
+async function saveFavs(favs: LocalFavStore) {
+  favCache = favs;
+  await setItem(FAVS_KEY, JSON.stringify(favs));
+}
+
+export async function starLocal(id: string, type?: StarType) {
+  const favs = await loadFavs();
+  if (type === 'album' || type === 'artist') {
+    const key = type === 'album' ? 'albums' : 'artists';
+    if (!favs[key].includes(id)) {
+      favs[key].push(id);
+      await saveFavs(favs);
+    }
+  } else {
+    if (!favs.songs.includes(id)) {
+      favs.songs.push(id);
+      await saveFavs(favs);
+    }
+  }
+}
+
+export async function unstarLocal(id: string, type?: StarType) {
+  const favs = await loadFavs();
+  if (type === 'album' || type === 'artist') {
+    const key = type === 'album' ? 'albums' : 'artists';
+    favs[key] = favs[key].filter((x) => x !== id);
+  } else {
+    favs.songs = favs.songs.filter((x) => x !== id);
+  }
+  await saveFavs(favs);
+}
+
+/** Limpia la caché de favoritos (al cambiar de origen). */
+export function clearLocalFavs() {
+  favCache = null;
+}
 
 function sourceInfo() {
   const { offlineSource } = useAuthStore.getState();
@@ -120,8 +179,18 @@ export function getPlaylists(): Playlist[] {
   return [];
 }
 
-export function getStarred(): Starred {
-  return { songs: [], albums: [], artists: [] };
+export async function getStarred(): Promise<Starred> {
+  const c = await ensureCatalog();
+  const favs = await loadFavs();
+  if (!c) return { songs: [], albums: [], artists: [] };
+  const favSongIds = new Set(favs.songs);
+  const favAlbumIds = new Set(favs.albums);
+  const favArtistIds = new Set(favs.artists);
+  return {
+    songs: c.songs.filter((s) => favSongIds.has(s.id)),
+    albums: c.albums.filter((a) => favAlbumIds.has(a.id)).map(toAlbum),
+    artists: c.artists.filter((a) => favArtistIds.has(a.id)).map(toArtist),
+  };
 }
 
 export async function search(query: string): Promise<SearchResult> {

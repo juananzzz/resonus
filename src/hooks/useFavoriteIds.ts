@@ -6,15 +6,15 @@
  */
 import { useQuery } from '@tanstack/react-query';
 
-import { getStarred } from '@/api/subsonic';
+import { getStarred } from '@/api/data';
 import { useAuthStore } from '@/store/auth';
 
 export function useFavoriteIds(enabled = true): Set<string> | undefined {
-  const auth = useAuthStore((s) => s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const { data } = useQuery({
     queryKey: ['starred'],
-    queryFn: () => getStarred(auth!),
-    enabled: enabled && !!auth,
+    queryFn: () => getStarred(),
+    enabled: enabled && canFetch,
     select: (d) => new Set(d.songs.map((s) => s.id)),
   });
   return data;

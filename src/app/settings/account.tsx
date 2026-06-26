@@ -10,22 +10,37 @@ import { colors } from '@/theme';
 export default function AccountSettings() {
   const t = useT();
   const auth = useAuthStore((s) => s.auth);
+  const offline = useAuthStore((s) => s.offline);
   const logout = useAuthStore((s) => s.logout);
 
   return (
     <SettingsPage title={t('Cuenta')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
-        <Text style={settingsStyles.sectionTitle}>{t('Servidor')}</Text>
-        <View style={settingsStyles.card}>
-          <Field label="URL" value={auth?.serverUrl ?? '—'} />
-          <View style={settingsStyles.divider} />
-          <Field label={t('Usuario')} value={auth?.username ?? '—'} />
-        </View>
-
-        <Pressable style={settingsStyles.logout} onPress={() => logout()}>
-          <Ionicons name="log-out-outline" size={22} color={colors.danger} />
-          <Text style={settingsStyles.logoutText}>{t('Cerrar sesión')}</Text>
-        </Pressable>
+        {offline ? (
+          <>
+            <Text style={settingsStyles.sectionTitle}>{t('Modo sin conexión')}</Text>
+            <View style={settingsStyles.card}>
+              <Field label="" value={t('Estás reproduciendo música almacenada en tu dispositivo.')} />
+            </View>
+            <Pressable style={settingsStyles.logout} onPress={() => logout()}>
+              <Ionicons name="exit-outline" size={22} color={colors.danger} />
+              <Text style={settingsStyles.logoutText}>{t('Salir')}</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={settingsStyles.sectionTitle}>{t('Servidor')}</Text>
+            <View style={settingsStyles.card}>
+              <Field label="URL" value={auth?.serverUrl ?? '—'} />
+              <View style={settingsStyles.divider} />
+              <Field label={t('Usuario')} value={auth?.username ?? '—'} />
+            </View>
+            <Pressable style={settingsStyles.logout} onPress={() => logout()}>
+              <Ionicons name="log-out-outline" size={22} color={colors.danger} />
+              <Text style={settingsStyles.logoutText}>{t('Cerrar sesión')}</Text>
+            </Pressable>
+          </>
+        )}
       </ScrollView>
     </SettingsPage>
   );

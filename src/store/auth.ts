@@ -11,6 +11,7 @@ import { create } from 'zustand';
 
 import { makeAuth, ping, type SubsonicAuth } from '@/api/subsonic';
 import { clearLocalCatalog } from '@/lib/localLibrary';
+import { clearLocalFavs } from '@/lib/localQueries';
 import { queryClient } from '@/lib/query';
 import { deleteItem, getItem, setItem } from '@/lib/storage';
 
@@ -156,11 +157,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       ];
       await setItem(PROFILES_KEY, JSON.stringify(profiles));
       clearLocalCatalog();
+      clearLocalFavs();
       queryClient.removeQueries({ queryKey: ['localSongs'] });
       set({ offlineSource: source, profiles });
     } else {
       await deleteItem(OFFLINE_SOURCE_KEY);
       clearLocalCatalog();
+      clearLocalFavs();
       queryClient.removeQueries({ queryKey: ['localSongs'] });
       set({ offlineSource: source });
     }

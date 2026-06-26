@@ -71,7 +71,8 @@ export default function PlayerScreen() {
   const t = useT();
   const showQuality = useSettings((s) => s.showAudioQuality);
   const showQualityBadge = showQuality === 'player' || showQuality === 'everywhere';
-  const favIds = useFavoriteIds(!!song && !song?.localUri);
+  const offline = useAuthStore((s) => s.offline);
+  const favIds = useFavoriteIds(!!song && (!song?.localUri || offline));
 
   if (!song) {
     router.back();
@@ -81,7 +82,11 @@ export default function PlayerScreen() {
   const isLocal = !!song.localUri;
   const favorited = !!song.starred || (favIds?.has(song.id) ?? false);
   const cover =
-    isLocal || !auth ? undefined : coverArtUrl(song.coverArt ?? song.albumId, 600);
+    isLocal || !auth
+      ? song.coverBase64
+        ? `data:${song.coverMime || 'image/jpeg'};base64,${song.coverBase64}`
+        : undefined
+      : coverArtUrl(song.coverArt ?? song.albumId, 600);
   const duration = durationSec || song.duration || 0;
   const repeatActive = repeat !== 'off';
 
@@ -152,7 +157,7 @@ export default function PlayerScreen() {
                 </Text>
               )}
             </View>
-            {isLocal ? null : <FavoriteButton id={song.id} starred={favorited} size={26} />}
+            {(isLocal && !offline) ? null : <FavoriteButton id={song.id} starred={favorited} size={26} />}
           </View>
 
           <View style={styles.progress}>
