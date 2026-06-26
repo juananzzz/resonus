@@ -22,6 +22,7 @@ import {
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { Message } from '@/components/Message';
 import { TrackRow } from '@/components/TrackRow';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
@@ -37,7 +38,7 @@ export default function ArtistScreen() {
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['artist', id],
     queryFn: () => getArtist(auth!, id),
     enabled: !!auth && !!id,
@@ -56,10 +57,18 @@ export default function ArtistScreen() {
     enabled: !!auth && !!id,
   });
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <View style={styles.center}>
+        <Message text="No se pudo cargar el artista." onRetry={() => refetch()} />
       </View>
     );
   }

@@ -117,13 +117,31 @@ function buildUrl(
   return `${auth.serverUrl}/rest/${endpoint}?${params.toString()}`;
 }
 
+const REQUEST_TIMEOUT_MS = 15000;
+
 /** Realiza una petición y desempaqueta la respuesta Subsonic. */
 async function request<T>(
   auth: SubsonicAuth,
   endpoint: string,
   extra: Record<string, string | number | undefined> = {},
 ): Promise<T> {
-  const res = await fetch(buildUrl(auth, endpoint, extra));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(buildUrl(auth, endpoint, extra), {
+      signal: controller.signal,
+    });
+  } catch {
+    if (controller.signal.aborted) {
+      throw new Error('El servidor tardó demasiado en responder');
+    }
+    throw new Error('No se pudo conectar con el servidor');
+  } finally {
+    clearTimeout(timer);
+  }
+
   if (!res.ok) throw new Error(`Error de red (${res.status})`);
   const json = await res.json();
   const sub = json['subsonic-response'];

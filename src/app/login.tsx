@@ -89,7 +89,13 @@ export default function LoginScreen() {
                 <View key={`${p.serverUrl}-${p.username}`} style={styles.profileRow}>
                   <Pressable
                     style={styles.profileMain}
-                    onPress={() => switchProfile(p)}
+                    onPress={async () => {
+                      try {
+                        await switchProfile(p);
+                      } catch {
+                        toast('No se pudo entrar; revisa la cuenta');
+                      }
+                    }}
                   >
                     <Image
                       source={logoFor(p.serverType)}

@@ -14,6 +14,7 @@ import { create } from 'zustand';
 import { scrobble, streamUrl, type Song } from '@/api/subsonic';
 import { useAuthStore } from './auth';
 import { useSettings } from './settings';
+import { useToast } from './toast';
 
 let player: AudioPlayer | null = null;
 let configured = false;
@@ -105,11 +106,15 @@ async function loadCurrent() {
   const song = currentSong(state);
   if (!auth || !song) return;
 
-  const p = await ensurePlayer();
-  p.replace({ uri: streamUrl(auth, song.id, useSettings.getState().maxBitRate) });
-  p.volume = usePlayerStore.getState().volume;
-  p.play();
-  scrobble(auth, song.id);
+  try {
+    const p = await ensurePlayer();
+    p.replace({ uri: streamUrl(auth, song.id, useSettings.getState().maxBitRate) });
+    p.volume = usePlayerStore.getState().volume;
+    p.play();
+    scrobble(auth, song.id);
+  } catch {
+    useToast.getState().show('No se pudo reproducir la canción');
+  }
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({

@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -23,6 +24,7 @@ import {
 } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
 import { FavoritesArt } from '@/components/FavoritesArt';
+import { Message } from '@/components/Message';
 import { useAuthStore } from '@/store/auth';
 import { colors, fontSize, spacing } from '@/theme';
 
@@ -59,17 +61,21 @@ function FavoritesEntry() {
 
 function PlaylistsTab() {
   const auth = useAuthStore((s) => s.auth);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['playlists'],
     queryFn: () => getPlaylists(auth!),
     enabled: !!auth,
   });
   if (isLoading) return <Loader />;
+  if (isError) return <Message text="No se pudieron cargar las listas." onRetry={() => refetch()} />;
   return (
     <FlatList
       data={data ?? []}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
+      refreshControl={
+        <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.accent} />
+      }
       ListHeaderComponent={<FavoritesEntry />}
       renderItem={({ item }: { item: Playlist }) => (
         <Link href={`/playlist/${item.id}`} asChild>
@@ -90,17 +96,21 @@ function PlaylistsTab() {
 
 function ArtistsTab() {
   const auth = useAuthStore((s) => s.auth);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['artists'],
     queryFn: () => getArtists(auth!),
     enabled: !!auth,
   });
   if (isLoading) return <Loader />;
+  if (isError) return <Message text="No se pudieron cargar los artistas." onRetry={() => refetch()} />;
   return (
     <FlatList
       data={data ?? []}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
+      refreshControl={
+        <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.accent} />
+      }
       renderItem={({ item }: { item: Artist }) => (
         <Link href={`/artist/${item.id}`} asChild>
           <Pressable style={styles.row}>

@@ -4,6 +4,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 
 import { coverArtUrl, getPlaylist } from '@/api/subsonic';
+import { Message } from '@/components/Message';
 import { TrackListView } from '@/components/TrackListView';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
@@ -15,16 +16,24 @@ export default function PlaylistScreen() {
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['playlist', id],
     queryFn: () => getPlaylist(auth!, id),
     enabled: !!auth && !!id,
   });
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center' }}>
         <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center' }}>
+        <Message text="No se pudo cargar la lista." onRetry={() => refetch()} />
       </View>
     );
   }

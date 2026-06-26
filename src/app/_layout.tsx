@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalMiniPlayer } from '@/components/GlobalMiniPlayer';
 import { SongMenuSheet } from '@/components/SongMenuSheet';
 import { Toast } from '@/components/Toast';
@@ -43,6 +44,7 @@ export default function RootLayout() {
             <ActivityIndicator color={colors.accent} size="large" />
           </View>
         ) : (
+          <ErrorBoundary>
           <View style={{ flex: 1 }}>
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
               <Stack.Protected guard={!!auth}>
@@ -64,6 +66,7 @@ export default function RootLayout() {
             {auth ? <SongMenuSheet /> : null}
             <Toast />
           </View>
+          </ErrorBoundary>
         )}
       </QueryClientProvider>
     </GestureHandlerRootView>

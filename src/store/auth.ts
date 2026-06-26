@@ -10,6 +10,7 @@
 import { create } from 'zustand';
 
 import { makeAuth, ping, type SubsonicAuth } from '@/api/subsonic';
+import { queryClient } from '@/lib/query';
 import { deleteItem, getItem, setItem } from '@/lib/storage';
 
 const ACTIVE_KEY = 'resonus.auth';
@@ -64,11 +65,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const profiles = [...get().profiles.filter((p) => !same(p, auth)), auth];
     await setItem(ACTIVE_KEY, JSON.stringify(auth));
     await setItem(PROFILES_KEY, JSON.stringify(profiles));
+    queryClient.clear(); // evita mezclar datos cacheados entre cuentas
     set({ auth, profiles });
   },
 
   switchProfile: async (profile) => {
+    await ping(profile); // valida que el token siga siendo válido
     await setItem(ACTIVE_KEY, JSON.stringify(profile));
+    queryClient.clear();
     set({ auth: profile });
   },
 
@@ -80,6 +84,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     await deleteItem(ACTIVE_KEY);
+    queryClient.clear();
     set({ auth: null });
   },
 }));

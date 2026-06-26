@@ -1,11 +1,13 @@
 /** Inicio estilo Spotify: accesos rápidos + carruseles de álbumes. */
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -115,11 +117,28 @@ function AlbumSection({
 export default function HomeScreen() {
   const router = useRouter();
   const auth = useAuthStore((s) => s.auth);
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
   const initial = (auth?.username ?? '?').charAt(0).toUpperCase();
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await queryClient.invalidateQueries();
+    setRefreshing(false);
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+          />
+        }
+      >
         <View style={styles.header}>
           <Text style={styles.greeting}>Tu música</Text>
           <Pressable style={styles.avatar} onPress={() => router.push('/settings')}>

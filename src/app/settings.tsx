@@ -111,7 +111,7 @@ export default function SettingsScreen() {
           })}
         </View>
         <Text style={styles.hint}>
-          "Original" usa la máxima calidad; bajar el bitrate ahorra datos.
+          {'«Original» usa la máxima calidad; bajar el bitrate ahorra datos.'}
         </Text>
 
         <Text style={styles.sectionTitle}>Reproducción</Text>

@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -14,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getStarred } from '@/api/subsonic';
 import { FavoritesArt } from '@/components/FavoritesArt';
+import { Message } from '@/components/Message';
 import { TrackRow } from '@/components/TrackRow';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
@@ -25,7 +27,7 @@ export default function FavoritesScreen() {
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['starred'],
     queryFn: () => getStarred(auth!),
     enabled: !!auth,
@@ -41,11 +43,20 @@ export default function FavoritesScreen() {
 
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
+      ) : isError ? (
+        <Message text="No se pudieron cargar los favoritos." onRetry={() => refetch()} />
       ) : (
         <FlatList
           data={songs}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={isFetching}
+              onRefresh={refetch}
+              tintColor={colors.accent}
+            />
+          }
           ListHeaderComponent={
             <View style={styles.header}>
               <FavoritesArt size={200} />

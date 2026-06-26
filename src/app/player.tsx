@@ -20,7 +20,7 @@ import { formatDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useSongMenu } from '@/store/songMenu';
-import { colors, fontSize, radius, spacing } from '@/theme';
+import { colors, fontSize, spacing } from '@/theme';
 
 const COVER = Dimensions.get('window').width - spacing.xl * 2;
 
