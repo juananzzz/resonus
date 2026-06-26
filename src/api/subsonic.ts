@@ -480,6 +480,47 @@ export async function getLyrics(
   return res.lyrics?.value?.trim() ?? '';
 }
 
+export interface SavedQueue {
+  entries: Song[];
+  current?: string;
+  /** Posición en la pista actual, en milisegundos. */
+  position: number;
+}
+
+/** Guarda la cola de reproducción en el servidor (savePlayQueue). */
+export async function savePlayQueue(
+  auth: SubsonicAuth,
+  ids: string[],
+  currentId: string,
+  positionMs: number,
+): Promise<void> {
+  if (ids.length === 0) return;
+  const params = authParams(auth);
+  for (const id of ids) params.append('id', id);
+  if (currentId) params.set('current', currentId);
+  params.set('position', String(Math.max(0, Math.floor(positionMs))));
+  try {
+    // POST con los parámetros en el cuerpo: evita URLs gigantes con colas largas.
+    await fetch(`${auth.serverUrl}/rest/savePlayQueue.view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    });
+  } catch {
+    // Best-effort; ignoramos errores de red al guardar la cola.
+  }
+}
+
+/** Recupera la cola guardada en el servidor (getPlayQueue). */
+export async function getPlayQueue(auth: SubsonicAuth): Promise<SavedQueue | null> {
+  const res = await request<{
+    playQueue?: { entry?: Song[]; current?: string; position?: number };
+  }>(auth, 'getPlayQueue.view');
+  const pq = res.playQueue;
+  if (!pq?.entry || pq.entry.length === 0) return null;
+  return { entries: pq.entry, current: pq.current, position: pq.position ?? 0 };
+}
+
 /** Informa al servidor de que se ha reproducido una canción (scrobble). */
 export async function scrobble(auth: SubsonicAuth, id: string): Promise<void> {
   try {

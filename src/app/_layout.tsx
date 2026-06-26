@@ -15,6 +15,7 @@ import { SongMenuSheet } from '@/components/SongMenuSheet';
 import { Toast } from '@/components/Toast';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
+import { usePlayerStore } from '@/store/player';
 import { usePlayCounts } from '@/store/playCounts';
 import { useRecentSearches } from '@/store/recentSearches';
 import { useSettings } from '@/store/settings';
@@ -36,6 +37,11 @@ export default function RootLayout() {
     useRecentSearches.getState().hydrate();
     usePlayCounts.getState().hydrate();
   }, [hydrate, activeProfile]);
+
+  // Al iniciar sesión en un servidor, retoma la cola guardada (sin reproducir).
+  useEffect(() => {
+    if (auth) void usePlayerStore.getState().restoreFromServer();
+  }, [auth]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>

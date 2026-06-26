@@ -7,6 +7,7 @@
  * índice activo) desde los eventos de RNTP hacia Zustand, conservando la misma
  * API que usaban los componentes.
  */
+import { AppState } from 'react-native';
 import TrackPlayer, {
   Capability,
   Event,
@@ -16,7 +17,7 @@ import TrackPlayer, {
 } from 'react-native-track-player';
 import { create } from 'zustand';
 
-import { coverArtUrl, scrobble, streamUrl, type Song } from '@/api/subsonic';
+import { coverArtUrl, getPlayQueue, savePlayQueue, scrobble, streamUrl, type Song } from '@/api/subsonic';
 import { useAuthStore } from './auth';
 import { usePlayCounts } from './playCounts';
 import { useSettings } from './settings';
@@ -34,6 +35,40 @@ export const SOURCE_FAVORITES = '@@favorites';
 let setupPromise: Promise<void> | null = null;
 let listenersAdded = false;
 let sleepTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// ── Sincronización de la cola con el servidor (savePlayQueue/getPlayQueue) ──
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+let syncInterval: ReturnType<typeof setInterval> | null = null;
+let appStateAttached = false;
+
+/** Guarda la cola actual en el servidor (si hay sesión y no es radio/local). */
+function syncQueueNow() {
+  const auth = useAuthStore.getState().auth;
+  if (!auth) return;
+  const { queue, index, positionSec } = usePlayerStore.getState();
+  const current = queue[index];
+  if (!current || current.url || current.localUri) return;
+  const ids = queue.filter((s) => !s.url && !s.localUri).map((s) => s.id);
+  if (ids.length === 0) return;
+  void savePlayQueue(auth, ids, current.id, Math.floor(positionSec * 1000));
+}
+
+/** Agenda un guardado con rebote para no saturar el servidor. */
+function scheduleSync() {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncQueueNow, 2500);
+}
+
+function startPeriodicSync() {
+  if (!syncInterval) syncInterval = setInterval(syncQueueNow, 20000);
+}
+
+function stopPeriodicSync() {
+  if (syncInterval) {
+    clearInterval(syncInterval);
+    syncInterval = null;
+  }
+}
 
 /** Carátula embebida (data URI) de una canción local, si la tiene. */
 export function localArtwork(song: Song): string | undefined {
@@ -84,8 +119,23 @@ function addListeners() {
   listenersAdded = true;
 
   TrackPlayer.addEventListener(Event.PlaybackState, (e) => {
-    usePlayerStore.setState({ isPlaying: e.state === State.Playing });
+    const playing = e.state === State.Playing;
+    usePlayerStore.setState({ isPlaying: playing });
+    // Guarda periódicamente mientras suena; al pausar, guarda la posición.
+    if (playing) startPeriodicSync();
+    else {
+      stopPeriodicSync();
+      scheduleSync();
+    }
   });
+
+  // Al pasar a segundo plano/cerrar, guardamos la posición exacta.
+  if (!appStateAttached) {
+    appStateAttached = true;
+    AppState.addEventListener('change', (st) => {
+      if (st !== 'active') syncQueueNow();
+    });
+  }
 
   TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, (e) => {
     usePlayerStore.setState({
@@ -103,6 +153,8 @@ function addListeners() {
       if (song && auth) scrobble(auth, song.id);
       // Sin conexión: llevamos la cuenta localmente (para "Más escuchados").
       else if (song && useAuthStore.getState().offline) usePlayCounts.getState().bump(song.id);
+      // Cambió la pista: actualiza la cola guardada en el servidor.
+      scheduleSync();
     }
     if (e.track?.duration) {
       usePlayerStore.setState({ durationSec: e.track.duration });
@@ -183,6 +235,8 @@ interface PlayerState {
   cycleRepeat: () => void;
   setSleepTimer: (minutes: number) => void;
   cancelSleepTimer: () => void;
+  /** Restaura la cola guardada en el servidor (sin reproducir). */
+  restoreFromServer: () => Promise<void>;
   reset: () => Promise<void>;
 }
 
@@ -219,6 +273,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     });
     try {
       await rebuildQueue(songs, startIndex);
+      scheduleSync();
     } catch {
       useToast.getState().show(tg('No se pudo reproducir'));
     }
@@ -382,8 +437,51 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ isPlaying: false, sleepTimerMinutes: null });
   },
 
+  restoreFromServer: async () => {
+    const auth = useAuthStore.getState().auth;
+    if (!auth || get().queue.length > 0) return;
+    let saved;
+    try {
+      saved = await getPlayQueue(auth);
+    } catch {
+      return;
+    }
+    if (!saved || saved.entries.length === 0) return;
+    const songs = saved.entries;
+    const index = saved.current
+      ? Math.max(0, songs.findIndex((s) => s.id === saved.current))
+      : 0;
+    const positionSec = (saved.position ?? 0) / 1000;
+    // Si entre tanto ya se empezó a reproducir algo, no pisamos la cola.
+    if (get().queue.length > 0) return;
+    set({
+      queue: songs,
+      index,
+      positionSec,
+      durationSec: songs[index]?.duration ?? 0,
+      isPlaying: false,
+      source: null,
+      sourceHref: null,
+    });
+    try {
+      await ensureSetup();
+      await TrackPlayer.reset();
+      await TrackPlayer.add(songs.map(toTrack));
+      if (index > 0) await TrackPlayer.skip(index);
+      if (positionSec > 0) await TrackPlayer.seekTo(positionSec);
+      // No reproducimos: el usuario retoma cuando quiera.
+    } catch {
+      // ignore
+    }
+  },
+
   reset: async () => {
     get().cancelSleepTimer();
+    stopPeriodicSync();
+    if (syncTimer) {
+      clearTimeout(syncTimer);
+      syncTimer = null;
+    }
     try {
       await TrackPlayer.reset();
     } catch {
