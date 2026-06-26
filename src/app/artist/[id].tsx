@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActivityIndicator,
+  Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -25,6 +26,8 @@ import { TrackRow } from '@/components/TrackRow';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, spacing } from '@/theme';
+
+const CARD_W = (Dimensions.get('window').width - spacing.lg * 2 - spacing.md) / 2;
 
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -101,15 +104,11 @@ export default function ArtistScreen() {
         {data.albums.length > 0 ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Álbumes</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.row}
-            >
+            <View style={styles.grid}>
               {data.albums.map((album) => (
-                <AlbumCard key={album.id} album={album} />
+                <AlbumCard key={album.id} album={album} width={CARD_W} />
               ))}
-            </ScrollView>
+            </View>
           </View>
         ) : null}
 
@@ -170,6 +169,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   row: { paddingHorizontal: spacing.lg, gap: spacing.md },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
   similar: { width: 110, alignItems: 'center', gap: spacing.xs },
   similarName: {
     color: colors.text,
