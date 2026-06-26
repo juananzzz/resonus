@@ -1,10 +1,12 @@
 /** Ajustes: servidor, reproducción, almacenamiento, acerca de y sesión. */
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getScanStatus, startScan } from '@/api/subsonic';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
 import { BITRATE_OPTIONS, useSettings } from '@/store/settings';
@@ -32,11 +34,30 @@ export default function SettingsScreen() {
   const setMaxBitRate = useSettings((s) => s.setMaxBitRate);
   const toast = useToast((s) => s.show);
 
+  const { data: scan, refetch: refetchScan } = useQuery({
+    queryKey: ['scanStatus'],
+    queryFn: () => getScanStatus(auth!),
+    enabled: !!auth,
+  });
+
   async function clearCache() {
     queryClient.clear();
     await Promise.all([Image.clearMemoryCache(), Image.clearDiskCache()]).catch(() => {});
     toast('Caché limpiada');
   }
+
+  async function scanNow() {
+    if (!auth) return;
+    try {
+      await startScan(auth);
+      toast('Escaneo iniciado');
+      setTimeout(() => refetchScan(), 1500);
+    } catch {
+      toast('No se pudo iniciar el escaneo');
+    }
+  }
+
+  const soon = (label: string) => toast(`${label}: próximamente 🚧`);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -54,6 +75,19 @@ export default function SettingsScreen() {
           <Field label="URL" value={auth?.serverUrl ?? '—'} />
           <View style={styles.divider} />
           <Field label="Usuario" value={auth?.username ?? '—'} />
+        </View>
+
+        <Text style={styles.sectionTitle}>Biblioteca</Text>
+        <View style={styles.card}>
+          <Field
+            label="Estado del escaneo"
+            value={scan?.scanning ? 'Escaneando…' : `${scan?.count ?? 0} elementos`}
+          />
+          <View style={styles.divider} />
+          <Pressable style={styles.linkRow} onPress={scanNow}>
+            <Ionicons name="refresh" size={22} color={colors.text} />
+            <Text style={styles.rowText}>Escanear ahora</Text>
+          </Pressable>
         </View>
 
         <Text style={styles.sectionTitle}>Calidad de streaming</Text>
@@ -79,6 +113,25 @@ export default function SettingsScreen() {
         <Text style={styles.hint}>
           "Original" usa la máxima calidad; bajar el bitrate ahorra datos.
         </Text>
+
+        <Text style={styles.sectionTitle}>Reproducción</Text>
+        <Pressable style={styles.rowButton} onPress={() => soon('Crossfade')}>
+          <Ionicons name="git-compare-outline" size={22} color={colors.text} />
+          <Text style={styles.rowText}>Crossfade</Text>
+          <Text style={styles.soonTag}>Pronto</Text>
+        </Pressable>
+        <Pressable style={styles.rowButton} onPress={() => soon('Ecualizador')}>
+          <Ionicons name="options-outline" size={22} color={colors.text} />
+          <Text style={styles.rowText}>Ecualizador</Text>
+          <Text style={styles.soonTag}>Pronto</Text>
+        </Pressable>
+
+        <Text style={styles.sectionTitle}>Pantalla</Text>
+        <Pressable style={styles.rowButton} onPress={() => soon('Idioma')}>
+          <Ionicons name="language-outline" size={22} color={colors.text} />
+          <Text style={styles.rowText}>Idioma</Text>
+          <Text style={styles.soonTag}>Español</Text>
+        </Pressable>
 
         <Text style={styles.sectionTitle}>Almacenamiento</Text>
         <Pressable style={styles.rowButton} onPress={clearCache}>
@@ -150,6 +203,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   rowText: { color: colors.text, fontSize: fontSize.md, flex: 1 },
+  soonTag: { color: colors.textMuted, fontSize: fontSize.xs },
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',

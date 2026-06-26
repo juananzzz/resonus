@@ -312,6 +312,35 @@ export async function unstar(
   await request(auth, 'unstar.view', starParam(id, type));
 }
 
+export interface ScanStatus {
+  scanning: boolean;
+  count: number;
+}
+
+/** Estado del escaneo de la biblioteca del servidor. */
+export async function getScanStatus(auth: SubsonicAuth): Promise<ScanStatus> {
+  const res = await request<{ scanStatus?: { scanning?: boolean; count?: number } }>(
+    auth,
+    'getScanStatus.view',
+  );
+  return {
+    scanning: res.scanStatus?.scanning ?? false,
+    count: res.scanStatus?.count ?? 0,
+  };
+}
+
+/** Lanza un nuevo escaneo de la biblioteca en el servidor. */
+export async function startScan(auth: SubsonicAuth): Promise<ScanStatus> {
+  const res = await request<{ scanStatus?: { scanning?: boolean; count?: number } }>(
+    auth,
+    'startScan.view',
+  );
+  return {
+    scanning: res.scanStatus?.scanning ?? false,
+    count: res.scanStatus?.count ?? 0,
+  };
+}
+
 /** Obtiene la letra de una canción (puede venir vacía si no hay). */
 export async function getLyrics(
   auth: SubsonicAuth,
