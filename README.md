@@ -11,21 +11,29 @@ Spotify-style client focused on the essentials.
 
 ## Features
 
-- 🔐 Log in to any Navidrome/Subsonic server. Credentials are stored encrypted
-  on the device (token-based auth — the password never travels in clear text).
-- 🏠 Home with recently added, most played and random albums.
+- 🔐 Log in to any Navidrome/Subsonic server (token-based auth, stored
+  encrypted). **Multiple saved profiles** to switch between accounts.
+- 🏠 Home with recently played, recently added and most played albums, plus
+  quick-access shortcuts.
 - 🔎 Search for songs, albums and artists (debounced).
-- 🎤 Browse artists and their albums.
+- 🎤 Artist pages with top songs, album grid and similar artists.
 - 📚 Library with playlists, artists and a pinned **Favorites** shortcut.
 - ❤️ Favorite/unfavorite tracks and artists (Subsonic star/unstar).
-- ▶️ Player with queue, shuffle, repeat (off/all/one), progress bar, background
-  playback and an always-visible mini player (Spotify-style).
+- 🎶 Per-track menu: add to playlist, play next, add to queue, go to
+  album/artist, **lyrics**, sleep timer.
+- 📝 **Lyrics** view (Subsonic `getLyrics`).
+- ▶️ Player with editable queue, shuffle, repeat (off/all/one), volume, sleep
+  timer and an always-visible mini player (dynamic colour from the artwork).
+- 🔊 Background playback and **scrobbling** to the server (which can forward to
+  Last.fm if your Navidrome is configured for it).
+- ⚙️ Settings: streaming quality (bitrate), library scan status, clear cache.
 
 ### Not included (yet)
 
-Offline downloads, lyrics, Last.fm scrobbling, equalizer, and full lock-screen
-media controls (the latter needs migrating from `expo-audio` to
-`react-native-track-player`).
+Offline downloads, equalizer, crossfade, and full lock-screen / notification
+media controls. The last three need a native audio engine
+(`react-native-track-player`) instead of `expo-audio`; offline downloads need a
+local file/store layer.
 
 ## Requirements
 
