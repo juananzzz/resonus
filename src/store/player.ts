@@ -1,26 +1,112 @@
 /**
- * Estado y control de reproducción. Mantiene una cola de canciones y maneja un
- * único AudioPlayer de expo-audio de forma imperativa, sincronizando su estado
- * (posición, duración, play/pausa) hacia este store de Zustand.
+ * Estado y control de reproducción sobre react-native-track-player (RNTP).
+ *
+ * RNTP gestiona la cola, la reproducción en segundo plano y los controles de
+ * la notificación / pantalla de bloqueo. Este store mantiene una copia de la
+ * cola (modelo Song) y sincroniza estado (posición, duración, play/pausa,
+ * índice activo) desde los eventos de RNTP hacia Zustand, conservando la misma
+ * API que usaban los componentes.
  */
-import {
-  createAudioPlayer,
-  setAudioModeAsync,
-  type AudioPlayer,
-  type AudioStatus,
-} from 'expo-audio';
+import TrackPlayer, {
+  Capability,
+  Event,
+  RepeatMode as RNTPRepeatMode,
+  State,
+  type Track,
+} from 'react-native-track-player';
 import { create } from 'zustand';
 
-import { scrobble, streamUrl, type Song } from '@/api/subsonic';
+import { coverArtUrl, scrobble, streamUrl, type Song } from '@/api/subsonic';
 import { useAuthStore } from './auth';
 import { useSettings } from './settings';
 import { useToast } from './toast';
 
-let player: AudioPlayer | null = null;
-let configured = false;
+export type RepeatMode = 'off' | 'all' | 'one';
+
+let setupPromise: Promise<void> | null = null;
+let listenersAdded = false;
 let sleepTimeout: ReturnType<typeof setTimeout> | null = null;
 
-export type RepeatMode = 'off' | 'all' | 'one';
+/** Convierte una canción al formato de pista de RNTP. */
+function toTrack(song: Song): Track {
+  const auth = useAuthStore.getState().auth!;
+  return {
+    id: song.id,
+    url: streamUrl(auth, song.id, useSettings.getState().maxBitRate),
+    title: song.title,
+    artist: song.artist ?? 'Desconocido',
+    album: song.album,
+    artwork: coverArtUrl(auth, song.coverArt ?? song.albumId, 500),
+    duration: song.duration,
+  };
+}
+
+function addListeners() {
+  if (listenersAdded) return;
+  listenersAdded = true;
+
+  TrackPlayer.addEventListener(Event.PlaybackState, (e) => {
+    usePlayerStore.setState({ isPlaying: e.state === State.Playing });
+  });
+
+  TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, (e) => {
+    usePlayerStore.setState({
+      positionSec: e.position,
+      durationSec: e.duration,
+    });
+  });
+
+  TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, (e) => {
+    if (e.index != null) {
+      usePlayerStore.setState({ index: e.index, positionSec: 0 });
+      const { queue } = usePlayerStore.getState();
+      const auth = useAuthStore.getState().auth;
+      const song = queue[e.index];
+      if (song && auth) scrobble(auth, song.id);
+    }
+    if (e.track?.duration) {
+      usePlayerStore.setState({ durationSec: e.track.duration });
+    }
+  });
+
+  TrackPlayer.addEventListener(Event.PlaybackError, () => {
+    useToast.getState().show('No se pudo reproducir la canción');
+  });
+}
+
+/** Inicializa RNTP una sola vez. */
+function ensureSetup(): Promise<void> {
+  if (!setupPromise) {
+    setupPromise = (async () => {
+      try {
+        await TrackPlayer.setupPlayer();
+      } catch {
+        // Ya estaba inicializado.
+      }
+      await TrackPlayer.updateOptions({
+        progressUpdateEventInterval: 1,
+        capabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.SkipToNext,
+          Capability.SkipToPrevious,
+          Capability.SeekTo,
+        ],
+      });
+      addListeners();
+    })();
+  }
+  return setupPromise;
+}
+
+/** Reconstruye la cola de RNTP (usado al activar/desactivar shuffle). */
+async function rebuildQueue(songs: Song[], startIndex: number) {
+  await ensureSetup();
+  await TrackPlayer.reset();
+  await TrackPlayer.add(songs.map(toTrack));
+  if (startIndex > 0) await TrackPlayer.skip(startIndex);
+  await TrackPlayer.play();
+}
 
 interface PlayerState {
   queue: Song[];
@@ -28,93 +114,31 @@ interface PlayerState {
   isPlaying: boolean;
   positionSec: number;
   durationSec: number;
-  /** Volumen de 0 a 1. */
   volume: number;
-  /** Si está activo, la cola se reproduce en orden aleatorio. */
   shuffle: boolean;
-  /** Modo de repetición: ninguno, toda la cola o la canción actual. */
   repeat: RepeatMode;
-  /** Orden original guardado mientras shuffle está activo. */
   originalQueue: Song[] | null;
-  toggleShuffle: () => void;
-  cycleRepeat: () => void;
-  /** Minutos restantes del temporizador de apagado, o null si está apagado. */
   sleepTimerMinutes: number | null;
-  setSleepTimer: (minutes: number) => void;
-  cancelSleepTimer: () => void;
-  /** Reproduce una lista de canciones empezando en `startIndex`. */
   playQueue: (songs: Song[], startIndex?: number) => Promise<void>;
-  /** Añade una canción al final de la cola (o la reproduce si está vacía). */
   addToQueue: (song: Song) => void;
-  /** Inserta una canción justo después de la actual. */
   playNext: (song: Song) => void;
   toggle: () => void;
   next: () => void;
   previous: () => void;
   seekTo: (sec: number) => void;
   setVolume: (v: number) => void;
-  /** Salta a una posición concreta de la cola. */
   jumpTo: (index: number) => void;
-  /** Elimina una canción de la cola por su índice. */
   removeAt: (index: number) => void;
-  /** Reordena la cola moviendo una canción de `from` a `to`. */
   moveTrack: (from: number, to: number) => void;
+  toggleShuffle: () => void;
+  cycleRepeat: () => void;
+  setSleepTimer: (minutes: number) => void;
+  cancelSleepTimer: () => void;
 }
 
 /** Canción que está sonando ahora mismo, o null si la cola está vacía. */
 export function currentSong(state: PlayerState): Song | null {
   return state.queue[state.index] ?? null;
-}
-
-async function ensurePlayer(): Promise<AudioPlayer> {
-  if (!configured) {
-    await setAudioModeAsync({
-      playsInSilentMode: true,
-      shouldPlayInBackground: true,
-    });
-    configured = true;
-  }
-  if (!player) {
-    player = createAudioPlayer();
-    player.addListener('playbackStatusUpdate', onStatus);
-  }
-  return player;
-}
-
-function onStatus(status: AudioStatus) {
-  usePlayerStore.setState({
-    isPlaying: status.playing,
-    positionSec: status.currentTime ?? 0,
-    durationSec: status.duration ?? 0,
-  });
-  if (status.didJustFinish) {
-    const state = usePlayerStore.getState();
-    if (state.repeat === 'one') {
-      // Repetir la misma canción.
-      player?.seekTo(0);
-      player?.play();
-    } else {
-      state.next();
-    }
-  }
-}
-
-/** Carga la canción del índice actual en el reproductor y la arranca. */
-async function loadCurrent() {
-  const { auth } = useAuthStore.getState();
-  const state = usePlayerStore.getState();
-  const song = currentSong(state);
-  if (!auth || !song) return;
-
-  try {
-    const p = await ensurePlayer();
-    p.replace({ uri: streamUrl(auth, song.id, useSettings.getState().maxBitRate) });
-    p.volume = usePlayerStore.getState().volume;
-    p.play();
-    scrobble(auth, song.id);
-  } catch {
-    useToast.getState().show('No se pudo reproducir la canción');
-  }
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -131,7 +155,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   playQueue: async (songs, startIndex = 0) => {
     if (songs.length === 0) return;
-    // Una cola nueva siempre arranca en orden; el shuffle se desactiva.
     set({
       queue: songs,
       index: startIndex,
@@ -140,7 +163,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       shuffle: false,
       originalQueue: null,
     });
-    await loadCurrent();
+    try {
+      await rebuildQueue(songs, startIndex);
+    } catch {
+      useToast.getState().show('No se pudo reproducir');
+    }
   },
 
   addToQueue: (song) => {
@@ -150,6 +177,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return;
     }
     set({ queue: [...queue, song] });
+    ensureSetup().then(() => TrackPlayer.add(toTrack(song))).catch(() => {});
   },
 
   playNext: (song) => {
@@ -158,49 +186,87 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       void get().playQueue([song], 0);
       return;
     }
+    const insertAt = index + 1;
     const next = [...queue];
-    next.splice(index + 1, 0, song);
+    next.splice(insertAt, 0, song);
     set({ queue: next });
+    ensureSetup()
+      .then(() => TrackPlayer.add(toTrack(song), insertAt))
+      .catch(() => {});
   },
 
   toggle: () => {
-    if (!player) return;
-    if (get().isPlaying) player.pause();
-    else player.play();
+    if (get().isPlaying) TrackPlayer.pause();
+    else TrackPlayer.play();
   },
 
   next: () => {
-    const { index, queue, repeat } = get();
-    if (queue.length === 0) return;
-    let nextIndex = index + 1;
-    if (nextIndex >= queue.length) {
-      if (repeat === 'all') nextIndex = 0;
-      else return; // fin de la cola sin repetición
-    }
-    set({ index: nextIndex, positionSec: 0 });
-    void loadCurrent();
+    TrackPlayer.skipToNext().catch(() => {});
   },
 
   previous: () => {
-    // Si llevamos más de 3 s, reiniciamos la canción en vez de retroceder.
-    const { index, positionSec } = get();
-    if (positionSec > 3 || index === 0) {
-      player?.seekTo(0);
+    if (get().positionSec > 3) {
+      TrackPlayer.seekTo(0);
       return;
     }
-    set({ index: index - 1, positionSec: 0 });
-    void loadCurrent();
+    TrackPlayer.skipToPrevious().catch(() => {});
   },
 
   seekTo: (sec) => {
-    player?.seekTo(sec);
+    TrackPlayer.seekTo(sec);
     set({ positionSec: sec });
   },
 
   setVolume: (v) => {
     const volume = Math.max(0, Math.min(1, v));
-    if (player) player.volume = volume;
+    TrackPlayer.setVolume(volume);
     set({ volume });
+  },
+
+  jumpTo: (index) => {
+    const { queue } = get();
+    if (index < 0 || index >= queue.length) return;
+    TrackPlayer.skip(index)
+      .then(() => TrackPlayer.play())
+      .catch(() => {});
+  },
+
+  removeAt: async (index) => {
+    const { queue } = get();
+    if (index < 0 || index >= queue.length) return;
+    const next = queue.filter((_, i) => i !== index);
+    set({ queue: next });
+    try {
+      await TrackPlayer.remove([index]);
+      if (next.length === 0) {
+        await TrackPlayer.reset();
+        set({ index: 0, isPlaying: false, positionSec: 0, durationSec: 0 });
+      }
+    } catch {
+      // ignore
+    }
+  },
+
+  moveTrack: async (from, to) => {
+    const { queue } = get();
+    if (
+      from === to ||
+      from < 0 ||
+      to < 0 ||
+      from >= queue.length ||
+      to >= queue.length
+    ) {
+      return;
+    }
+    const next = [...queue];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    set({ queue: next });
+    try {
+      await TrackPlayer.move(from, to);
+    } catch {
+      // ignore
+    }
   },
 
   toggleShuffle: () => {
@@ -208,48 +274,48 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const current = queue[index];
 
     if (!shuffle) {
-      // Activar: guardamos el orden original y barajamos el resto, dejando
-      // la canción actual la primera para no cortar la reproducción.
       const rest = queue.filter((_, i) => i !== index);
       for (let i = rest.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [rest[i], rest[j]] = [rest[j], rest[i]];
       }
+      const newQueue = current ? [current, ...rest] : rest;
+      set({ shuffle: true, originalQueue: queue, queue: newQueue, index: 0 });
+      void rebuildQueue(newQueue, 0);
+    } else if (originalQueue && current) {
+      const newIndex = Math.max(
+        0,
+        originalQueue.findIndex((s) => s.id === current.id),
+      );
       set({
-        shuffle: true,
-        originalQueue: queue,
-        queue: current ? [current, ...rest] : rest,
-        index: 0,
+        shuffle: false,
+        queue: originalQueue,
+        index: newIndex,
+        originalQueue: null,
       });
+      void rebuildQueue(originalQueue, newIndex);
     } else {
-      // Desactivar: restauramos el orden original, manteniendo la actual.
-      if (originalQueue && current) {
-        const newIndex = Math.max(
-          0,
-          originalQueue.findIndex((s) => s.id === current.id),
-        );
-        set({
-          shuffle: false,
-          queue: originalQueue,
-          index: newIndex,
-          originalQueue: null,
-        });
-      } else {
-        set({ shuffle: false, originalQueue: null });
-      }
+      set({ shuffle: false, originalQueue: null });
     }
   },
 
   cycleRepeat: () => {
     const order: RepeatMode[] = ['off', 'all', 'one'];
-    const current = order.indexOf(get().repeat);
-    set({ repeat: order[(current + 1) % order.length] });
+    const repeat = order[(order.indexOf(get().repeat) + 1) % order.length];
+    set({ repeat });
+    TrackPlayer.setRepeatMode(
+      repeat === 'one'
+        ? RNTPRepeatMode.Track
+        : repeat === 'all'
+          ? RNTPRepeatMode.Queue
+          : RNTPRepeatMode.Off,
+    );
   },
 
   setSleepTimer: (minutes) => {
     if (sleepTimeout) clearTimeout(sleepTimeout);
     sleepTimeout = setTimeout(() => {
-      player?.pause();
+      TrackPlayer.pause();
       sleepTimeout = null;
       set({ isPlaying: false, sleepTimerMinutes: null });
     }, minutes * 60_000);
@@ -260,53 +326,5 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (sleepTimeout) clearTimeout(sleepTimeout);
     sleepTimeout = null;
     set({ sleepTimerMinutes: null });
-  },
-
-  jumpTo: (index) => {
-    const { queue } = get();
-    if (index < 0 || index >= queue.length) return;
-    set({ index, positionSec: 0 });
-    void loadCurrent();
-  },
-
-  removeAt: (index) => {
-    const { queue, index: current } = get();
-    if (index < 0 || index >= queue.length) return;
-    const next = queue.filter((_, i) => i !== index);
-
-    if (next.length === 0) {
-      player?.pause();
-      set({ queue: [], index: 0, isPlaying: false, positionSec: 0, durationSec: 0 });
-      return;
-    }
-    if (index < current) {
-      // Se elimina algo anterior: la actual baja un puesto, sigue sonando.
-      set({ queue: next, index: current - 1 });
-    } else if (index === current) {
-      // Se elimina la actual: pasa a sonar la que ocupa ahora ese índice.
-      const newIndex = Math.min(current, next.length - 1);
-      set({ queue: next, index: newIndex, positionSec: 0 });
-      void loadCurrent();
-    } else {
-      set({ queue: next });
-    }
-  },
-
-  moveTrack: (from, to) => {
-    const { queue, index: current } = get();
-    if (from === to || from < 0 || to < 0 || from >= queue.length || to >= queue.length) {
-      return;
-    }
-    const next = [...queue];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-
-    // Recalculamos qué índice ocupa ahora la canción que está sonando.
-    let index = current;
-    if (from === current) index = to;
-    else if (from < current && to >= current) index = current - 1;
-    else if (from > current && to <= current) index = current + 1;
-
-    set({ queue: next, index });
   },
 }));
