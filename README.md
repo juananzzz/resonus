@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./assets/images/icon.png" width="120" alt="Resonus icon" />
+  <img src="./assets/images/icon-transparent.png" width="120" alt="Resonus icon" />
 </p>
 
 <h1 align="center">Resonus 🎵</h1>
