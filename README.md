@@ -105,6 +105,9 @@ src/
 
 Things planned / still to do:
 
+- [ ] **Android Auto** — plan documented in [docs/ANDROID_AUTO.md](./docs/ANDROID_AUTO.md)
+      (custom Media3 `MediaLibraryService` native module, à la
+      [wavio](https://github.com/Joel-Mercier/wavio))
 - [ ] Offline downloads (local file/store layer)
 - [ ] Equalizer (needs a native audio-effects module)
 - [ ] Crossfade between tracks
