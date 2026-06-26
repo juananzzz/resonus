@@ -1,4 +1,5 @@
 /** Inicio de sesión: elección de tipo de servidor + credenciales. */
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import {
@@ -31,8 +32,15 @@ const SERVERS: {
   { key: 'jellyfin', name: 'Jellyfin', logo: require('@/assets/images/servers/jellyfin.png'), soon: true },
 ];
 
+function logoFor(type?: string): number {
+  return SERVERS.find((s) => s.key === type)?.logo ?? SERVERS[0].logo;
+}
+
 export default function LoginScreen() {
   const login = useAuthStore((s) => s.login);
+  const profiles = useAuthStore((s) => s.profiles);
+  const switchProfile = useAuthStore((s) => s.switchProfile);
+  const removeProfile = useAuthStore((s) => s.removeProfile);
   const toast = useToast((s) => s.show);
   const [server, setServer] = useState<ServerKey>('navidrome');
   const [serverUrl, setServerUrl] = useState('');
@@ -53,7 +61,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       // Navidrome y OpenSubsonic comparten la API Subsonic.
-      await login(serverUrl, username, password);
+      await login(serverUrl, username, password, server);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo iniciar sesión');
     } finally {
@@ -73,6 +81,38 @@ export default function LoginScreen() {
         >
           <Text style={styles.logo}>Resonus</Text>
           <Text style={styles.subtitle}>Conéctate a tu servidor de música</Text>
+
+          {profiles.length > 0 ? (
+            <View style={styles.profiles}>
+              <Text style={styles.groupTitle}>Tus cuentas</Text>
+              {profiles.map((p) => (
+                <View key={`${p.serverUrl}-${p.username}`} style={styles.profileRow}>
+                  <Pressable
+                    style={styles.profileMain}
+                    onPress={() => switchProfile(p)}
+                  >
+                    <Image
+                      source={logoFor(p.serverType)}
+                      style={styles.profileLogo}
+                      contentFit="contain"
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.profileUser} numberOfLines={1}>
+                        {p.username}
+                      </Text>
+                      <Text style={styles.profileUrl} numberOfLines={1}>
+                        {p.serverUrl}
+                      </Text>
+                    </View>
+                  </Pressable>
+                  <Pressable hitSlop={10} onPress={() => removeProfile(p)}>
+                    <Ionicons name="close" size={20} color={colors.textMuted} />
+                  </Pressable>
+                </View>
+              ))}
+              <Text style={styles.groupTitle}>Añadir otra cuenta</Text>
+            </View>
+          ) : null}
 
           <View style={styles.servers}>
             {SERVERS.map((s) => {
@@ -168,6 +208,30 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: spacing.xl,
   },
+  profiles: { gap: spacing.sm, marginBottom: spacing.lg },
+  groupTitle: {
+    color: colors.textSecondary,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    marginTop: spacing.sm,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  profileMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  profileLogo: { width: 36, height: 36 },
+  profileUser: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
+  profileUrl: { color: colors.textMuted, fontSize: fontSize.xs },
   servers: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl },
   serverCard: {
     flex: 1,

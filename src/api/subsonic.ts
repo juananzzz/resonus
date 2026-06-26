@@ -17,6 +17,8 @@ export interface SubsonicAuth {
   token: string;
   /** salt aleatorio usado para generar el token */
   salt: string;
+  /** Tipo de servidor (para mostrar su logo); navidrome/opensubsonic. */
+  serverType?: string;
 }
 
 export interface Song {
@@ -75,13 +77,14 @@ export async function makeAuth(
   serverUrl: string,
   username: string,
   password: string,
+  serverType?: string,
 ): Promise<SubsonicAuth> {
   const salt = randomSalt();
   const token = await Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.MD5,
     password + salt,
   );
-  return { serverUrl: normalizeUrl(serverUrl), username, token, salt };
+  return { serverUrl: normalizeUrl(serverUrl), username, token, salt, serverType };
 }
 
 /** Quita la barra final y asegura el esquema http(s). */
