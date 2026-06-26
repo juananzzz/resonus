@@ -309,17 +309,32 @@ export async function getTopSongs(
   return res.topSongs?.song ?? [];
 }
 
-/** Artistas similares (de getArtistInfo2). */
-export async function getSimilarArtists(
+export interface ArtistInfo {
+  biography?: string;
+  imageUrl?: string;
+  similarArtists: Artist[];
+}
+
+/** Info ampliada del artista (biografía, foto y similares) de getArtistInfo2. */
+export async function getArtistInfo(
   auth: SubsonicAuth,
   id: string,
-): Promise<Artist[]> {
-  const res = await request<{ artistInfo2?: { similarArtist?: Artist[] } }>(
-    auth,
-    'getArtistInfo2.view',
-    { id },
-  );
-  return res.artistInfo2?.similarArtist ?? [];
+): Promise<ArtistInfo> {
+  const res = await request<{
+    artistInfo2?: {
+      biography?: string;
+      largeImageUrl?: string;
+      similarArtist?: Artist[];
+    };
+  }>(auth, 'getArtistInfo2.view', { id });
+  const info = res.artistInfo2 ?? {};
+  // La biografía suele venir con HTML (enlace a Last.fm); lo quitamos.
+  const biography = info.biography?.replace(/<[^>]+>/g, '').trim() || undefined;
+  return {
+    biography,
+    imageUrl: info.largeImageUrl || undefined,
+    similarArtists: info.similarArtist ?? [],
+  };
 }
 
 export interface Starred {
