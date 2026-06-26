@@ -33,6 +33,16 @@ export function getArtists(): Promise<Subsonic.Artist[]> {
   return Subsonic.getArtists(auth());
 }
 
+/** Todos los álbumes locales (modo sin conexión). Solo usado offline. */
+export function getAllAlbums(): Promise<Subsonic.Album[]> {
+  return Local.getAllAlbums();
+}
+
+/** Vuelve a escanear el catálogo local (modo sin conexión). */
+export function rescanLocal(): Promise<void> {
+  return Local.rescan();
+}
+
 export function getArtist(id: string): Promise<{ artist: Subsonic.Artist; albums: Subsonic.Album[] }> {
   if (isOffline()) return Local.getArtist(id);
   return Subsonic.getArtist(auth(), id);

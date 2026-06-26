@@ -2,8 +2,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { rescanLocal } from '@/api/data';
 import { getScanStatus, startScan } from '@/api/subsonic';
 import { Field, SettingsPage, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
@@ -19,6 +21,22 @@ export default function LibrarySettings() {
   const source = useAuthStore((s) => s.offlineSource);
   const setSource = useAuthStore((s) => s.setOfflineSource);
   const toast = useToast((s) => s.show);
+  const [rescanning, setRescanning] = useState(false);
+
+  async function rescanNow() {
+    if (rescanning) return;
+    setRescanning(true);
+    toast(t('Volviendo a escanear tu música…'));
+    try {
+      await rescanLocal();
+      queryClient.invalidateQueries();
+      toast(t('Biblioteca actualizada'));
+    } catch {
+      toast(t('No se pudo volver a escanear'));
+    } finally {
+      setRescanning(false);
+    }
+  }
 
   const { data: scan, refetch: refetchScan } = useQuery({
     queryKey: ['scanStatus'],
@@ -52,6 +70,18 @@ export default function LibrarySettings() {
             <View style={settingsStyles.card}>
               <Field label={t('Origen')} value={source?.mode === 'folder' ? 'Carpeta' : 'Dispositivo'} />
             </View>
+            <Pressable
+              style={settingsStyles.rowButton}
+              disabled={rescanning}
+              onPress={rescanNow}
+            >
+              {rescanning ? (
+                <ActivityIndicator size="small" color={colors.text} />
+              ) : (
+                <Ionicons name="refresh" size={22} color={colors.text} />
+              )}
+              <Text style={settingsStyles.rowText}>{t('Volver a escanear')}</Text>
+            </Pressable>
             <Pressable
               style={settingsStyles.rowButton}
               onPress={() => { void setSource(null); }}

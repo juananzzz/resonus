@@ -139,9 +139,23 @@ export default function PlayerScreen() {
         <View style={styles.bottom}>
           <View style={styles.meta}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.title} numberOfLines={1}>
-                {song.title}
-              </Text>
+              {song.albumId ? (
+                <Pressable
+                  hitSlop={6}
+                  onPress={() => {
+                    router.back();
+                    router.navigate(`/album/${song.albumId}` as never);
+                  }}
+                >
+                  <Text style={styles.title} numberOfLines={1}>
+                    {song.title}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Text style={styles.title} numberOfLines={1}>
+                  {song.title}
+                </Text>
+              )}
               {song.artistId ? (
                 <Pressable
                   hitSlop={6}

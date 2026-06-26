@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth';
 import { type Album, type Artist, type ArtistInfo, type Playlist, type SearchResult, type Song, type StarType, type Starred } from '@/api/subsonic';
 import { getItem, setItem } from '@/lib/storage';
 import {
+  clearLocalCatalog,
   getLocalAlbums,
   getLocalAlbumSongs,
   getLocalArtists,
@@ -106,6 +107,17 @@ async function ensureCatalog() {
   return getLocalCatalog(mode, key);
 }
 
+/**
+ * Vuelve a escanear el origen local: descarta el catálogo cacheado (y las
+ * carátulas) y lo reconstruye leyendo de nuevo las etiquetas de los ficheros.
+ * Útil tras añadir o cambiar música sin reiniciar la app.
+ */
+export async function rescan(): Promise<void> {
+  clearLocalCatalog();
+  loadingPromise = null;
+  await ensureCatalog();
+}
+
 function toAlbum(local: { id: string; name: string; artist?: string; coverBase64?: string; coverMime?: string; songCount: number; year?: number }): Album {
   registerCover(local.id, local.coverBase64, local.coverMime);
   return {
@@ -129,10 +141,28 @@ function toArtist(local: { id: string; name: string; coverBase64?: string; cover
   };
 }
 
-export async function getAlbumList(_type: string, size = 20): Promise<Album[]> {
+export async function getAlbumList(type: string, size = 20): Promise<Album[]> {
   const c = await ensureCatalog();
   if (!c) return [];
-  return c.albums.slice(0, size).map(toAlbum);
+  let albums = [...c.albums];
+  if (type === 'newest' || type === 'recent') {
+    albums.sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+  } else if (type === 'random') {
+    for (let i = albums.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [albums[i], albums[j]] = [albums[j], albums[i]];
+    }
+  } else {
+    albums.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return albums.slice(0, size).map(toAlbum);
+}
+
+/** Todos los álbumes del catálogo local, ordenados alfabéticamente. */
+export async function getAllAlbums(): Promise<Album[]> {
+  const c = await ensureCatalog();
+  if (!c) return [];
+  return [...c.albums].sort((a, b) => a.name.localeCompare(b.name)).map(toAlbum);
 }
 
 export async function getAlbum(albumId: string): Promise<{ album: Album; songs: Song[] }> {
@@ -203,7 +233,7 @@ export async function search(query: string): Promise<SearchResult> {
       (s.artist?.toLowerCase() ?? '').includes(q) ||
       (s.album?.toLowerCase() ?? '').includes(q),
   );
-  const albumIds = new Set(songs.map((s) => normKey(s.album || 'Álbum desconocido') + '|' + normKey(s.artist || 'Artista desconocido')));
+  const albumIds = new Set(songs.map((s) => s.albumId).filter(Boolean));
   const albums = c.albums.filter((a) => a.id && albumIds.has(a.id)).map(toAlbum);
   const artistIds = new Set(songs.map((s) => normKey(s.artist || '')));
   const artists = c.artists.filter((a) => artistIds.has(a.id)).map(toArtist);

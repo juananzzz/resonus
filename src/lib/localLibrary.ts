@@ -13,6 +13,7 @@ import { StorageAccessFramework } from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
 
 import { type Song } from '@/api/subsonic';
+import { useScanProgress } from '@/store/scanProgress';
 import { base64ToUint8, parseID3, type ID3Tags } from './id3';
 
 const AUDIO_EXT = /\.(mp3|flac|m4a|aac|ogg|opus|wav|wma|alac|aif|aiff)$/i;
@@ -69,13 +70,17 @@ async function readID3Full(uri: string): Promise<{ buf: Uint8Array; fileSize: nu
     }
     const tagSize = ((head[6] & 0x7f) << 21) | ((head[7] & 0x7f) << 14) | ((head[8] & 0x7f) << 7) | (head[9] & 0x7f);
     const total = 10 + tagSize;
-    const limit = Math.min(total, 2_000_000);
+    // Pedimos con margen (×4/3 + colchón): en SAF la lectura parcial puede
+    // quedarse corta y cortar la carátula embebida (APIC), que suele ir al
+    // final del tag. Leer de más es inofensivo y luego recortamos al decodificar.
+    const cap = 2_500_000;
+    const limit = Math.min(Math.ceil(total * (4 / 3)) + 4096, cap);
     const fullB64 = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
       length: limit,
       position: 0,
     });
-    return { buf: base64ToUint8(fullB64), fileSize };
+    return { buf: base64ToUint8(fullB64, Math.min(total, cap)), fileSize };
   } catch {
     return null;
   }
@@ -126,6 +131,42 @@ export function normKey(s: string): string {
   return s.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
+/** Hash estable y corto (FNV-1a → base36) para usar como id de ruta seguro. */
+function hashKey(s: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36);
+}
+
+/** Nombre legible de una carpeta a partir de su URI SAF (sin prefijo [año]). */
+function folderNameFromUri(dirUri: string): string {
+  const decoded = decodeURIComponent(dirUri);
+  const last = (decoded.split('/').pop() ?? decoded).split(':').pop() ?? decoded;
+  return last.replace(/^\[\d{4}\]\s*/, '').trim() || last;
+}
+
+/** Carpeta contenedora de un fichero `file://` (modo dispositivo). */
+function parentDirOf(uri: string): string | null {
+  const decoded = decodeURIComponent(uri);
+  const idx = decoded.lastIndexOf('/');
+  if (idx <= 0) return null;
+  return decoded.slice(0, idx);
+}
+
+/**
+ * Asigna el álbum por carpeta: id estable a partir de la ruta de la carpeta y,
+ * si la pista no trae etiqueta de álbum, usa el nombre de la carpeta. Así cada
+ * carpeta es un álbum y las colaboraciones no parten el álbum (como Navidrome).
+ */
+function assignFolderAlbum(base: Record<string, unknown>, dirPath: string, hasAlbumTag: boolean) {
+  base.albumId = 'f' + hashKey(dirPath);
+  base.coverArt = base.albumId;
+  if (!hasAlbumTag) base.album = folderNameFromUri(dirPath);
+}
+
 /** Nombre más frecuente de una lista (para mostrar el más común como display). */
 function pickBestName(names: string[]): string {
   const freq = new Map<string, number>();
@@ -155,7 +196,11 @@ function groupByAlbum(songs: Song[]): LocalAlbum[] {
   for (const song of songs) {
     const rawAlbum = song.album || 'Álbum desconocido';
     const rawArtist = song.artist || 'Artista desconocido';
-    const key = normKey(rawAlbum) + '|' + normKey(rawArtist);
+    // La clave de agrupación es el id de álbum ya calculado por canción:
+    // en modo carpeta es la subcarpeta (todas sus pistas = un álbum), y en
+    // modo dispositivo el nombre de álbum normalizado. Así un álbum con
+    // colaboraciones no se parte; el artista se decide por mayoría más abajo.
+    const key = albumKeyOf(song);
     let entry = map.get(key);
     if (!entry) {
       entry = { songs: [], displayAlbum: rawAlbum, displayArtist: rawArtist };
@@ -219,7 +264,33 @@ function groupByArtist(albums: LocalAlbum[]): LocalArtist[] {
 function buildCatalog(songs: Song[]): LocalCatalog {
   const albums = groupByAlbum(songs);
   const artists = groupByArtist(albums);
+  // Registra las carátulas embebidas para que `localCoverUrl(albumId)` y
+  // `localCoverUrl(artistId)` funcionen en toda la app justo tras el escaneo.
+  for (const a of albums) registerCover(a.id, a.coverBase64, a.coverMime);
+  for (const a of artists) registerCover(a.id, a.coverBase64, a.coverMime);
   return { songs, albums, artists };
+}
+
+/** Rellena título/artista/álbum/IDs de una canción a partir de sus tags ID3. */
+function applyTags(base: Record<string, unknown>, fallbackTitle: string, tags: ID3Tags | null) {
+  base.title = tags?.title || fallbackTitle;
+  // Preferimos el artista del álbum (TPE2) para agrupar todo bajo un solo
+  // artista, como hace Navidrome; si no, el artista de pista (TPE1).
+  base.artist = tags?.albumArtist || tags?.artist;
+  base.album = tags?.album;
+  base.track = tags?.track;
+  if (tags?.coverBase64) {
+    base.coverBase64 = tags.coverBase64;
+    base.coverMime = tags.coverMime;
+  }
+  if (tags?.year) base.year = tags.year;
+  // IDs derivados (componen las claves del catálogo) para poder navegar al
+  // álbum / artista desde una canción, igual que en modo servidor.
+  const album = (base.album as string) || 'Álbum desconocido';
+  const artist = (base.artist as string) || 'Artista desconocido';
+  base.albumId = normKey(album);
+  base.artistId = normKey(artist);
+  base.coverArt = base.albumId;
 }
 
 // ── Origen: dispositivo (expo-media-library) ──────────────────────────────
@@ -254,32 +325,27 @@ export async function loadDeviceSongs(): Promise<Song[]> {
   }
 
   const songs: Song[] = [];
-  for (const raw of rawSongs) {
-    let tags = null;
-    try {
-      tags = await readID3(raw.uri);
-    } catch {
-      // Si falla la lectura ID3, seguimos con el nombre de fichero.
+  const scan = useScanProgress.getState();
+  scan.start(rawSongs.length);
+  try {
+    for (const raw of rawSongs) {
+      let tags = null;
+      try {
+        tags = await readID3(raw.uri);
+      } catch {
+        // Si falla la lectura ID3, seguimos con el nombre de fichero.
+      }
+      const base: any = { id: raw.id, localUri: raw.uri, duration: raw.duration };
+      applyTags(base, titleFromFilename(raw.filename), tags);
+      // Agrupa por carpeta (igual que en modo carpeta): el álbum lo define el
+      // directorio del fichero, no las etiquetas de cada pista.
+      const dir = parentDirOf(raw.uri);
+      if (dir) assignFolderAlbum(base, dir, !!tags?.album);
+      songs.push(base);
+      useScanProgress.getState().tick();
     }
-    const base: any = {
-      id: raw.id,
-      localUri: raw.uri,
-      duration: raw.duration,
-    };
-    if (tags?.title) {
-      base.title = tags.title;
-      base.artist = tags.artist;
-      base.album = tags.album;
-      base.track = tags.track;
-    } else {
-      base.title = titleFromFilename(raw.filename);
-    }
-    if (tags?.coverBase64) {
-      base.coverBase64 = tags.coverBase64;
-      base.coverMime = tags.coverMime;
-    }
-    if (tags?.year) base.year = tags.year;
-    songs.push(base);
+  } finally {
+    useScanProgress.getState().done();
   }
   songs.sort((a, b) => a.title.localeCompare(b.title));
 
@@ -300,7 +366,7 @@ export async function loadFolderSongs(treeUri: string): Promise<Song[]> {
   const cached = catalogCache.get(key);
   if (cached) return cached.songs;
 
-  const rawSongs: { id: string; filename: string; uri: string }[] = [];
+  const rawSongs: { id: string; filename: string; uri: string; dirUri: string }[] = [];
 
   async function walk(dirUri: string, depth: number): Promise<void> {
     if (depth > 6 || rawSongs.length >= 5000) return;
@@ -313,7 +379,7 @@ export async function loadFolderSongs(treeUri: string): Promise<Song[]> {
     for (const entryUri of entries) {
       const decoded = decodeURIComponent(entryUri);
       if (AUDIO_EXT.test(decoded)) {
-        rawSongs.push({ id: `local:${entryUri}`, filename: nameFromSafUri(entryUri), uri: entryUri });
+        rawSongs.push({ id: `local:${entryUri}`, filename: nameFromSafUri(entryUri), uri: entryUri, dirUri });
       } else if (!/\.[a-z0-9]{1,5}$/i.test(decoded)) {
         await walk(entryUri, depth + 1);
       }
@@ -323,31 +389,27 @@ export async function loadFolderSongs(treeUri: string): Promise<Song[]> {
   await walk(treeUri, 0);
 
   const songs: Song[] = [];
-  for (const raw of rawSongs) {
-    let tags = null;
-    try {
-      tags = await readID3(raw.uri);
-    } catch {
-      // Si falla la lectura ID3, seguimos con el nombre de fichero.
+  const scan = useScanProgress.getState();
+  scan.start(rawSongs.length);
+  try {
+    for (const raw of rawSongs) {
+      let tags = null;
+      try {
+        tags = await readID3(raw.uri);
+      } catch {
+        // Si falla la lectura ID3, seguimos con el nombre de fichero.
+      }
+      const base: any = { id: raw.id, localUri: raw.uri };
+      applyTags(base, raw.filename, tags);
+      // En modo carpeta, cada subcarpeta es un álbum (lo más fiable). Los
+      // ficheros sueltos en la raíz elegida se agrupan por su etiqueta de
+      // álbum (p. ej. un single).
+      if (raw.dirUri !== treeUri) assignFolderAlbum(base, raw.dirUri, !!tags?.album);
+      songs.push(base);
+      useScanProgress.getState().tick();
     }
-    const base: any = {
-      id: raw.id,
-      localUri: raw.uri,
-    };
-    if (tags?.title) {
-      base.title = tags.title;
-      base.artist = tags.artist;
-      base.album = tags.album;
-      base.track = tags.track;
-    } else {
-      base.title = raw.filename;
-    }
-    if (tags?.coverBase64) {
-      base.coverBase64 = tags.coverBase64;
-      base.coverMime = tags.coverMime;
-    }
-    if (tags?.year) base.year = tags.year;
-    songs.push(base);
+  } finally {
+    useScanProgress.getState().done();
   }
   songs.sort((a, b) => a.title.localeCompare(b.title));
 
@@ -371,11 +433,18 @@ export function getLocalArtists(sourceMode: string, uri?: string): LocalArtist[]
 }
 
 function albumKeyOf(song: Song): string {
-  return normKey(song.album || 'Álbum desconocido') + '|' + normKey(song.artist || 'Artista desconocido');
+  return song.albumId || normKey(song.album || 'Álbum desconocido');
 }
 
 export function getLocalAlbumSongs(sourceMode: string, albumId: string, uri?: string): Song[] {
-  return catalogCache.get(cacheKey(sourceMode, uri))?.songs.filter((s) => albumKeyOf(s) === albumId) ?? [];
+  const songs = catalogCache.get(cacheKey(sourceMode, uri))?.songs.filter((s) => albumKeyOf(s) === albumId) ?? [];
+  // Orden por nº de pista (las que no lo tengan, al final por título).
+  return songs.sort((a, b) => {
+    const ta = a.track ?? Infinity;
+    const tb = b.track ?? Infinity;
+    if (ta !== tb) return ta - tb;
+    return a.title.localeCompare(b.title);
+  });
 }
 
 export function getLocalArtistAlbums(sourceMode: string, artistName: string, uri?: string): LocalAlbum[] {

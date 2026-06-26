@@ -26,6 +26,7 @@ import { Cover } from '@/components/Cover';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
+import { useScanProgress } from '@/store/scanProgress';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 const TILE_W = (Dimensions.get('window').width - spacing.lg * 2 - spacing.sm) / 2;
@@ -130,9 +131,25 @@ function AlbumSection({
   );
 }
 
+function ScanningPanel() {
+  const t = useT();
+  const count = useScanProgress((s) => s.count);
+  const total = useScanProgress((s) => s.total);
+  return (
+    <View style={styles.scanPanel}>
+      <ActivityIndicator color={colors.accent} size="large" />
+      <Text style={styles.scanTitle}>{t('Analizando tu música…')}</Text>
+      <Text style={styles.scanSub}>
+        {total > 0 ? `${count} / ${total}` : `${count}`}
+      </Text>
+    </View>
+  );
+}
+
 export default function HomeScreen() {
   const auth = useAuthStore((s) => s.auth);
   const offline = useAuthStore((s) => s.offline);
+  const scanning = useScanProgress((s) => s.scanning);
   const queryClient = useQueryClient();
   const t = useT();
   const [refreshing, setRefreshing] = useState(false);
@@ -169,6 +186,8 @@ export default function HomeScreen() {
             <Text style={styles.avatarText}>{initial}</Text>
           </View>
         </View>
+
+        {offline && scanning ? <ScanningPanel /> : null}
 
         <QuickGrid />
 
@@ -250,4 +269,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
+  scanPanel: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xl,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+  },
+  scanTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
+  scanSub: { color: colors.textSecondary, fontSize: fontSize.sm },
 });

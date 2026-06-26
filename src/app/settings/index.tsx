@@ -35,9 +35,13 @@ export default function SettingsScreen() {
   const logout = useAuthStore((s) => s.logout);
   const offline = useAuthStore((s) => s.offline);
 
-  const visible = offline
-    ? SECTIONS.filter((s) => s.key !== 'account' && s.key !== 'library')
-    : SECTIONS;
+  // En offline no hay cuenta de servidor; la sección "Biblioteca" pasa a ser
+  // la música local (origen + volver a escanear).
+  const visible = (offline ? SECTIONS.filter((s) => s.key !== 'account') : SECTIONS).map((s) =>
+    offline && s.key === 'library'
+      ? { ...s, title: 'Música local', subtitle: 'Origen · Volver a escanear' }
+      : s,
+  );
 
   return (
     <SafeAreaView style={settingsStyles.safe} edges={['top']}>

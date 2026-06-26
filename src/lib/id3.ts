@@ -55,7 +55,12 @@ function decodeText(b: Uint8Array, start: number, end: number): string {
     default:
       text = decodeLatin1(data);
   }
-  return text.replace(/\0/g, '').trim();
+  // En ID3v2.4 los frames de texto pueden contener varios valores separados
+  // por un byte nulo (p. ej. TPE1 = "6ix9ine\0Anuel AA"). Antes los nulos se
+  // borraban y los valores quedaban pegados ("6ix9ineAnuel AA"); ahora nos
+  // quedamos con el primer valor (el principal), que es lo que se muestra.
+  const first = text.split('\0').map((s) => s.trim()).find((s) => s.length > 0);
+  return first ?? '';
 }
 
 function nullTerminatedIndex(b: Uint8Array, start: number, max: number): number {
@@ -68,6 +73,8 @@ function nullTerminatedIndex(b: Uint8Array, start: number, max: number): number 
 export interface ID3Tags {
   title?: string;
   artist?: string;
+  /** Artista del álbum (TPE2); más fiable para agrupar que el de pista. */
+  albumArtist?: string;
   album?: string;
   track?: number;
   year?: number;
@@ -116,6 +123,7 @@ function parseID3v2(buffer: Uint8Array): ID3Tags {
     switch (frameId) {
       case 'TIT2': tags.title = decodeText(data, 0, data.length) || undefined; break;
       case 'TPE1': tags.artist = decodeText(data, 0, data.length) || undefined; break;
+      case 'TPE2': tags.albumArtist = decodeText(data, 0, data.length) || undefined; break;
       case 'TALB': tags.album = decodeText(data, 0, data.length) || undefined; break;
       case 'TRCK': {
         const raw = decodeText(data, 0, data.length);

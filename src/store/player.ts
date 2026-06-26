@@ -34,6 +34,12 @@ let setupPromise: Promise<void> | null = null;
 let listenersAdded = false;
 let sleepTimeout: ReturnType<typeof setTimeout> | null = null;
 
+/** Carátula embebida (data URI) de una canción local, si la tiene. */
+export function localArtwork(song: Song): string | undefined {
+  if (!song.coverBase64) return undefined;
+  return `data:${song.coverMime ?? 'image/jpeg'};base64,${song.coverBase64}`;
+}
+
 /** Convierte una canción al formato de pista de RNTP. */
 function toTrack(song: Song): Track {
   // URL directa (radio, streams externos): se usa tal cual, sin procesar.
@@ -47,7 +53,8 @@ function toTrack(song: Song): Track {
       duration: song.duration,
     };
   }
-  // Modo sin conexión: el fichero es local, no hay servidor ni carátula remota.
+  // Modo sin conexión: el fichero es local. La carátula sale de la imagen
+  // embebida (ID3) si existe, no de un servidor.
   if (song.localUri) {
     return {
       id: song.id,
@@ -55,6 +62,7 @@ function toTrack(song: Song): Track {
       title: song.title,
       artist: song.artist ?? 'Desconocido',
       album: song.album,
+      artwork: localArtwork(song),
       duration: song.duration,
     };
   }
