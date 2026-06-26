@@ -8,6 +8,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { coverArtUrl } from '@/api/subsonic';
 import { useDominantColor } from '@/hooks/useDominantColor';
+import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
@@ -25,15 +26,18 @@ export function MiniPlayer() {
   const toggle = usePlayerStore((s) => s.toggle);
   const t = useT();
 
-  const cover = song
-    ? coverArtUrl(auth!, song.coverArt ?? song.albumId, 100)
-    : undefined;
+  const cover =
+    song && auth && !song.localUri
+      ? coverArtUrl(auth, song.coverArt ?? song.albumId, 100)
+      : undefined;
   const bg = useDominantColor(cover);
+  const favIds = useFavoriteIds(!!song && !song.localUri);
 
   if (!song) return null;
 
   const duration = durationSec || song.duration || 0;
   const progress = duration > 0 ? Math.min(1, positionSec / duration) : 0;
+  const favorited = !!song.starred || (favIds?.has(song.id) ?? false);
 
   return (
     <Pressable
@@ -51,7 +55,9 @@ export function MiniPlayer() {
           </Text>
         ) : null}
       </View>
-      <FavoriteButton id={song.id} starred={!!song.starred} size={24} />
+      {song.localUri ? null : (
+        <FavoriteButton id={song.id} starred={favorited} size={24} />
+      )}
       <Pressable
         hitSlop={12}
         accessibilityRole="button"

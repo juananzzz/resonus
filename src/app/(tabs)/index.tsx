@@ -1,6 +1,6 @@
 /** Inicio estilo Spotify: accesos rápidos + carruseles de álbumes. */
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -65,7 +65,7 @@ function QuickGrid() {
     queryFn: () => getPlaylists(auth!),
     enabled: !!auth,
   });
-  const playlists = (data ?? []).slice(0, 5);
+  const playlists = (data ?? []).slice(0, 7);
 
   return (
     <View style={styles.grid}>
@@ -117,7 +117,6 @@ function AlbumSection({
 }
 
 export default function HomeScreen() {
-  const router = useRouter();
   const auth = useAuthStore((s) => s.auth);
   const queryClient = useQueryClient();
   const t = useT();
@@ -144,9 +143,9 @@ export default function HomeScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.greeting}>{t('Tu música')}</Text>
-          <Pressable style={styles.avatar} onPress={() => router.push('/settings')}>
+          <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initial}</Text>
-          </Pressable>
+          </View>
         </View>
 
         <QuickGrid />

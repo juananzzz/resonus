@@ -1,7 +1,7 @@
 /** Corazón para marcar/desmarcar favoritos (star/unstar de Subsonic). */
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, type GestureResponderEvent } from 'react-native';
 
 import { star, unstar, type StarType } from '@/api/subsonic';
@@ -22,6 +22,13 @@ export function FavoriteButton({ id, type = 'song', starred, size = 22 }: Props)
   const t = useT();
   const [fav, setFav] = useState(!!starred);
   const [busy, setBusy] = useState(false);
+
+  // Re-sincroniza con la canción actual: el mismo componente se reutiliza al
+  // cambiar de pista (mini-player/reproductor), así que sin esto el corazón
+  // se quedaba "pegado" al estado de la canción anterior.
+  useEffect(() => {
+    setFav(!!starred);
+  }, [id, starred]);
 
   async function toggle(e?: GestureResponderEvent) {
     e?.stopPropagation();

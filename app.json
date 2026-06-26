@@ -39,19 +39,26 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#121212",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 180,
+          "image": "./assets/images/splash-blank.png",
+          "imageWidth": 1,
           "android": {
             "backgroundColor": "#121212",
-            "image": "./assets/images/splash-icon.png",
-            "imageWidth": 180
+            "image": "./assets/images/splash-blank.png",
+            "imageWidth": 1
           }
         }
       ],
       "expo-secure-store",
       "expo-font",
       "expo-image",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-media-library",
+        {
+          "isAccessMediaLocationEnabled": false,
+          "granularPermissions": ["audio"]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false,

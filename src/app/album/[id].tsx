@@ -6,15 +6,18 @@ import { ActivityIndicator, View } from 'react-native';
 import { coverArtUrl, getAlbum } from '@/api/subsonic';
 import { Message } from '@/components/Message';
 import { TrackListView } from '@/components/TrackListView';
-import { useT } from '@/i18n';
+import { songsLabel, useT } from '@/i18n';
+import { formatTotalDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
+import { useSettings } from '@/store/settings';
 import { colors } from '@/theme';
 
 export default function AlbumScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const auth = useAuthStore((s) => s.auth);
   const t = useT();
+  const lang = useSettings((s) => s.language);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
@@ -40,16 +43,24 @@ export default function AlbumScreen() {
     );
   }
 
+  const totalSec = data.songs.reduce((acc, s) => acc + (s.duration ?? 0), 0);
+  const metaParts = [t('Álbum')];
+  if (data.album.year) metaParts.push(String(data.album.year));
+  metaParts.push(songsLabel(data.songs.length, lang));
+  if (totalSec > 0) metaParts.push(formatTotalDuration(totalSec));
+
   return (
     <TrackListView
       title={data.album.name}
       subtitle={data.album.artist}
       artistId={data.album.artistId}
+      meta={metaParts.join(' · ')}
       coverUri={coverArtUrl(auth!, data.album.coverArt ?? data.album.id, 500)}
       songs={data.songs}
       currentId={playing?.id}
       numbered
-      onPlay={(start) => playQueue(data.songs, start)}
+      favorite={{ id: data.album.id, type: 'album', starred: !!data.album.starred }}
+      onPlay={(start) => playQueue(data.songs, start, data.album.name, `/album/${id}`)}
     />
   );
 }

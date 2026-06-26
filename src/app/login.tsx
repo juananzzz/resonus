@@ -42,6 +42,7 @@ export default function LoginScreen() {
   const profiles = useAuthStore((s) => s.profiles);
   const switchProfile = useAuthStore((s) => s.switchProfile);
   const removeProfile = useAuthStore((s) => s.removeProfile);
+  const enterOffline = useAuthStore((s) => s.enterOffline);
   const toast = useToast((s) => s.show);
   const t = useT();
   const [server, setServer] = useState<ServerKey>('navidrome');
@@ -86,7 +87,7 @@ export default function LoginScreen() {
 
           {profiles.length > 0 ? (
             <View style={styles.profiles}>
-              <Text style={styles.groupTitle}>{t('Tus cuentas')}</Text>
+              <Text style={styles.groupTitle}>{t('Perfiles guardados')}</Text>
               {profiles.map((p) => (
                 <View key={`${p.serverUrl}-${p.username}`} style={styles.profileRow}>
                   <Pressable
@@ -192,6 +193,20 @@ export default function LoginScreen() {
                 <Text style={styles.buttonText}>{t('Entrar')}</Text>
               )}
             </Pressable>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>{t('o')}</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <Pressable style={styles.offlineButton} onPress={() => enterOffline()}>
+              <Ionicons name="cloud-offline-outline" size={20} color={colors.text} />
+              <Text style={styles.offlineText}>{t('Modo sin conexión')}</Text>
+            </Pressable>
+            <Text style={styles.offlineHint}>
+              {t('Escucha la música guardada en tu dispositivo, sin servidor.')}
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -277,4 +292,30 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: '#000', fontSize: fontSize.md, fontWeight: '700' },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.lg,
+  },
+  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+  dividerText: { color: colors.textMuted, fontSize: fontSize.sm },
+  offlineButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
+    marginTop: spacing.md,
+  },
+  offlineText: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
+  offlineHint: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+  },
 });

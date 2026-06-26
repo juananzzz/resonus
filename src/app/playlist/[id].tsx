@@ -1,28 +1,18 @@
 /** Detalle de una lista de reproducción con sus canciones. */
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  coverArtUrl,
-  deletePlaylist,
-  getPlaylist,
-  renamePlaylist,
-} from '@/api/subsonic';
+import { coverArtUrl, deletePlaylist, getPlaylist, renamePlaylist } from '@/api/subsonic';
 import { Dialog } from '@/components/Dialog';
 import { Message } from '@/components/Message';
 import { TrackListView } from '@/components/TrackListView';
+import { useSongSort } from '@/hooks/useSongSort';
 import { songsLabel, useT } from '@/i18n';
+import { formatTotalDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
@@ -50,6 +40,10 @@ export default function PlaylistScreen() {
     queryFn: () => getPlaylist(auth!, id),
     enabled: !!auth && !!id,
   });
+
+  const { songs: displaySongs, indices: playlistIndices, openSort, sortSheet } = useSongSort(
+    data?.songs ?? [],
+  );
 
   async function onRename(name: string) {
     setRenaming(false);
@@ -93,18 +87,25 @@ export default function PlaylistScreen() {
     );
   }
 
+  const totalSec = data.songs.reduce((acc, s) => acc + (s.duration ?? 0), 0);
+  const metaParts = [t('Lista'), songsLabel(data.songs.length, lang)];
+  if (totalSec > 0) metaParts.push(formatTotalDuration(totalSec));
+
   return (
     <>
       <TrackListView
         title={data.playlist.name}
-        subtitle={songsLabel(data.songs.length, lang)}
+        meta={metaParts.join(' · ')}
         coverUri={coverArtUrl(auth!, data.playlist.coverArt ?? data.playlist.id, 500)}
-        songs={data.songs}
+        songs={displaySongs}
+        playlistIndices={playlistIndices}
         currentId={playing?.id}
         onMenu={() => setMenuOpen(true)}
         playlistId={id}
-        onPlay={(start) => playQueue(data.songs, start)}
+        onSort={data.songs.length > 1 ? openSort : undefined}
+        onPlay={(start) => playQueue(displaySongs, start, data.playlist.name, `/playlist/${id}`)}
       />
+      {sortSheet}
 
       <Modal transparent visible={menuOpen} animationType="fade" onRequestClose={() => setMenuOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)} />
@@ -127,9 +128,7 @@ export default function PlaylistScreen() {
             }}
           >
             <Ionicons name="trash-outline" size={24} color={colors.danger} />
-            <Text style={[styles.actionText, { color: colors.danger }]}>
-              {t('Eliminar lista')}
-            </Text>
+            <Text style={[styles.actionText, { color: colors.danger }]}>{t('Eliminar lista')}</Text>
           </Pressable>
         </View>
       </Modal>

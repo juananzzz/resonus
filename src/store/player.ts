@@ -24,12 +24,29 @@ import { tg } from '@/i18n';
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
+/**
+ * Centinela para orígenes que deben traducirse al vuelo (no son nombres
+ * reales de álbum/lista). La cabecera del reproductor los resuelve con i18n.
+ */
+export const SOURCE_FAVORITES = '@@favorites';
+
 let setupPromise: Promise<void> | null = null;
 let listenersAdded = false;
 let sleepTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /** Convierte una canción al formato de pista de RNTP. */
 function toTrack(song: Song): Track {
+  // Modo sin conexión: el fichero es local, no hay servidor ni carátula remota.
+  if (song.localUri) {
+    return {
+      id: song.id,
+      url: song.localUri,
+      title: song.title,
+      artist: song.artist ?? 'Desconocido',
+      album: song.album,
+      duration: song.duration,
+    };
+  }
   const auth = useAuthStore.getState().auth!;
   return {
     id: song.id,
@@ -120,7 +137,16 @@ interface PlayerState {
   repeat: RepeatMode;
   originalQueue: Song[] | null;
   sleepTimerMinutes: number | null;
-  playQueue: (songs: Song[], startIndex?: number) => Promise<void>;
+  /** De dónde salió la cola actual (álbum, lista, artista…), si se conoce. */
+  source: string | null;
+  /** Ruta del origen para poder navegar a él desde el reproductor. */
+  sourceHref: string | null;
+  playQueue: (
+    songs: Song[],
+    startIndex?: number,
+    source?: string,
+    sourceHref?: string,
+  ) => Promise<void>;
   addToQueue: (song: Song) => void;
   playNext: (song: Song) => void;
   toggle: () => void;
@@ -153,8 +179,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   repeat: 'off',
   originalQueue: null,
   sleepTimerMinutes: null,
+  source: null,
+  sourceHref: null,
 
-  playQueue: async (songs, startIndex = 0) => {
+  playQueue: async (songs, startIndex = 0, source, sourceHref) => {
     if (songs.length === 0) return;
     set({
       queue: songs,
@@ -163,6 +191,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       durationSec: 0,
       shuffle: false,
       originalQueue: null,
+      source: source ?? null,
+      sourceHref: sourceHref ?? null,
     });
     try {
       await rebuildQueue(songs, startIndex);

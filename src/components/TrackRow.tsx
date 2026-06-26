@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { type Song } from '@/api/subsonic';
+import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu, type SongMenuContext } from '@/store/songMenu';
@@ -18,13 +19,34 @@ interface Props {
   isCurrent?: boolean;
   /** Contexto de playlist (para permitir "quitar de la lista" en el menú). */
   menuContext?: SongMenuContext;
+  /**
+   * Permite mostrar el corazón en las canciones favoritas (por defecto sí).
+   * Solo aparece si la canción está marcada como favorita (estilo Spotify).
+   * En offline se pasa `false` (no hay favoritos de servidor).
+   */
+  showFavorite?: boolean;
+  /** Muestra el botón de menú ⋯ (por defecto sí; desactivado en offline). */
+  showMenu?: boolean;
   onPress: () => void;
 }
 
-export function TrackRow({ song, position, isCurrent, menuContext, onPress }: Props) {
+export function TrackRow({
+  song,
+  position,
+  isCurrent,
+  menuContext,
+  showFavorite = true,
+  showMenu = true,
+  onPress,
+}: Props) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
+
+  // Favorito = marcado por el endpoint o presente en la lista central de
+  // favoritos (fiable), ya que no todos los endpoints traen `starred`.
+  const favIds = useFavoriteIds(showFavorite);
+  const favorited = showFavorite && (!!song.starred || (favIds?.has(song.id) ?? false));
 
   return (
     <Pressable
@@ -53,16 +75,18 @@ export function TrackRow({ song, position, isCurrent, menuContext, onPress }: Pr
         ) : null}
       </View>
 
-      <FavoriteButton id={song.id} starred={!!song.starred} size={20} />
+      {favorited ? <FavoriteButton id={song.id} starred size={20} /> : null}
       <Text style={styles.duration}>{formatDuration(song.duration)}</Text>
-      <Pressable
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityLabel={t('Más opciones')}
-        onPress={() => openMenu(song, menuContext)}
-      >
-        <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
-      </Pressable>
+      {showMenu ? (
+        <Pressable
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('Más opciones')}
+          onPress={() => openMenu(song, menuContext)}
+        >
+          <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }

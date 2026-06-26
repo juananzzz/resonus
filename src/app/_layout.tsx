@@ -15,17 +15,20 @@ import { SongMenuSheet } from '@/components/SongMenuSheet';
 import { Toast } from '@/components/Toast';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
+import { useRecentSearches } from '@/store/recentSearches';
 import { useSettings } from '@/store/settings';
 import { colors } from '@/theme';
 
 export default function RootLayout() {
   const auth = useAuthStore((s) => s.auth);
+  const offline = useAuthStore((s) => s.offline);
   const hydrating = useAuthStore((s) => s.hydrating);
   const hydrate = useAuthStore((s) => s.hydrate);
 
   useEffect(() => {
     hydrate();
     useSettings.getState().hydrate();
+    useRecentSearches.getState().hydrate();
   }, [hydrate]);
 
   return (
@@ -52,17 +55,27 @@ export default function RootLayout() {
                 <Stack.Screen name="album/[id]" />
                 <Stack.Screen name="playlist/[id]" />
                 <Stack.Screen name="artist/[id]" />
+                <Stack.Screen name="artist/discography/[id]" />
                 <Stack.Screen name="favorites" />
-                <Stack.Screen name="settings" />
-                <Stack.Screen name="lyrics" options={{ presentation: 'modal' }} />
-                <Stack.Screen name="player" options={{ presentation: 'modal' }} />
-                <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="settings/index" />
+                <Stack.Screen name="settings/account" />
+                <Stack.Screen name="settings/library" />
+                <Stack.Screen name="settings/playback" />
+                <Stack.Screen name="settings/display" />
+                <Stack.Screen name="settings/about" />
               </Stack.Protected>
-              <Stack.Protected guard={!auth}>
+              <Stack.Protected guard={offline}>
+                <Stack.Screen name="offline" />
+              </Stack.Protected>
+              <Stack.Protected guard={!auth && !offline}>
                 <Stack.Screen name="login" />
               </Stack.Protected>
+              {/* Modales compartidos por servidor y offline (requieren canción activa). */}
+              <Stack.Screen name="lyrics" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="player" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
             </Stack>
-            {auth ? <GlobalMiniPlayer /> : null}
+            {auth || offline ? <GlobalMiniPlayer /> : null}
             {auth ? <SongMenuSheet /> : null}
             <Toast />
           </View>

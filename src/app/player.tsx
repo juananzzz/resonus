@@ -16,9 +16,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { coverArtUrl } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
-import { currentSong, usePlayerStore } from '@/store/player';
+import { currentSong, SOURCE_FAVORITES, usePlayerStore } from '@/store/player';
 import { useSongMenu } from '@/store/songMenu';
 import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
@@ -51,6 +52,8 @@ export default function PlayerScreen() {
   const router = useRouter();
   const auth = useAuthStore((s) => s.auth);
   const song = usePlayerStore(currentSong);
+  const source = usePlayerStore((s) => s.source);
+  const sourceHref = usePlayerStore((s) => s.sourceHref);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const positionSec = usePlayerStore((s) => s.positionSec);
   const durationSec = usePlayerStore((s) => s.durationSec);
@@ -64,13 +67,17 @@ export default function PlayerScreen() {
   const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
+  const favIds = useFavoriteIds(!!song && !song?.localUri);
 
   if (!song) {
     router.back();
     return null;
   }
 
-  const cover = coverArtUrl(auth!, song.coverArt ?? song.albumId, 600);
+  const isLocal = !!song.localUri;
+  const favorited = !!song.starred || (favIds?.has(song.id) ?? false);
+  const cover =
+    isLocal || !auth ? undefined : coverArtUrl(auth, song.coverArt ?? song.albumId, 600);
   const duration = durationSec || song.duration || 0;
   const repeatActive = repeat !== 'off';
 
@@ -83,8 +90,32 @@ export default function PlayerScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.topBar}>
           <CircleButton name="chevron-down" label={t('Cerrar')} onPress={() => router.back()} />
-          <Text style={styles.topTitle}>{t('REPRODUCIENDO')}</Text>
-          <CircleButton name="ellipsis-vertical" label={t('Más opciones')} onPress={() => openMenu(song)} />
+          <Pressable
+            style={styles.topTitleWrap}
+            disabled={!sourceHref}
+            accessibilityRole={sourceHref ? 'button' : undefined}
+            onPress={() => {
+              if (!sourceHref) return;
+              router.back();
+              router.navigate(sourceHref as never);
+            }}
+          >
+            {source ? (
+              <>
+                <Text style={styles.topLabel}>{t('REPRODUCIENDO DESDE')}</Text>
+                <Text style={styles.topSource} numberOfLines={1}>
+                  {source === SOURCE_FAVORITES ? t('Favoritos') : source}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.topTitle}>{t('REPRODUCIENDO')}</Text>
+            )}
+          </Pressable>
+          {isLocal ? (
+            <View style={{ width: 40 }} />
+          ) : (
+            <CircleButton name="ellipsis-vertical" label={t('Más opciones')} onPress={() => openMenu(song)} />
+          )}
         </View>
 
         <View style={styles.coverWrap}>
@@ -112,7 +143,7 @@ export default function PlayerScreen() {
                 </Text>
               )}
             </View>
-            <FavoriteButton id={song.id} starred={!!song.starred} size={26} />
+            {isLocal ? null : <FavoriteButton id={song.id} starred={favorited} size={26} />}
           </View>
 
           <View style={styles.progress}>
@@ -222,11 +253,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  topTitleWrap: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+  },
   topTitle: {
     color: colors.text,
     fontSize: fontSize.sm,
     fontWeight: '700',
     letterSpacing: 1.5,
+  },
+  topLabel: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+  },
+  topSource: {
+    color: colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: '700',
   },
   coverWrap: {
     alignItems: 'center',
