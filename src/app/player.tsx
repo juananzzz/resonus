@@ -63,7 +63,6 @@ export default function PlayerScreen() {
   const cover = coverArtUrl(auth!, song.coverArt ?? song.albumId, 600);
   const duration = durationSec || song.duration || 0;
   const repeatActive = repeat !== 'off';
-  const progress = duration > 0 ? Math.min(1, positionSec / duration) : 0;
 
   return (
     <View style={styles.root}>
@@ -162,25 +161,12 @@ export default function PlayerScreen() {
           </View>
         </View>
       </SafeAreaView>
-
-      <View style={styles.bottomLine} pointerEvents="none">
-        <View style={[styles.bottomLineFill, { width: `${progress * 100}%` }]} />
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  bottomLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  bottomLineFill: { height: 2, backgroundColor: colors.textSecondary },
   safe: { flex: 1, paddingHorizontal: spacing.xl },
   topBar: {
     flexDirection: 'row',

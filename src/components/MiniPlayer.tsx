@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, radius, spacing } from '@/theme';
 import { Cover } from './Cover';
+import { FavoriteButton } from './FavoriteButton';
 
 export function MiniPlayer() {
   const router = useRouter();
@@ -43,6 +44,7 @@ export function MiniPlayer() {
           </Text>
         ) : null}
       </View>
+      <FavoriteButton id={song.id} starred={!!song.starred} size={24} />
       <Pressable
         hitSlop={12}
         onPress={(e) => {
