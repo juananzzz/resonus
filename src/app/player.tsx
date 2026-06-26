@@ -120,7 +120,7 @@ export default function PlayerScreen() {
               <Text style={styles.topTitle}>{t('REPRODUCIENDO')}</Text>
             )}
           </Pressable>
-          {isLocal ? (
+          {isLocal && !offline ? (
             <View style={{ width: 40 }} />
           ) : (
             <CircleButton name="ellipsis-vertical" label={t('Más opciones')} onPress={() => openMenu(song)} />

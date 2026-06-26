@@ -198,8 +198,10 @@ const en: Record<string, string> = {
   'Marca álbumes como favoritos para verlos aquí.':
     'Star albums to see them here.',
   // Offline specifics
-  'Los favoritos no están disponibles sin conexión al servidor.':
-    'Favorites are not available offline.',
+  'Marca canciones con el corazón para verlas aquí.':
+    'Tap the heart on songs to see them here.',
+  'Las listas no están disponibles en modo sin conexión.':
+    'Playlists are not available in offline mode.',
   'La letra no está disponible en modo sin conexión.':
     'Lyrics are not available in offline mode.',
   'Estás reproduciendo música almacenada en tu dispositivo.':

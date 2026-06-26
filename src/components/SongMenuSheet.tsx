@@ -255,21 +255,17 @@ export function SongMenuSheet() {
                 close();
               }}
             />
-            {!offline ? (
-              <Action
-                icon="heart-outline"
-                label={t('Añadir a favoritos')}
-                onPress={() => {
-                  if (auth) {
-                    star(song.id).then(() =>
-                      queryClient.invalidateQueries({ queryKey: ['starred'] }),
-                    );
-                  }
-                  toast(t('Añadida a favoritos'));
-                  close();
-                }}
-              />
-            ) : null}
+            <Action
+              icon="heart-outline"
+              label={t('Añadir a favoritos')}
+              onPress={() => {
+                star(song.id).then(() =>
+                  queryClient.invalidateQueries({ queryKey: ['starred'] }),
+                );
+                toast(t('Añadida a favoritos'));
+                close();
+              }}
+            />
             <Action
               icon="musical-notes-outline"
               label={t('Letra')}

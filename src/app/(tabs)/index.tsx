@@ -172,9 +172,13 @@ export default function HomeScreen() {
 
         <QuickGrid />
 
-        <AlbumSection title={t('Reproducido recientemente')} type="recent" />
-        <AlbumSection title={t('Añadido recientemente')} type="newest" />
-        <AlbumSection title={t('Más escuchados')} type="frequent" />
+        <AlbumSection title={t('Álbumes')} type="newest" />
+        {!offline ? (
+          <>
+            <AlbumSection title={t('Reproducido recientemente')} type="recent" />
+            <AlbumSection title={t('Más escuchados')} type="frequent" />
+          </>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

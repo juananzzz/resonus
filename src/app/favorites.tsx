@@ -49,7 +49,7 @@ export default function FavoritesScreen() {
   if (displaySongs.length === 0 && offline) {
     return (
       <View style={styles.center}>
-        <Message text={t('Los favoritos no están disponibles sin conexión al servidor.')} />
+        <Message text={t('Marca canciones con el corazón para verlas aquí.')} />
       </View>
     );
   }

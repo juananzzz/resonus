@@ -24,6 +24,7 @@ export default function PlaylistScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuthStore((s) => s.auth);
+  const offline = useAuthStore((s) => s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
   const queryClient = useQueryClient();
@@ -82,7 +83,10 @@ export default function PlaylistScreen() {
   if (isError || !data) {
     return (
       <View style={styles.center}>
-        <Message text={t('No se pudo cargar la lista.')} onRetry={() => refetch()} />
+        <Message
+          text={offline ? t('Las listas no están disponibles en modo sin conexión.') : t('No se pudo cargar la lista.')}
+          onRetry={offline ? undefined : () => refetch()}
+        />
       </View>
     );
   }

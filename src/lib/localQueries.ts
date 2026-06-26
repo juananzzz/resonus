@@ -112,7 +112,7 @@ function toAlbum(local: { id: string; name: string; artist?: string; coverBase64
     id: local.id,
     name: local.name,
     artist: local.artist,
-    artistId: local.artist,
+    artistId: local.artist ? normKey(local.artist) : undefined,
     coverArt: local.id,
     songCount: local.songCount,
     year: local.year,

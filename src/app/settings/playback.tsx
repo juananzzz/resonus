@@ -8,9 +8,12 @@ import { BITRATE_OPTIONS, useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors } from '@/theme';
 
+import { useAuthStore } from '@/store/auth';
+
 export default function PlaybackSettings() {
   const t = useT();
   const toast = useToast((s) => s.show);
+  const offline = useAuthStore((s) => s.offline);
   const maxBitRate = useSettings((s) => s.maxBitRate);
   const setMaxBitRate = useSettings((s) => s.setMaxBitRate);
 
@@ -19,29 +22,33 @@ export default function PlaybackSettings() {
   return (
     <SettingsPage title={t('Calidad y reproducción')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
-        <Text style={settingsStyles.sectionTitle}>{t('Calidad de streaming')}</Text>
-        <View style={settingsStyles.chips}>
-          {BITRATE_OPTIONS.map((opt) => {
-            const active = opt.value === maxBitRate;
-            return (
-              <Pressable
-                key={opt.value}
-                style={[settingsStyles.chip, active && settingsStyles.chipActive]}
-                onPress={() => {
-                  setMaxBitRate(opt.value);
-                  toast(t('Calidad: {label}', { label: opt.label }));
-                }}
-              >
-                <Text style={[settingsStyles.chipText, active && settingsStyles.chipTextActive]}>
-                  {opt.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        <Text style={settingsStyles.hint}>
-          {t('«Original» usa la máxima calidad; bajar el bitrate ahorra datos.')}
-        </Text>
+        {!offline ? (
+          <>
+            <Text style={settingsStyles.sectionTitle}>{t('Calidad de streaming')}</Text>
+            <View style={settingsStyles.chips}>
+              {BITRATE_OPTIONS.map((opt) => {
+                const active = opt.value === maxBitRate;
+                return (
+                  <Pressable
+                    key={opt.value}
+                    style={[settingsStyles.chip, active && settingsStyles.chipActive]}
+                    onPress={() => {
+                      setMaxBitRate(opt.value);
+                      toast(t('Calidad: {label}', { label: opt.label }));
+                    }}
+                  >
+                    <Text style={[settingsStyles.chipText, active && settingsStyles.chipTextActive]}>
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={settingsStyles.hint}>
+              {t('«Original» usa la máxima calidad; bajar el bitrate ahorra datos.')}
+            </Text>
+          </>
+        ) : null}
 
         <Text style={settingsStyles.sectionTitle}>{t('Reproducción')}</Text>
         <Pressable style={settingsStyles.rowButton} onPress={soon}>
