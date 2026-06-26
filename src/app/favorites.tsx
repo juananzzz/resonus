@@ -17,13 +17,17 @@ import { getStarred } from '@/api/subsonic';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { TrackRow } from '@/components/TrackRow';
+import { songsLabel, useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
+import { useSettings } from '@/store/settings';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 export default function FavoritesScreen() {
   const router = useRouter();
   const auth = useAuthStore((s) => s.auth);
+  const t = useT();
+  const lang = useSettings((s) => s.language);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
@@ -44,7 +48,7 @@ export default function FavoritesScreen() {
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
       ) : isError ? (
-        <Message text="No se pudieron cargar los favoritos." onRetry={() => refetch()} />
+        <Message text={t('No se pudieron cargar los favoritos.')} onRetry={() => refetch()} />
       ) : (
         <FlatList
           data={songs}
@@ -60,14 +64,12 @@ export default function FavoritesScreen() {
           ListHeaderComponent={
             <View style={styles.header}>
               <FavoritesArt size={200} />
-              <Text style={styles.title}>Favoritos</Text>
-              <Text style={styles.count}>
-                {songs.length} canción{songs.length === 1 ? '' : 'es'}
-              </Text>
+              <Text style={styles.title}>{t('Favoritos')}</Text>
+              <Text style={styles.count}>{songsLabel(songs.length, lang)}</Text>
               {songs.length > 0 ? (
                 <Pressable style={styles.play} onPress={() => playQueue(songs, 0)}>
                   <Ionicons name="play" size={22} color="#000" />
-                  <Text style={styles.playText}>Reproducir</Text>
+                  <Text style={styles.playText}>{t('Reproducir')}</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -80,7 +82,7 @@ export default function FavoritesScreen() {
             />
           )}
           ListEmptyComponent={
-            <Text style={styles.empty}>Aún no tienes canciones favoritas.</Text>
+            <Text style={styles.empty}>{t('Aún no tienes canciones favoritas.')}</Text>
           }
         />
       )}

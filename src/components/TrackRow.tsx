@@ -6,6 +6,7 @@ import { type Song } from '@/api/subsonic';
 import { formatDuration } from '@/lib/format';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu } from '@/store/songMenu';
+import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
 import { FavoriteButton } from './FavoriteButton';
 import { NowPlayingBars } from './NowPlayingBars';
@@ -21,6 +22,7 @@ interface Props {
 export function TrackRow({ song, position, isCurrent, onPress }: Props) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const openMenu = useSongMenu((s) => s.open);
+  const t = useT();
 
   return (
     <Pressable
@@ -54,7 +56,7 @@ export function TrackRow({ song, position, isCurrent, onPress }: Props) {
       <Pressable
         hitSlop={8}
         accessibilityRole="button"
-        accessibilityLabel="Más opciones"
+        accessibilityLabel={t('Más opciones')}
         onPress={() => openMenu(song)}
       >
         <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />

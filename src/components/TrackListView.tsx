@@ -8,6 +8,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { type Song } from '@/api/subsonic';
+import { useT } from '@/i18n';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 import { Cover } from './Cover';
 import { TrackRow } from './TrackRow';
@@ -36,6 +37,7 @@ export function TrackListView({
   onPlay,
 }: Props) {
   const router = useRouter();
+  const t = useT();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -72,7 +74,7 @@ export function TrackListView({
               onPress={() => songs.length > 0 && onPlay(0)}
             >
               <Ionicons name="play" size={22} color="#000" />
-              <Text style={styles.playText}>Reproducir</Text>
+              <Text style={styles.playText}>{t('Reproducir')}</Text>
             </Pressable>
           </View>
         }

@@ -20,6 +20,7 @@ import { coverArtUrl, scrobble, streamUrl, type Song } from '@/api/subsonic';
 import { useAuthStore } from './auth';
 import { useSettings } from './settings';
 import { useToast } from './toast';
+import { tg } from '@/i18n';
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
@@ -70,7 +71,7 @@ function addListeners() {
   });
 
   TrackPlayer.addEventListener(Event.PlaybackError, () => {
-    useToast.getState().show('No se pudo reproducir la canción');
+    useToast.getState().show(tg('No se pudo reproducir la canción'));
   });
 }
 
@@ -166,7 +167,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     try {
       await rebuildQueue(songs, startIndex);
     } catch {
-      useToast.getState().show('No se pudo reproducir');
+      useToast.getState().show(tg('No se pudo reproducir'));
     }
   },
 

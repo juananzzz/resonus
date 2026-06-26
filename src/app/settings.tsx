@@ -7,13 +7,19 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getScanStatus, startScan } from '@/api/subsonic';
+import { useT } from '@/i18n';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
-import { BITRATE_OPTIONS, useSettings } from '@/store/settings';
+import { BITRATE_OPTIONS, useSettings, type Language } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 const REPO_URL = 'https://github.com/juananzzz/resonus';
+
+const LANGUAGES: { value: Language; label: string }[] = [
+  { value: 'es', label: 'Español' },
+  { value: 'en', label: 'English' },
+];
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -32,7 +38,10 @@ export default function SettingsScreen() {
   const logout = useAuthStore((s) => s.logout);
   const maxBitRate = useSettings((s) => s.maxBitRate);
   const setMaxBitRate = useSettings((s) => s.setMaxBitRate);
+  const language = useSettings((s) => s.language);
+  const setLanguage = useSettings((s) => s.setLanguage);
   const toast = useToast((s) => s.show);
+  const t = useT();
 
   const { data: scan, refetch: refetchScan } = useQuery({
     queryKey: ['scanStatus'],
@@ -43,21 +52,21 @@ export default function SettingsScreen() {
   async function clearCache() {
     queryClient.clear();
     await Promise.all([Image.clearMemoryCache(), Image.clearDiskCache()]).catch(() => {});
-    toast('Caché limpiada');
+    toast(t('Caché limpiada'));
   }
 
   async function scanNow() {
     if (!auth) return;
     try {
       await startScan(auth);
-      toast('Escaneo iniciado');
+      toast(t('Escaneo iniciado'));
       setTimeout(() => refetchScan(), 1500);
     } catch {
-      toast('No se pudo iniciar el escaneo');
+      toast(t('No se pudo iniciar el escaneo'));
     }
   }
 
-  const soon = (label: string) => toast(`${label}: próximamente 🚧`);
+  const soon = () => toast(t('Próximamente 🚧'));
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -65,32 +74,36 @@ export default function SettingsScreen() {
         <Pressable hitSlop={12} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color={colors.text} />
         </Pressable>
-        <Text style={styles.title}>Ajustes</Text>
+        <Text style={styles.title}>{t('Ajustes')}</Text>
         <View style={{ width: 28 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Servidor</Text>
+        <Text style={styles.sectionTitle}>{t('Servidor')}</Text>
         <View style={styles.card}>
           <Field label="URL" value={auth?.serverUrl ?? '—'} />
           <View style={styles.divider} />
-          <Field label="Usuario" value={auth?.username ?? '—'} />
+          <Field label={t('Usuario')} value={auth?.username ?? '—'} />
         </View>
 
-        <Text style={styles.sectionTitle}>Biblioteca</Text>
+        <Text style={styles.sectionTitle}>{t('Biblioteca')}</Text>
         <View style={styles.card}>
           <Field
-            label="Estado del escaneo"
-            value={scan?.scanning ? 'Escaneando…' : `${scan?.count ?? 0} elementos`}
+            label={t('Estado del escaneo')}
+            value={
+              scan?.scanning
+                ? t('Escaneando…')
+                : t('{n} elementos', { n: scan?.count ?? 0 })
+            }
           />
           <View style={styles.divider} />
           <Pressable style={styles.linkRow} onPress={scanNow}>
             <Ionicons name="refresh" size={22} color={colors.text} />
-            <Text style={styles.rowText}>Escanear ahora</Text>
+            <Text style={styles.rowText}>{t('Escanear ahora')}</Text>
           </Pressable>
         </View>
 
-        <Text style={styles.sectionTitle}>Calidad de streaming</Text>
+        <Text style={styles.sectionTitle}>{t('Calidad de streaming')}</Text>
         <View style={styles.chips}>
           {BITRATE_OPTIONS.map((opt) => {
             const active = opt.value === maxBitRate;
@@ -100,7 +113,7 @@ export default function SettingsScreen() {
                 style={[styles.chip, active && styles.chipActive]}
                 onPress={() => {
                   setMaxBitRate(opt.value);
-                  toast(`Calidad: ${opt.label}`);
+                  toast(t('Calidad: {label}', { label: opt.label }));
                 }}
               >
                 <Text style={[styles.chipText, active && styles.chipTextActive]}>
@@ -111,48 +124,59 @@ export default function SettingsScreen() {
           })}
         </View>
         <Text style={styles.hint}>
-          {'«Original» usa la máxima calidad; bajar el bitrate ahorra datos.'}
+          {t('«Original» usa la máxima calidad; bajar el bitrate ahorra datos.')}
         </Text>
 
-        <Text style={styles.sectionTitle}>Reproducción</Text>
-        <Pressable style={styles.rowButton} onPress={() => soon('Crossfade')}>
+        <Text style={styles.sectionTitle}>{t('Reproducción')}</Text>
+        <Pressable style={styles.rowButton} onPress={soon}>
           <Ionicons name="git-compare-outline" size={22} color={colors.text} />
-          <Text style={styles.rowText}>Crossfade</Text>
-          <Text style={styles.soonTag}>Pronto</Text>
+          <Text style={styles.rowText}>{t('Crossfade')}</Text>
+          <Text style={styles.soonTag}>{t('Pronto')}</Text>
         </Pressable>
-        <Pressable style={styles.rowButton} onPress={() => soon('Ecualizador')}>
+        <Pressable style={styles.rowButton} onPress={soon}>
           <Ionicons name="options-outline" size={22} color={colors.text} />
-          <Text style={styles.rowText}>Ecualizador</Text>
-          <Text style={styles.soonTag}>Pronto</Text>
+          <Text style={styles.rowText}>{t('Ecualizador')}</Text>
+          <Text style={styles.soonTag}>{t('Pronto')}</Text>
         </Pressable>
 
-        <Text style={styles.sectionTitle}>Pantalla</Text>
-        <Pressable style={styles.rowButton} onPress={() => soon('Idioma')}>
-          <Ionicons name="language-outline" size={22} color={colors.text} />
-          <Text style={styles.rowText}>Idioma</Text>
-          <Text style={styles.soonTag}>Español</Text>
-        </Pressable>
+        <Text style={styles.sectionTitle}>{t('Idioma')}</Text>
+        <View style={styles.chips}>
+          {LANGUAGES.map((opt) => {
+            const active = opt.value === language;
+            return (
+              <Pressable
+                key={opt.value}
+                style={[styles.chip, active && styles.chipActive]}
+                onPress={() => setLanguage(opt.value)}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {opt.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
-        <Text style={styles.sectionTitle}>Almacenamiento</Text>
+        <Text style={styles.sectionTitle}>{t('Almacenamiento')}</Text>
         <Pressable style={styles.rowButton} onPress={clearCache}>
           <Ionicons name="trash-outline" size={22} color={colors.text} />
-          <Text style={styles.rowText}>Limpiar caché</Text>
+          <Text style={styles.rowText}>{t('Limpiar caché')}</Text>
         </Pressable>
 
-        <Text style={styles.sectionTitle}>Acerca de</Text>
+        <Text style={styles.sectionTitle}>{t('Acerca de')}</Text>
         <View style={styles.card}>
           <Field label="Versión" value="Resonus 1.0.0" />
           <View style={styles.divider} />
           <Pressable style={styles.linkRow} onPress={() => Linking.openURL(REPO_URL)}>
             <Ionicons name="logo-github" size={22} color={colors.text} />
-            <Text style={styles.rowText}>Ver en GitHub</Text>
+            <Text style={styles.rowText}>{t('Ver en GitHub')}</Text>
             <Ionicons name="open-outline" size={18} color={colors.textMuted} />
           </Pressable>
         </View>
 
         <Pressable style={styles.logout} onPress={() => logout()}>
           <Ionicons name="log-out-outline" size={22} color={colors.danger} />
-          <Text style={styles.logoutText}>Cerrar sesión</Text>
+          <Text style={styles.logoutText}>{t('Cerrar sesión')}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '@/store/auth';
 import { useToast } from '@/store/toast';
+import { useT } from '@/i18n';
 import { colors, fontSize, radius, spacing } from '@/theme';
 
 type ServerKey = 'navidrome' | 'opensubsonic' | 'jellyfin';
@@ -42,6 +43,7 @@ export default function LoginScreen() {
   const switchProfile = useAuthStore((s) => s.switchProfile);
   const removeProfile = useAuthStore((s) => s.removeProfile);
   const toast = useToast((s) => s.show);
+  const t = useT();
   const [server, setServer] = useState<ServerKey>('navidrome');
   const [serverUrl, setServerUrl] = useState('');
   const [username, setUsername] = useState('');
@@ -54,7 +56,7 @@ export default function LoginScreen() {
 
   async function onSubmit() {
     if (isJellyfin) {
-      toast('Jellyfin estará disponible pronto 🚧');
+      toast(t('Jellyfin estará disponible pronto 🚧'));
       return;
     }
     setError(null);
@@ -63,7 +65,7 @@ export default function LoginScreen() {
       // Navidrome y OpenSubsonic comparten la API Subsonic.
       await login(serverUrl, username, password, server);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo iniciar sesión');
+      setError(e instanceof Error ? e.message : t('No se pudo iniciar sesión'));
     } finally {
       setLoading(false);
     }
@@ -80,11 +82,11 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.logo}>Resonus</Text>
-          <Text style={styles.subtitle}>Conéctate a tu servidor de música</Text>
+          <Text style={styles.subtitle}>{t('Conéctate a tu servidor de música')}</Text>
 
           {profiles.length > 0 ? (
             <View style={styles.profiles}>
-              <Text style={styles.groupTitle}>Tus cuentas</Text>
+              <Text style={styles.groupTitle}>{t('Tus cuentas')}</Text>
               {profiles.map((p) => (
                 <View key={`${p.serverUrl}-${p.username}`} style={styles.profileRow}>
                   <Pressable
@@ -93,7 +95,7 @@ export default function LoginScreen() {
                       try {
                         await switchProfile(p);
                       } catch {
-                        toast('No se pudo entrar; revisa la cuenta');
+                        toast(t('No se pudo entrar; revisa la cuenta'));
                       }
                     }}
                   >
@@ -116,7 +118,7 @@ export default function LoginScreen() {
                   </Pressable>
                 </View>
               ))}
-              <Text style={styles.groupTitle}>Añadir otra cuenta</Text>
+              <Text style={styles.groupTitle}>{t('Añadir otra cuenta')}</Text>
             </View>
           ) : null}
 
@@ -137,7 +139,7 @@ export default function LoginScreen() {
                   <Text style={styles.serverName} numberOfLines={1}>
                     {s.name}
                   </Text>
-                  {s.soon ? <Text style={styles.soon}>Pronto</Text> : null}
+                  {s.soon ? <Text style={styles.soon}>{t('Pronto')}</Text> : null}
                 </Pressable>
               );
             })}
@@ -156,7 +158,7 @@ export default function LoginScreen() {
             />
             <TextInput
               style={styles.input}
-              placeholder="Usuario"
+              placeholder={t('Usuario')}
               placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
@@ -165,7 +167,7 @@ export default function LoginScreen() {
             />
             <TextInput
               style={styles.input}
-              placeholder="Contraseña"
+              placeholder={t('Contraseña')}
               placeholderTextColor={colors.textMuted}
               secureTextEntry
               value={password}
@@ -174,8 +176,7 @@ export default function LoginScreen() {
 
             {isJellyfin ? (
               <Text style={styles.notice}>
-                El soporte de Jellyfin llegará pronto. Por ahora usa Navidrome u
-                OpenSubsonic.
+                {t('El soporte de Jellyfin llegará pronto. Por ahora usa Navidrome u OpenSubsonic.')}
               </Text>
             ) : null}
             {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -188,7 +189,7 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator color="#000" />
               ) : (
-                <Text style={styles.buttonText}>Entrar</Text>
+                <Text style={styles.buttonText}>{t('Entrar')}</Text>
               )}
             </Pressable>
           </View>

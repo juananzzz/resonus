@@ -6,6 +6,7 @@ import { Pressable, type GestureResponderEvent } from 'react-native';
 
 import { star, unstar, type StarType } from '@/api/subsonic';
 import { useAuthStore } from '@/store/auth';
+import { useT } from '@/i18n';
 import { colors } from '@/theme';
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 export function FavoriteButton({ id, type = 'song', starred, size = 22 }: Props) {
   const auth = useAuthStore((s) => s.auth);
   const queryClient = useQueryClient();
+  const t = useT();
   const [fav, setFav] = useState(!!starred);
   const [busy, setBusy] = useState(false);
 
@@ -44,7 +46,7 @@ export function FavoriteButton({ id, type = 'song', starred, size = 22 }: Props)
       hitSlop={10}
       onPress={toggle}
       accessibilityRole="button"
-      accessibilityLabel={fav ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+      accessibilityLabel={fav ? t('Quitar de favoritos') : t('Añadir a favoritos')}
     >
       <Ionicons
         name={fav ? 'heart' : 'heart-outline'}

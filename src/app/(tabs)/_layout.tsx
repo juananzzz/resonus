@@ -9,10 +9,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useT } from '@/i18n';
 import { colors, TAB_BAR_HEIGHT } from '@/theme';
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const t = useT();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -43,7 +45,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: 'Inicio',
+            title: t('Inicio'),
             tabBarIcon: ({ focused, color, size }) => (
               <Ionicons name={focused ? 'home' : 'home-outline'} color={color} size={size} />
             ),
@@ -52,7 +54,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="search"
           options={{
-            title: 'Buscar',
+            title: t('Buscar'),
             tabBarIcon: ({ focused, color, size }) => (
               <Ionicons name={focused ? 'search' : 'search-outline'} color={color} size={size} />
             ),
@@ -61,7 +63,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="library"
           options={{
-            title: 'Biblioteca',
+            title: t('Biblioteca'),
             tabBarIcon: ({ focused, color, size }) => (
               <Ionicons name={focused ? 'library' : 'library-outline'} color={color} size={size} />
             ),

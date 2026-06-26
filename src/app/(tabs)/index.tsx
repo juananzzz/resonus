@@ -24,6 +24,7 @@ import {
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { FavoritesArt } from '@/components/FavoritesArt';
+import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
@@ -58,6 +59,7 @@ function QuickTile({
 
 function QuickGrid() {
   const auth = useAuthStore((s) => s.auth);
+  const t = useT();
   const { data } = useQuery({
     queryKey: ['playlists'],
     queryFn: () => getPlaylists(auth!),
@@ -67,7 +69,7 @@ function QuickGrid() {
 
   return (
     <View style={styles.grid}>
-      <QuickTile href="/favorites" name="Favoritos" favorites />
+      <QuickTile href="/favorites" name={t('Favoritos')} favorites />
       {playlists.map((p) => (
         <QuickTile
           key={p.id}
@@ -118,6 +120,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const auth = useAuthStore((s) => s.auth);
   const queryClient = useQueryClient();
+  const t = useT();
   const [refreshing, setRefreshing] = useState(false);
   const initial = (auth?.username ?? '?').charAt(0).toUpperCase();
 
@@ -140,7 +143,7 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.greeting}>Tu música</Text>
+          <Text style={styles.greeting}>{t('Tu música')}</Text>
           <Pressable style={styles.avatar} onPress={() => router.push('/settings')}>
             <Text style={styles.avatarText}>{initial}</Text>
           </Pressable>
@@ -148,9 +151,9 @@ export default function HomeScreen() {
 
         <QuickGrid />
 
-        <AlbumSection title="Reproducido recientemente" type="recent" />
-        <AlbumSection title="Añadido recientemente" type="newest" />
-        <AlbumSection title="Más escuchados" type="frequent" />
+        <AlbumSection title={t('Reproducido recientemente')} type="recent" />
+        <AlbumSection title={t('Añadido recientemente')} type="newest" />
+        <AlbumSection title={t('Más escuchados')} type="frequent" />
       </ScrollView>
     </SafeAreaView>
   );

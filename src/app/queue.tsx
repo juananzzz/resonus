@@ -7,9 +7,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { type Song } from '@/api/subsonic';
 import { NowPlayingBars } from '@/components/NowPlayingBars';
 import { usePlayerStore } from '@/store/player';
+import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
 
 export default function QueueScreen() {
+  const t = useT();
   const router = useRouter();
   const queue = usePlayerStore((s) => s.queue);
   const index = usePlayerStore((s) => s.index);
@@ -78,7 +80,7 @@ export default function QueueScreen() {
         <Pressable hitSlop={12} onPress={() => router.back()}>
           <Ionicons name="chevron-down" size={28} color={colors.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>Cola</Text>
+        <Text style={styles.headerTitle}>{t('Cola')}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -88,7 +90,7 @@ export default function QueueScreen() {
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Text style={styles.empty}>La cola está vacía.</Text>
+          <Text style={styles.empty}>{t('La cola está vacía.')}</Text>
         }
       />
     </SafeAreaView>

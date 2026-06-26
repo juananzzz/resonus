@@ -1,4 +1,4 @@
-/** Ajustes de la app (persistidos). De momento: calidad de streaming. */
+/** Ajustes de la app (persistidos): calidad de streaming e idioma. */
 import { create } from 'zustand';
 
 import { getItem, setItem } from '@/lib/storage';
@@ -13,27 +13,47 @@ export const BITRATE_OPTIONS = [
   { label: '128 kbps', value: 128 },
 ] as const;
 
+export type Language = 'es' | 'en';
+
 interface SettingsState {
   maxBitRate: number;
+  language: Language;
   setMaxBitRate: (value: number) => void;
+  setLanguage: (language: Language) => void;
   hydrate: () => Promise<void>;
 }
 
-export const useSettings = create<SettingsState>((set) => ({
+function persist(state: { maxBitRate: number; language: Language }) {
+  void setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+export const useSettings = create<SettingsState>((set, get) => ({
   maxBitRate: 0,
+  language: 'es',
 
   setMaxBitRate: (maxBitRate) => {
     set({ maxBitRate });
-    void setItem(STORAGE_KEY, JSON.stringify({ maxBitRate }));
+    persist({ maxBitRate, language: get().language });
+  },
+
+  setLanguage: (language) => {
+    set({ language });
+    persist({ maxBitRate: get().maxBitRate, language });
   },
 
   hydrate: async () => {
     try {
       const raw = await getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as { maxBitRate?: number };
+        const parsed = JSON.parse(raw) as Partial<{
+          maxBitRate: number;
+          language: Language;
+        }>;
         if (typeof parsed.maxBitRate === 'number') {
           set({ maxBitRate: parsed.maxBitRate });
+        }
+        if (parsed.language === 'es' || parsed.language === 'en') {
+          set({ language: parsed.language });
         }
       }
     } catch {

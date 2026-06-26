@@ -19,6 +19,7 @@ import { useAuthStore } from '@/store/auth';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu } from '@/store/songMenu';
 import { useToast } from '@/store/toast';
+import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
 import { Cover } from './Cover';
 
@@ -55,6 +56,7 @@ export function SongMenuSheet() {
   const cancelSleepTimer = usePlayerStore((s) => s.cancelSleepTimer);
   const sleepTimerMinutes = usePlayerStore((s) => s.sleepTimerMinutes);
   const toast = useToast((s) => s.show);
+  const t = useT();
 
   const [mode, setMode] = useState<'actions' | 'playlists' | 'sleep'>('actions');
 
@@ -82,15 +84,15 @@ export function SongMenuSheet() {
     try {
       await addToPlaylist(auth, playlistId, song.id);
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
-      toast(`Añadida a "${playlistName}"`);
+      toast(t('Añadida a «{name}»', { name: playlistName }));
     } catch {
-      toast('No se pudo añadir a la lista');
+      toast(t('No se pudo añadir a la lista'));
     }
   }
 
   const soon = () => {
     close();
-    toast('Próximamente 🚧');
+    toast(t('Próximamente 🚧'));
   };
 
   return (
@@ -119,7 +121,7 @@ export function SongMenuSheet() {
               onPress={() => setMode('actions')}
             >
               <Ionicons name="chevron-back" size={24} color={colors.text} />
-              <Text style={styles.actionText}>Añadir a una playlist</Text>
+              <Text style={styles.actionText}>{t('Añadir a una playlist')}</Text>
             </Pressable>
             {loadingPlaylists ? (
               <ActivityIndicator style={{ marginVertical: spacing.lg }} color={colors.accent} />
@@ -144,7 +146,7 @@ export function SongMenuSheet() {
           <View>
             <Pressable style={styles.action} onPress={() => setMode('actions')}>
               <Ionicons name="chevron-back" size={24} color={colors.text} />
-              <Text style={styles.actionText}>Temporizador de apagado</Text>
+              <Text style={styles.actionText}>{t('Temporizador de apagado')}</Text>
             </Pressable>
             {[15, 30, 45, 60].map((m) => (
               <Pressable
@@ -152,12 +154,12 @@ export function SongMenuSheet() {
                 style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
                 onPress={() => {
                   setSleepTimer(m);
-                  toast(`Se pausará en ${m} min`);
+                  toast(t('Se pausará en {n} min', { n: m }));
                   close();
                 }}
               >
                 <Ionicons name="time-outline" size={24} color={colors.text} />
-                <Text style={styles.actionText}>{m} minutos</Text>
+                <Text style={styles.actionText}>{t('{n} minutos', { n: m })}</Text>
               </Pressable>
             ))}
             {sleepTimerMinutes ? (
@@ -165,13 +167,13 @@ export function SongMenuSheet() {
                 style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
                 onPress={() => {
                   cancelSleepTimer();
-                  toast('Temporizador desactivado');
+                  toast(t('Temporizador desactivado'));
                   close();
                 }}
               >
                 <Ionicons name="close-circle-outline" size={24} color={colors.danger} />
                 <Text style={[styles.actionText, { color: colors.danger }]}>
-                  Desactivar
+                  {t('Desactivar')}
                 </Text>
               </Pressable>
             ) : null}
@@ -180,26 +182,26 @@ export function SongMenuSheet() {
           <>
             <Action
               icon="add-circle-outline"
-              label="Añadir a una playlist"
+              label={t('Añadir a una playlist')}
               onPress={() => setMode('playlists')}
             />
             {song.artistId ? (
               <Action
                 icon="person"
-                label="Ir al artista"
+                label={t('Ir al artista')}
                 onPress={() => go(`/artist/${song.artistId}`)}
               />
             ) : null}
             {song.albumId ? (
               <Action
                 icon="disc"
-                label="Ir al álbum"
+                label={t('Ir al álbum')}
                 onPress={() => go(`/album/${song.albumId}`)}
               />
             ) : null}
             <Action
               icon="play-forward"
-              label="Reproducir a continuación"
+              label={t('Reproducir a continuación')}
               onPress={() => {
                 playNext(song);
                 close();
@@ -207,7 +209,7 @@ export function SongMenuSheet() {
             />
             <Action
               icon="list"
-              label="Añadir a la cola"
+              label={t('Añadir a la cola')}
               onPress={() => {
                 addToQueue(song);
                 close();
@@ -215,29 +217,29 @@ export function SongMenuSheet() {
             />
             <Action
               icon="heart-outline"
-              label="Añadir a favoritos"
+              label={t('Añadir a favoritos')}
               onPress={() => {
                 if (auth) {
                   star(auth, song.id).then(() =>
                     queryClient.invalidateQueries({ queryKey: ['starred'] }),
                   );
                 }
-                toast('Añadida a favoritos');
+                toast(t('Añadida a favoritos'));
                 close();
               }}
             />
             <Action
               icon="musical-notes-outline"
-              label="Letra"
+              label={t('Letra')}
               onPress={() => go('/lyrics')}
             />
-            <Action icon="download-outline" label="Descargar" onPress={soon} />
+            <Action icon="download-outline" label={t('Descargar')} onPress={soon} />
             <Action
               icon="moon-outline"
               label={
                 sleepTimerMinutes
-                  ? `Temporizador (${sleepTimerMinutes} min)`
-                  : 'Temporizador de apagado'
+                  ? t('Temporizador ({n} min)', { n: sleepTimerMinutes })
+                  : t('Temporizador de apagado')
               }
               onPress={() => setMode('sleep')}
             />

@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getLyrics } from '@/api/subsonic';
+import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
@@ -20,6 +21,7 @@ import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 export default function LyricsScreen() {
   const router = useRouter();
   const auth = useAuthStore((s) => s.auth);
+  const t = useT();
   const song = usePlayerStore(currentSong);
 
   const { data, isLoading } = useQuery({
@@ -36,7 +38,7 @@ export default function LyricsScreen() {
         </Pressable>
         <View style={styles.titleBox}>
           <Text style={styles.title} numberOfLines={1}>
-            {song?.title ?? 'Letra'}
+            {song?.title ?? t('Letra')}
           </Text>
           {song?.artist ? (
             <Text style={styles.artist} numberOfLines={1}>
@@ -54,7 +56,7 @@ export default function LyricsScreen() {
           <Text style={styles.lyrics}>{data}</Text>
         </ScrollView>
       ) : (
-        <Text style={styles.empty}>No hay letra disponible para esta canción.</Text>
+        <Text style={styles.empty}>{t('No hay letra disponible para esta canción.')}</Text>
       )}
     </SafeAreaView>
   );

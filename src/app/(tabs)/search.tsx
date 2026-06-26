@@ -19,12 +19,14 @@ import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { TrackRow } from '@/components/TrackRow';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 export default function SearchScreen() {
   const auth = useAuthStore((s) => s.auth);
+  const t = useT();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query.trim(), 350);
   const playing = usePlayerStore(currentSong);
@@ -42,7 +44,7 @@ export default function SearchScreen() {
         <Ionicons name="search" size={20} color={colors.textMuted} />
         <TextInput
           style={styles.input}
-          placeholder="Canciones, álbumes, artistas"
+          placeholder={t('Canciones, álbumes, artistas')}
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
@@ -62,7 +64,7 @@ export default function SearchScreen() {
 
         {data && data.artists.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Artistas</Text>
+            <Text style={styles.sectionTitle}>{t('Artistas')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -88,7 +90,7 @@ export default function SearchScreen() {
 
         {data && data.albums.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Álbumes</Text>
+            <Text style={styles.sectionTitle}>{t('Álbumes')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -103,7 +105,7 @@ export default function SearchScreen() {
 
         {data && data.songs.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Canciones</Text>
+            <Text style={styles.sectionTitle}>{t('Canciones')}</Text>
             {data.songs.map((song, i) => (
               <TrackRow
                 key={song.id}

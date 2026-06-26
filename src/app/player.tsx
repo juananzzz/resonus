@@ -20,6 +20,7 @@ import { formatDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useSongMenu } from '@/store/songMenu';
+import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
 
 const COVER = Dimensions.get('window').width - spacing.xl * 2;
@@ -62,6 +63,7 @@ export default function PlayerScreen() {
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
   const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
   const openMenu = useSongMenu((s) => s.open);
+  const t = useT();
 
   if (!song) {
     router.back();
@@ -80,9 +82,9 @@ export default function PlayerScreen() {
       />
       <SafeAreaView style={styles.safe}>
         <View style={styles.topBar}>
-          <CircleButton name="chevron-down" label="Cerrar" onPress={() => router.back()} />
-          <Text style={styles.topTitle}>REPRODUCIENDO</Text>
-          <CircleButton name="ellipsis-vertical" label="Más opciones" onPress={() => openMenu(song)} />
+          <CircleButton name="chevron-down" label={t('Cerrar')} onPress={() => router.back()} />
+          <Text style={styles.topTitle}>{t('REPRODUCIENDO')}</Text>
+          <CircleButton name="ellipsis-vertical" label={t('Más opciones')} onPress={() => openMenu(song)} />
         </View>
 
         <View style={styles.coverWrap}>
@@ -101,12 +103,12 @@ export default function PlayerScreen() {
                   onPress={() => router.push(`/artist/${song.artistId}`)}
                 >
                   <Text style={styles.artist} numberOfLines={1}>
-                    {song.artist ?? 'Desconocido'}
+                    {song.artist ?? t('Desconocido')}
                   </Text>
                 </Pressable>
               ) : (
                 <Text style={styles.artist} numberOfLines={1}>
-                  {song.artist ?? 'Desconocido'}
+                  {song.artist ?? t('Desconocido')}
                 </Text>
               )}
             </View>
@@ -133,7 +135,7 @@ export default function PlayerScreen() {
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="Aleatorio"
+              accessibilityLabel={t('Aleatorio')}
               onPress={toggleShuffle}
             >
               <Ionicons
@@ -145,7 +147,7 @@ export default function PlayerScreen() {
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="Anterior"
+              accessibilityLabel={t('Anterior')}
               onPress={previous}
             >
               <Ionicons name="play-skip-back" size={34} color={colors.text} />
@@ -153,7 +155,7 @@ export default function PlayerScreen() {
             <Pressable
               style={styles.playButton}
               accessibilityRole="button"
-              accessibilityLabel={isPlaying ? 'Pausar' : 'Reproducir'}
+              accessibilityLabel={isPlaying ? t('Pausar') : t('Reproducir')}
               onPress={toggle}
             >
               <Ionicons
@@ -166,7 +168,7 @@ export default function PlayerScreen() {
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="Siguiente"
+              accessibilityLabel={t('Siguiente')}
               onPress={next}
             >
               <Ionicons name="play-skip-forward" size={34} color={colors.text} />
@@ -174,7 +176,7 @@ export default function PlayerScreen() {
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="Repetir"
+              accessibilityLabel={t('Repetir')}
               onPress={cycleRepeat}
             >
               <MaterialIcons
@@ -191,7 +193,7 @@ export default function PlayerScreen() {
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="Ver la cola"
+              accessibilityLabel={t('Ver la cola')}
               onPress={() => router.push('/queue')}
             >
               <MaterialIcons name="queue-music" size={24} color={colors.text} />

@@ -8,6 +8,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { coverArtUrl } from '@/api/subsonic';
 import { useDominantColor } from '@/hooks/useDominantColor';
+import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, radius, spacing } from '@/theme';
@@ -22,6 +23,7 @@ export function MiniPlayer() {
   const positionSec = usePlayerStore((s) => s.positionSec);
   const durationSec = usePlayerStore((s) => s.durationSec);
   const toggle = usePlayerStore((s) => s.toggle);
+  const t = useT();
 
   const cover = song
     ? coverArtUrl(auth!, song.coverArt ?? song.albumId, 100)
@@ -53,7 +55,7 @@ export function MiniPlayer() {
       <Pressable
         hitSlop={12}
         accessibilityRole="button"
-        accessibilityLabel={isPlaying ? 'Pausar' : 'Reproducir'}
+        accessibilityLabel={isPlaying ? t('Pausar') : t('Reproducir')}
         onPress={(e) => {
           e.stopPropagation();
           toggle();

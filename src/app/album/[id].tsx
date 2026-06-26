@@ -6,6 +6,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { coverArtUrl, getAlbum } from '@/api/subsonic';
 import { Message } from '@/components/Message';
 import { TrackListView } from '@/components/TrackListView';
+import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { colors } from '@/theme';
@@ -13,6 +14,7 @@ import { colors } from '@/theme';
 export default function AlbumScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const auth = useAuthStore((s) => s.auth);
+  const t = useT();
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
@@ -33,7 +35,7 @@ export default function AlbumScreen() {
   if (isError || !data) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center' }}>
-        <Message text="No se pudo cargar el álbum." onRetry={() => refetch()} />
+        <Message text={t('No se pudo cargar el álbum.')} onRetry={() => refetch()} />
       </View>
     );
   }

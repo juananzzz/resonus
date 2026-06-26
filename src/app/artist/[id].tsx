@@ -23,6 +23,7 @@ import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { Message } from '@/components/Message';
 import { TrackRow } from '@/components/TrackRow';
+import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
@@ -31,6 +32,7 @@ export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const auth = useAuthStore((s) => s.auth);
+  const t = useT();
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
@@ -64,7 +66,7 @@ export default function ArtistScreen() {
   if (isError || !data) {
     return (
       <View style={styles.center}>
-        <Message text="No se pudo cargar el artista." onRetry={() => refetch()} />
+        <Message text={t('No se pudo cargar el artista.')} onRetry={() => refetch()} />
       </View>
     );
   }
@@ -94,7 +96,7 @@ export default function ArtistScreen() {
 
         {top.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Populares</Text>
+            <Text style={styles.sectionTitle}>{t('Populares')}</Text>
             {top.map((song, i) => (
               <TrackRow
                 key={song.id}
@@ -109,14 +111,14 @@ export default function ArtistScreen() {
 
         {data.albums.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Álbumes</Text>
+            <Text style={styles.sectionTitle}>{t('Álbumes')}</Text>
             <AlbumGrid albums={data.albums} columns={4} />
           </View>
         ) : null}
 
         {similar && similar.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Artistas similares</Text>
+            <Text style={styles.sectionTitle}>{t('Artistas similares')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}

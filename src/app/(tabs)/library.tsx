@@ -25,7 +25,9 @@ import {
 import { Cover } from '@/components/Cover';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
+import { albumsLabel, songsLabel, useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
+import { useSettings } from '@/store/settings';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 type Segment = 'playlists' | 'artists';
@@ -37,6 +39,8 @@ const SEGMENTS: { key: Segment; label: string }[] = [
 
 function FavoritesEntry() {
   const auth = useAuthStore((s) => s.auth);
+  const t = useT();
+  const lang = useSettings((s) => s.language);
   const { data } = useQuery({
     queryKey: ['starred'],
     queryFn: () => getStarred(auth!),
@@ -49,10 +53,8 @@ function FavoritesEntry() {
       <Pressable style={styles.row}>
         <FavoritesArt size={56} />
         <View style={styles.rowInfo}>
-          <Text style={styles.rowTitle}>Favoritos</Text>
-          <Text style={styles.rowSub}>
-            {count} canción{count === 1 ? '' : 'es'}
-          </Text>
+          <Text style={styles.rowTitle}>{t('Favoritos')}</Text>
+          <Text style={styles.rowSub}>{songsLabel(count, lang)}</Text>
         </View>
       </Pressable>
     </Link>
@@ -61,13 +63,15 @@ function FavoritesEntry() {
 
 function PlaylistsTab() {
   const auth = useAuthStore((s) => s.auth);
+  const t = useT();
+  const lang = useSettings((s) => s.language);
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['playlists'],
     queryFn: () => getPlaylists(auth!),
     enabled: !!auth,
   });
   if (isLoading) return <Loader />;
-  if (isError) return <Message text="No se pudieron cargar las listas." onRetry={() => refetch()} />;
+  if (isError) return <Message text={t('No se pudieron cargar las listas.')} onRetry={() => refetch()} />;
   return (
     <FlatList
       data={data ?? []}
@@ -85,7 +89,7 @@ function PlaylistsTab() {
               <Text style={styles.rowTitle} numberOfLines={1}>
                 {item.name}
               </Text>
-              <Text style={styles.rowSub}>{item.songCount ?? 0} canciones</Text>
+              <Text style={styles.rowSub}>{songsLabel(item.songCount ?? 0, lang)}</Text>
             </View>
           </Pressable>
         </Link>
@@ -96,13 +100,15 @@ function PlaylistsTab() {
 
 function ArtistsTab() {
   const auth = useAuthStore((s) => s.auth);
+  const t = useT();
+  const lang = useSettings((s) => s.language);
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['artists'],
     queryFn: () => getArtists(auth!),
     enabled: !!auth,
   });
   if (isLoading) return <Loader />;
-  if (isError) return <Message text="No se pudieron cargar los artistas." onRetry={() => refetch()} />;
+  if (isError) return <Message text={t('No se pudieron cargar los artistas.')} onRetry={() => refetch()} />;
   return (
     <FlatList
       data={data ?? []}
@@ -124,13 +130,13 @@ function ArtistsTab() {
                 {item.name}
               </Text>
               <Text style={styles.rowSub}>
-                {item.albumCount ?? 0} álbum{item.albumCount === 1 ? '' : 'es'}
+                {albumsLabel(item.albumCount ?? 0, lang)}
               </Text>
             </View>
           </Pressable>
         </Link>
       )}
-      ListEmptyComponent={<Empty text="No hay artistas." />}
+      ListEmptyComponent={<Empty text={t('No hay artistas.')} />}
     />
   );
 }
@@ -145,12 +151,13 @@ function Empty({ text }: { text: string }) {
 
 export default function LibraryScreen() {
   const router = useRouter();
+  const t = useT();
   const [segment, setSegment] = useState<Segment>('playlists');
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.heading}>Biblioteca</Text>
+        <Text style={styles.heading}>{t('Biblioteca')}</Text>
         <Pressable hitSlop={12} onPress={() => router.push('/settings')}>
           <Ionicons name="settings-outline" size={24} color={colors.textSecondary} />
         </Pressable>
@@ -166,7 +173,7 @@ export default function LibraryScreen() {
               onPress={() => setSegment(s.key)}
             >
               <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
-                {s.label}
+                {t(s.label)}
               </Text>
             </Pressable>
           );
