@@ -15,6 +15,7 @@ import { SongMenuSheet } from '@/components/SongMenuSheet';
 import { Toast } from '@/components/Toast';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
+import { usePlayCounts } from '@/store/playCounts';
 import { useRecentSearches } from '@/store/recentSearches';
 import { useSettings } from '@/store/settings';
 import { colors } from '@/theme';
@@ -33,6 +34,7 @@ export default function RootLayout() {
     hydrate();
     useSettings.getState().hydrate();
     useRecentSearches.getState().hydrate();
+    usePlayCounts.getState().hydrate();
   }, [hydrate, activeProfile]);
 
   return (

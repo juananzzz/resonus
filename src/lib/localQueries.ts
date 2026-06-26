@@ -3,6 +3,7 @@
  * Si el catálogo aún no se ha cargado, lo carga bajo demanda.
  */
 import { useAuthStore } from '@/store/auth';
+import { usePlayCounts } from '@/store/playCounts';
 import { type Album, type Artist, type ArtistInfo, type Playlist, type SearchResult, type Song, type StarType, type Starred } from '@/api/subsonic';
 import { getItem, setItem } from '@/lib/storage';
 import {
@@ -144,9 +145,22 @@ function toArtist(local: { id: string; name: string; coverBase64?: string; cover
 export async function getAlbumList(type: string, size = 20): Promise<Album[]> {
   const c = await ensureCatalog();
   if (!c) return [];
-  let albums = [...c.albums];
-  if (type === 'newest' || type === 'recent') {
-    albums.sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+  const albums = [...c.albums];
+  if (type === 'newest') {
+    // Añadidos recientemente: por fecha del fichero (si falta, por año).
+    albums.sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0) || (b.year ?? 0) - (a.year ?? 0));
+  } else if (type === 'frequent') {
+    // Más escuchados: por nº de reproducciones locales acumuladas del álbum.
+    const counts = usePlayCounts.getState().counts;
+    const albumPlays = new Map<string, number>();
+    for (const s of c.songs) {
+      const n = counts[s.id] ?? 0;
+      if (n > 0 && s.albumId) albumPlays.set(s.albumId, (albumPlays.get(s.albumId) ?? 0) + n);
+    }
+    const played = albums
+      .filter((a) => (albumPlays.get(a.id) ?? 0) > 0)
+      .sort((a, b) => (albumPlays.get(b.id) ?? 0) - (albumPlays.get(a.id) ?? 0));
+    return played.slice(0, size).map(toAlbum);
   } else if (type === 'random') {
     for (let i = albums.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

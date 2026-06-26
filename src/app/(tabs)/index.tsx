@@ -102,7 +102,7 @@ function AlbumSection({
   type,
 }: {
   title: string;
-  type: 'recent' | 'newest' | 'frequent';
+  type: 'recent' | 'newest' | 'frequent' | 'random';
 }) {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const { data, isLoading } = useQuery({
@@ -191,13 +191,19 @@ export default function HomeScreen() {
 
         <QuickGrid />
 
-        <AlbumSection title={t('Álbumes')} type="newest" />
-        {!offline ? (
+        {offline ? (
           <>
+            <AlbumSection title={t('Añadidos recientemente')} type="newest" />
+            <AlbumSection title={t('Más escuchados')} type="frequent" />
+            <AlbumSection title={t('Aleatorio')} type="random" />
+          </>
+        ) : (
+          <>
+            <AlbumSection title={t('Álbumes')} type="newest" />
             <AlbumSection title={t('Reproducido recientemente')} type="recent" />
             <AlbumSection title={t('Más escuchados')} type="frequent" />
           </>
-        ) : null}
+        )}
       </ScrollView>
     </SafeAreaView>
   );

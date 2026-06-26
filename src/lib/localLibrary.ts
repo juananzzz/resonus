@@ -28,6 +28,8 @@ export interface LocalAlbum {
   coverMime?: string;
   songCount: number;
   year?: number;
+  /** Fecha del fichero más reciente del álbum (ms), para "Añadidos recientemente". */
+  addedAt?: number;
 }
 
 export interface LocalArtist {
@@ -54,10 +56,14 @@ function cacheKey(sourceMode: string, uri?: string): string {
 // ── Lectura de ID3 desde archivo ───────────────────────────────────────────
 
 /** Lee el tag ID3v2 completo: primero la cabecera, luego el resto. */
-async function readID3Full(uri: string): Promise<{ buf: Uint8Array; fileSize: number } | null> {
+async function readID3Full(uri: string): Promise<{ buf: Uint8Array; fileSize: number; mtime: number } | null> {
   try {
     const info = await FileSystem.getInfoAsync(uri);
     const fileSize = (info.exists && (info as any).size) ? (info as any).size as number : 0;
+    // modificationTime viene en segundos; lo pasamos a ms.
+    const mtime = (info.exists && (info as any).modificationTime)
+      ? ((info as any).modificationTime as number) * 1000
+      : 0;
     // Leer solo la cabecera (10 bytes)
     const headB64 = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
@@ -66,7 +72,7 @@ async function readID3Full(uri: string): Promise<{ buf: Uint8Array; fileSize: nu
     });
     const head = base64ToUint8(headB64);
     if (head.length < 10 || head[0] !== 0x49 || head[1] !== 0x44 || head[2] !== 0x33) {
-      return { buf: head, fileSize };
+      return { buf: head, fileSize, mtime };
     }
     const tagSize = ((head[6] & 0x7f) << 21) | ((head[7] & 0x7f) << 14) | ((head[8] & 0x7f) << 7) | (head[9] & 0x7f);
     const total = 10 + tagSize;
@@ -80,15 +86,16 @@ async function readID3Full(uri: string): Promise<{ buf: Uint8Array; fileSize: nu
       length: limit,
       position: 0,
     });
-    return { buf: base64ToUint8(fullB64, Math.min(total, cap)), fileSize };
+    return { buf: base64ToUint8(fullB64, Math.min(total, cap)), fileSize, mtime };
   } catch {
     return null;
   }
 }
 
-async function readID3(uri: string): Promise<ID3Tags | null> {
+async function readID3(uri: string): Promise<{ tags: ID3Tags | null; mtime: number }> {
   const result = await readID3Full(uri);
-  if (!result) return null;
+  if (!result) return { tags: null, mtime: 0 };
+  const mtime = result.mtime;
   const tags = parseID3(result.buf);
   // Si ID3v2 no encontró título y el archivo es > 128 B, intenta ID3v1 al final
   if (!tags.title && result.fileSize > 128) {
@@ -111,7 +118,7 @@ async function readID3(uri: string): Promise<ID3Tags | null> {
       // ignorar errores leyendo el final
     }
   }
-  return tags;
+  return { tags, mtime };
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -192,6 +199,7 @@ function groupByAlbum(songs: Song[]): LocalAlbum[] {
     coverBase64?: string;
     coverMime?: string;
     year?: number;
+    addedAt?: number;
   }>();
   for (const song of songs) {
     const rawAlbum = song.album || 'Álbum desconocido';
@@ -217,6 +225,7 @@ function groupByAlbum(songs: Song[]): LocalAlbum[] {
       entry.coverMime = (song as any).coverMime;
     }
     if ((song as any).year) entry.year = (song as any).year;
+    if (song.addedAt && song.addedAt > (entry.addedAt ?? 0)) entry.addedAt = song.addedAt;
   }
   return Array.from(map.entries()).map(([key, v]) => ({
     id: key,
@@ -226,6 +235,7 @@ function groupByAlbum(songs: Song[]): LocalAlbum[] {
     coverMime: v.coverMime,
     songCount: v.songs.length,
     year: v.year,
+    addedAt: v.addedAt,
   }));
 }
 
@@ -308,7 +318,7 @@ export async function loadDeviceSongs(): Promise<Song[]> {
   const cached = catalogCache.get(key);
   if (cached) return cached.songs;
 
-  const rawSongs: { id: string; filename: string; duration: number; uri: string }[] = [];
+  const rawSongs: { id: string; filename: string; duration: number; uri: string; mtime: number }[] = [];
   let after: string | undefined;
   let hasNext = true;
   while (hasNext && rawSongs.length < 5000) {
@@ -318,7 +328,13 @@ export async function loadDeviceSongs(): Promise<Song[]> {
       after,
     });
     for (const a of page.assets) {
-      rawSongs.push({ id: `local:${a.id}`, filename: a.filename, duration: a.duration, uri: a.uri });
+      rawSongs.push({
+        id: `local:${a.id}`,
+        filename: a.filename,
+        duration: a.duration,
+        uri: a.uri,
+        mtime: a.modificationTime || 0,
+      });
     }
     after = page.endCursor;
     hasNext = page.hasNextPage;
@@ -331,12 +347,13 @@ export async function loadDeviceSongs(): Promise<Song[]> {
     for (const raw of rawSongs) {
       let tags = null;
       try {
-        tags = await readID3(raw.uri);
+        ({ tags } = await readID3(raw.uri));
       } catch {
         // Si falla la lectura ID3, seguimos con el nombre de fichero.
       }
       const base: any = { id: raw.id, localUri: raw.uri, duration: raw.duration };
       applyTags(base, titleFromFilename(raw.filename), tags);
+      if (raw.mtime) base.addedAt = raw.mtime; // MediaLibrary ya da ms
       // Agrupa por carpeta (igual que en modo carpeta): el álbum lo define el
       // directorio del fichero, no las etiquetas de cada pista.
       const dir = parentDirOf(raw.uri);
@@ -394,13 +411,15 @@ export async function loadFolderSongs(treeUri: string): Promise<Song[]> {
   try {
     for (const raw of rawSongs) {
       let tags = null;
+      let mtime = 0;
       try {
-        tags = await readID3(raw.uri);
+        ({ tags, mtime } = await readID3(raw.uri));
       } catch {
         // Si falla la lectura ID3, seguimos con el nombre de fichero.
       }
       const base: any = { id: raw.id, localUri: raw.uri };
       applyTags(base, raw.filename, tags);
+      if (mtime) base.addedAt = mtime;
       // En modo carpeta, cada subcarpeta es un álbum (lo más fiable). Los
       // ficheros sueltos en la raíz elegida se agrupan por su etiqueta de
       // álbum (p. ej. un single).

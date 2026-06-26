@@ -37,6 +37,9 @@ const en: Record<string, string> = {
   'Modo sin conexión': 'Offline mode',
   'Escucha la música guardada en tu dispositivo, sin servidor.':
     'Listen to music stored on your device, without a server.',
+  'Escucha la música guardada en tu dispositivo, sin servidor. Elige de dónde sacarla:':
+    'Listen to music stored on your device, without a server. Choose where from:',
+  Local: 'Local',
   'Música local': 'Local music',
   'Origen · Volver a escanear': 'Source · Rescan',
   'Volver a escanear': 'Rescan',
@@ -57,6 +60,7 @@ const en: Record<string, string> = {
   // Home
   'Tu música': 'Your music',
   'Reproducido recientemente': 'Recently played',
+  'Añadidos recientemente': 'Recently added',
   'Añadido recientemente': 'Recently added',
   'Más escuchados': 'Most played',
   Favoritos: 'Favorites',

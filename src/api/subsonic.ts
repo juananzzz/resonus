@@ -51,6 +51,8 @@ export interface Song {
   localUri?: string;
   /** Año de la canción (desde ID3, modo sin conexión). */
   year?: number;
+  /** Fecha de modificación del fichero en ms (modo sin conexión). */
+  addedAt?: number;
 }
 
 export interface Album {

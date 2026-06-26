@@ -22,6 +22,7 @@ import {
   type ServerProfile,
   useAuthStore,
 } from '@/store/auth';
+import { ensureAudioPermission, pickFolder } from '@/lib/localLibrary';
 import { useToast } from '@/store/toast';
 import { useT } from '@/i18n';
 import { colors, fontSize, radius, spacing } from '@/theme';
@@ -111,9 +112,10 @@ export default function LoginScreen() {
   const switchProfile = useAuthStore((s) => s.switchProfile);
   const removeProfile = useAuthStore((s) => s.removeProfile);
   const enterOffline = useAuthStore((s) => s.enterOffline);
+  const setOfflineSource = useAuthStore((s) => s.setOfflineSource);
   const toast = useToast((s) => s.show);
   const t = useT();
-  const [server, setServer] = useState<ServerKey>('navidrome');
+  const [server, setServer] = useState<ServerKey | 'local'>('navidrome');
   const [serverUrl, setServerUrl] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -122,9 +124,28 @@ export default function LoginScreen() {
   const [showAll, setShowAll] = useState(false);
 
   const isJellyfin = server === 'jellyfin';
+  const isLocal = server === 'local';
   const canSubmit = serverUrl.trim() && username.trim() && password && !loading;
   const visible = profiles.slice(0, MAX_VISIBLE);
   const overflow = profiles.length > MAX_VISIBLE;
+
+  // Modo sin conexión: fija el origen y entra directamente (sin pantalla intermedia).
+  async function startLocalDevice() {
+    const ok = await ensureAudioPermission();
+    if (!ok) {
+      toast(t('Necesitamos permiso para leer la música del dispositivo.'));
+      return;
+    }
+    await setOfflineSource({ mode: 'device' });
+    await enterOffline();
+  }
+
+  async function startLocalFolder() {
+    const uri = await pickFolder();
+    if (!uri) return;
+    await setOfflineSource({ mode: 'folder', uri });
+    await enterOffline();
+  }
 
   async function onSubmit() {
     if (isJellyfin) {
@@ -213,70 +234,93 @@ export default function LoginScreen() {
                 </Pressable>
               );
             })}
-          </View>
-
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="https://musica.midominio.com"
-              placeholderTextColor={colors.textMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              value={serverUrl}
-              onChangeText={setServerUrl}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder={t('Usuario')}
-              placeholderTextColor={colors.textMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={username}
-              onChangeText={setUsername}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder={t('Contraseña')}
-              placeholderTextColor={colors.textMuted}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
-
-            {isJellyfin ? (
-              <Text style={styles.notice}>
-                {t('El soporte de Jellyfin llegará pronto. Por ahora usa Navidrome u OpenSubsonic.')}
-              </Text>
-            ) : null}
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-
             <Pressable
-              style={[styles.button, (!canSubmit || isJellyfin) && styles.buttonDisabled]}
-              disabled={!canSubmit}
-              onPress={onSubmit}
+              style={[styles.serverCard, isLocal && styles.serverCardActive]}
+              onPress={() => setServer('local')}
             >
-              {loading ? (
-                <ActivityIndicator color="#000" />
-              ) : (
-                <Text style={styles.buttonText}>{t('Entrar')}</Text>
-              )}
+              <View style={styles.serverIcon}>
+                <Ionicons name="cloud-offline-outline" size={40} color={colors.accent} />
+              </View>
+              <Text style={styles.serverName} numberOfLines={1}>
+                {t('Local')}
+              </Text>
             </Pressable>
-
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>{t('o')}</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <Pressable style={styles.offlineButton} onPress={() => enterOffline()}>
-              <Ionicons name="cloud-offline-outline" size={20} color={colors.text} />
-              <Text style={styles.offlineText}>{t('Modo sin conexión')}</Text>
-            </Pressable>
-            <Text style={styles.offlineHint}>
-              {t('Escucha la música guardada en tu dispositivo, sin servidor.')}
-            </Text>
           </View>
+
+          {isLocal ? (
+            <View style={styles.form}>
+              <Text style={styles.localDesc}>
+                {t('Escucha la música guardada en tu dispositivo, sin servidor. Elige de dónde sacarla:')}
+              </Text>
+
+              <Pressable style={styles.localOption} onPress={startLocalDevice}>
+                <Ionicons name="phone-portrait-outline" size={26} color={colors.accent} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.localOptTitle}>{t('Escanear todo el móvil')}</Text>
+                  <Text style={styles.localOptSub}>{t('Toda la música del dispositivo.')}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+              </Pressable>
+
+              <Pressable style={styles.localOption} onPress={startLocalFolder}>
+                <Ionicons name="folder-outline" size={26} color={colors.accent} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.localOptTitle}>{t('Elegir una carpeta')}</Text>
+                  <Text style={styles.localOptSub}>{t('Solo la música de la carpeta que elijas.')}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.form}>
+              <TextInput
+                style={styles.input}
+                placeholder="https://musica.midominio.com"
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                value={serverUrl}
+                onChangeText={setServerUrl}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder={t('Usuario')}
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={username}
+                onChangeText={setUsername}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder={t('Contraseña')}
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+              />
+
+              {isJellyfin ? (
+                <Text style={styles.notice}>
+                  {t('El soporte de Jellyfin llegará pronto. Por ahora usa Navidrome u OpenSubsonic.')}
+                </Text>
+              ) : null}
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              <Pressable
+                style={[styles.button, (!canSubmit || isJellyfin) && styles.buttonDisabled]}
+                disabled={!canSubmit}
+                onPress={onSubmit}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Text style={styles.buttonText}>{t('Entrar')}</Text>
+                )}
+              </Pressable>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -373,16 +417,28 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
     borderRadius: radius.md,
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   serverCardActive: { borderColor: colors.accent },
-  serverIcon: { width: 48, height: 48 },
+  serverIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   serverName: { color: colors.text, fontSize: fontSize.xs, fontWeight: '600' },
   soon: { color: colors.textMuted, fontSize: 10 },
+  localDesc: { color: colors.textSecondary, fontSize: fontSize.sm, marginBottom: spacing.xs },
+  localOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+  },
+  localOptTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
+  localOptSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
   form: { gap: spacing.md },
   input: {
     backgroundColor: colors.surfaceHighlight,
@@ -403,32 +459,6 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: '#000', fontSize: fontSize.md, fontWeight: '700' },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
-  dividerText: { color: colors.textMuted, fontSize: fontSize.sm },
-  offlineButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: spacing.md,
-    marginTop: spacing.md,
-  },
-  offlineText: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
-  offlineHint: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-  },
   modalSafe: { flex: 1, backgroundColor: colors.background },
   modalHeader: {
     flexDirection: 'row',

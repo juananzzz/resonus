@@ -18,6 +18,7 @@ import { create } from 'zustand';
 
 import { coverArtUrl, scrobble, streamUrl, type Song } from '@/api/subsonic';
 import { useAuthStore } from './auth';
+import { usePlayCounts } from './playCounts';
 import { useSettings } from './settings';
 import { useToast } from './toast';
 import { tg } from '@/i18n';
@@ -100,6 +101,8 @@ function addListeners() {
       const auth = useAuthStore.getState().auth;
       const song = queue[e.index];
       if (song && auth) scrobble(auth, song.id);
+      // Sin conexión: llevamos la cuenta localmente (para "Más escuchados").
+      else if (song && useAuthStore.getState().offline) usePlayCounts.getState().bump(song.id);
     }
     if (e.track?.duration) {
       usePlayerStore.setState({ durationSec: e.track.duration });
