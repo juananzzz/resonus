@@ -11,10 +11,8 @@ import { create } from 'zustand';
 
 import { makeAuth, ping, type SubsonicAuth } from '@/api/subsonic';
 import { clearLocalCatalog } from '@/lib/localLibrary';
-import { clearLocalFavs } from '@/lib/localQueries';
 import { queryClient } from '@/lib/query';
 import { deleteItem, getItem, setItem } from '@/lib/storage';
-import { usePlayerStore } from './player';
 
 const ACTIVE_KEY = 'resonus.auth';
 const PROFILES_KEY = 'resonus.profiles';
@@ -122,7 +120,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   switchProfile: async (profile) => {
-    await usePlayerStore.getState().reset();
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    await require('./player').usePlayerStore.getState().reset();
     if (profile._type === 'offline') {
       await setItem(OFFLINE_KEY, '1');
       await setItem(OFFLINE_SOURCE_KEY, JSON.stringify(profile.source));
@@ -159,20 +158,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       ];
       await setItem(PROFILES_KEY, JSON.stringify(profiles));
       clearLocalCatalog();
-      clearLocalFavs();
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/lib/localQueries').clearLocalFavs();
       queryClient.removeQueries({ queryKey: ['localSongs'] });
       set({ offlineSource: source, profiles });
     } else {
       await deleteItem(OFFLINE_SOURCE_KEY);
       clearLocalCatalog();
-      clearLocalFavs();
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/lib/localQueries').clearLocalFavs();
       queryClient.removeQueries({ queryKey: ['localSongs'] });
       set({ offlineSource: source });
     }
   },
 
   logout: async () => {
-    await usePlayerStore.getState().reset();
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    await require('./player').usePlayerStore.getState().reset();
     await deleteItem(ACTIVE_KEY);
     await deleteItem(OFFLINE_KEY);
     await deleteItem(OFFLINE_SOURCE_KEY);
