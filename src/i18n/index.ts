@@ -1,8 +1,15 @@
 /**
- * i18n mínimo y reactivo. El texto en español es la clave; aquí solo se
- * mantiene la traducción al inglés. `useT()` devuelve una función `t` ligada
- * al idioma actual (del store de ajustes), por lo que cambiar el idioma
- * re-renderiza y traduce al vuelo.
+ * i18n mínimo y reactivo. El texto en español es la clave; cada idioma extra
+ * tiene su diccionario (clave española → traducción). `useT()` devuelve una
+ * función `t` ligada al idioma actual (del store de ajustes), por lo que
+ * cambiar el idioma re-renderiza y traduce al vuelo.
+ *
+ * Para añadir un idioma nuevo (p. ej. 'fr'):
+ *   1. Añádelo a `Language` en src/store/settings.ts (y a su `hydrate`).
+ *   2. Crea aquí su diccionario `const fr = { ... }` y mételo en `dictionaries`.
+ *   3. Añade sus formas a `PLURALS` (singular/plural).
+ *   4. Añade su opción a `LANGUAGES` en src/app/settings.tsx.
+ * El español no necesita diccionario (es la clave); lo no traducido cae a él.
  */
 import { useCallback } from 'react';
 
@@ -123,10 +130,16 @@ const en: Record<string, string> = {
   '{n} minutos': '{n} minutes',
 };
 
+/** Diccionarios por idioma. El español es la clave, así que no lleva tabla. */
+const dictionaries: Partial<Record<Language, Record<string, string>>> = {
+  en,
+};
+
 type Vars = Record<string, string | number>;
 
 function translate(text: string, lang: Language, vars?: Vars): string {
-  let out = lang === 'en' ? (en[text] ?? text) : text;
+  const table = dictionaries[lang];
+  let out = table?.[text] ?? text;
   if (vars) {
     for (const key of Object.keys(vars)) {
       out = out.split(`{${key}}`).join(String(vars[key]));
@@ -148,16 +161,26 @@ export function useT(): TFunction {
   return useCallback((text: string, vars?: Vars) => translate(text, lang, vars), [lang]);
 }
 
-/** "N canción/canciones" según idioma. */
-export function songsLabel(n: number, lang: Language): string {
-  return lang === 'en'
-    ? `${n} song${n === 1 ? '' : 's'}`
-    : `${n} canción${n === 1 ? '' : 'es'}`;
+/**
+ * Formas singular/plural por idioma para los contadores. El español ('es')
+ * es obligatorio (fallback); el resto son opcionales.
+ */
+const PLURALS: Record<string, Partial<Record<Language, [string, string]>>> = {
+  song: { es: ['canción', 'canciones'], en: ['song', 'songs'] },
+  album: { es: ['álbum', 'álbumes'], en: ['album', 'albums'] },
+};
+
+function countLabel(kind: keyof typeof PLURALS, n: number, lang: Language): string {
+  const forms = PLURALS[kind][lang] ?? PLURALS[kind].es!;
+  return `${n} ${forms[n === 1 ? 0 : 1]}`;
 }
 
-/** "N álbum/álbumes" según idioma. */
+/** "N canción/canciones" (o su equivalente) según idioma. */
+export function songsLabel(n: number, lang: Language): string {
+  return countLabel('song', n, lang);
+}
+
+/** "N álbum/álbumes" (o su equivalente) según idioma. */
 export function albumsLabel(n: number, lang: Language): string {
-  return lang === 'en'
-    ? `${n} album${n === 1 ? '' : 's'}`
-    : `${n} álbum${n === 1 ? '' : 'es'}`;
+  return countLabel('album', n, lang);
 }
