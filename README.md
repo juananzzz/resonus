@@ -1,45 +1,54 @@
 # Resonus 🎵
 
-An open-source Android music player that connects to your own
-[Navidrome](https://www.navidrome.org/) server (via the Subsonic API). A simple,
-Spotify-style client focused on the essentials.
+An open-source Android music player for your own self-hosted music server.
+A clean, Spotify-style client focused on the essentials.
 
-> Built with [Expo](https://expo.dev) (React Native + TypeScript).
->
+Works with **Navidrome** and any **OpenSubsonic**-compatible server (Subsonic
+API). Jellyfin support is planned.
+
 > ⚡ **Vibe-coded** — this whole app was built collaboratively with an AI coding
 > assistant ([Claude Code](https://claude.com/claude-code)), prompt by prompt.
 
 ## Features
 
-- 🔐 Log in to any Navidrome/Subsonic server (token-based auth, stored
+- 🔐 **Log in** to any Navidrome / OpenSubsonic server (token-based auth, stored
   encrypted). **Multiple saved profiles** to switch between accounts.
-- 🏠 Home with recently played, recently added and most played albums, plus
+- 🏠 **Home** with recently played, recently added and most played albums, plus
   quick-access shortcuts.
-- 🔎 Search for songs, albums and artists (debounced).
-- 🎤 Artist pages with top songs, album grid and similar artists.
-- 📚 Library with playlists, artists and a pinned **Favorites** shortcut.
-- ❤️ Favorite/unfavorite tracks and artists (Subsonic star/unstar).
-- 🎶 Per-track menu: add to playlist, play next, add to queue, go to
-  album/artist, **lyrics**, sleep timer.
-- 📝 **Lyrics** view (Subsonic `getLyrics`).
-- ▶️ Player with editable queue, shuffle, repeat (off/all/one), volume, sleep
-  timer and an always-visible mini player (dynamic colour from the artwork).
-- 🔊 Background playback with **lock-screen / notification media controls**
-  (powered by `react-native-track-player`).
-- 📡 **Scrobbling** to the server (which can forward to Last.fm if your
-  Navidrome is configured for it).
-- ⚙️ Settings: streaming quality (bitrate), library scan status, clear cache.
+- 🔎 **Search** for songs, albums and artists (debounced).
+- 🎤 **Artist** pages with top songs, an album grid and similar artists.
+- 📚 **Library** with playlists, artists and a pinned Favorites shortcut.
+- ❤️ **Favorites** — star/unstar tracks and artists (Subsonic star/unstar).
+- 🎶 **Per-track menu**: add to playlist, play next, add to queue, go to
+  album/artist, lyrics, sleep timer.
+- 📝 **Lyrics** view.
+- ▶️ **Player** with editable queue, shuffle, repeat (off/all/one), volume, a
+  sleep timer and an always-visible mini player (dynamic colour from the
+  artwork).
+- 🔊 **Background playback** with lock-screen / notification media controls.
+- 📡 **Scrobbling** to the server (which can forward to Last.fm if your server
+  is configured for it).
+- 🌍 **Spanish & English** (in-app language switch; easy to add more).
+- ⚙️ **Settings**: streaming quality (bitrate), library scan status, clear cache.
 
 ### Not included (yet)
 
-Offline downloads, equalizer and crossfade. Equalizer and crossfade would need
-custom native audio work; offline downloads need a local file/store layer.
+Offline downloads, equalizer and crossfade. The latter two need custom native
+audio work; offline downloads need a local file/store layer.
+
+## Tech stack
+
+- [Expo](https://expo.dev) SDK 55 (React Native 0.83, New Architecture) + TypeScript
+- [expo-router](https://docs.expo.dev/router/introduction/) for file-based navigation
+- [react-native-track-player](https://rntp.dev/) for audio + media controls
+- [Zustand](https://zustand-demo.pmnd.rs/) for state, [TanStack Query](https://tanstack.com/query) for data fetching
+- A small hand-rolled Subsonic API client and i18n layer
 
 ## Requirements
 
-- [Node.js](https://nodejs.org) 20+ and [pnpm](https://pnpm.io).
-- A running Navidrome server reachable from the device.
-- An Android emulator or device (see below).
+- [Node.js](https://nodejs.org) 20+ and [pnpm](https://pnpm.io)
+- A running Navidrome / OpenSubsonic server reachable from the device
+- An Android emulator or device
 
 ## Getting started
 
@@ -48,15 +57,15 @@ pnpm install
 pnpm android   # builds and runs on a connected emulator/device
 ```
 
-For the dev server only: `pnpm start`. On the login screen enter your server
-URL, username and password.
+For just the dev server: `pnpm start`. On the login screen pick your server
+type and enter its URL, username and password.
 
 ## Build a standalone APK
 
-The whole Android toolchain is local — no cloud required:
+The whole Android toolchain is local — no cloud account required:
 
 ```bash
-# from the project, with an Android SDK + JDK 17 installed:
+# with an Android SDK + JDK 17 installed:
 pnpm android --variant release
 ```
 
@@ -67,14 +76,24 @@ pnpm android --variant release
 
 ```
 src/
-├── api/subsonic.ts     Subsonic API client (auth, albums, artists, search, star…)
-├── store/              Global state with Zustand (session and player)
-├── lib/                Utilities (query client, storage, formatting)
-├── hooks/              Reusable hooks (e.g. useDebounce)
-├── components/         Reusable UI components
-├── theme/              Colors, spacing and typography
-└── app/                Screens and navigation (expo-router)
+├── api/          Subsonic API client (auth, albums, artists, search, star…)
+├── app/          Screens and navigation (expo-router)
+├── components/   Reusable UI components
+├── hooks/        Reusable hooks (useDebounce, useDominantColor)
+├── i18n/         Translations and the useT() hook
+├── lib/          Utilities (query client, storage, playback service, format)
+├── store/        Global state with Zustand (auth, player, settings, …)
+└── theme/        Colors, spacing, typography and layout constants
 ```
+
+## Scripts
+
+| Command | Description |
+|---|---|
+| `pnpm android` | Build and run on Android |
+| `pnpm start` | Start the Metro dev server |
+| `pnpm lint` | Run ESLint |
+| `pnpm typecheck` | Type-check with `tsc` |
 
 ## License
 

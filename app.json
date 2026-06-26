@@ -49,7 +49,6 @@
           }
         }
       ],
-      "expo-audio",
       "expo-secure-store",
       "expo-font",
       "expo-image",
