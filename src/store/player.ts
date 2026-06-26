@@ -172,6 +172,7 @@ interface PlayerState {
   cycleRepeat: () => void;
   setSleepTimer: (minutes: number) => void;
   cancelSleepTimer: () => void;
+  reset: () => Promise<void>;
 }
 
 /** Canción que está sonando ahora mismo, o null si la cola está vacía. */
@@ -359,7 +360,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     sleepTimeout = setTimeout(() => {
       TrackPlayer.pause();
       sleepTimeout = null;
-      set({ isPlaying: false, sleepTimerMinutes: null });
+    set({ sleepTimerMinutes: null });
     }, minutes * 60_000);
     set({ sleepTimerMinutes: minutes });
   },
@@ -367,6 +368,26 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   cancelSleepTimer: () => {
     if (sleepTimeout) clearTimeout(sleepTimeout);
     sleepTimeout = null;
-    set({ sleepTimerMinutes: null });
+    set({ isPlaying: false, sleepTimerMinutes: null });
+  },
+
+  reset: async () => {
+    get().cancelSleepTimer();
+    try {
+      await TrackPlayer.reset();
+    } catch {
+      // ignore
+    }
+    set({
+      queue: [],
+      index: 0,
+      isPlaying: false,
+      positionSec: 0,
+      durationSec: 0,
+      shuffle: false,
+      originalQueue: null,
+      source: null,
+      sourceHref: null,
+    });
   },
 }));

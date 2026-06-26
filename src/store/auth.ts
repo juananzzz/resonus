@@ -14,6 +14,7 @@ import { clearLocalCatalog } from '@/lib/localLibrary';
 import { clearLocalFavs } from '@/lib/localQueries';
 import { queryClient } from '@/lib/query';
 import { deleteItem, getItem, setItem } from '@/lib/storage';
+import { usePlayerStore } from './player';
 
 const ACTIVE_KEY = 'resonus.auth';
 const PROFILES_KEY = 'resonus.profiles';
@@ -121,6 +122,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   switchProfile: async (profile) => {
+    await usePlayerStore.getState().reset();
     if (profile._type === 'offline') {
       await setItem(OFFLINE_KEY, '1');
       await setItem(OFFLINE_SOURCE_KEY, JSON.stringify(profile.source));
@@ -170,6 +172,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
+    await usePlayerStore.getState().reset();
     await deleteItem(ACTIVE_KEY);
     await deleteItem(OFFLINE_KEY);
     await deleteItem(OFFLINE_SOURCE_KEY);
