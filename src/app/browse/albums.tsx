@@ -21,6 +21,7 @@ import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
+import { listPerf } from '@/lib/listPerf';
 
 const PAGE = 30;
 const COLUMNS = 2;
@@ -91,6 +92,7 @@ export default function BrowseAlbumsScreen() {
         <Message text={t('No se pudieron cargar los álbumes.')} onRetry={() => refetch()} />
       ) : (
         <FlatList
+        {...listPerf}
           data={albums}
           key={sort}
           keyExtractor={(item, i) => `${item.id}-${i}`}

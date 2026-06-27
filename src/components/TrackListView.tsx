@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type Song, type StarType } from '@/api/subsonic';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useT } from '@/i18n';
+import { listPerf } from '@/lib/listPerf';
 import { usePlayerStore } from '@/store/player';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 import { Cover } from './Cover';
@@ -116,6 +117,7 @@ export function TrackListView({
       </Animated.View>
 
       <Animated.FlatList
+        {...listPerf}
         data={songs}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[

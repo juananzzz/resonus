@@ -21,6 +21,7 @@ import { albumsLabel, useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { useSettings } from '@/store/settings';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
+import { listPerf } from '@/lib/listPerf';
 
 export default function BrowseArtistsScreen() {
   const router = useRouter();
@@ -75,6 +76,7 @@ export default function BrowseArtistsScreen() {
         <Message text={t('No se pudieron cargar los artistas.')} onRetry={() => refetch()} />
       ) : (
         <FlatList
+        {...listPerf}
           data={artists}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}

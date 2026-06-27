@@ -30,6 +30,7 @@ import { useAuthStore } from '@/store/auth';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
+import { listPerf } from '@/lib/listPerf';
 
 type Segment = 'playlists' | 'albums' | 'artists';
 
@@ -76,6 +77,7 @@ function PlaylistsTab() {
   if (isError) return <Message text={t('No se pudieron cargar las listas.')} onRetry={() => refetch()} />;
   return (
     <FlatList
+        {...listPerf}
       data={data ?? []}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
@@ -115,6 +117,7 @@ function ArtistsTab() {
   if (isError) return <Message text={t('No se pudieron cargar los artistas.')} onRetry={() => refetch()} />;
   return (
     <FlatList
+        {...listPerf}
       data={artists}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
@@ -151,6 +154,7 @@ function AlbumsTab() {
   if (isError) return <Message text={t('No se pudieron cargar los álbumes.')} onRetry={() => refetch()} />;
   return (
     <FlatList
+        {...listPerf}
       data={albums}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}

@@ -29,6 +29,7 @@ import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { useScanProgress } from '@/store/scanProgress';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
+import { listPerf } from '@/lib/listPerf';
 
 const TILE_W = (Dimensions.get('window').width - spacing.lg * 2 - spacing.sm) / 2;
 
@@ -121,6 +122,7 @@ function AlbumSection({
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
       <FlatList
+        {...listPerf}
         horizontal
         data={data}
         keyExtractor={(item: Album) => item.id}

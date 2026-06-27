@@ -9,6 +9,7 @@ import { NowPlayingBars } from '@/components/NowPlayingBars';
 import { usePlayerStore } from '@/store/player';
 import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
+import { listPerf } from '@/lib/listPerf';
 
 export default function QueueScreen() {
   const t = useT();
@@ -85,6 +86,7 @@ export default function QueueScreen() {
       </View>
 
       <FlatList
+        {...listPerf}
         data={queue}
         keyExtractor={(item, i) => `${item.id}-${i}`}
         renderItem={renderItem}

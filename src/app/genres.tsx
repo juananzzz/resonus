@@ -11,6 +11,7 @@ import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
+import { listPerf } from '@/lib/listPerf';
 
 export default function GenresScreen() {
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function GenresScreen() {
         <Message text={t('No se pudieron cargar los géneros.')} onRetry={() => refetch()} />
       ) : (
         <FlatList
+        {...listPerf}
           data={genres}
           keyExtractor={(item) => item.value}
           numColumns={2}
