@@ -1,6 +1,10 @@
 # Crowdin sync config (GitHub App integration).
 # Source language: English. Source file: src/i18n/locales/en.json (identity map).
 # Crowdin pushes each target language as src/i18n/locales/<code>.json via PRs.
+#
+# skip_untranslated_files: don't export a file for languages with no translations
+# (avoids committing English-only clones for the still-untranslated languages).
+skip_untranslated_files: true
 files:
   - source: /src/i18n/locales/en.json
     translation: /src/i18n/locales/%two_letters_code%.json
