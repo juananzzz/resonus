@@ -48,20 +48,20 @@ export default function OfflineScreen() {
       <View style={styles.setup}>
         <Text style={styles.setupTitle}>{t('¿De dónde sacamos tu música?')}</Text>
 
+        <Pressable style={styles.option} onPress={chooseFolder}>
+          <Ionicons name="folder-outline" size={28} color={colors.accent} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.optionTitle}>{t('Elegir una carpeta (recomendado)')}</Text>
+            <Text style={styles.optionSub}>{t('Solo la música de la carpeta que elijas.')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </Pressable>
+
         <Pressable style={styles.option} onPress={chooseDevice}>
           <Ionicons name="phone-portrait-outline" size={28} color={colors.accent} />
           <View style={{ flex: 1 }}>
             <Text style={styles.optionTitle}>{t('Escanear todo el móvil')}</Text>
             <Text style={styles.optionSub}>{t('Toda la música del dispositivo.')}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-        </Pressable>
-
-        <Pressable style={styles.option} onPress={chooseFolder}>
-          <Ionicons name="folder-outline" size={28} color={colors.accent} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.optionTitle}>{t('Elegir una carpeta')}</Text>
-            <Text style={styles.optionSub}>{t('Solo la música de la carpeta que elijas.')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
         </Pressable>

@@ -304,6 +304,21 @@ function applyTags(base: Record<string, unknown>, fallbackTitle: string, tags: I
 
 // ── Origen: dispositivo (expo-media-library) ──────────────────────────────
 
+// Filtra audio que no es música al escanear todo el dispositivo. MediaStore
+// devuelve TODO (notas de voz, grabaciones, tonos, SFX), así que descartamos por
+// ruta las carpetas típicas de no-música (mensajería, grabaciones, tonos…). No
+// filtramos por duración: hay canciones cortas legítimas (interludios, skits).
+const NON_MUSIC_PATH =
+  /\/(whatsapp|telegram|signal|threema|viber|wechat|kakaotalk|line)\b|voice[ _-]?notes?|voice[ _-]?recorder|call[ _-]?rec|\/recordings?\/|\/ringtones?\/|\/notifications?\/|\/alarms?\//i;
+
+function isLikelyMusic(uri: string): boolean {
+  try {
+    return !NON_MUSIC_PATH.test(decodeURIComponent(uri));
+  } catch {
+    return !NON_MUSIC_PATH.test(uri);
+  }
+}
+
 export async function ensureAudioPermission(): Promise<boolean> {
   const current = await MediaLibrary.getPermissionsAsync(false, ['audio']);
   if (current.granted) return true;
@@ -327,6 +342,8 @@ export async function loadDeviceSongs(): Promise<Song[]> {
       after,
     });
     for (const a of page.assets) {
+      // Salta carpetas que no son de música (mensajería, grabaciones, tonos…).
+      if (!isLikelyMusic(a.uri)) continue;
       rawSongs.push({
         id: `local:${a.id}`,
         filename: a.filename,

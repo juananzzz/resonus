@@ -28,10 +28,10 @@ const en: Record<string, string> = {
   Usuario: 'Username',
   Contraseña: 'Password',
   Entrar: 'Sign in',
-  'El soporte de Jellyfin llegará pronto. Por ahora usa Navidrome u OpenSubsonic.':
-    'Jellyfin support is coming soon. For now use Navidrome or OpenSubsonic.',
+  'El soporte de Jellyfin aún no está disponible. Por ahora usa Navidrome u OpenSubsonic.':
+    'Jellyfin support is not available yet. For now use Navidrome or OpenSubsonic.',
   'No se pudo entrar; revisa la cuenta': "Couldn't sign in; check the account",
-  'Jellyfin estará disponible pronto 🚧': 'Jellyfin is coming soon 🚧',
+  'Jellyfin aún no está disponible 🚧': 'Jellyfin is not available yet 🚧',
   'No se pudo iniciar sesión': "Couldn't sign in",
   o: 'or',
   'Modo sin conexión': 'Offline mode',
@@ -52,6 +52,9 @@ const en: Record<string, string> = {
   'Escanear todo el móvil': 'Scan the whole phone',
   'Toda la música del dispositivo.': 'All the music on your device.',
   'Elegir una carpeta': 'Choose a folder',
+  'Elegir una carpeta (recomendado)': 'Choose a folder (recommended)',
+  'Perfil local': 'Local profile',
+  'Música del dispositivo': 'Music on your device',
   'Solo la música de la carpeta que elijas.': 'Only the music in the folder you choose.',
   'Necesitamos permiso para leer la música del dispositivo.':
     'We need permission to read your device music.',

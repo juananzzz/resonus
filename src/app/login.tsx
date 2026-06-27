@@ -37,7 +37,7 @@ const SERVERS: {
 }[] = [
   { key: 'navidrome', name: 'Navidrome', logo: require('@/assets/images/servers/navidrome.png') },
   { key: 'opensubsonic', name: 'OpenSubsonic', logo: require('@/assets/images/servers/opensubsonic.png') },
-  { key: 'jellyfin', name: 'Jellyfin', logo: require('@/assets/images/servers/jellyfin.png'), soon: true },
+  { key: 'jellyfin', name: 'Jellyfin', logo: require('@/assets/images/servers/jellyfin.png') },
 ];
 
 function logoFor(type?: string): number {
@@ -63,14 +63,14 @@ function ProfileRow({ profile, onTap, onRemove }: {
       <View style={styles.profileRow}>
         <Pressable style={styles.profileMain} onPress={onTap}>
           <View style={styles.offlineIcon}>
-            <Ionicons name="cloud-offline-outline" size={22} color={colors.accent} />
+            <Ionicons name="phone-portrait-outline" size={22} color={colors.accent} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.profileUser} numberOfLines={1}>
-              {t('Modo sin conexión')}
+              {t('Perfil local')}
             </Text>
             <Text style={styles.profileUrl} numberOfLines={1}>
-              {profile.name}
+              {t('Música del dispositivo')}
             </Text>
           </View>
         </Pressable>
@@ -149,7 +149,7 @@ export default function LoginScreen() {
 
   async function onSubmit() {
     if (isJellyfin) {
-      toast(t('Jellyfin estará disponible pronto 🚧'));
+      toast(t('Jellyfin aún no está disponible 🚧'));
       return;
     }
     setError(null);
@@ -239,7 +239,7 @@ export default function LoginScreen() {
               onPress={() => setServer('local')}
             >
               <View style={styles.serverIcon}>
-                <Ionicons name="cloud-offline-outline" size={40} color={colors.accent} />
+                <Ionicons name="phone-portrait-outline" size={40} color={colors.accent} />
               </View>
               <Text style={styles.serverName} numberOfLines={1}>
                 {t('Local')}
@@ -253,20 +253,20 @@ export default function LoginScreen() {
                 {t('Escucha la música guardada en tu dispositivo, sin servidor. Elige de dónde sacarla:')}
               </Text>
 
+              <Pressable style={styles.localOption} onPress={startLocalFolder}>
+                <Ionicons name="folder-outline" size={26} color={colors.accent} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.localOptTitle}>{t('Elegir una carpeta (recomendado)')}</Text>
+                  <Text style={styles.localOptSub}>{t('Solo la música de la carpeta que elijas.')}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+              </Pressable>
+
               <Pressable style={styles.localOption} onPress={startLocalDevice}>
                 <Ionicons name="phone-portrait-outline" size={26} color={colors.accent} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.localOptTitle}>{t('Escanear todo el móvil')}</Text>
                   <Text style={styles.localOptSub}>{t('Toda la música del dispositivo.')}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-              </Pressable>
-
-              <Pressable style={styles.localOption} onPress={startLocalFolder}>
-                <Ionicons name="folder-outline" size={26} color={colors.accent} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.localOptTitle}>{t('Elegir una carpeta')}</Text>
-                  <Text style={styles.localOptSub}>{t('Solo la música de la carpeta que elijas.')}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
               </Pressable>
@@ -303,7 +303,7 @@ export default function LoginScreen() {
 
               {isJellyfin ? (
                 <Text style={styles.notice}>
-                  {t('El soporte de Jellyfin llegará pronto. Por ahora usa Navidrome u OpenSubsonic.')}
+                  {t('El soporte de Jellyfin aún no está disponible. Por ahora usa Navidrome u OpenSubsonic.')}
                 </Text>
               ) : null}
               {error ? <Text style={styles.error}>{error}</Text> : null}
