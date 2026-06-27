@@ -11,6 +11,16 @@ import {
   View,
   type GestureResponderEvent,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { coverArtUrl } from '@/api/data';
@@ -26,7 +36,9 @@ import { useSongMenu } from '@/store/songMenu';
 import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
 
-const COVER = Dimensions.get('window').width - spacing.xl * 2;
+const SCREEN_W = Dimensions.get('window').width;
+const COVER = SCREEN_W - spacing.xl * 2;
+const SWIPE_THRESHOLD = SCREEN_W * 0.25;
 
 function CircleButton({
   name,
@@ -72,6 +84,63 @@ export default function PlayerScreen() {
   const showQualityBadge = showQuality === 'player' || showQuality === 'everywhere';
   const offline = useAuthStore((s) => s.offline);
   const favIds = useFavoriteIds(!!song && (!song?.localUri || offline));
+
+  // Deslizar la carátula: izquierda → siguiente, derecha → anterior. A
+  // diferencia de los botones, el swipe siempre cambia de pista y da la vuelta
+  // a la lista al llegar al final/inicio.
+  const jumpTo = usePlayerStore((s) => s.jumpTo);
+  const canSwitch = usePlayerStore((s) => s.queue.length > 1);
+  const goNext = () => {
+    const { queue, index } = usePlayerStore.getState();
+    if (queue.length > 1) jumpTo(index < queue.length - 1 ? index + 1 : 0);
+  };
+  const goPrev = () => {
+    const { queue, index } = usePlayerStore.getState();
+    if (queue.length > 1) jumpTo(index > 0 ? index - 1 : queue.length - 1);
+  };
+
+  const swipeX = useSharedValue(0);
+  const coverPan = Gesture.Pan()
+    .activeOffsetX([-20, 20])
+    .failOffsetY([-20, 20])
+    .onUpdate((e) => {
+      swipeX.value = e.translationX;
+    })
+    .onEnd((e) => {
+      const wantNext = e.translationX < -SWIPE_THRESHOLD || e.velocityX < -600;
+      const wantPrev = e.translationX > SWIPE_THRESHOLD || e.velocityX > 600;
+      // Saca la carátula actual por un lado, cambia de pista y mete la nueva
+      // por el lado opuesto: así el cambio de imagen ocurre fuera de pantalla
+      // y no hay flash de la carátula anterior.
+      if (canSwitch && wantNext) {
+        swipeX.value = withTiming(-SCREEN_W, { duration: 180 }, (f) => {
+          if (f) {
+            runOnJS(goNext)();
+            swipeX.value = SCREEN_W;
+            swipeX.value = withTiming(0, { duration: 200 });
+          }
+        });
+      } else if (canSwitch && wantPrev) {
+        swipeX.value = withTiming(SCREEN_W, { duration: 180 }, (f) => {
+          if (f) {
+            runOnJS(goPrev)();
+            swipeX.value = -SCREEN_W;
+            swipeX.value = withTiming(0, { duration: 200 });
+          }
+        });
+      } else {
+        swipeX.value = withSpring(0, { damping: 20, stiffness: 200 });
+      }
+    });
+  const coverStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: swipeX.value }],
+    opacity: interpolate(
+      Math.abs(swipeX.value),
+      [0, SCREEN_W * 0.5],
+      [1, 0.3],
+      Extrapolation.CLAMP,
+    ),
+  }));
 
   if (!song) {
     router.back();
@@ -124,7 +193,11 @@ export default function PlayerScreen() {
         </View>
 
         <View style={styles.coverWrap}>
-          <Cover uri={cover} size={COVER} />
+          <GestureDetector gesture={coverPan}>
+            <Animated.View style={coverStyle}>
+              <Cover uri={cover} size={COVER} />
+            </Animated.View>
+          </GestureDetector>
           {showQualityBadge ? (
             <View style={styles.qualityWrap}>
               <AudioQualityBadge song={song} />
