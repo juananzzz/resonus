@@ -73,9 +73,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Drop any keys in the downloaded files that no longer exist in en.json,
-      # and never touch the code-owned en.json / es.json.
-      - name: Cleanup orphaned keys
+      # Drop keys that no longer exist in en.json, delete empty locale files
+      # (untranslated languages download as `{}`), and never touch the
+      # code-owned en.json / es.json.
+      - name: Cleanup translations
         if: steps.check.outputs.ready == 'true'
         run: |
           python3 << 'EOF'
@@ -88,7 +89,10 @@ jobs:
               with open(path, encoding='utf-8') as f:
                   data = json.load(f)
               cleaned = {k: v for k, v in data.items() if k in en_keys}
-              if cleaned != data:
+              if not cleaned:
+                  os.remove(path)
+                  print('Removed empty', os.path.basename(path))
+              elif cleaned != data:
                   with open(path, 'w', encoding='utf-8') as f:
                       json.dump(cleaned, f, ensure_ascii=False, indent=2, sort_keys=True)
                       f.write('\n')
