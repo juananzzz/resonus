@@ -77,7 +77,7 @@ function QuickGrid() {
 
   return (
     <View style={styles.grid}>
-      <QuickTile href="/favorites" name={t('Favoritos')} favorites />
+      <QuickTile href="/favorites" name={t('Favorites')} favorites />
       {offline
         ? (albums ?? []).map((a) => (
             <QuickTile
@@ -135,9 +135,9 @@ function AlbumSection({
 }
 
 const EXPLORE: { href: string; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
-  { href: '/browse/albums', icon: 'disc-outline', label: 'Álbumes' },
-  { href: '/browse/artists', icon: 'people-outline', label: 'Artistas' },
-  { href: '/genres', icon: 'pricetags-outline', label: 'Géneros' },
+  { href: '/browse/albums', icon: 'disc-outline', label: 'Albums' },
+  { href: '/browse/artists', icon: 'people-outline', label: 'Artists' },
+  { href: '/genres', icon: 'pricetags-outline', label: 'Genres' },
   { href: '/radio', icon: 'radio-outline', label: 'Radio' },
 ];
 
@@ -173,7 +173,7 @@ function ScanningPanel() {
   return (
     <View style={styles.scanPanel}>
       <ActivityIndicator color={colors.accent} size="large" />
-      <Text style={styles.scanTitle}>{t('Analizando tu música…')}</Text>
+      <Text style={styles.scanTitle}>{t('Scanning your music…')}</Text>
       <Text style={styles.scanSub}>
         {total > 0 ? `${count} / ${total}` : `${count}`}
       </Text>
@@ -210,10 +210,10 @@ export default function HomeScreen() {
       >
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <Text style={styles.greeting}>{t('Tu música')}</Text>
+            <Text style={styles.greeting}>{t('Your music')}</Text>
             {offline ? (
               <View style={styles.offlineBadge}>
-                <Text style={styles.offlineBadgeText}>Sin conexión</Text>
+                <Text style={styles.offlineBadgeText}>{t('Offline')}</Text>
               </View>
             ) : null}
           </View>
@@ -230,15 +230,15 @@ export default function HomeScreen() {
 
         {offline ? (
           <>
-            <AlbumSection title={t('Añadidos recientemente')} type="newest" />
-            <AlbumSection title={t('Más escuchados')} type="frequent" />
-            <AlbumSection title={t('Aleatorio')} type="random" />
+            <AlbumSection title={t('Recently added')} type="newest" />
+            <AlbumSection title={t('Most played')} type="frequent" />
+            <AlbumSection title={t('Shuffle')} type="random" />
           </>
         ) : (
           <>
-            <AlbumSection title={t('Añadidos recientemente')} type="newest" />
-            <AlbumSection title={t('Reproducido recientemente')} type="recent" />
-            <AlbumSection title={t('Más escuchados')} type="frequent" />
+            <AlbumSection title={t('Recently added')} type="newest" />
+            <AlbumSection title={t('Recently played')} type="recent" />
+            <AlbumSection title={t('Most played')} type="frequent" />
           </>
         )}
       </ScrollView>

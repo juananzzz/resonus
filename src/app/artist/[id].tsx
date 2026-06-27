@@ -101,7 +101,7 @@ export default function ArtistScreen() {
   if (isError || !data) {
     return (
       <View style={styles.center}>
-        <Message text={t('No se pudo cargar el artista.')} onRetry={() => refetch()} />
+        <Message text={t("Couldn't load the artist.")} onRetry={() => refetch()} />
       </View>
     );
   }
@@ -146,7 +146,7 @@ export default function ArtistScreen() {
           <Pressable
             hitSlop={10}
             accessibilityRole="button"
-            accessibilityLabel={t('Aleatorio')}
+            accessibilityLabel={t('Shuffle')}
             onPress={shufflePlay}
           >
             <Ionicons name="shuffle" size={28} color={colors.text} />
@@ -155,7 +155,7 @@ export default function ArtistScreen() {
           <Pressable
             style={styles.playButton}
             accessibilityRole="button"
-            accessibilityLabel={t('Reproducir')}
+            accessibilityLabel={t('Play')}
             onPress={() => top.length > 0 && playQueue(top, 0, data.artist.name, `/artist/${id}`)}
           >
             <Ionicons name="play" size={28} color="#000" style={{ marginLeft: 2 }} />
@@ -164,7 +164,7 @@ export default function ArtistScreen() {
 
         {top.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('Populares')}</Text>
+            <Text style={styles.sectionTitle}>{t('Popular')}</Text>
             {top.slice(0, songsExpanded ? 10 : 5).map((song, i) => (
               <TrackRow
                 key={song.id}
@@ -181,7 +181,7 @@ export default function ArtistScreen() {
                 onPress={() => setSongsExpanded((v) => !v)}
               >
                 <Text style={styles.bioToggle}>
-                  {songsExpanded ? t('Ver menos') : t('Ver más')}
+                  {songsExpanded ? t('Show less') : t('Show more')}
                 </Text>
               </Pressable>
             ) : null}
@@ -192,9 +192,9 @@ export default function ArtistScreen() {
           <View style={styles.section}>
             <Link href={`/artist/discography/${id}`} asChild>
               <Pressable style={styles.sectionHeader}>
-                <Text style={styles.sectionHeaderTitle}>{t('Discografía')}</Text>
+                <Text style={styles.sectionHeaderTitle}>{t('Discography')}</Text>
                 {albums.length > 1 ? (
-                  <Text style={styles.showAll}>{t('Mostrar todo')}</Text>
+                  <Text style={styles.showAll}>{t('Show all')}</Text>
                 ) : null}
               </Pressable>
             </Link>
@@ -212,7 +212,7 @@ export default function ArtistScreen() {
 
         {info?.biography ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('Acerca de')}</Text>
+            <Text style={styles.sectionTitle}>{t('About')}</Text>
             <Text style={styles.bio} numberOfLines={bioExpanded ? undefined : 4}>
               {info.biography}
             </Text>
@@ -223,7 +223,7 @@ export default function ArtistScreen() {
                 onPress={() => setBioExpanded((v) => !v)}
               >
                 <Text style={styles.bioToggle}>
-                  {bioExpanded ? t('Ver menos') : t('Ver más')}
+                  {bioExpanded ? t('Show less') : t('Show more')}
                 </Text>
               </Pressable>
             ) : null}
@@ -232,7 +232,7 @@ export default function ArtistScreen() {
 
         {info && info.similarArtists.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('Artistas similares')}</Text>
+            <Text style={styles.sectionTitle}>{t('Similar artists')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -263,7 +263,7 @@ export default function ArtistScreen() {
           style={styles.back}
           hitSlop={10}
           accessibilityRole="button"
-          accessibilityLabel={t('Cerrar')}
+          accessibilityLabel={t('Close')}
           onPress={() => router.back()}
         >
           <Ionicons name="chevron-back" size={26} color={colors.text} />

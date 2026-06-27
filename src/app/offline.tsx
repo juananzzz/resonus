@@ -21,7 +21,7 @@ export default function OfflineScreen() {
   async function chooseDevice() {
     const ok = await ensureAudioPermission();
     if (!ok) {
-      toast(t('Necesitamos permiso para leer la música del dispositivo.'));
+      toast(t('We need permission to read your device music.'));
       return;
     }
     void setSource({ mode: 'device' });
@@ -35,24 +35,24 @@ export default function OfflineScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.heading}>{t('Modo sin conexión')}</Text>
+        <Text style={styles.heading}>{t('Offline mode')}</Text>
         <Pressable
           hitSlop={12}
           accessibilityRole="button"
-          accessibilityLabel={t('Salir')}
+          accessibilityLabel={t('Exit')}
           onPress={() => logout()}
         >
           <Ionicons name="exit-outline" size={24} color={colors.textSecondary} />
         </Pressable>
       </View>
       <View style={styles.setup}>
-        <Text style={styles.setupTitle}>{t('¿De dónde sacamos tu música?')}</Text>
+        <Text style={styles.setupTitle}>{t('Where should we get your music?')}</Text>
 
         <Pressable style={styles.option} onPress={chooseFolder}>
           <Ionicons name="folder-outline" size={28} color={colors.accent} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.optionTitle}>{t('Elegir una carpeta (recomendado)')}</Text>
-            <Text style={styles.optionSub}>{t('Solo la música de la carpeta que elijas.')}</Text>
+            <Text style={styles.optionTitle}>{t('Choose a folder (recommended)')}</Text>
+            <Text style={styles.optionSub}>{t('Only the music in the folder you choose.')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
         </Pressable>
@@ -60,8 +60,8 @@ export default function OfflineScreen() {
         <Pressable style={styles.option} onPress={chooseDevice}>
           <Ionicons name="phone-portrait-outline" size={28} color={colors.accent} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.optionTitle}>{t('Escanear todo el móvil')}</Text>
-            <Text style={styles.optionSub}>{t('Toda la música del dispositivo.')}</Text>
+            <Text style={styles.optionTitle}>{t('Scan the whole phone')}</Text>
+            <Text style={styles.optionSub}>{t('All the music on your device.')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
         </Pressable>

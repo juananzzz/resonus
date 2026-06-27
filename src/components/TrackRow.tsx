@@ -85,7 +85,7 @@ export function TrackRow({
         <Pressable
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel={t('Más opciones')}
+          accessibilityLabel={t('More options')}
           onPress={() => openMenu(song, menuContext)}
         >
           <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />

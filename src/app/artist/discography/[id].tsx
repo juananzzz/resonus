@@ -32,23 +32,23 @@ export default function DiscographyScreen() {
         <Pressable
           hitSlop={10}
           accessibilityRole="button"
-          accessibilityLabel={t('Cerrar')}
+          accessibilityLabel={t('Close')}
           onPress={() => router.back()}
         >
           <Ionicons name="chevron-back" size={26} color={colors.text} />
         </Pressable>
         <Text style={styles.title} numberOfLines={1}>
-          {data?.artist.name ?? t('Discografía')}
+          {data?.artist.name ?? t('Discography')}
         </Text>
       </View>
 
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
       ) : isError || !data ? (
-        <Message text={t('No se pudo cargar el artista.')} onRetry={() => refetch()} />
+        <Message text={t("Couldn't load the artist.")} onRetry={() => refetch()} />
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: SCREEN_BOTTOM_PADDING }}>
-          <Text style={styles.sectionTitle}>{t('Discografía')}</Text>
+          <Text style={styles.sectionTitle}>{t('Discography')}</Text>
           <AlbumGrid albums={albums} columns={3} />
         </ScrollView>
       )}

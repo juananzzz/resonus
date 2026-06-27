@@ -49,7 +49,7 @@ function songNode(s: Song, parentId: string): CarNode {
   songById.set(s.id, s);
   return {
     id: trackMediaId(parentId, s.id),
-    title: s.title || tg('Desconocido'),
+    title: s.title || tg('Unknown'),
     subtitle: s.artist,
     artworkUrl: art(s.coverArt ?? s.albumId),
     playable: true,
@@ -79,9 +79,9 @@ function artistNode(a: Artist): CarNode {
 
 // El título se resuelve dentro de buildBrowseTree (i18n ya cargado), no aquí.
 const HOME_SECTIONS: { id: string; titleKey: string; type: 'newest' | 'frequent' | 'random' }[] = [
-  { id: 'home:newest', titleKey: 'Añadidos recientemente', type: 'newest' },
-  { id: 'home:frequent', titleKey: 'Más escuchados', type: 'frequent' },
-  { id: 'home:random', titleKey: 'Aleatorio', type: 'random' },
+  { id: 'home:newest', titleKey: 'Recently added', type: 'newest' },
+  { id: 'home:frequent', titleKey: 'Most played', type: 'frequent' },
+  { id: 'home:random', titleKey: 'Shuffle', type: 'random' },
 ];
 
 export async function buildBrowseTree(): Promise<CarTree> {
@@ -91,8 +91,8 @@ export async function buildBrowseTree(): Promise<CarTree> {
 
   // Raíz: pestañas Inicio / Biblioteca.
   tree[ROOT] = [
-    { id: 'tab:home', title: tg('Inicio'), playable: false, contentStyle: 'list' },
-    { id: 'tab:library', title: tg('Biblioteca'), playable: false, contentStyle: 'list' },
+    { id: 'tab:home', title: tg('Home'), playable: false, contentStyle: 'list' },
+    { id: 'tab:library', title: tg('Library'), playable: false, contentStyle: 'list' },
   ];
 
   const albumIds = new Set<string>();
@@ -118,9 +118,9 @@ export async function buildBrowseTree(): Promise<CarTree> {
     .catch(() => ({ songs: [] as Song[], albums: [] as Album[], artists: [] as Artist[] }));
 
   tree['tab:library'] = [
-    { id: 'favorites', title: tg('Favoritos'), playable: false, contentStyle: 'list' },
-    { id: 'lib:albums', title: tg('Álbumes'), playable: false, contentStyle: 'grid' },
-    { id: 'lib:artists', title: tg('Artistas'), playable: false, contentStyle: 'list' },
+    { id: 'favorites', title: tg('Favorites'), playable: false, contentStyle: 'list' },
+    { id: 'lib:albums', title: tg('Albums'), playable: false, contentStyle: 'grid' },
+    { id: 'lib:artists', title: tg('Artists'), playable: false, contentStyle: 'list' },
   ];
 
   tree['favorites'] = starred.songs.map((s) => songNode(s, 'favorites'));

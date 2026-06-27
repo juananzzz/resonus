@@ -17,14 +17,14 @@ export default function PlaybackSettings() {
   const maxBitRate = useSettings((s) => s.maxBitRate);
   const setMaxBitRate = useSettings((s) => s.setMaxBitRate);
 
-  const soon = () => toast(t('Próximamente 🚧'));
+  const soon = () => toast(t('Coming soon 🚧'));
 
   return (
-    <SettingsPage title={t('Calidad y reproducción')}>
+    <SettingsPage title={t('Quality & playback')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         {!offline ? (
           <>
-            <Text style={settingsStyles.sectionTitle}>{t('Calidad de streaming')}</Text>
+            <Text style={settingsStyles.sectionTitle}>{t('Streaming quality')}</Text>
             <View style={settingsStyles.chips}>
               {BITRATE_OPTIONS.map((opt) => {
                 const active = opt.value === maxBitRate;
@@ -34,7 +34,7 @@ export default function PlaybackSettings() {
                     style={[settingsStyles.chip, active && settingsStyles.chipActive]}
                     onPress={() => {
                       setMaxBitRate(opt.value);
-                      toast(t('Calidad: {label}', { label: opt.label }));
+                      toast(t('Quality: {label}', { label: opt.label }));
                     }}
                   >
                     <Text style={[settingsStyles.chipText, active && settingsStyles.chipTextActive]}>
@@ -45,21 +45,21 @@ export default function PlaybackSettings() {
               })}
             </View>
             <Text style={settingsStyles.hint}>
-              {t('«Original» usa la máxima calidad; bajar el bitrate ahorra datos.')}
+              {t('“Original” uses the highest quality; a lower bitrate saves data.')}
             </Text>
           </>
         ) : null}
 
-        <Text style={settingsStyles.sectionTitle}>{t('Reproducción')}</Text>
+        <Text style={settingsStyles.sectionTitle}>{t('Playback')}</Text>
         <Pressable style={settingsStyles.rowButton} onPress={soon}>
           <Ionicons name="git-compare-outline" size={22} color={colors.text} />
           <Text style={settingsStyles.rowText}>{t('Crossfade')}</Text>
-          <Text style={settingsStyles.soonTag}>{t('Pronto')}</Text>
+          <Text style={settingsStyles.soonTag}>{t('Soon')}</Text>
         </Pressable>
         <Pressable style={settingsStyles.rowButton} onPress={soon}>
           <Ionicons name="options-outline" size={22} color={colors.text} />
-          <Text style={settingsStyles.rowText}>{t('Ecualizador')}</Text>
-          <Text style={settingsStyles.soonTag}>{t('Pronto')}</Text>
+          <Text style={settingsStyles.rowText}>{t('Equalizer')}</Text>
+          <Text style={settingsStyles.soonTag}>{t('Soon')}</Text>
         </Pressable>
       </ScrollView>
     </SettingsPage>

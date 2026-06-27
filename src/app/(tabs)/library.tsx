@@ -35,9 +35,9 @@ import { listPerf } from '@/lib/listPerf';
 type Segment = 'playlists' | 'albums' | 'artists';
 
 const SEGMENTS: { key: Segment; label: string }[] = [
-  { key: 'playlists', label: 'Listas' },
-  { key: 'albums', label: 'Álbumes' },
-  { key: 'artists', label: 'Artistas' },
+  { key: 'playlists', label: 'Playlists' },
+  { key: 'albums', label: 'Albums' },
+  { key: 'artists', label: 'Artists' },
 ];
 
 function FavoritesEntry() {
@@ -56,7 +56,7 @@ function FavoritesEntry() {
       <Pressable style={styles.row}>
         <FavoritesArt size={56} />
         <View style={styles.rowInfo}>
-          <Text style={styles.rowTitle}>{t('Favoritos')}</Text>
+          <Text style={styles.rowTitle}>{t('Favorites')}</Text>
           <Text style={styles.rowSub}>{songsLabel(count, lang)}</Text>
         </View>
       </Pressable>
@@ -74,7 +74,7 @@ function PlaylistsTab() {
     enabled: canFetch,
   });
   if (isLoading) return <Loader />;
-  if (isError) return <Message text={t('No se pudieron cargar las listas.')} onRetry={() => refetch()} />;
+  if (isError) return <Message text={t("Couldn't load playlists.")} onRetry={() => refetch()} />;
   return (
     <FlatList
         {...listPerf}
@@ -114,7 +114,7 @@ function ArtistsTab() {
   });
   const artists = data?.artists ?? [];
   if (isLoading) return <Loader />;
-  if (isError) return <Message text={t('No se pudieron cargar los artistas.')} onRetry={() => refetch()} />;
+  if (isError) return <Message text={t("Couldn't load artists.")} onRetry={() => refetch()} />;
   return (
     <FlatList
         {...listPerf}
@@ -135,7 +135,7 @@ function ArtistsTab() {
           </Pressable>
         </Link>
       )}
-      ListEmptyComponent={<Empty text={t('Marca artistas como favoritos para verlos aquí.')} />}
+      ListEmptyComponent={<Empty text={t('Star artists to see them here.')} />}
     />
   );
 }
@@ -151,7 +151,7 @@ function AlbumsTab() {
   });
   const albums = data?.albums ?? [];
   if (isLoading) return <Loader />;
-  if (isError) return <Message text={t('No se pudieron cargar los álbumes.')} onRetry={() => refetch()} />;
+  if (isError) return <Message text={t("Couldn't load albums.")} onRetry={() => refetch()} />;
   return (
     <FlatList
         {...listPerf}
@@ -174,7 +174,7 @@ function AlbumsTab() {
           </Pressable>
         </Link>
       )}
-      ListEmptyComponent={<Empty text={t('Marca álbumes como favoritos para verlos aquí.')} />}
+      ListEmptyComponent={<Empty text={t('Star albums to see them here.')} />}
     />
   );
 }
@@ -205,22 +205,22 @@ export default function LibraryScreen() {
     try {
       await createPlaylist(name);
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      toast(t('Lista creada'));
+      toast(t('Playlist created'));
     } catch {
-      toast(t('No se pudo crear la lista'));
+      toast(t("Couldn't create the playlist"));
     }
   }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.heading}>{t('Biblioteca')}</Text>
+        <Text style={styles.heading}>{t('Library')}</Text>
         <View style={styles.headerActions}>
           {!offline ? (
             <Pressable
               hitSlop={12}
               accessibilityRole="button"
-              accessibilityLabel={t('Nueva lista')}
+              accessibilityLabel={t('New playlist')}
               onPress={() => setCreating(true)}
             >
               <Ionicons name="add" size={28} color={colors.text} />
@@ -234,9 +234,9 @@ export default function LibraryScreen() {
 
       <Dialog
         visible={creating}
-        title={t('Nueva lista')}
-        input={{ placeholder: t('Nombre de la lista') }}
-        confirmLabel={t('Crear')}
+        title={t('New playlist')}
+        input={{ placeholder: t('Playlist name') }}
+        confirmLabel={t('Create')}
         onCancel={() => setCreating(false)}
         onConfirm={onCreate}
       />

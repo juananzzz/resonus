@@ -38,13 +38,13 @@ export default function AlbumScreen() {
   if (isError || !data) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center' }}>
-        <Message text={t('No se pudo cargar el álbum.')} onRetry={() => refetch()} />
+        <Message text={t("Couldn't load the album.")} onRetry={() => refetch()} />
       </View>
     );
   }
 
   const totalSec = data.songs.reduce((acc, s) => acc + (s.duration ?? 0), 0);
-  const metaParts = [t('Álbum')];
+  const metaParts = [t('Album')];
   if (data.album.year) metaParts.push(String(data.album.year));
   metaParts.push(songsLabel(data.songs.length, lang));
   if (totalSec > 0) metaParts.push(formatTotalDuration(totalSec));

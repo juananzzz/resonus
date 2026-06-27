@@ -38,9 +38,9 @@ const SERVERS: {
   sub: string;
   soon?: boolean;
 }[] = [
-  { key: 'navidrome', name: 'Navidrome', logo: require('@/assets/images/servers/navidrome.png'), sub: 'Servidor Subsonic' },
-  { key: 'opensubsonic', name: 'OpenSubsonic', logo: require('@/assets/images/servers/opensubsonic.png'), sub: 'Compatible con Subsonic' },
-  { key: 'jellyfin', name: 'Jellyfin', logo: require('@/assets/images/servers/jellyfin.png'), sub: 'Aún no disponible', soon: true },
+  { key: 'navidrome', name: 'Navidrome', logo: require('@/assets/images/servers/navidrome.png'), sub: 'Subsonic server' },
+  { key: 'opensubsonic', name: 'OpenSubsonic', logo: require('@/assets/images/servers/opensubsonic.png'), sub: 'Subsonic-compatible' },
+  { key: 'jellyfin', name: 'Jellyfin', logo: require('@/assets/images/servers/jellyfin.png'), sub: 'Not available yet', soon: true },
 ];
 
 function logoFor(type?: string): number {
@@ -70,10 +70,10 @@ function ProfileRow({ profile, onTap, onRemove }: {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.profileUser} numberOfLines={1}>
-              {t('Perfil local')}
+              {t('Local profile')}
             </Text>
             <Text style={styles.profileUrl} numberOfLines={1}>
-              {t('Música del dispositivo')}
+              {t('Music on your device')}
             </Text>
           </View>
         </Pressable>
@@ -148,7 +148,7 @@ export default function LoginScreen() {
   async function startLocalDevice() {
     const ok = await ensureAudioPermission();
     if (!ok) {
-      toast(t('Necesitamos permiso para leer la música del dispositivo.'));
+      toast(t('We need permission to read your device music.'));
       return;
     }
     await setOfflineSource({ mode: 'device' });
@@ -164,7 +164,7 @@ export default function LoginScreen() {
 
   async function onSubmit() {
     if (isJellyfin) {
-      toast(t('Jellyfin aún no está disponible 🚧'));
+      toast(t('Jellyfin is not available yet 🚧'));
       return;
     }
     setError(null);
@@ -172,7 +172,7 @@ export default function LoginScreen() {
     try {
       await login(serverUrl, username, password, server);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('No se pudo iniciar sesión'));
+      setError(e instanceof Error ? e.message : t("Couldn't sign in"));
     } finally {
       setLoading(false);
     }
@@ -183,7 +183,7 @@ export default function LoginScreen() {
       await switchProfile(p);
     } catch {
       if (isServer(p)) {
-        toast(t('No se pudo entrar; revisa la cuenta'));
+        toast(t("Couldn't sign in; check the account"));
       }
     }
   }
@@ -212,7 +212,7 @@ export default function LoginScreen() {
 
               {profiles.length > 0 ? (
                 <View style={styles.profiles}>
-                  <Text style={styles.groupTitle}>{t('Perfiles guardados')}</Text>
+                  <Text style={styles.groupTitle}>{t('Saved profiles')}</Text>
                   {visible.map((p, i) => (
                     <ProfileRow
                       key={isOffline(p) ? `offline-${i}` : `${p.serverUrl}-${p.username}`}
@@ -224,7 +224,7 @@ export default function LoginScreen() {
                   {overflow ? (
                     <Pressable style={styles.showMore} onPress={() => setShowAll(true)}>
                       <Text style={styles.showMoreText}>
-                        {t('Mostrar todos')} ({profiles.length})
+                        {t('Show all')} ({profiles.length})
                       </Text>
                       <Ionicons name="chevron-down" size={18} color={colors.accent} />
                     </Pressable>
@@ -234,7 +234,7 @@ export default function LoginScreen() {
 
               <Pressable style={styles.addAccount} onPress={() => setStep('server')}>
                 <Ionicons name="add" size={22} color={colors.background} />
-                <Text style={styles.addAccountText}>{t('Añadir perfil')}</Text>
+                <Text style={styles.addAccountText}>{t('Add profile')}</Text>
               </Pressable>
             </>
           ) : step === 'server' ? (
@@ -244,13 +244,13 @@ export default function LoginScreen() {
                   style={styles.backBtn}
                   onPress={goBack}
                   hitSlop={12}
-                  accessibilityLabel={t('Atrás')}
+                  accessibilityLabel={t('Back')}
                 >
                   <Ionicons name="chevron-back" size={26} color={colors.text} />
                 </Pressable>
               </View>
-              <Text style={styles.stepTitle}>{t('Añadir perfil')}</Text>
-              <Text style={styles.stepHint}>{t('Elige el tipo de servidor')}</Text>
+              <Text style={styles.stepTitle}>{t('Add profile')}</Text>
+              <Text style={styles.stepHint}>{t('Choose the server type')}</Text>
 
               <View style={styles.srvList}>
                 {SERVERS.map((s) => (
@@ -258,7 +258,7 @@ export default function LoginScreen() {
                     key={s.key}
                     style={[styles.srvRow, s.soon && styles.srvRowDisabled]}
                     onPress={() =>
-                      s.soon ? toast(t('Jellyfin aún no está disponible 🚧')) : pickServer(s.key)
+                      s.soon ? toast(t('Jellyfin is not available yet 🚧')) : pickServer(s.key)
                     }
                   >
                     <Image source={s.logo} style={styles.srvLogo} contentFit="contain" />
@@ -277,7 +277,7 @@ export default function LoginScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.srvName}>{t('Local')}</Text>
-                    <Text style={styles.srvSub}>{t('Música del dispositivo')}</Text>
+                    <Text style={styles.srvSub}>{t('Music on your device')}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
                 </Pressable>
@@ -290,7 +290,7 @@ export default function LoginScreen() {
                   style={styles.backBtn}
                   onPress={goBack}
                   hitSlop={12}
-                  accessibilityLabel={t('Atrás')}
+                  accessibilityLabel={t('Back')}
                 >
                   <Ionicons name="chevron-back" size={26} color={colors.text} />
                 </Pressable>
@@ -314,14 +314,14 @@ export default function LoginScreen() {
               {isLocal ? (
                 <View style={styles.form}>
                   <Text style={styles.localDesc}>
-                    {t('Escucha la música guardada en tu dispositivo, sin servidor. Elige de dónde sacarla:')}
+                    {t('Listen to music stored on your device, without a server. Choose where from:')}
                   </Text>
 
                   <Pressable style={styles.localOption} onPress={startLocalFolder}>
                     <Ionicons name="folder-outline" size={26} color={colors.accent} />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.localOptTitle}>{t('Elegir una carpeta (recomendado)')}</Text>
-                      <Text style={styles.localOptSub}>{t('Solo la música de la carpeta que elijas.')}</Text>
+                      <Text style={styles.localOptTitle}>{t('Choose a folder (recommended)')}</Text>
+                      <Text style={styles.localOptSub}>{t('Only the music in the folder you choose.')}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
                   </Pressable>
@@ -329,8 +329,8 @@ export default function LoginScreen() {
                   <Pressable style={styles.localOption} onPress={startLocalDevice}>
                     <Ionicons name="phone-portrait-outline" size={26} color={colors.accent} />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.localOptTitle}>{t('Escanear todo el móvil')}</Text>
-                      <Text style={styles.localOptSub}>{t('Toda la música del dispositivo.')}</Text>
+                      <Text style={styles.localOptTitle}>{t('Scan the whole phone')}</Text>
+                      <Text style={styles.localOptSub}>{t('All the music on your device.')}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
                   </Pressable>
@@ -354,7 +354,7 @@ export default function LoginScreen() {
                     <Ionicons name="person-outline" size={20} color={colors.textMuted} />
                     <TextInput
                       style={styles.inputFlex}
-                      placeholder={t('Usuario')}
+                      placeholder={t('Username')}
                       placeholderTextColor={colors.textMuted}
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -366,7 +366,7 @@ export default function LoginScreen() {
                     <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
                     <TextInput
                       style={styles.inputFlex}
-                      placeholder={t('Contraseña')}
+                      placeholder={t('Password')}
                       placeholderTextColor={colors.textMuted}
                       secureTextEntry
                       value={password}
@@ -376,7 +376,7 @@ export default function LoginScreen() {
 
                   {isJellyfin ? (
                     <Text style={styles.notice}>
-                      {t('El soporte de Jellyfin aún no está disponible. Por ahora usa Navidrome u OpenSubsonic.')}
+                      {t('Jellyfin support is not available yet. For now use Navidrome or OpenSubsonic.')}
                     </Text>
                   ) : null}
                   {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -389,7 +389,7 @@ export default function LoginScreen() {
                     {loading ? (
                       <ActivityIndicator color="#000" />
                     ) : (
-                      <Text style={styles.buttonText}>{t('Entrar')}</Text>
+                      <Text style={styles.buttonText}>{t('Sign in')}</Text>
                     )}
                   </Pressable>
                 </View>
@@ -407,9 +407,9 @@ export default function LoginScreen() {
       >
         <SafeAreaView style={styles.modalSafe} edges={['top']}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t('Perfiles guardados')}</Text>
+            <Text style={styles.modalTitle}>{t('Saved profiles')}</Text>
             <Pressable hitSlop={12} onPress={() => setShowAll(false)}>
-              <Text style={styles.modalDone}>{t('Cerrar')}</Text>
+              <Text style={styles.modalDone}>{t('Close')}</Text>
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={styles.modalList}>

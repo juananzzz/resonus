@@ -26,13 +26,13 @@ export default function LibrarySettings() {
   async function rescanNow() {
     if (rescanning) return;
     setRescanning(true);
-    toast(t('Volviendo a escanear tu música…'));
+    toast(t('Rescanning your music…'));
     try {
       await rescanLocal();
       queryClient.invalidateQueries();
-      toast(t('Biblioteca actualizada'));
+      toast(t('Library updated'));
     } catch {
-      toast(t('No se pudo volver a escanear'));
+      toast(t("Couldn't rescan"));
     } finally {
       setRescanning(false);
     }
@@ -48,27 +48,27 @@ export default function LibrarySettings() {
     if (!auth) return;
     try {
       await startScan(auth);
-      toast(t('Escaneo iniciado'));
+      toast(t('Scan started'));
       setTimeout(() => refetchScan(), 1500);
     } catch {
-      toast(t('No se pudo iniciar el escaneo'));
+      toast(t("Couldn't start the scan"));
     }
   }
 
   async function clearCache() {
     queryClient.clear();
     await Promise.all([Image.clearMemoryCache(), Image.clearDiskCache()]).catch(() => {});
-    toast(t('Caché limpiada'));
+    toast(t('Cache cleared'));
   }
 
   return (
-    <SettingsPage title={t('Biblioteca')}>
+    <SettingsPage title={t('Library')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         {offline ? (
           <>
-            <Text style={settingsStyles.sectionTitle}>{t('Modo sin conexión')}</Text>
+            <Text style={settingsStyles.sectionTitle}>{t('Offline mode')}</Text>
             <View style={settingsStyles.card}>
-              <Field label={t('Origen')} value={source?.mode === 'folder' ? 'Carpeta' : 'Dispositivo'} />
+              <Field label={t('Source')} value={source?.mode === 'folder' ? 'Carpeta' : 'Dispositivo'} />
             </View>
             <Pressable
               style={settingsStyles.rowButton}
@@ -80,37 +80,37 @@ export default function LibrarySettings() {
               ) : (
                 <Ionicons name="refresh" size={22} color={colors.text} />
               )}
-              <Text style={settingsStyles.rowText}>{t('Volver a escanear')}</Text>
+              <Text style={settingsStyles.rowText}>{t('Rescan')}</Text>
             </Pressable>
             <Pressable
               style={settingsStyles.rowButton}
               onPress={() => { void setSource(null); }}
             >
               <Ionicons name="swap-horizontal" size={22} color={colors.text} />
-              <Text style={settingsStyles.rowText}>{t('Cambiar origen')}</Text>
+              <Text style={settingsStyles.rowText}>{t('Change source')}</Text>
             </Pressable>
           </>
         ) : (
           <>
-            <Text style={settingsStyles.sectionTitle}>{t('Biblioteca')}</Text>
+            <Text style={settingsStyles.sectionTitle}>{t('Library')}</Text>
             <View style={settingsStyles.card}>
               <Field
-                label={t('Estado del escaneo')}
-                value={scan?.scanning ? t('Escaneando…') : t('{n} elementos', { n: scan?.count ?? 0 })}
+                label={t('Scan status')}
+                value={scan?.scanning ? t('Scanning…') : t('{n} items', { n: scan?.count ?? 0 })}
               />
               <View style={settingsStyles.divider} />
               <Pressable style={settingsStyles.linkRow} onPress={scanNow}>
                 <Ionicons name="refresh" size={22} color={colors.text} />
-                <Text style={settingsStyles.rowText}>{t('Escanear ahora')}</Text>
+                <Text style={settingsStyles.rowText}>{t('Scan now')}</Text>
               </Pressable>
             </View>
           </>
         )}
 
-        <Text style={settingsStyles.sectionTitle}>{t('Almacenamiento')}</Text>
+        <Text style={settingsStyles.sectionTitle}>{t('Storage')}</Text>
         <Pressable style={settingsStyles.rowButton} onPress={clearCache}>
           <Ionicons name="trash-outline" size={22} color={colors.text} />
-          <Text style={settingsStyles.rowText}>{t('Limpiar caché')}</Text>
+          <Text style={settingsStyles.rowText}>{t('Clear cache')}</Text>
         </Pressable>
       </ScrollView>
     </SettingsPage>

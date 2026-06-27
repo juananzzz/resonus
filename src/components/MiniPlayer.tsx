@@ -58,7 +58,7 @@ export function MiniPlayer() {
       <Pressable
         hitSlop={12}
         accessibilityRole="button"
-        accessibilityLabel={isPlaying ? t('Pausar') : t('Reproducir')}
+        accessibilityLabel={isPlaying ? t('Pause') : t('Play')}
         onPress={(e) => {
           e.stopPropagation();
           toggle();

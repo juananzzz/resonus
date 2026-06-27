@@ -81,7 +81,7 @@ export default function QueueScreen() {
         <Pressable hitSlop={12} onPress={() => router.back()}>
           <Ionicons name="chevron-down" size={28} color={colors.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>{t('Cola')}</Text>
+        <Text style={styles.headerTitle}>{t('Queue')}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -92,7 +92,7 @@ export default function QueueScreen() {
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Text style={styles.empty}>{t('La cola está vacía.')}</Text>
+          <Text style={styles.empty}>{t('The queue is empty.')}</Text>
         }
       />
     </SafeAreaView>

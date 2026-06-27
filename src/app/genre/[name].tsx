@@ -47,7 +47,7 @@ export default function GenreScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel={t('Atrás')}>
+        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel={t('Back')}>
           <Ionicons name="chevron-back" size={26} color={colors.text} />
         </Pressable>
         <Text style={styles.title} numberOfLines={1}>{genre}</Text>
@@ -57,7 +57,7 @@ export default function GenreScreen() {
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
       ) : isError ? (
-        <Message text={t('No se pudieron cargar los álbumes.')} onRetry={() => refetch()} />
+        <Message text={t("Couldn't load albums.")} onRetry={() => refetch()} />
       ) : (
         <FlatList
         {...listPerf}
@@ -74,7 +74,7 @@ export default function GenreScreen() {
               <ActivityIndicator style={{ marginVertical: spacing.lg }} color={colors.accent} />
             ) : null
           }
-          ListEmptyComponent={<Text style={styles.empty}>{t('No hay álbumes de este género.')}</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>{t('No albums in this genre.')}</Text>}
         />
       )}
     </SafeAreaView>

@@ -18,9 +18,9 @@ export default function DisplaySettings() {
   const setShowAudioQuality = useSettings((s) => s.setShowAudioQuality);
 
   return (
-    <SettingsPage title={t('Pantalla')}>
+    <SettingsPage title={t('Display')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
-        <Text style={settingsStyles.sectionTitle}>{t('Idioma')}</Text>
+        <Text style={settingsStyles.sectionTitle}>{t('Language')}</Text>
         <View style={settingsStyles.chips}>
           {LANGUAGES.map((opt) => {
             const active = opt.value === language;
@@ -38,9 +38,9 @@ export default function DisplaySettings() {
           })}
         </View>
 
-        <Text style={settingsStyles.sectionTitle}>{t('Formato y calidad')}</Text>
+        <Text style={settingsStyles.sectionTitle}>{t('Format & quality')}</Text>
         <Text style={settingsStyles.hint}>
-          {t('Muestra el formato de audio, bitrate y etiquetas Lossless / Hi-Res junto a cada canción.')}
+          {t('Displays the audio format, bitrate, and Lossless / Hi-Res labels next to each song.')}
         </Text>
         <View style={settingsStyles.chips}>
           {AUDIO_QUALITY_OPTIONS.map((opt) => {

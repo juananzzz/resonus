@@ -29,11 +29,11 @@ const GAP = spacing.sm;
 const CARD = (Dimensions.get('window').width - spacing.lg * 2 - GAP * (COLUMNS - 1)) / COLUMNS;
 
 const SORTS: { key: AlbumListType; label: string }[] = [
-  { key: 'newest', label: 'Recientes' },
+  { key: 'newest', label: 'Recent' },
   { key: 'alphabeticalByName', label: 'A-Z' },
-  { key: 'alphabeticalByArtist', label: 'Artista' },
-  { key: 'frequent', label: 'Más escuchados' },
-  { key: 'random', label: 'Aleatorio' },
+  { key: 'alphabeticalByArtist', label: 'Artist' },
+  { key: 'frequent', label: 'Most played' },
+  { key: 'random', label: 'Shuffle' },
 ];
 
 export default function BrowseAlbumsScreen() {
@@ -57,10 +57,10 @@ export default function BrowseAlbumsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel={t('Atrás')}>
+        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel={t('Back')}>
           <Ionicons name="chevron-back" size={26} color={colors.text} />
         </Pressable>
-        <Text style={styles.title}>{t('Álbumes')}</Text>
+        <Text style={styles.title}>{t('Albums')}</Text>
         <View style={{ width: 26 }} />
       </View>
 
@@ -89,7 +89,7 @@ export default function BrowseAlbumsScreen() {
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
       ) : isError ? (
-        <Message text={t('No se pudieron cargar los álbumes.')} onRetry={() => refetch()} />
+        <Message text={t("Couldn't load albums.")} onRetry={() => refetch()} />
       ) : (
         <FlatList
         {...listPerf}

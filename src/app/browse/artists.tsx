@@ -45,10 +45,10 @@ export default function BrowseArtistsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel={t('Atrás')}>
+        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel={t('Back')}>
           <Ionicons name="chevron-back" size={26} color={colors.text} />
         </Pressable>
-        <Text style={styles.title}>{t('Artistas')}</Text>
+        <Text style={styles.title}>{t('Artists')}</Text>
         <View style={{ width: 26 }} />
       </View>
 
@@ -56,7 +56,7 @@ export default function BrowseArtistsScreen() {
         <Ionicons name="search" size={18} color={colors.textMuted} />
         <TextInput
           style={styles.input}
-          placeholder={t('Filtrar artistas')}
+          placeholder={t('Filter artists')}
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
@@ -73,7 +73,7 @@ export default function BrowseArtistsScreen() {
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
       ) : isError ? (
-        <Message text={t('No se pudieron cargar los artistas.')} onRetry={() => refetch()} />
+        <Message text={t("Couldn't load artists.")} onRetry={() => refetch()} />
       ) : (
         <FlatList
         {...listPerf}

@@ -19,8 +19,8 @@ export type AudioQualityMode = 'off' | 'player' | 'everywhere';
 
 export const AUDIO_QUALITY_OPTIONS: { label: string; value: AudioQualityMode }[] = [
   { label: 'No', value: 'off' },
-  { label: 'Solo reproductor', value: 'player' },
-  { label: 'En todas partes', value: 'everywhere' },
+  { label: 'Player only', value: 'player' },
+  { label: 'Everywhere', value: 'everywhere' },
 ];
 
 interface SettingsState {

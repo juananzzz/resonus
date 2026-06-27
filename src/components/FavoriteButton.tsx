@@ -54,7 +54,7 @@ export function FavoriteButton({ id, type = 'song', starred, size = 22 }: Props)
       hitSlop={10}
       onPress={toggle}
       accessibilityRole="button"
-      accessibilityLabel={fav ? t('Quitar de favoritos') : t('Añadir a favoritos')}
+      accessibilityLabel={fav ? t('Remove from favorites') : t('Add to favorites')}
     >
       <Ionicons
         name={fav ? 'heart' : 'heart-outline'}

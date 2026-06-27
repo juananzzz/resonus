@@ -133,7 +133,7 @@ async function loadIndex(index: number, autoplay: boolean) {
     applyLockScreen(song);
     onTrackChanged(song);
   } catch {
-    useToast.getState().show(tg('No se pudo reproducir la canción'));
+    useToast.getState().show(tg("Couldn't play the song"));
   }
 }
 

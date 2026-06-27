@@ -94,7 +94,7 @@ export default function PlayerScreen() {
       />
       <SafeAreaView style={styles.safe}>
         <View style={styles.topBar}>
-          <CircleButton name="chevron-down" label={t('Cerrar')} onPress={() => router.back()} />
+          <CircleButton name="chevron-down" label={t('Close')} onPress={() => router.back()} />
           <Pressable
             style={styles.topTitleWrap}
             disabled={!sourceHref}
@@ -107,19 +107,19 @@ export default function PlayerScreen() {
           >
             {source ? (
               <>
-                <Text style={styles.topLabel}>{t('REPRODUCIENDO DESDE')}</Text>
+                <Text style={styles.topLabel}>{t('PLAYING FROM')}</Text>
                 <Text style={styles.topSource} numberOfLines={1}>
-                  {source === SOURCE_FAVORITES ? t('Favoritos') : source}
+                  {source === SOURCE_FAVORITES ? t('Favorites') : source}
                 </Text>
               </>
             ) : (
-              <Text style={styles.topTitle}>{t('REPRODUCIENDO')}</Text>
+              <Text style={styles.topTitle}>{t('NOW PLAYING')}</Text>
             )}
           </Pressable>
           {isLocal && !offline ? (
             <View style={{ width: 40 }} />
           ) : (
-            <CircleButton name="ellipsis-vertical" label={t('Más opciones')} onPress={() => openMenu(song)} />
+            <CircleButton name="ellipsis-vertical" label={t('More options')} onPress={() => openMenu(song)} />
           )}
         </View>
 
@@ -157,12 +157,12 @@ export default function PlayerScreen() {
                   onPress={() => router.push(`/artist/${song.artistId}`)}
                 >
                   <Text style={styles.artist} numberOfLines={1}>
-                    {song.artist ?? t('Desconocido')}
+                    {song.artist ?? t('Unknown')}
                   </Text>
                 </Pressable>
               ) : (
                 <Text style={styles.artist} numberOfLines={1}>
-                  {song.artist ?? t('Desconocido')}
+                  {song.artist ?? t('Unknown')}
                 </Text>
               )}
             </View>
@@ -189,7 +189,7 @@ export default function PlayerScreen() {
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel={t('Aleatorio')}
+              accessibilityLabel={t('Shuffle')}
               onPress={toggleShuffle}
             >
               <Ionicons
@@ -201,7 +201,7 @@ export default function PlayerScreen() {
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel={t('Anterior')}
+              accessibilityLabel={t('Previous')}
               onPress={previous}
             >
               <Ionicons name="play-skip-back" size={34} color={colors.text} />
@@ -209,7 +209,7 @@ export default function PlayerScreen() {
             <Pressable
               style={styles.playButton}
               accessibilityRole="button"
-              accessibilityLabel={isPlaying ? t('Pausar') : t('Reproducir')}
+              accessibilityLabel={isPlaying ? t('Pause') : t('Play')}
               onPress={toggle}
             >
               <Ionicons
@@ -222,7 +222,7 @@ export default function PlayerScreen() {
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel={t('Siguiente')}
+              accessibilityLabel={t('Next')}
               onPress={next}
             >
               <Ionicons name="play-skip-forward" size={34} color={colors.text} />
@@ -230,7 +230,7 @@ export default function PlayerScreen() {
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel={t('Repetir')}
+              accessibilityLabel={t('Repeat')}
               onPress={cycleRepeat}
             >
               <MaterialIcons
@@ -247,7 +247,7 @@ export default function PlayerScreen() {
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel={t('Ver la cola')}
+              accessibilityLabel={t('View queue')}
               onPress={() => router.push('/queue')}
             >
               <MaterialIcons name="queue-music" size={24} color={colors.text} />

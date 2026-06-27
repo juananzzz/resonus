@@ -14,30 +14,30 @@ export default function AccountSettings() {
   const logout = useAuthStore((s) => s.logout);
 
   return (
-    <SettingsPage title={t('Cuenta')}>
+    <SettingsPage title={t('Account')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         {offline ? (
           <>
-            <Text style={settingsStyles.sectionTitle}>{t('Modo sin conexión')}</Text>
+            <Text style={settingsStyles.sectionTitle}>{t('Offline mode')}</Text>
             <View style={settingsStyles.card}>
-              <Field label="" value={t('Estás reproduciendo música almacenada en tu dispositivo.')} />
+              <Field label="" value={t('You are playing music stored on your device.')} />
             </View>
             <Pressable style={settingsStyles.logout} onPress={() => logout()}>
               <Ionicons name="exit-outline" size={22} color={colors.danger} />
-              <Text style={settingsStyles.logoutText}>{t('Salir')}</Text>
+              <Text style={settingsStyles.logoutText}>{t('Exit')}</Text>
             </Pressable>
           </>
         ) : (
           <>
-            <Text style={settingsStyles.sectionTitle}>{t('Servidor')}</Text>
+            <Text style={settingsStyles.sectionTitle}>{t('Server')}</Text>
             <View style={settingsStyles.card}>
               <Field label="URL" value={auth?.serverUrl ?? '—'} />
               <View style={settingsStyles.divider} />
-              <Field label={t('Usuario')} value={auth?.username ?? '—'} />
+              <Field label={t('Username')} value={auth?.username ?? '—'} />
             </View>
             <Pressable style={settingsStyles.logout} onPress={() => logout()}>
               <Ionicons name="log-out-outline" size={22} color={colors.danger} />
-              <Text style={settingsStyles.logoutText}>{t('Cerrar sesión')}</Text>
+              <Text style={settingsStyles.logoutText}>{t('Sign out')}</Text>
             </Pressable>
           </>
         )}

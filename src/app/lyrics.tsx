@@ -38,7 +38,7 @@ export default function LyricsScreen() {
         </Pressable>
         <View style={styles.titleBox}>
           <Text style={styles.title} numberOfLines={1}>
-            {song?.title ?? t('Letra')}
+            {song?.title ?? t('Lyrics')}
           </Text>
           {song?.artist ? (
             <Text style={styles.artist} numberOfLines={1}>
@@ -52,13 +52,13 @@ export default function LyricsScreen() {
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: spacing.xxl }} color={colors.accent} />
       ) : !auth ? (
-        <Text style={styles.empty}>{t('La letra no está disponible en modo sin conexión.')}</Text>
+        <Text style={styles.empty}>{t('Lyrics are not available in offline mode.')}</Text>
       ) : data ? (
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.lyrics}>{data}</Text>
         </ScrollView>
       ) : (
-        <Text style={styles.empty}>{t('No hay letra disponible para esta canción.')}</Text>
+        <Text style={styles.empty}>{t('No lyrics available for this song.')}</Text>
       )}
     </SafeAreaView>
   );

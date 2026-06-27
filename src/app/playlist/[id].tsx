@@ -53,9 +53,9 @@ export default function PlaylistScreen() {
       await renamePlaylist(id, name);
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      toast(t('Lista renombrada'));
+      toast(t('Playlist renamed'));
     } catch {
-      toast(t('No se pudo completar la acción'));
+      toast(t("Couldn't complete the action"));
     }
   }
 
@@ -65,10 +65,10 @@ export default function PlaylistScreen() {
     try {
       await deletePlaylist(id);
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      toast(t('Lista eliminada'));
+      toast(t('Playlist deleted'));
       router.back();
     } catch {
-      toast(t('No se pudo completar la acción'));
+      toast(t("Couldn't complete the action"));
     }
   }
 
@@ -84,7 +84,7 @@ export default function PlaylistScreen() {
     return (
       <View style={styles.center}>
         <Message
-          text={offline ? t('Las listas no están disponibles en modo sin conexión.') : t('No se pudo cargar la lista.')}
+          text={offline ? t('Playlists are not available in offline mode.') : t("Couldn't load the playlist.")}
           onRetry={offline ? undefined : () => refetch()}
         />
       </View>
@@ -92,7 +92,7 @@ export default function PlaylistScreen() {
   }
 
   const totalSec = data.songs.reduce((acc, s) => acc + (s.duration ?? 0), 0);
-  const metaParts = [t('Lista'), songsLabel(data.songs.length, lang)];
+  const metaParts = [t('Playlist'), songsLabel(data.songs.length, lang)];
   if (totalSec > 0) metaParts.push(formatTotalDuration(totalSec));
 
   return (
@@ -122,7 +122,7 @@ export default function PlaylistScreen() {
             }}
           >
             <Ionicons name="create-outline" size={24} color={colors.text} />
-            <Text style={styles.actionText}>{t('Renombrar')}</Text>
+            <Text style={styles.actionText}>{t('Rename')}</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
@@ -132,25 +132,25 @@ export default function PlaylistScreen() {
             }}
           >
             <Ionicons name="trash-outline" size={24} color={colors.danger} />
-            <Text style={[styles.actionText, { color: colors.danger }]}>{t('Eliminar lista')}</Text>
+            <Text style={[styles.actionText, { color: colors.danger }]}>{t('Delete playlist')}</Text>
           </Pressable>
         </View>
       </Modal>
 
       <Dialog
         visible={renaming}
-        title={t('Renombrar lista')}
-        input={{ initialValue: data.playlist.name, placeholder: t('Nombre de la lista') }}
-        confirmLabel={t('Renombrar')}
+        title={t('Rename playlist')}
+        input={{ initialValue: data.playlist.name, placeholder: t('Playlist name') }}
+        confirmLabel={t('Rename')}
         onCancel={() => setRenaming(false)}
         onConfirm={onRename}
       />
 
       <Dialog
         visible={deleting}
-        title={t('¿Eliminar «{name}»?', { name: data.playlist.name })}
-        message={t('Esta acción no se puede deshacer.')}
-        confirmLabel={t('Eliminar')}
+        title={t('Delete “{name}”?', { name: data.playlist.name })}
+        message={t("This can't be undone.")}
+        confirmLabel={t('Delete')}
         destructive
         onCancel={() => setDeleting(false)}
         onConfirm={onDelete}

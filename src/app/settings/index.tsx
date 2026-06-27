@@ -17,16 +17,16 @@ type Section = {
 };
 
 const SECTIONS: Section[] = [
-  { key: 'account', icon: 'person-circle-outline', title: 'Cuenta', subtitle: 'Servidor · Cerrar sesión' },
-  { key: 'library', icon: 'server-outline', title: 'Biblioteca', subtitle: 'Escaneo · Limpiar caché' },
+  { key: 'account', icon: 'person-circle-outline', title: 'Account', subtitle: 'Server · Sign out' },
+  { key: 'library', icon: 'server-outline', title: 'Library', subtitle: 'Scan · Clear cache' },
   {
     key: 'playback',
     icon: 'musical-notes-outline',
-    title: 'Calidad y reproducción',
-    subtitle: 'Calidad · Crossfade · Ecualizador',
+    title: 'Quality & playback',
+    subtitle: 'Quality · Crossfade · Equalizer',
   },
-  { key: 'display', icon: 'phone-portrait-outline', title: 'Pantalla', subtitle: 'Idioma' },
-  { key: 'about', icon: 'information-circle-outline', title: 'Acerca de', subtitle: 'Versión · GitHub' },
+  { key: 'display', icon: 'phone-portrait-outline', title: 'Display', subtitle: 'Language' },
+  { key: 'about', icon: 'information-circle-outline', title: 'About', subtitle: 'Version · GitHub' },
 ];
 
 export default function SettingsScreen() {
@@ -39,13 +39,13 @@ export default function SettingsScreen() {
   // la música local (origen + volver a escanear).
   const visible = (offline ? SECTIONS.filter((s) => s.key !== 'account') : SECTIONS).map((s) =>
     offline && s.key === 'library'
-      ? { ...s, title: 'Música local', subtitle: 'Origen · Volver a escanear' }
+      ? { ...s, title: 'Local music', subtitle: 'Source · Rescan' }
       : s,
   );
 
   return (
     <SafeAreaView style={settingsStyles.safe} edges={['top']}>
-      <ScreenHeader title={t('Ajustes')} />
+      <ScreenHeader title={t('Settings')} />
       <ScrollView contentContainerStyle={settingsStyles.content}>
         {visible.map((s) => (
           <Pressable
@@ -66,7 +66,7 @@ export default function SettingsScreen() {
 
         <Pressable style={settingsStyles.logout} onPress={() => logout()}>
           <Ionicons name={offline ? 'exit-outline' : 'log-out-outline'} size={22} color={colors.danger} />
-          <Text style={settingsStyles.logoutText}>{offline ? t('Salir del modo sin conexión') : t('Cerrar sesión')}</Text>
+          <Text style={settingsStyles.logoutText}>{offline ? t('Exit offline mode') : t('Sign out')}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

@@ -67,7 +67,7 @@ export default function SearchScreen() {
         <Ionicons name="search" size={20} color={colors.textMuted} />
         <TextInput
           style={styles.input}
-          placeholder={t('Canciones, álbumes, artistas')}
+          placeholder={t('Songs, albums, artists')}
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
@@ -79,7 +79,7 @@ export default function SearchScreen() {
           onSubmitEditing={() => addRecent(query)}
         />
         {query.length > 0 ? (
-          <Pressable hitSlop={10} accessibilityLabel={t('Borrar')} onPress={() => setQuery('')}>
+          <Pressable hitSlop={10} accessibilityLabel={t('Clear')} onPress={() => setQuery('')}>
             <Ionicons name="close-circle" size={20} color={colors.textMuted} />
           </Pressable>
         ) : null}
@@ -92,9 +92,9 @@ export default function SearchScreen() {
         {showRecent ? (
           <View style={styles.section}>
             <View style={styles.recentHeader}>
-              <Text style={styles.sectionTitle}>{t('Búsquedas recientes')}</Text>
+              <Text style={styles.sectionTitle}>{t('Recent searches')}</Text>
               <Pressable hitSlop={8} onPress={() => clearRecent()}>
-                <Text style={styles.clearAll}>{t('Borrar todo')}</Text>
+                <Text style={styles.clearAll}>{t('Clear all')}</Text>
               </Pressable>
             </View>
             <View>
@@ -106,7 +106,7 @@ export default function SearchScreen() {
                   </Text>
                   <Pressable
                     hitSlop={10}
-                    accessibilityLabel={t('Borrar')}
+                    accessibilityLabel={t('Clear')}
                     onPress={() => removeRecent(term)}
                   >
                     <Ionicons name="close" size={20} color={colors.textMuted} />
@@ -119,7 +119,7 @@ export default function SearchScreen() {
 
         {showBrowse ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('Explorar todo')}</Text>
+            <Text style={styles.sectionTitle}>{t('Browse all')}</Text>
             <View style={styles.genreGrid}>
               {genres!.map((g) => (
                 <GenreCard key={g.value} name={g.value} width={GENRE_W} />
@@ -134,7 +134,7 @@ export default function SearchScreen() {
 
         {data && data.artists.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('Artistas')}</Text>
+            <Text style={styles.sectionTitle}>{t('Artists')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -160,7 +160,7 @@ export default function SearchScreen() {
 
         {data && data.albums.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('Álbumes')}</Text>
+            <Text style={styles.sectionTitle}>{t('Albums')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -175,7 +175,7 @@ export default function SearchScreen() {
 
         {data && data.songs.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('Canciones')}</Text>
+            <Text style={styles.sectionTitle}>{t('Songs')}</Text>
             {data.songs.map((song, i) => (
               <TrackRow
                 key={song.id}

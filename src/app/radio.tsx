@@ -35,7 +35,7 @@ export default function RadioScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel={t('Atrás')}>
+        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel={t('Back')}>
           <Ionicons name="chevron-back" size={26} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>{t('Radio')}</Text>
@@ -45,7 +45,7 @@ export default function RadioScreen() {
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
       ) : isError ? (
-        <Message text={t('No se pudieron cargar las emisoras.')} onRetry={() => refetch()} />
+        <Message text={t("Couldn't load radio stations.")} onRetry={() => refetch()} />
       ) : (
         <FlatList
           data={data ?? []}
@@ -77,7 +77,7 @@ export default function RadioScreen() {
               <Ionicons name="play-circle" size={28} color={colors.accent} />
             </Pressable>
           )}
-          ListEmptyComponent={<Text style={styles.empty}>{t('No hay emisoras de radio.')}</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>{t('No radio stations.')}</Text>}
         />
       )}
     </SafeAreaView>

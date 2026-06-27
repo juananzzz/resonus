@@ -67,7 +67,7 @@ export function Dialog({
           ) : null}
           <View style={styles.actions}>
             <Pressable hitSlop={8} onPress={onCancel}>
-              <Text style={styles.cancel}>{t('Cancelar')}</Text>
+              <Text style={styles.cancel}>{t('Cancel')}</Text>
             </Pressable>
             <Pressable
               hitSlop={8}

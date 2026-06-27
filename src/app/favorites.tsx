@@ -41,7 +41,7 @@ export default function FavoritesScreen() {
   if (isError || !data) {
     return (
       <View style={styles.center}>
-        <Message text={t('No se pudieron cargar los favoritos.')} onRetry={() => refetch()} />
+        <Message text={t("Couldn't load favorites.")} onRetry={() => refetch()} />
       </View>
     );
   }
@@ -49,7 +49,7 @@ export default function FavoritesScreen() {
   if (displaySongs.length === 0 && offline) {
     return (
       <View style={styles.center}>
-        <Message text={t('Marca canciones con el corazón para verlas aquí.')} />
+        <Message text={t('Tap the heart on songs to see them here.')} />
       </View>
     );
   }
@@ -61,7 +61,7 @@ export default function FavoritesScreen() {
   return (
     <>
       <TrackListView
-        title={t('Favoritos')}
+        title={t('Favorites')}
         meta={metaParts.join(' · ')}
         renderCover={(size) => <FavoritesArt size={size} />}
         accentColor={colors.accent}

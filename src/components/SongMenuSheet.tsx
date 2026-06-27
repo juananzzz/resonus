@@ -93,15 +93,15 @@ export function SongMenuSheet() {
     try {
       await addToPlaylist(playlistId, song.id);
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
-      toast(t('Añadida a «{name}»', { name: playlistName }));
+      toast(t('Added to “{name}”', { name: playlistName }));
     } catch {
-      toast(t('No se pudo añadir a la lista'));
+      toast(t("Couldn't add to the playlist"));
     }
   }
 
   const soon = () => {
     close();
-    toast(t('Próximamente 🚧'));
+    toast(t('Coming soon 🚧'));
   };
 
   async function removeFromList() {
@@ -111,9 +111,9 @@ export function SongMenuSheet() {
       await removeFromPlaylist(context.playlistId, context.index);
       queryClient.invalidateQueries({ queryKey: ['playlist', context.playlistId] });
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      toast(t('Quitada de la lista'));
+      toast(t('Removed from playlist'));
     } catch {
-      toast(t('No se pudo completar la acción'));
+      toast(t("Couldn't complete the action"));
     }
   }
 
@@ -143,7 +143,7 @@ export function SongMenuSheet() {
               onPress={() => setMode('actions')}
             >
               <Ionicons name="chevron-back" size={24} color={colors.text} />
-              <Text style={styles.actionText}>{t('Añadir a una playlist')}</Text>
+              <Text style={styles.actionText}>{t('Add to a playlist')}</Text>
             </Pressable>
             {loadingPlaylists ? (
               <ActivityIndicator style={{ marginVertical: spacing.lg }} color={colors.accent} />
@@ -168,7 +168,7 @@ export function SongMenuSheet() {
           <View>
             <Pressable style={styles.action} onPress={() => setMode('actions')}>
               <Ionicons name="chevron-back" size={24} color={colors.text} />
-              <Text style={styles.actionText}>{t('Temporizador de apagado')}</Text>
+              <Text style={styles.actionText}>{t('Sleep timer')}</Text>
             </Pressable>
             {[15, 30, 45, 60].map((m) => (
               <Pressable
@@ -176,12 +176,12 @@ export function SongMenuSheet() {
                 style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
                 onPress={() => {
                   setSleepTimer(m);
-                  toast(t('Se pausará en {n} min', { n: m }));
+                  toast(t('Will pause in {n} min', { n: m }));
                   close();
                 }}
               >
                 <Ionicons name="time-outline" size={24} color={colors.text} />
-                <Text style={styles.actionText}>{t('{n} minutos', { n: m })}</Text>
+                <Text style={styles.actionText}>{t('{n} minutes', { n: m })}</Text>
               </Pressable>
             ))}
             {sleepTimerMinutes ? (
@@ -189,13 +189,13 @@ export function SongMenuSheet() {
                 style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
                 onPress={() => {
                   cancelSleepTimer();
-                  toast(t('Temporizador desactivado'));
+                  toast(t('Sleep timer off'));
                   close();
                 }}
               >
                 <Ionicons name="close-circle-outline" size={24} color={colors.danger} />
                 <Text style={[styles.actionText, { color: colors.danger }]}>
-                  {t('Desactivar')}
+                  {t('Turn off')}
                 </Text>
               </Pressable>
             ) : null}
@@ -205,21 +205,21 @@ export function SongMenuSheet() {
             {!offline ? (
               <Action
                 icon="add-circle-outline"
-                label={t('Añadir a una playlist')}
+                label={t('Add to a playlist')}
                 onPress={() => setMode('playlists')}
               />
             ) : null}
             {!offline && context ? (
               <Action
                 icon="remove-circle-outline"
-                label={t('Quitar de la lista')}
+                label={t('Remove from playlist')}
                 onPress={removeFromList}
               />
             ) : null}
             {(song.artistId || song.artist) ? (
               <Action
                 icon="person"
-                label={t('Ir al artista')}
+                label={t('Go to artist')}
                 onPress={() => {
                   const id = song.artistId ?? (song.artist ? normKey(song.artist) : '');
                   if (id) go(`/artist/${id}`);
@@ -229,7 +229,7 @@ export function SongMenuSheet() {
             {(song.albumId || song.album) ? (
               <Action
                 icon="disc"
-                label={t('Ir al álbum')}
+                label={t('Go to album')}
                 onPress={() => {
                   if (song.albumId) { go(`/album/${song.albumId}`); return; }
                   if (song.album) {
@@ -241,7 +241,7 @@ export function SongMenuSheet() {
             ) : null}
             <Action
               icon="play-forward"
-              label={t('Reproducir a continuación')}
+              label={t('Play next')}
               onPress={() => {
                 playNext(song);
                 close();
@@ -249,7 +249,7 @@ export function SongMenuSheet() {
             />
             <Action
               icon="list"
-              label={t('Añadir a la cola')}
+              label={t('Add to queue')}
               onPress={() => {
                 addToQueue(song);
                 close();
@@ -257,27 +257,27 @@ export function SongMenuSheet() {
             />
             <Action
               icon="heart-outline"
-              label={t('Añadir a favoritos')}
+              label={t('Add to favorites')}
               onPress={() => {
                 star(song.id).then(() =>
                   queryClient.invalidateQueries({ queryKey: ['starred'] }),
                 );
-                toast(t('Añadida a favoritos'));
+                toast(t('Added to favorites'));
                 close();
               }}
             />
             <Action
               icon="musical-notes-outline"
-              label={t('Letra')}
+              label={t('Lyrics')}
               onPress={() => go('/lyrics')}
             />
-            {!offline ? <Action icon="download-outline" label={t('Descargar')} onPress={soon} /> : null}
+            {!offline ? <Action icon="download-outline" label={t('Download')} onPress={soon} /> : null}
             <Action
               icon="moon-outline"
               label={
                 sleepTimerMinutes
-                  ? t('Temporizador ({n} min)', { n: sleepTimerMinutes })
-                  : t('Temporizador de apagado')
+                  ? t('Sleep timer ({n} min)', { n: sleepTimerMinutes })
+                  : t('Sleep timer')
               }
               onPress={() => setMode('sleep')}
             />

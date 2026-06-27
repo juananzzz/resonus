@@ -19,8 +19,8 @@ type SortField = 'recent' | 'alpha';
 type SortDir = 'asc' | 'desc';
 
 const SORT_LABEL: Record<SortField, string> = {
-  recent: 'Recientes',
-  alpha: 'Alfabético',
+  recent: 'Recent',
+  alpha: 'Alphabetical',
 };
 
 interface SortResult {
@@ -50,7 +50,7 @@ export function useSongSort(source: Song[]): SortResult {
     <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
       <Pressable style={styles.backdrop} onPress={() => setOpen(false)} />
       <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}>
-        <Text style={styles.sheetTitle}>{t('Ordenar por')}</Text>
+        <Text style={styles.sheetTitle}>{t('Sort by')}</Text>
         {(['recent', 'alpha'] as SortField[]).map((f) => {
           const active = field === f;
           return (
@@ -75,7 +75,7 @@ export function useSongSort(source: Song[]): SortResult {
         })}
 
         <View style={styles.divider} />
-        <Text style={styles.sheetTitle}>{t('Dirección')}</Text>
+        <Text style={styles.sheetTitle}>{t('Direction')}</Text>
         <View style={styles.dirRow}>
           {(['asc', 'desc'] as SortDir[]).map((d) => {
             const active = dir === d;
@@ -91,7 +91,7 @@ export function useSongSort(source: Song[]): SortResult {
                   color={active ? '#000' : colors.text}
                 />
                 <Text style={[styles.dirChipText, active && { color: '#000' }]}>
-                  {d === 'asc' ? t('Ascendente') : t('Descendente')}
+                  {d === 'asc' ? t('Ascending') : t('Descending')}
                 </Text>
               </Pressable>
             );

@@ -29,17 +29,17 @@ export default function GenresScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel={t('Atrás')}>
+        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel={t('Back')}>
           <Ionicons name="chevron-back" size={26} color={colors.text} />
         </Pressable>
-        <Text style={styles.title}>{t('Géneros')}</Text>
+        <Text style={styles.title}>{t('Genres')}</Text>
         <View style={{ width: 26 }} />
       </View>
 
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
       ) : isError ? (
-        <Message text={t('No se pudieron cargar los géneros.')} onRetry={() => refetch()} />
+        <Message text={t("Couldn't load genres.")} onRetry={() => refetch()} />
       ) : (
         <FlatList
         {...listPerf}
@@ -49,7 +49,7 @@ export default function GenresScreen() {
           columnWrapperStyle={{ gap: spacing.sm }}
           contentContainerStyle={styles.list}
           renderItem={({ item }: { item: Genre }) => <GenreCard name={item.value} />}
-          ListEmptyComponent={<Text style={styles.empty}>{t('No hay géneros.')}</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>{t('No genres.')}</Text>}
         />
       )}
     </SafeAreaView>

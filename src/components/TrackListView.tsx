@@ -161,7 +161,7 @@ export function TrackListView({
                   <Pressable
                     hitSlop={10}
                     accessibilityRole="button"
-                    accessibilityLabel={t('Ordenar')}
+                    accessibilityLabel={t('Sort')}
                     onPress={onSort}
                   >
                     <Ionicons name="swap-vertical" size={24} color={colors.textSecondary} />
@@ -171,7 +171,7 @@ export function TrackListView({
                   <Pressable
                     hitSlop={10}
                     accessibilityRole="button"
-                    accessibilityLabel={t('Más opciones')}
+                    accessibilityLabel={t('More options')}
                     onPress={onMenu}
                   >
                     <Ionicons name="ellipsis-horizontal" size={26} color={colors.textSecondary} />
@@ -183,7 +183,7 @@ export function TrackListView({
                 <Pressable
                   hitSlop={10}
                   accessibilityRole="button"
-                  accessibilityLabel={t('Aleatorio')}
+                  accessibilityLabel={t('Shuffle')}
                   onPress={shufflePlay}
                 >
                   <Ionicons
@@ -195,7 +195,7 @@ export function TrackListView({
                 <Pressable
                   style={styles.playButton}
                   accessibilityRole="button"
-                  accessibilityLabel={t('Reproducir')}
+                  accessibilityLabel={t('Play')}
                   onPress={() => songs.length > 0 && onPlay(0)}
                 >
                   <Ionicons name="play" size={28} color="#000" style={{ marginLeft: 3 }} />
@@ -228,7 +228,7 @@ export function TrackListView({
         <Pressable
           hitSlop={12}
           accessibilityRole="button"
-          accessibilityLabel={t('Cerrar')}
+          accessibilityLabel={t('Close')}
           onPress={() => router.back()}
         >
           <Ionicons name="chevron-back" size={28} color={colors.text} />
