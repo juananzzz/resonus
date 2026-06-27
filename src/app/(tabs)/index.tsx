@@ -217,8 +217,15 @@ export default function HomeScreen() {
               </View>
             ) : null}
           </View>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
+          <View style={styles.headerRight}>
+            <Link href="/settings" asChild>
+              <Pressable hitSlop={10} accessibilityLabel={t('Settings')}>
+                <Ionicons name="settings-outline" size={24} color={colors.textSecondary} />
+              </Pressable>
+            </Link>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initial}</Text>
+            </View>
           </View>
         </View>
 
@@ -257,6 +264,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   greeting: { color: colors.text, fontSize: fontSize.xxl, fontWeight: '800' },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
   avatar: {
     width: 36,
     height: 36,

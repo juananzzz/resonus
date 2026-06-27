@@ -1,7 +1,7 @@
 /** Biblioteca: listas (con acceso fijo a Favoritos) y artistas. Ajustes. */
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -188,7 +188,6 @@ function Empty({ text }: { text: string }) {
 }
 
 export default function LibraryScreen() {
-  const router = useRouter();
   const t = useT();
   const auth = useAuthStore((s) => s.auth);
   const offline = useAuthStore((s) => s.offline);
@@ -226,9 +225,6 @@ export default function LibraryScreen() {
               <Ionicons name="add" size={28} color={colors.text} />
             </Pressable>
           ) : null}
-          <Pressable hitSlop={12} onPress={() => router.push('/settings')}>
-            <Ionicons name="settings-outline" size={24} color={colors.textSecondary} />
-          </Pressable>
         </View>
       </View>
 
