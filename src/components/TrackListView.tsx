@@ -49,6 +49,8 @@ interface Props {
   playlistIndices?: number[];
   /** Si se indica, muestra un botón de orden a la izquierda del ⋯. */
   onSort?: () => void;
+  /** Contenido extra al pie de la lista (p. ej. "Más de este artista"). */
+  footer?: ReactNode;
   onPlay: (startIndex: number) => void;
 }
 
@@ -68,6 +70,7 @@ export function TrackListView({
   playlistId,
   playlistIndices,
   onSort,
+  footer,
   onPlay,
 }: Props) {
   const router = useRouter();
@@ -217,6 +220,7 @@ export function TrackListView({
             onPress={() => onPlay(index)}
           />
         )}
+        ListFooterComponent={footer ? <>{footer}</> : null}
       />
 
       {/* Barra fija superior: el fondo y el título aparecen al colapsar. */}

@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { coverArtUrl, getAlbum } from '@/api/data';
 import { Message } from '@/components/Message';
+import { MoreFromArtist } from '@/components/MoreFromArtist';
 import { TrackListView } from '@/components/TrackListView';
 import { songsLabel, useT } from '@/i18n';
 import { formatTotalDuration } from '@/lib/format';
@@ -60,6 +61,15 @@ export default function AlbumScreen() {
       currentId={playing?.id}
       numbered
       favorite={{ id: data.album.id, type: 'album', starred: !!data.album.starred }}
+      footer={
+        data.album.artistId ? (
+          <MoreFromArtist
+            artistId={data.album.artistId}
+            artistName={data.album.artist ?? ''}
+            currentAlbumId={data.album.id}
+          />
+        ) : undefined
+      }
       onPlay={(start) => playQueue(data.songs, start, data.album.name, `/album/${id}`)}
     />
   );
