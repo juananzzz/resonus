@@ -1,12 +1,10 @@
 /**
  * Navegación principal por pestañas: Inicio, Buscar y Biblioteca.
- * Estilo Spotify: barra sin borde con un degradado que se funde a oscuro
- * abajo para que los iconos se lean bien sobre el contenido.
+ * Barra inferior sólida sobre el fondo de la app.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useT } from '@/i18n';
@@ -24,16 +22,9 @@ export default function TabsLayout() {
           tabBarActiveTintColor: colors.text,
           tabBarInactiveTintColor: colors.textSecondary,
           sceneStyle: { backgroundColor: colors.background },
-          tabBarBackground: () => (
-            <LinearGradient
-              colors={['transparent', colors.background, colors.background] as const}
-              locations={[0, 0.4, 1]}
-              style={StyleSheet.absoluteFill}
-            />
-          ),
           tabBarStyle: {
             position: 'absolute',
-            backgroundColor: 'transparent',
+            backgroundColor: colors.background,
             borderTopWidth: 0,
             elevation: 0,
             height: TAB_BAR_HEIGHT + insets.bottom,
