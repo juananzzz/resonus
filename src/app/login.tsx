@@ -27,7 +27,7 @@ import { useToast } from '@/store/toast';
 import { useT } from '@/i18n';
 import { colors, fontSize, radius, spacing } from '@/theme';
 
-type ServerKey = 'navidrome' | 'opensubsonic' | 'jellyfin';
+type ServerKey = 'navidrome' | 'opensubsonic' | 'jellyfin' | 'ampache';
 
 const APP_ICON = require('@/assets/images/icon.png');
 
@@ -41,6 +41,7 @@ const SERVERS: {
   { key: 'navidrome', name: 'Navidrome', logo: require('@/assets/images/servers/navidrome.png'), sub: 'Subsonic server' },
   { key: 'opensubsonic', name: 'OpenSubsonic', logo: require('@/assets/images/servers/opensubsonic.png'), sub: 'Subsonic-compatible' },
   { key: 'jellyfin', name: 'Jellyfin', logo: require('@/assets/images/servers/jellyfin.png'), sub: 'Not available yet', soon: true },
+  { key: 'ampache', name: 'Ampache', logo: require('@/assets/images/servers/ampache.png'), sub: 'Subsonic-compatible' },
 ];
 
 function logoFor(type?: string): number {
@@ -258,7 +259,9 @@ export default function LoginScreen() {
                     key={s.key}
                     style={[styles.srvRow, s.soon && styles.srvRowDisabled]}
                     onPress={() =>
-                      s.soon ? toast(t('Jellyfin is not available yet 🚧')) : pickServer(s.key)
+                      s.soon
+                        ? toast(t('{name} is not available yet 🚧', { name: s.name }))
+                        : pickServer(s.key)
                     }
                   >
                     <Image source={s.logo} style={styles.srvLogo} contentFit="contain" />
