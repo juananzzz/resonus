@@ -2,9 +2,13 @@
 # Source language: English. Source file: src/i18n/locales/en.json (identity map).
 # Crowdin pushes each target language as src/i18n/locales/<code>.json via PRs.
 #
-# skip_untranslated_files: don't export a file for languages with no translations
-# (avoids committing English-only clones for the still-untranslated languages).
-skip_untranslated_files: true
+# Do NOT hand-edit the translated files (es.json, etc.) — they are owned by
+# Crowdin. Only edit en.json (the source) in code; translate the rest in
+# Crowdin to avoid merge conflicts/regressions.
+#
+# skip_untranslated_files (per file): don't export a file for languages with no
+# translations, so the repo only gets a <lang>.json once it's actually translated.
 files:
   - source: /src/i18n/locales/en.json
     translation: /src/i18n/locales/%two_letters_code%.json
+    skip_untranslated_files: true
