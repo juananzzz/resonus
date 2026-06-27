@@ -45,6 +45,9 @@ jobs:
           upload_sources: true
           upload_translations: false
           download_translations: false
+          push_sources: false
+          push_translations: false
+          create_pull_request: false
           project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
           token: ${{ secrets.CROWDIN_API_TOKEN }}
         env:
@@ -62,6 +65,8 @@ jobs:
           download_translations: true
           skip_untranslated_strings: true
           export_only_approved: false
+          push_sources: false
+          push_translations: false
           create_pull_request: false
           project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
           token: ${{ secrets.CROWDIN_API_TOKEN }}
@@ -93,7 +98,12 @@ jobs:
       - name: Check for changes
         id: changes
         if: steps.check.outputs.ready == 'true'
-        run: git diff --quiet && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create Pull Request
         if: steps.check.outputs.ready == 'true' && steps.changes.outputs.changed == 'true'
