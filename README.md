@@ -14,24 +14,12 @@ Resonus connects to **Navidrome** or any **OpenSubsonic**-compatible server (Sub
 
 ## Features
 
-- 🎵 **Navidrome / OpenSubsonic** — multi-profile login (several servers + local).
-- 📱 **Local mode** — play music from a folder or the whole device, fully offline. Albums grouped by folder, embedded artwork, and a cached catalog so it doesn't re-scan every time.
-- 🔎 **Browse & search** — home, artists (top songs, albums, similar), albums, genres, playlists, favorites.
-- ▶️ **Playback** — background playback, lock-screen & notification controls, queue, shuffle/repeat, sleep timer, lyrics.
-- 🚗 **Android Auto** — browse your library and control playback from the car.
-- ☁️ **Queue sync** — resume where you left off across devices (`savePlayQueue` / `getPlayQueue`).
-
-## Tech
-
-Expo (React Native + TypeScript, New Architecture), expo-router, Zustand, TanStack Query, expo-audio, Media3 (Android Auto module under `modules/car-auto`).
-
-## Run (dev)
-
-```sh
-pnpm install
-pnpm expo prebuild --clean -p android   # only after native / app.json changes
-pnpm android                            # build, install and start Metro
-```
+- **Navidrome / OpenSubsonic** — multi-profile login (several servers + local).
+- **Local mode** — play music from a folder or the whole device, fully offline. Albums grouped by folder, embedded artwork, and a cached catalog so it doesn't re-scan every time.
+- **Browse & search** — home, artists (top songs, albums, similar), albums, genres, playlists, favorites.
+- **Playback** — background playback, lock-screen & notification controls, queue, shuffle/repeat, sleep timer, lyrics.
+- **Android Auto** — browse your library and control playback from the car.
+- **Queue sync** — resume where you left off across devices.
 
 ## Roadmap
 
