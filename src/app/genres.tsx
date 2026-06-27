@@ -2,7 +2,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getGenres, type Genre } from '@/api/subsonic';
@@ -10,13 +19,14 @@ import { GenreCard } from '@/components/GenreCard';
 import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
-import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
+import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 import { listPerf } from '@/lib/listPerf';
 
 export default function GenresScreen() {
   const router = useRouter();
   const t = useT();
   const auth = useAuthStore((s) => s.auth);
+  const [query, setQuery] = useState('');
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['genres'],
@@ -24,7 +34,11 @@ export default function GenresScreen() {
     enabled: !!auth,
   });
 
-  const genres = [...(data ?? [])].sort((a, b) => a.value.localeCompare(b.value));
+  const genres = useMemo(() => {
+    const all = [...(data ?? [])].sort((a, b) => a.value.localeCompare(b.value));
+    const q = query.trim().toLowerCase();
+    return q ? all.filter((g) => g.value.toLowerCase().includes(q)) : all;
+  }, [data, query]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -34,6 +48,24 @@ export default function GenresScreen() {
         </Pressable>
         <Text style={styles.title}>{t('Genres')}</Text>
         <View style={{ width: 26 }} />
+      </View>
+
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={18} color={colors.textMuted} />
+        <TextInput
+          style={styles.input}
+          placeholder={t('Filter genres')}
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={query}
+          onChangeText={setQuery}
+        />
+        {query.length > 0 ? (
+          <Pressable hitSlop={10} onPress={() => setQuery('')}>
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+          </Pressable>
+        ) : null}
       </View>
 
       {isLoading ? (
@@ -66,6 +98,17 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '800' },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceHighlight,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+  },
+  input: { flex: 1, color: colors.text, fontSize: fontSize.md, paddingVertical: spacing.sm },
   list: {
     paddingHorizontal: spacing.lg,
     paddingBottom: SCREEN_BOTTOM_PADDING,
