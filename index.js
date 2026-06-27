@@ -1,10 +1,3 @@
-// Punto de entrada: registra el servicio de reproducción de
-// react-native-track-player ANTES de arrancar la app (expo-router).
-import TrackPlayer from 'react-native-track-player';
-
-import { PlaybackService } from './src/lib/playbackService';
-
-TrackPlayer.registerPlaybackService(() => PlaybackService);
-
-// require (no import) para que la app arranque tras registrar el servicio.
-require('expo-router/entry');
+// Punto de entrada de la app. El audio lo gestiona expo-audio (ver
+// src/store/player.ts) y la sesión del coche el módulo modules/car-auto.
+import 'expo-router/entry';

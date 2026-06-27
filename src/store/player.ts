@@ -1,24 +1,27 @@
 /**
- * Estado y control de reproducción sobre react-native-track-player (RNTP).
+ * Estado y control de reproducción sobre **expo-audio**.
  *
- * RNTP gestiona la cola, la reproducción en segundo plano y los controles de
- * la notificación / pantalla de bloqueo. Este store mantiene una copia de la
- * cola (modelo Song) y sincroniza estado (posición, duración, play/pausa,
- * índice activo) desde los eventos de RNTP hacia Zustand, conservando la misma
- * API que usaban los componentes.
+ * La cola vive en JS (este store). Un único `AudioPlayer` de expo-audio
+ * decodifica; al cambiar de pista se hace `replace()` de la fuente. La
+ * notificación / pantalla de bloqueo la da el propio expo-audio vía
+ * `setActiveForLockScreen`. El avance automático de pista se detecta con el
+ * evento `playbackStatusUpdate` (`didJustFinish`).
+ *
+ * (Se migró desde react-native-track-player para poder tener UNA sola
+ * MediaSession y así soportar Android Auto con el módulo `modules/car-auto`.)
  */
 import { AppState } from 'react-native';
-import TrackPlayer, {
-  Capability,
-  Event,
-  RepeatMode as RNTPRepeatMode,
-  State,
-  type Track,
-} from 'react-native-track-player';
+import {
+  createAudioPlayer,
+  setAudioModeAsync,
+  setIsAudioActiveAsync,
+  type AudioMetadata,
+  type AudioPlayer,
+  type AudioStatus,
+} from 'expo-audio';
 import { create } from 'zustand';
 
 import { coverArtUrl, getPlayQueue, savePlayQueue, scrobble, streamUrl, type Song } from '@/api/subsonic';
-import { localCoverUrl } from '@/lib/localLibrary';
 import { useAuthStore } from './auth';
 import { usePlayCounts } from './playCounts';
 import { useSettings } from './settings';
@@ -33,9 +36,138 @@ export type RepeatMode = 'off' | 'all' | 'one';
  */
 export const SOURCE_FAVORITES = '@@favorites';
 
-let setupPromise: Promise<void> | null = null;
-let listenersAdded = false;
 let sleepTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// ── Motor de audio (expo-audio) ─────────────────────────────────────────────
+let audioPlayer: AudioPlayer | null = null;
+let audioModeReady = false;
+let lockActive = false;
+
+/** Crea (una vez) el AudioPlayer y engancha el listener de estado. */
+function ensurePlayer(): AudioPlayer {
+  if (!audioPlayer) {
+    audioPlayer = createAudioPlayer(null, { updateInterval: 500 });
+    // El listener vive durante toda la sesión (el player es un singleton).
+    audioPlayer.addListener('playbackStatusUpdate', onStatus);
+  }
+  return audioPlayer;
+}
+
+/** Configura el modo de audio (foco exclusivo) una sola vez. */
+async function ensureAudioMode() {
+  if (audioModeReady) return;
+  audioModeReady = true;
+  try {
+    // `shouldPlayInBackground` mantiene el audio al minimizar la app; sin él,
+    // expo-audio pausa al ir a segundo plano. `doNotMix` da foco exclusivo
+    // (necesario para que los controles de bloqueo se asocien a nuestro player).
+    await setAudioModeAsync({ interruptionMode: 'doNotMix', shouldPlayInBackground: true });
+    await setIsAudioActiveAsync(true);
+  } catch {
+    // ignore
+  }
+}
+
+/** Fuente para expo-audio: radio (url), local (file/content) o stream Subsonic. */
+function sourceFor(song: Song): { uri: string } {
+  if (song.url) return { uri: song.url };
+  if (song.localUri) return { uri: song.localUri };
+  const auth = useAuthStore.getState().auth!;
+  return { uri: streamUrl(auth, song.id, useSettings.getState().maxBitRate) };
+}
+
+/** URL de carátula para la pantalla de bloqueo (solo servidor por ahora). */
+function artworkUrlFor(song: Song): string | undefined {
+  if (song.url || song.localUri) return undefined; // radio/local: TODO carátula a disco
+  const auth = useAuthStore.getState().auth!;
+  return coverArtUrl(auth, song.coverArt ?? song.albumId, 500);
+}
+
+function metadataFor(song: Song): AudioMetadata {
+  return {
+    title: song.title,
+    artist: song.artist ?? undefined,
+    albumTitle: song.album ?? undefined,
+    artworkUrl: artworkUrlFor(song),
+  };
+}
+
+/** Aplica metadatos al bloqueo (registra el control la primera vez). */
+function applyLockScreen(song: Song) {
+  const p = audioPlayer;
+  if (!p) return;
+  const meta = metadataFor(song);
+  if (!lockActive) {
+    lockActive = true;
+    p.setActiveForLockScreen(true, meta, { showSeekForward: false, showSeekBackward: false });
+  } else {
+    p.updateLockScreenMetadata(meta);
+  }
+}
+
+/** Carga la pista en `index` y (opcionalmente) la reproduce. */
+async function loadIndex(index: number, autoplay: boolean) {
+  const { queue, repeat } = usePlayerStore.getState();
+  const song = queue[index];
+  if (!song) return;
+  await ensureAudioMode();
+  const p = ensurePlayer();
+  try {
+    p.replace(sourceFor(song));
+    p.loop = repeat === 'one';
+    usePlayerStore.setState({
+      index,
+      positionSec: 0,
+      durationSec: song.duration ?? 0,
+      isPlaying: autoplay,
+    });
+    if (autoplay) p.play();
+    applyLockScreen(song);
+    onTrackChanged(song);
+  } catch {
+    useToast.getState().show(tg('No se pudo reproducir la canción'));
+  }
+}
+
+/** Scrobble / contador local + sincroniza la cola al cambiar de pista. */
+function onTrackChanged(song: Song) {
+  const auth = useAuthStore.getState().auth;
+  if (auth) scrobble(auth, song.id);
+  else if (useAuthStore.getState().offline) usePlayCounts.getState().bump(song.id);
+  scheduleSync();
+}
+
+/** Siguiente índice al terminar/saltar; null si la reproducción debe parar. */
+function nextIndex(manual: boolean): number | null {
+  const { queue, index, repeat } = usePlayerStore.getState();
+  if (index < queue.length - 1) return index + 1;
+  if (repeat === 'all') return 0;
+  return manual ? null : null;
+}
+
+/** Listener de estado de expo-audio: progreso, play/pausa y fin de pista. */
+function onStatus(status: AudioStatus) {
+  const prev = usePlayerStore.getState();
+  usePlayerStore.setState({
+    positionSec: status.currentTime ?? 0,
+    durationSec: status.duration || prev.durationSec,
+    isPlaying: status.playing,
+  });
+  // Sincronización de la cola con el servidor.
+  if (status.playing) startPeriodicSync();
+  else {
+    stopPeriodicSync();
+    if (prev.isPlaying) scheduleSync(); // acaba de pausar
+  }
+  if (status.didJustFinish) {
+    const ni = nextIndex(false);
+    if (ni == null) {
+      usePlayerStore.setState({ isPlaying: false });
+    } else {
+      void loadIndex(ni, true);
+    }
+  }
+}
 
 // ── Sincronización de la cola con el servidor (savePlayQueue/getPlayQueue) ──
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -54,7 +186,6 @@ function syncQueueNow() {
   void savePlayQueue(auth, ids, current.id, Math.floor(positionSec * 1000));
 }
 
-/** Agenda un guardado con rebote para no saturar el servidor. */
 function scheduleSync() {
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(syncQueueNow, 2500);
@@ -71,134 +202,12 @@ function stopPeriodicSync() {
   }
 }
 
-/** Carátula (data URI) de una canción local: del índice por álbum, o embebida. */
-export function localArtwork(song: Song): string | undefined {
-  if (song.coverBase64) return `data:${song.coverMime ?? 'image/jpeg'};base64,${song.coverBase64}`;
-  return localCoverUrl(song.coverArt ?? song.albumId);
-}
-
-/** Convierte una canción al formato de pista de RNTP. */
-function toTrack(song: Song): Track {
-  // URL directa (radio, streams externos): se usa tal cual, sin procesar.
-  if (song.url) {
-    return {
-      id: song.id,
-      url: song.url,
-      title: song.title,
-      artist: song.artist ?? 'Desconocido',
-      album: song.album,
-      duration: song.duration,
-    };
-  }
-  // Modo sin conexión: el fichero es local. La carátula sale de la imagen
-  // embebida (ID3) si existe, no de un servidor.
-  if (song.localUri) {
-    return {
-      id: song.id,
-      url: song.localUri,
-      title: song.title,
-      artist: song.artist ?? 'Desconocido',
-      album: song.album,
-      artwork: localArtwork(song),
-      duration: song.duration,
-    };
-  }
-  const auth = useAuthStore.getState().auth!;
-  return {
-    id: song.id,
-    url: streamUrl(auth, song.id, useSettings.getState().maxBitRate),
-    title: song.title,
-    artist: song.artist ?? 'Desconocido',
-    album: song.album,
-    artwork: coverArtUrl(auth, song.coverArt ?? song.albumId, 500),
-    duration: song.duration,
-  };
-}
-
-function addListeners() {
-  if (listenersAdded) return;
-  listenersAdded = true;
-
-  TrackPlayer.addEventListener(Event.PlaybackState, (e) => {
-    const playing = e.state === State.Playing;
-    usePlayerStore.setState({ isPlaying: playing });
-    // Guarda periódicamente mientras suena; al pausar, guarda la posición.
-    if (playing) startPeriodicSync();
-    else {
-      stopPeriodicSync();
-      scheduleSync();
-    }
+function attachAppState() {
+  if (appStateAttached) return;
+  appStateAttached = true;
+  AppState.addEventListener('change', (st) => {
+    if (st !== 'active') syncQueueNow();
   });
-
-  // Al pasar a segundo plano/cerrar, guardamos la posición exacta.
-  if (!appStateAttached) {
-    appStateAttached = true;
-    AppState.addEventListener('change', (st) => {
-      if (st !== 'active') syncQueueNow();
-    });
-  }
-
-  TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, (e) => {
-    usePlayerStore.setState({
-      positionSec: e.position,
-      durationSec: e.duration,
-    });
-  });
-
-  TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, (e) => {
-    if (e.index != null) {
-      usePlayerStore.setState({ index: e.index, positionSec: 0 });
-      const { queue } = usePlayerStore.getState();
-      const auth = useAuthStore.getState().auth;
-      const song = queue[e.index];
-      if (song && auth) scrobble(auth, song.id);
-      // Sin conexión: llevamos la cuenta localmente (para "Más escuchados").
-      else if (song && useAuthStore.getState().offline) usePlayCounts.getState().bump(song.id);
-      // Cambió la pista: actualiza la cola guardada en el servidor.
-      scheduleSync();
-    }
-    if (e.track?.duration) {
-      usePlayerStore.setState({ durationSec: e.track.duration });
-    }
-  });
-
-  TrackPlayer.addEventListener(Event.PlaybackError, () => {
-    useToast.getState().show(tg('No se pudo reproducir la canción'));
-  });
-}
-
-/** Inicializa RNTP una sola vez. */
-function ensureSetup(): Promise<void> {
-  if (!setupPromise) {
-    setupPromise = (async () => {
-      try {
-        await TrackPlayer.setupPlayer();
-      } catch {
-        // Ya estaba inicializado.
-      }
-      await TrackPlayer.updateOptions({
-        progressUpdateEventInterval: 1,
-        capabilities: [
-          Capability.Play,
-          Capability.Pause,
-          Capability.SkipToNext,
-          Capability.SkipToPrevious,
-          Capability.SeekTo,
-        ],
-      });
-      addListeners();
-    })();
-  }
-  return setupPromise;
-}
-
-/** Reconstruye la cola de RNTP (usado al activar/desactivar shuffle). */
-async function rebuildQueue(songs: Song[], startIndex: number) {
-  await ensureSetup();
-  await TrackPlayer.reset();
-  await TrackPlayer.add(songs.map(toTrack));
-  if (startIndex > 0) await TrackPlayer.skip(startIndex);
-  await TrackPlayer.play();
 }
 
 interface PlayerState {
@@ -262,6 +271,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   playQueue: async (songs, startIndex = 0, source, sourceHref) => {
     if (songs.length === 0) return;
+    attachAppState();
     set({
       queue: songs,
       index: startIndex,
@@ -272,12 +282,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       source: source ?? null,
       sourceHref: sourceHref ?? null,
     });
-    try {
-      await rebuildQueue(songs, startIndex);
-      scheduleSync();
-    } catch {
-      useToast.getState().show(tg('No se pudo reproducir'));
-    }
+    await loadIndex(startIndex, true);
   },
 
   addToQueue: (song) => {
@@ -287,7 +292,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return;
     }
     set({ queue: [...queue, song] });
-    ensureSetup().then(() => TrackPlayer.add(toTrack(song))).catch(() => {});
+    scheduleSync();
   },
 
   playNext: (song) => {
@@ -296,69 +301,76 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       void get().playQueue([song], 0);
       return;
     }
-    const insertAt = index + 1;
     const next = [...queue];
-    next.splice(insertAt, 0, song);
+    next.splice(index + 1, 0, song);
     set({ queue: next });
-    ensureSetup()
-      .then(() => TrackPlayer.add(toTrack(song), insertAt))
-      .catch(() => {});
+    scheduleSync();
   },
 
   toggle: () => {
-    if (get().isPlaying) TrackPlayer.pause();
-    else TrackPlayer.play();
+    const p = audioPlayer;
+    if (!p) return;
+    if (get().isPlaying) {
+      p.pause();
+      set({ isPlaying: false });
+    } else {
+      p.play();
+      set({ isPlaying: true });
+    }
   },
 
   next: () => {
-    TrackPlayer.skipToNext().catch(() => {});
+    const ni = nextIndex(true);
+    if (ni != null) void loadIndex(ni, true);
   },
 
   previous: () => {
-    if (get().positionSec > 3) {
-      TrackPlayer.seekTo(0);
+    const { index, positionSec } = get();
+    if (positionSec > 3) {
+      get().seekTo(0);
       return;
     }
-    TrackPlayer.skipToPrevious().catch(() => {});
+    if (index > 0) void loadIndex(index - 1, true);
+    else get().seekTo(0);
   },
 
   seekTo: (sec) => {
-    TrackPlayer.seekTo(sec);
+    audioPlayer?.seekTo(sec);
     set({ positionSec: sec });
   },
 
   setVolume: (v) => {
     const volume = Math.max(0, Math.min(1, v));
-    TrackPlayer.setVolume(volume);
+    if (audioPlayer) audioPlayer.volume = volume;
     set({ volume });
   },
 
   jumpTo: (index) => {
     const { queue } = get();
     if (index < 0 || index >= queue.length) return;
-    TrackPlayer.skip(index)
-      .then(() => TrackPlayer.play())
-      .catch(() => {});
+    void loadIndex(index, true);
   },
 
   removeAt: async (index) => {
-    const { queue } = get();
+    const { queue, index: cur } = get();
     if (index < 0 || index >= queue.length) return;
     const next = queue.filter((_, i) => i !== index);
-    set({ queue: next });
-    try {
-      await TrackPlayer.remove([index]);
-      if (next.length === 0) {
-        await TrackPlayer.reset();
-        set({ index: 0, isPlaying: false, positionSec: 0, durationSec: 0 });
-      }
-    } catch {
-      // ignore
+    if (next.length === 0) {
+      await get().reset();
+      return;
+    }
+    if (index === cur) {
+      // Quitamos la actual: cargamos la que ocupa ahora esa posición.
+      const newIndex = Math.min(cur, next.length - 1);
+      set({ queue: next, index: newIndex });
+      await loadIndex(newIndex, get().isPlaying);
+    } else {
+      set({ queue: next, index: index < cur ? cur - 1 : cur });
     }
   },
 
   moveTrack: async (from, to) => {
-    const { queue } = get();
+    const { queue, index } = get();
     if (
       from === to ||
       from < 0 ||
@@ -371,12 +383,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const next = [...queue];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
-    set({ queue: next });
-    try {
-      await TrackPlayer.move(from, to);
-    } catch {
-      // ignore
-    }
+    // Recolocamos el índice actual para que siga apuntando a la misma canción.
+    let newIndex = index;
+    if (from === index) newIndex = to;
+    else if (from < index && to >= index) newIndex = index - 1;
+    else if (from > index && to <= index) newIndex = index + 1;
+    set({ queue: next, index: newIndex });
   },
 
   toggleShuffle: () => {
@@ -390,44 +402,30 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         [rest[i], rest[j]] = [rest[j], rest[i]];
       }
       const newQueue = current ? [current, ...rest] : rest;
+      // La actual sigue sonando; solo reordenamos y la dejamos en el índice 0.
       set({ shuffle: true, originalQueue: queue, queue: newQueue, index: 0 });
-      void rebuildQueue(newQueue, 0);
     } else if (originalQueue && current) {
-      const newIndex = Math.max(
-        0,
-        originalQueue.findIndex((s) => s.id === current.id),
-      );
-      set({
-        shuffle: false,
-        queue: originalQueue,
-        index: newIndex,
-        originalQueue: null,
-      });
-      void rebuildQueue(originalQueue, newIndex);
+      const newIndex = Math.max(0, originalQueue.findIndex((s) => s.id === current.id));
+      set({ shuffle: false, queue: originalQueue, index: newIndex, originalQueue: null });
     } else {
       set({ shuffle: false, originalQueue: null });
     }
+    scheduleSync();
   },
 
   cycleRepeat: () => {
     const order: RepeatMode[] = ['off', 'all', 'one'];
     const repeat = order[(order.indexOf(get().repeat) + 1) % order.length];
     set({ repeat });
-    TrackPlayer.setRepeatMode(
-      repeat === 'one'
-        ? RNTPRepeatMode.Track
-        : repeat === 'all'
-          ? RNTPRepeatMode.Queue
-          : RNTPRepeatMode.Off,
-    );
+    if (audioPlayer) audioPlayer.loop = repeat === 'one';
   },
 
   setSleepTimer: (minutes) => {
     if (sleepTimeout) clearTimeout(sleepTimeout);
     sleepTimeout = setTimeout(() => {
-      TrackPlayer.pause();
+      audioPlayer?.pause();
       sleepTimeout = null;
-    set({ sleepTimerMinutes: null });
+      set({ isPlaying: false, sleepTimerMinutes: null });
     }, minutes * 60_000);
     set({ sleepTimerMinutes: minutes });
   },
@@ -435,7 +433,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   cancelSleepTimer: () => {
     if (sleepTimeout) clearTimeout(sleepTimeout);
     sleepTimeout = null;
-    set({ isPlaying: false, sleepTimerMinutes: null });
+    set({ sleepTimerMinutes: null });
   },
 
   restoreFromServer: async () => {
@@ -455,6 +453,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const positionSec = (saved.position ?? 0) / 1000;
     // Si entre tanto ya se empezó a reproducir algo, no pisamos la cola.
     if (get().queue.length > 0) return;
+    attachAppState();
     set({
       queue: songs,
       index,
@@ -464,16 +463,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       source: null,
       sourceHref: null,
     });
-    try {
-      await ensureSetup();
-      await TrackPlayer.reset();
-      await TrackPlayer.add(songs.map(toTrack));
-      if (index > 0) await TrackPlayer.skip(index);
-      if (positionSec > 0) await TrackPlayer.seekTo(positionSec);
-      // No reproducimos: el usuario retoma cuando quiera.
-    } catch {
-      // ignore
-    }
+    // Cargamos la pista (sin reproducir) y dejamos la posición lista.
+    await loadIndex(index, false);
+    if (positionSec > 0) audioPlayer?.seekTo(positionSec);
+    usePlayerStore.setState({ positionSec, isPlaying: false });
   },
 
   reset: async () => {
@@ -484,7 +477,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       syncTimer = null;
     }
     try {
-      await TrackPlayer.reset();
+      audioPlayer?.pause();
+      if (lockActive) {
+        audioPlayer?.clearLockScreenControls();
+        lockActive = false;
+      }
     } catch {
       // ignore
     }

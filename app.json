@@ -56,7 +56,17 @@
         "expo-media-library",
         {
           "isAccessMediaLocationEnabled": false,
-          "granularPermissions": ["audio"]
+          "granularPermissions": [
+            "audio"
+          ]
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": false,
+          "microphonePermission": false,
+          "enableBackgroundPlayback": true
         }
       ]
     ],
