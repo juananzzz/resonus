@@ -37,8 +37,10 @@ import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
 
 const SCREEN_W = Dimensions.get('window').width;
+const SCREEN_H = Dimensions.get('window').height;
 const COVER = SCREEN_W - spacing.xl * 2;
 const SWIPE_THRESHOLD = SCREEN_W * 0.25;
+const DISMISS_THRESHOLD = 120;
 
 function CircleButton({
   name,
@@ -142,6 +144,29 @@ export default function PlayerScreen() {
     ),
   }));
 
+  // Deslizar hacia abajo cierra el reproductor (gesto propio: el modal nativo
+  // no lo soporta en Android).
+  const transY = useSharedValue(0);
+  const closePlayer = () => router.back();
+  const dismissPan = Gesture.Pan()
+    .activeOffsetY(15)
+    .failOffsetX([-25, 25])
+    .onUpdate((e) => {
+      transY.value = Math.max(0, e.translationY);
+    })
+    .onEnd((e) => {
+      if (e.translationY > DISMISS_THRESHOLD || e.velocityY > 800) {
+        transY.value = withTiming(SCREEN_H, { duration: 220 }, (f) => {
+          if (f) runOnJS(closePlayer)();
+        });
+      } else {
+        transY.value = withSpring(0, { damping: 20, stiffness: 200 });
+      }
+    });
+  const rootStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: transY.value }],
+  }));
+
   if (!song) {
     router.back();
     return null;
@@ -156,12 +181,13 @@ export default function PlayerScreen() {
   const repeatActive = repeat !== 'off';
 
   return (
-    <View style={styles.root}>
-      <LinearGradient
-        colors={['#3a4042', colors.background] as const}
-        style={StyleSheet.absoluteFill}
-      />
-      <SafeAreaView style={styles.safe}>
+    <GestureDetector gesture={dismissPan}>
+      <Animated.View style={[styles.root, rootStyle]}>
+        <LinearGradient
+          colors={['#3a4042', colors.background] as const}
+          style={StyleSheet.absoluteFill}
+        />
+        <SafeAreaView style={styles.safe}>
         <View style={styles.topBar}>
           <CircleButton name="chevron-down" label={t('Close')} onPress={() => router.back()} />
           <Pressable
@@ -327,8 +353,9 @@ export default function PlayerScreen() {
             </Pressable>
           </View>
         </View>
-      </SafeAreaView>
-    </View>
+        </SafeAreaView>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
