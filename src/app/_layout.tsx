@@ -13,6 +13,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalMiniPlayer } from '@/components/GlobalMiniPlayer';
 import { SongMenuSheet } from '@/components/SongMenuSheet';
 import { Toast } from '@/components/Toast';
+import { pushDummyTreeForSpike } from '@/lib/carAuto';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
 import { usePlayerStore } from '@/store/player';
@@ -42,6 +43,12 @@ export default function RootLayout() {
   useEffect(() => {
     if (auth) void usePlayerStore.getState().restoreFromServer();
   }, [auth]);
+
+  // SPIKE Android Auto (fase 1): empuja un árbol de prueba para verificar el
+  // browse en el emulador AAOS. Se sustituirá por el árbol real en la fase 2.
+  useEffect(() => {
+    pushDummyTreeForSpike();
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>

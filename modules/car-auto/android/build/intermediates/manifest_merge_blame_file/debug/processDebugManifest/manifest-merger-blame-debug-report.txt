@@ -1,0 +1,48 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="expo.modules.carauto" >
+4
+5    <uses-sdk android:minSdkVersion="24" />
+6    <!--
+7       Permite instalar en Android Automotive OS sin exigir hardware de coche
+8       (así también funciona como app de proyección Android Auto en el móvil).
+9    -->
+10    <uses-feature
+10-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:4:3-6:32
+11        android:name="android.hardware.type.automotive"
+11-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:5:5-52
+12        android:required="false" />
+12-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:6:5-29
+13
+14    <application>
+14-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:8:3-23:17
+15
+16        <!-- Declara la app como app de medios para Android Auto (proyección). -->
+17        <meta-data
+17-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:10:5-12:53
+18            android:name="com.google.android.gms.car.application"
+18-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:11:7-60
+19            android:resource="@xml/automotive_app_desc" />
+19-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:12:7-50
+20
+21        <service
+21-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:14:5-22:15
+22            android:name="expo.modules.carauto.ResonusCarBrowserService"
+22-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:15:7-67
+23            android:exported="true"
+23-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:16:7-30
+24            android:foregroundServiceType="mediaPlayback" >
+24-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:17:7-52
+25            <intent-filter>
+25-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:18:7-21:23
+26                <action android:name="androidx.media3.session.MediaLibraryService" />
+26-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:19:9-78
+26-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:19:17-75
+27                <action android:name="android.media.browse.MediaBrowserService" />
+27-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:20:9-75
+27-->/home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:20:17-72
+28            </intent-filter>
+29        </service>
+30    </application>
+31
+32</manifest>

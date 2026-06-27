@@ -1,0 +1,7 @@
+{
+  "name": "car-auto",
+  "version": "0.0.1",
+  "description": "Android Auto / Automotive OS bridge for Resonus (local Expo module)",
+  "main": "index.ts",
+  "private": true
+}

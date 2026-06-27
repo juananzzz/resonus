@@ -2,6 +2,24 @@
 
 Goal: add Android Auto (browse + playback controls in the car) to Resonus.
 
+## Progress
+
+- **Phase 1 (browse-only spike) — in progress.** Ported wavio's `car-auto`
+  module into `modules/car-auto/` (local Expo module, autolinked). Kotlin
+  compiles clean against Media3 **1.8.0** (the version RNTP 5 already pulls —
+  do NOT use wavio's 1.4.1, it would clash). Service renamed to
+  `ResonusCarBrowserService`. JS bridge at `src/lib/carAuto.ts`; a dummy tree is
+  pushed on startup (`pushDummyTreeForSpike`) to verify browse in the emulator.
+- **Testing without a car/DHU**: use the **Android Automotive OS (AAOS)**
+  emulator. A media app exposes the *same* `MediaBrowserService` to both AA
+  projection and AAOS, so the AAOS emulator validates browse + controls.
+  Image: `system-images;android-34-ext9;android-automotive-playstore;x86_64`;
+  AVD `resonus_car`. (DHU + a real phone is only needed for AA *projection*.)
+  Run: boot `resonus_car`, then `pnpm android` targeting it; open the car's
+  Media app and look for Resonus + the dummy tree.
+- Still TODO: real browse tree from the data layer (phase 2), engine swap
+  RNTP→expo-audio + JsProxyPlayer wiring (phase 3), final manifest polish (4).
+
 Reference: the open-source app **wavio** (MIT) by Joel-Mercier solves this
 cleanly: https://github.com/Joel-Mercier/wavio — see `apps/mobile/modules/car-auto`.
 We can adapt its Kotlin with attribution.

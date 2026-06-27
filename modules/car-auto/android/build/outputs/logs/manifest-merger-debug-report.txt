@@ -1,0 +1,48 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:1:1-24:12
+INJECTED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:1:1-24:12
+	package
+		INJECTED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:1:11-69
+uses-feature#android.hardware.type.automotive
+ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:4:3-6:32
+	android:required
+		ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:6:5-29
+	android:name
+		ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:5:5-52
+application
+ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:8:3-23:17
+meta-data#com.google.android.gms.car.application
+ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:10:5-12:53
+	android:resource
+		ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:12:7-50
+	android:name
+		ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:11:7-60
+service#expo.modules.carauto.ResonusCarBrowserService
+ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:14:5-22:15
+	android:exported
+		ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:16:7-30
+	android:foregroundServiceType
+		ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:17:7-52
+	android:name
+		ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:15:7-67
+intent-filter#action:name:android.media.browse.MediaBrowserService+action:name:androidx.media3.session.MediaLibraryService
+ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:18:7-21:23
+action#androidx.media3.session.MediaLibraryService
+ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:19:9-78
+	android:name
+		ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:19:17-75
+action#android.media.browse.MediaBrowserService
+ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:20:9-75
+	android:name
+		ADDED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml:20:17-72
+uses-sdk
+INJECTED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml
+INJECTED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /home/juan/Proyectos/resonus/modules/car-auto/android/src/main/AndroidManifest.xml

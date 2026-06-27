@@ -1,0 +1,32 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+group = 'expo.modules.carauto'
+version = '0.0.1'
+
+def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
+apply from: expoModulesCorePlugin
+applyKotlinExpoModulesCorePlugin()
+useCoreDependencies()
+useExpoPublishing()
+
+android {
+  namespace "expo.modules.carauto"
+  compileSdk rootProject.ext.compileSdkVersion ?: 35
+  defaultConfig {
+    minSdkVersion rootProject.ext.minSdkVersion ?: 24
+    targetSdkVersion rootProject.ext.targetSdkVersion ?: 35
+  }
+  buildFeatures {
+    buildConfig true
+  }
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+  // Media3 debe coincidir con la versión que arrastra react-native-track-player
+  // (1.8.0). Si difieren puede haber conflictos de clases/sesión en runtime.
+  implementation "androidx.media3:media3-session:1.8.0"
+  implementation "androidx.media3:media3-common:1.8.0"
+  implementation "androidx.media3:media3-exoplayer:1.8.0"
+}
