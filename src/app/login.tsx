@@ -204,6 +204,7 @@ export default function LoginScreen() {
         >
           {step === 'home' ? (
             <>
+              <View style={styles.topBar} />
               <View style={styles.hero}>
                 <Image source={APP_ICON} style={styles.appIcon} contentFit="cover" />
                 <Text style={styles.logo}>Resonus</Text>
@@ -238,7 +239,7 @@ export default function LoginScreen() {
             </>
           ) : step === 'server' ? (
             <>
-              <View style={styles.stepHeader}>
+              <View style={styles.topBar}>
                 <Pressable
                   style={styles.backBtn}
                   onPress={goBack}
@@ -247,9 +248,8 @@ export default function LoginScreen() {
                 >
                   <Ionicons name="chevron-back" size={26} color={colors.text} />
                 </Pressable>
-                <Text style={styles.stepHeaderTitle}>{t('Añadir perfil')}</Text>
-                <View style={styles.headerSpacer} />
               </View>
+              <Text style={styles.stepTitle}>{t('Añadir perfil')}</Text>
               <Text style={styles.stepHint}>{t('Elige el tipo de servidor')}</Text>
 
               <View style={styles.srvList}>
@@ -285,7 +285,7 @@ export default function LoginScreen() {
             </>
           ) : (
             <>
-              <View style={styles.stepHeader}>
+              <View style={styles.topBar}>
                 <Pressable
                   style={styles.backBtn}
                   onPress={goBack}
@@ -294,11 +294,10 @@ export default function LoginScreen() {
                 >
                   <Ionicons name="chevron-back" size={26} color={colors.text} />
                 </Pressable>
-                <Text style={styles.stepHeaderTitle}>
-                  {isLocal ? t('Local') : SERVERS.find((s) => s.key === server)?.name ?? ''}
-                </Text>
-                <View style={styles.headerSpacer} />
               </View>
+              <Text style={styles.stepTitle}>
+                {isLocal ? t('Local') : SERVERS.find((s) => s.key === server)?.name ?? ''}
+              </Text>
 
               <View style={styles.serverHero}>
                 {isLocal ? (
@@ -494,15 +493,15 @@ const styles = StyleSheet.create({
   addAccountText: { color: colors.background, fontSize: fontSize.md, fontWeight: '700' },
   hero: { alignItems: 'center', marginBottom: spacing.xl },
   appIcon: { width: 88, height: 88, borderRadius: 22, marginBottom: spacing.md },
-  stepHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
+  topBar: { height: 32, justifyContent: 'center', marginBottom: spacing.md },
+  backBtn: { alignSelf: 'flex-start' },
+  stepTitle: {
+    color: colors.text,
+    fontSize: fontSize.xl,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: spacing.xs,
   },
-  backBtn: { width: 26, alignItems: 'flex-start' },
-  headerSpacer: { width: 26 },
-  stepHeaderTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '800' },
   stepHint: {
     color: colors.textSecondary,
     fontSize: fontSize.sm,
