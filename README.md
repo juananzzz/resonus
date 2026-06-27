@@ -29,7 +29,20 @@ Resonus connects to **Navidrome** or any **OpenSubsonic**-compatible server (Sub
 - [ ] Ampache support
 - [ ] Jellyfin support
 - [ ] iOS support
-- [ ] Crowdin for translations
+
+## Translations
+
+Resonus is translated through [Crowdin](https://crowdin.com/project/resonus), and help from the community is very welcome.
+
+[![Crowdin](https://badges.crowdin.net/resonus/localized.svg)](https://crowdin.com/project/resonus)
+
+To contribute a translation:
+
+1. Open the [Crowdin project](https://crowdin.com/project/resonus) and sign in (it's free).
+2. Pick your language — or request a new one if it isn't listed yet.
+3. Translate the strings in the web editor. No coding or git needed.
+
+The source language is English (`src/i18n/locales/en.json`). Crowdin syncs approved translations back to the repository automatically via pull requests, so there's no need to edit the JSON files by hand.
 
 ## License
 
