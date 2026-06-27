@@ -1,13 +1,12 @@
 /**
  * i18n mínimo y reactivo. El texto en INGLÉS es la clave; cada idioma extra
- * tiene su diccionario JSON en `locales/` (clave inglesa → traducción). Esos
- * ficheros son los que sincroniza Crowdin (fuente: `locales/en.json`).
+ * tiene su diccionario JSON en `locales/` (clave inglesa → traducción).
  * `useT()` devuelve una función `t` ligada al idioma actual (del store de
  * ajustes), por lo que cambiar el idioma re-renderiza y traduce al vuelo.
  *
  * Para añadir un idioma nuevo (p. ej. 'fr'):
  *   1. Añádelo a `Language` en src/store/settings.ts (y a su `hydrate`).
- *   2. Crea `locales/fr.json` (lo genera Crowdin) e impórtalo en `dictionaries`.
+ *   2. Crea `locales/fr.json` (clave inglesa → traducción) e impórtalo en `dictionaries`.
  *   3. Añade sus formas a `PLURALS` (singular/plural).
  *   4. Añade su opción a `LANGUAGES` en src/app/settings/display.tsx.
  * El inglés no necesita diccionario (es la clave); lo no traducido cae a él.
