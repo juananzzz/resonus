@@ -88,31 +88,3 @@ export function onPlay(cb: (e: PlayEvent) => void): { remove: () => void } | und
 export function onTransport(cb: (e: TransportEvent) => void): { remove: () => void } | undefined {
   return native?.addListener('transport', cb);
 }
-
-/**
- * SPIKE (temporal, fase 1): empuja un árbol de prueba para verificar que la app
- * aparece y se navega en el emulador AAOS antes de cablear el árbol real desde
- * la capa de datos. Se eliminará en la fase 2.
- */
-export function pushDummyTreeForSpike(): void {
-  if (!carAutoAvailable) return;
-  setNodes({
-    nodes: {
-      root: [
-        { id: 'cat:albums', title: 'Álbumes (demo)', playable: false, contentStyle: 'grid' },
-        { id: 'cat:songs', title: 'Canciones (demo)', playable: false, contentStyle: 'list' },
-      ],
-      'cat:albums': [
-        { id: 'album:1', title: 'Álbum de prueba', subtitle: 'Resonus', playable: false, contentStyle: 'list' },
-      ],
-      'album:1': [
-        { id: 'song:1', title: 'Pista 1', subtitle: 'Resonus', playable: true },
-        { id: 'song:2', title: 'Pista 2', subtitle: 'Resonus', playable: true },
-      ],
-      'cat:songs': [
-        { id: 'song:1', title: 'Pista 1', subtitle: 'Resonus', playable: true },
-        { id: 'song:2', title: 'Pista 2', subtitle: 'Resonus', playable: true },
-      ],
-    },
-  });
-}
