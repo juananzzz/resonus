@@ -32,25 +32,9 @@ Resonus connects to **Navidrome** or any **OpenSubsonic**-compatible server (Sub
 
 ## Translations
 
-Resonus ships in **English and Spanish**, both maintained by the project in the
-repository (`src/i18n/locales/en.json` and `es.json`). English is the source
-language.
-
-All other languages are open to the community through
-[Crowdin](https://crowdin.com/project/resonus), and help is very welcome.
-
-[![Crowdin](https://badges.crowdin.net/resonus/localized.svg)](https://crowdin.com/project/resonus)
-
-To contribute a translation:
-
-1. Open the [Crowdin project](https://crowdin.com/project/resonus) and sign in (it's free).
-2. Pick your language — or request a new one if it isn't listed yet.
-3. Translate the strings in the web editor. No coding or git needed.
-
-Crowdin syncs translations back to the repository automatically via pull
-requests, adding a `src/i18n/locales/<lang>.json` file once a language has real
-translations. (English and Spanish aren't listed on Crowdin because they're
-maintained directly in the code.)
+Resonus ships in **English and Spanish**, maintained in the repository
+(`src/i18n/locales/`). English is the source language. Community translations
+for more languages are planned as the project matures.
 
 ## License
 
