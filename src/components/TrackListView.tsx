@@ -102,8 +102,11 @@ export function TrackListView({
 
   function shufflePlay() {
     if (songs.length === 0) return;
-    onPlay(0);
-    if (!shuffle) toggleShuffle();
+    // Arranca en una pista aleatoria y activa el modo aleatorio. playQueue
+    // (dentro de onPlay) resetea shuffle a false, así que leemos el estado
+    // fresco con getState() en vez de la variable del render (desactualizada).
+    onPlay(Math.floor(Math.random() * songs.length));
+    if (!usePlayerStore.getState().shuffle) toggleShuffle();
   }
 
   return (
