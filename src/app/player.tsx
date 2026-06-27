@@ -137,11 +137,9 @@ export default function PlayerScreen() {
             <View style={{ flex: 1 }}>
               {song.albumId ? (
                 <Pressable
+                  style={styles.tapText}
                   hitSlop={6}
-                  onPress={() => {
-                    router.back();
-                    router.navigate(`/album/${song.albumId}` as never);
-                  }}
+                  onPress={() => router.push(`/album/${song.albumId}` as never)}
                 >
                   <Text style={styles.title} numberOfLines={1}>
                     {song.title}
@@ -154,6 +152,7 @@ export default function PlayerScreen() {
               )}
               {song.artistId ? (
                 <Pressable
+                  style={styles.tapText}
                   hitSlop={6}
                   onPress={() => router.push(`/artist/${song.artistId}`)}
                 >
@@ -315,6 +314,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginBottom: spacing.md,
   },
+  // El área pulsable se ajusta al texto (no a todo el ancho), para no navegar
+  // al tocar el hueco vacío de la derecha.
+  tapText: { alignSelf: 'flex-start', maxWidth: '100%' },
   title: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800' },
   artist: {
     color: colors.textSecondary,
