@@ -29,15 +29,18 @@ import { colors, fontSize, radius, spacing } from '@/theme';
 
 type ServerKey = 'navidrome' | 'opensubsonic' | 'jellyfin';
 
+const APP_ICON = require('@/assets/images/icon.png');
+
 const SERVERS: {
   key: ServerKey;
   name: string;
   logo: number;
+  sub: string;
   soon?: boolean;
 }[] = [
-  { key: 'navidrome', name: 'Navidrome', logo: require('@/assets/images/servers/navidrome.png') },
-  { key: 'opensubsonic', name: 'OpenSubsonic', logo: require('@/assets/images/servers/opensubsonic.png') },
-  { key: 'jellyfin', name: 'Jellyfin', logo: require('@/assets/images/servers/jellyfin.png') },
+  { key: 'navidrome', name: 'Navidrome', logo: require('@/assets/images/servers/navidrome.png'), sub: 'Servidor Subsonic' },
+  { key: 'opensubsonic', name: 'OpenSubsonic', logo: require('@/assets/images/servers/opensubsonic.png'), sub: 'Compatible con Subsonic' },
+  { key: 'jellyfin', name: 'Jellyfin', logo: require('@/assets/images/servers/jellyfin.png'), sub: 'Aún no disponible', soon: true },
 ];
 
 function logoFor(type?: string): number {
@@ -122,12 +125,24 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  // Flujo para añadir perfil: home → elegir servidor → credenciales.
+  const [step, setStep] = useState<'home' | 'server' | 'form'>('home');
 
   const isJellyfin = server === 'jellyfin';
   const isLocal = server === 'local';
   const canSubmit = serverUrl.trim() && username.trim() && password && !loading;
   const visible = profiles.slice(0, MAX_VISIBLE);
   const overflow = profiles.length > MAX_VISIBLE;
+
+  function goBack() {
+    setError(null);
+    setStep((s) => (s === 'form' ? 'server' : 'home'));
+  }
+  function pickServer(key: ServerKey | 'local') {
+    setServer(key);
+    setError(null);
+    setStep('form');
+  }
 
   // Modo sin conexión: fija el origen y entra directamente (sin pantalla intermedia).
   async function startLocalDevice() {
@@ -187,139 +202,200 @@ export default function LoginScreen() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.logo}>Resonus</Text>
-          <Text style={styles.subtitle}>{t('Conéctate a tu servidor de música')}</Text>
+          {step === 'home' ? (
+            <>
+              <View style={styles.hero}>
+                <Image source={APP_ICON} style={styles.appIcon} contentFit="cover" />
+                <Text style={styles.logo}>Resonus</Text>
+              </View>
 
-          {profiles.length > 0 ? (
-            <View style={styles.profiles}>
-              <Text style={styles.groupTitle}>{t('Perfiles guardados')}</Text>
-              {visible.map((p, i) => (
-                <ProfileRow
-                  key={isOffline(p) ? `offline-${i}` : `${p.serverUrl}-${p.username}`}
-                  profile={p}
-                  onTap={() => onProfileTap(p)}
-                  onRemove={() => onProfileRemove(p)}
-                />
-              ))}
-              {overflow ? (
-                <Pressable style={styles.showMore} onPress={() => setShowAll(true)}>
-                  <Text style={styles.showMoreText}>
-                    {t('Mostrar todos')} ({profiles.length})
-                  </Text>
-                  <Ionicons name="chevron-down" size={18} color={colors.accent} />
-                </Pressable>
+              {profiles.length > 0 ? (
+                <View style={styles.profiles}>
+                  <Text style={styles.groupTitle}>{t('Perfiles guardados')}</Text>
+                  {visible.map((p, i) => (
+                    <ProfileRow
+                      key={isOffline(p) ? `offline-${i}` : `${p.serverUrl}-${p.username}`}
+                      profile={p}
+                      onTap={() => onProfileTap(p)}
+                      onRemove={() => onProfileRemove(p)}
+                    />
+                  ))}
+                  {overflow ? (
+                    <Pressable style={styles.showMore} onPress={() => setShowAll(true)}>
+                      <Text style={styles.showMoreText}>
+                        {t('Mostrar todos')} ({profiles.length})
+                      </Text>
+                      <Ionicons name="chevron-down" size={18} color={colors.accent} />
+                    </Pressable>
+                  ) : null}
+                </View>
               ) : null}
-              <Text style={styles.groupTitle}>{t('Añadir otra cuenta')}</Text>
-            </View>
-          ) : null}
 
-          <View style={styles.servers}>
-            {SERVERS.map((s) => {
-              const active = s.key === server;
-              return (
+              <Pressable style={styles.addAccount} onPress={() => setStep('server')}>
+                <Ionicons name="add" size={22} color={colors.background} />
+                <Text style={styles.addAccountText}>{t('Añadir perfil')}</Text>
+              </Pressable>
+            </>
+          ) : step === 'server' ? (
+            <>
+              <View style={styles.stepHeader}>
                 <Pressable
-                  key={s.key}
-                  style={[styles.serverCard, active && styles.serverCardActive]}
-                  onPress={() => setServer(s.key)}
+                  style={styles.backBtn}
+                  onPress={goBack}
+                  hitSlop={12}
+                  accessibilityLabel={t('Atrás')}
                 >
+                  <Ionicons name="chevron-back" size={26} color={colors.text} />
+                </Pressable>
+                <Text style={styles.stepHeaderTitle}>{t('Añadir perfil')}</Text>
+                <View style={styles.headerSpacer} />
+              </View>
+              <Text style={styles.stepHint}>{t('Elige el tipo de servidor')}</Text>
+
+              <View style={styles.srvList}>
+                {SERVERS.map((s) => (
+                  <Pressable
+                    key={s.key}
+                    style={[styles.srvRow, s.soon && styles.srvRowDisabled]}
+                    onPress={() =>
+                      s.soon ? toast(t('Jellyfin aún no está disponible 🚧')) : pickServer(s.key)
+                    }
+                  >
+                    <Image source={s.logo} style={styles.srvLogo} contentFit="contain" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.srvName}>{s.name}</Text>
+                      <Text style={styles.srvSub}>{t(s.sub)}</Text>
+                    </View>
+                    {s.soon ? null : (
+                      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                    )}
+                  </Pressable>
+                ))}
+                <Pressable style={styles.srvRow} onPress={() => pickServer('local')}>
+                  <View style={styles.srvLocalIcon}>
+                    <Ionicons name="phone-portrait-outline" size={26} color={colors.accent} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.srvName}>{t('Local')}</Text>
+                    <Text style={styles.srvSub}>{t('Música del dispositivo')}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.stepHeader}>
+                <Pressable
+                  style={styles.backBtn}
+                  onPress={goBack}
+                  hitSlop={12}
+                  accessibilityLabel={t('Atrás')}
+                >
+                  <Ionicons name="chevron-back" size={26} color={colors.text} />
+                </Pressable>
+                <Text style={styles.stepHeaderTitle}>
+                  {isLocal ? t('Local') : SERVERS.find((s) => s.key === server)?.name ?? ''}
+                </Text>
+                <View style={styles.headerSpacer} />
+              </View>
+
+              <View style={styles.serverHero}>
+                {isLocal ? (
+                  <Ionicons name="phone-portrait-outline" size={44} color={colors.accent} />
+                ) : (
                   <Image
-                    source={s.logo}
-                    style={styles.serverIcon}
+                    source={SERVERS.find((s) => s.key === server)?.logo ?? SERVERS[0].logo}
+                    style={styles.serverHeroLogo}
                     contentFit="contain"
                   />
-                  <Text style={styles.serverName} numberOfLines={1}>
-                    {s.name}
-                  </Text>
-                  {s.soon ? <Text style={styles.soon}>{t('Pronto')}</Text> : null}
-                </Pressable>
-              );
-            })}
-            <Pressable
-              style={[styles.serverCard, isLocal && styles.serverCardActive]}
-              onPress={() => setServer('local')}
-            >
-              <View style={styles.serverIcon}>
-                <Ionicons name="phone-portrait-outline" size={40} color={colors.accent} />
-              </View>
-              <Text style={styles.serverName} numberOfLines={1}>
-                {t('Local')}
-              </Text>
-            </Pressable>
-          </View>
-
-          {isLocal ? (
-            <View style={styles.form}>
-              <Text style={styles.localDesc}>
-                {t('Escucha la música guardada en tu dispositivo, sin servidor. Elige de dónde sacarla:')}
-              </Text>
-
-              <Pressable style={styles.localOption} onPress={startLocalFolder}>
-                <Ionicons name="folder-outline" size={26} color={colors.accent} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.localOptTitle}>{t('Elegir una carpeta (recomendado)')}</Text>
-                  <Text style={styles.localOptSub}>{t('Solo la música de la carpeta que elijas.')}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-              </Pressable>
-
-              <Pressable style={styles.localOption} onPress={startLocalDevice}>
-                <Ionicons name="phone-portrait-outline" size={26} color={colors.accent} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.localOptTitle}>{t('Escanear todo el móvil')}</Text>
-                  <Text style={styles.localOptSub}>{t('Toda la música del dispositivo.')}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.form}>
-              <TextInput
-                style={styles.input}
-                placeholder="https://musica.midominio.com"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                value={serverUrl}
-                onChangeText={setServerUrl}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder={t('Usuario')}
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={username}
-                onChangeText={setUsername}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder={t('Contraseña')}
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-
-              {isJellyfin ? (
-                <Text style={styles.notice}>
-                  {t('El soporte de Jellyfin aún no está disponible. Por ahora usa Navidrome u OpenSubsonic.')}
-                </Text>
-              ) : null}
-              {error ? <Text style={styles.error}>{error}</Text> : null}
-
-              <Pressable
-                style={[styles.button, (!canSubmit || isJellyfin) && styles.buttonDisabled]}
-                disabled={!canSubmit}
-                onPress={onSubmit}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#000" />
-                ) : (
-                  <Text style={styles.buttonText}>{t('Entrar')}</Text>
                 )}
-              </Pressable>
-            </View>
+              </View>
+
+              {isLocal ? (
+                <View style={styles.form}>
+                  <Text style={styles.localDesc}>
+                    {t('Escucha la música guardada en tu dispositivo, sin servidor. Elige de dónde sacarla:')}
+                  </Text>
+
+                  <Pressable style={styles.localOption} onPress={startLocalFolder}>
+                    <Ionicons name="folder-outline" size={26} color={colors.accent} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.localOptTitle}>{t('Elegir una carpeta (recomendado)')}</Text>
+                      <Text style={styles.localOptSub}>{t('Solo la música de la carpeta que elijas.')}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                  </Pressable>
+
+                  <Pressable style={styles.localOption} onPress={startLocalDevice}>
+                    <Ionicons name="phone-portrait-outline" size={26} color={colors.accent} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.localOptTitle}>{t('Escanear todo el móvil')}</Text>
+                      <Text style={styles.localOptSub}>{t('Toda la música del dispositivo.')}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                  </Pressable>
+                </View>
+              ) : (
+                <View style={styles.form}>
+                  <View style={styles.inputRow}>
+                    <Ionicons name="globe-outline" size={20} color={colors.textMuted} />
+                    <TextInput
+                      style={styles.inputFlex}
+                      placeholder="https://musica.midominio.com"
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="url"
+                      value={serverUrl}
+                      onChangeText={setServerUrl}
+                    />
+                  </View>
+                  <View style={styles.inputRow}>
+                    <Ionicons name="person-outline" size={20} color={colors.textMuted} />
+                    <TextInput
+                      style={styles.inputFlex}
+                      placeholder={t('Usuario')}
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      value={username}
+                      onChangeText={setUsername}
+                    />
+                  </View>
+                  <View style={styles.inputRow}>
+                    <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
+                    <TextInput
+                      style={styles.inputFlex}
+                      placeholder={t('Contraseña')}
+                      placeholderTextColor={colors.textMuted}
+                      secureTextEntry
+                      value={password}
+                      onChangeText={setPassword}
+                    />
+                  </View>
+
+                  {isJellyfin ? (
+                    <Text style={styles.notice}>
+                      {t('El soporte de Jellyfin aún no está disponible. Por ahora usa Navidrome u OpenSubsonic.')}
+                    </Text>
+                  ) : null}
+                  {error ? <Text style={styles.error}>{error}</Text> : null}
+
+                  <Pressable
+                    style={[styles.button, (!canSubmit || isJellyfin) && styles.buttonDisabled]}
+                    disabled={!canSubmit}
+                    onPress={onSubmit}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#000" />
+                    ) : (
+                      <Text style={styles.buttonText}>{t('Entrar')}</Text>
+                    )}
+                  </Pressable>
+                </View>
+              )}
+            </>
           )}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -358,19 +434,12 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  container: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl },
+  container: { flexGrow: 1, padding: spacing.xl, paddingTop: spacing.xxl },
   logo: {
     color: colors.accent,
     fontSize: fontSize.xxl,
     fontWeight: '800',
     textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: fontSize.md,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.xl,
   },
   profiles: { gap: spacing.sm, marginBottom: spacing.lg },
   groupTitle: {
@@ -412,22 +481,71 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   showMoreText: { color: colors.accent, fontSize: fontSize.sm, fontWeight: '600' },
-  servers: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl },
-  serverCard: {
-    flex: 1,
+  addAccount: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xs,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    marginTop: spacing.md,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accent,
   },
-  serverCardActive: { borderColor: colors.accent },
-  serverIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  serverName: { color: colors.text, fontSize: fontSize.xs, fontWeight: '600' },
-  soon: { color: colors.textMuted, fontSize: 10 },
+  addAccountText: { color: colors.background, fontSize: fontSize.md, fontWeight: '700' },
+  hero: { alignItems: 'center', marginBottom: spacing.xl },
+  appIcon: { width: 88, height: 88, borderRadius: 22, marginBottom: spacing.md },
+  stepHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  backBtn: { width: 26, alignItems: 'flex-start' },
+  headerSpacer: { width: 26 },
+  stepHeaderTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '800' },
+  stepHint: {
+    color: colors.textSecondary,
+    fontSize: fontSize.sm,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  srvList: { gap: spacing.sm },
+  srvRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+  },
+  srvRowDisabled: { opacity: 0.5 },
+  srvLogo: { width: 40, height: 40 },
+  srvLocalIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceHighlight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  srvName: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
+  srvSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
+  serverHero: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 72,
+    marginBottom: spacing.lg,
+  },
+  serverHeroLogo: { width: 64, height: 64 },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceHighlight,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+  },
+  inputFlex: { flex: 1, color: colors.text, paddingVertical: spacing.md, fontSize: fontSize.md },
   localDesc: { color: colors.textSecondary, fontSize: fontSize.sm, marginBottom: spacing.xs },
   localOption: {
     flexDirection: 'row',
@@ -440,14 +558,6 @@ const styles = StyleSheet.create({
   localOptTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
   localOptSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
   form: { gap: spacing.md },
-  input: {
-    backgroundColor: colors.surfaceHighlight,
-    color: colors.text,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    fontSize: fontSize.md,
-  },
   notice: { color: colors.textSecondary, fontSize: fontSize.sm },
   error: { color: colors.danger, fontSize: fontSize.sm },
   button: {
