@@ -236,7 +236,7 @@ export default function HomeScreen() {
           </>
         ) : (
           <>
-            <AlbumSection title={t('Álbumes')} type="newest" />
+            <AlbumSection title={t('Añadidos recientemente')} type="newest" />
             <AlbumSection title={t('Reproducido recientemente')} type="recent" />
             <AlbumSection title={t('Más escuchados')} type="frequent" />
           </>
