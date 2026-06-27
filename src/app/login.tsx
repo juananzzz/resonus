@@ -298,10 +298,6 @@ export default function LoginScreen() {
                   <Ionicons name="chevron-back" size={26} color={colors.text} />
                 </Pressable>
               </View>
-              <Text style={styles.stepTitle}>
-                {isLocal ? t('Local') : SERVERS.find((s) => s.key === server)?.name ?? ''}
-              </Text>
-
               <View style={styles.serverHero}>
                 {isLocal ? (
                   <Ionicons name="phone-portrait-outline" size={44} color={colors.accent} />
