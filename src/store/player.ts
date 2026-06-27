@@ -18,6 +18,7 @@ import TrackPlayer, {
 import { create } from 'zustand';
 
 import { coverArtUrl, getPlayQueue, savePlayQueue, scrobble, streamUrl, type Song } from '@/api/subsonic';
+import { localCoverUrl } from '@/lib/localLibrary';
 import { useAuthStore } from './auth';
 import { usePlayCounts } from './playCounts';
 import { useSettings } from './settings';
@@ -70,10 +71,10 @@ function stopPeriodicSync() {
   }
 }
 
-/** Carátula embebida (data URI) de una canción local, si la tiene. */
+/** Carátula (data URI) de una canción local: del índice por álbum, o embebida. */
 export function localArtwork(song: Song): string | undefined {
-  if (!song.coverBase64) return undefined;
-  return `data:${song.coverMime ?? 'image/jpeg'};base64,${song.coverBase64}`;
+  if (song.coverBase64) return `data:${song.coverMime ?? 'image/jpeg'};base64,${song.coverBase64}`;
+  return localCoverUrl(song.coverArt ?? song.albumId);
 }
 
 /** Convierte una canción al formato de pista de RNTP. */

@@ -18,7 +18,6 @@ import { FavoriteButton } from './FavoriteButton';
 
 export function MiniPlayer() {
   const router = useRouter();
-  const auth = useAuthStore((s) => s.auth);
   const song = usePlayerStore(currentSong);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const positionSec = usePlayerStore((s) => s.positionSec);
@@ -26,12 +25,7 @@ export function MiniPlayer() {
   const toggle = usePlayerStore((s) => s.toggle);
   const t = useT();
 
-  const cover =
-    song && auth && !song.localUri
-      ? coverArtUrl(song.coverArt ?? song.albumId, 100)
-      : song?.coverBase64
-        ? `data:${song.coverMime || 'image/jpeg'};base64,${song.coverBase64}`
-        : undefined;
+  const cover = song ? coverArtUrl(song.coverArt ?? song.albumId, 100) : undefined;
   const bg = useDominantColor(cover);
   const offline = useAuthStore((s) => s.offline);
   const favIds = useFavoriteIds(!!song && (!song.localUri || offline));

@@ -52,7 +52,6 @@ function CircleButton({
 
 export default function PlayerScreen() {
   const router = useRouter();
-  const auth = useAuthStore((s) => s.auth);
   const song = usePlayerStore(currentSong);
   const source = usePlayerStore((s) => s.source);
   const sourceHref = usePlayerStore((s) => s.sourceHref);
@@ -81,12 +80,9 @@ export default function PlayerScreen() {
 
   const isLocal = !!song.localUri;
   const favorited = !!song.starred || (favIds?.has(song.id) ?? false);
-  const cover =
-    isLocal || !auth
-      ? song.coverBase64
-        ? `data:${song.coverMime || 'image/jpeg'};base64,${song.coverBase64}`
-        : undefined
-      : coverArtUrl(song.coverArt ?? song.albumId, 600);
+  // La capa de datos resuelve la carátula: del servidor (online) o del índice
+  // local por álbum (offline). Ya no se guarda el base64 en cada canción.
+  const cover = coverArtUrl(song.coverArt ?? song.albumId, 600);
   const duration = durationSec || song.duration || 0;
   const repeatActive = repeat !== 'off';
 

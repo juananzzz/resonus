@@ -194,16 +194,12 @@ function pickBestName(names: string[]): string {
 function groupByAlbum(songs: Song[]): LocalAlbum[] {
   const map = new Map<string, {
     songs: Song[];
-    displayAlbum: string;
-    displayArtist: string;
     coverBase64?: string;
     coverMime?: string;
     year?: number;
     addedAt?: number;
   }>();
   for (const song of songs) {
-    const rawAlbum = song.album || 'Álbum desconocido';
-    const rawArtist = song.artist || 'Artista desconocido';
     // La clave de agrupación es el id de álbum ya calculado por canción:
     // en modo carpeta es la subcarpeta (todas sus pistas = un álbum), y en
     // modo dispositivo el nombre de álbum normalizado. Así un álbum con
@@ -211,52 +207,48 @@ function groupByAlbum(songs: Song[]): LocalAlbum[] {
     const key = albumKeyOf(song);
     let entry = map.get(key);
     if (!entry) {
-      entry = { songs: [], displayAlbum: rawAlbum, displayArtist: rawArtist };
+      entry = { songs: [] };
       map.set(key, entry);
     }
     entry.songs.push(song);
-    // Actualiza el nombre de display al más frecuente
-    const allAlbums = entry.songs.map((s) => s.album || 'Álbum desconocido');
-    entry.displayAlbum = pickBestName(allAlbums);
-    const allArtists = entry.songs.map((s) => s.artist || 'Artista desconocido');
-    entry.displayArtist = pickBestName(allArtists);
-    if ((song as any).coverBase64) {
-      entry.coverBase64 = (song as any).coverBase64;
-      entry.coverMime = (song as any).coverMime;
+    if (song.coverBase64) {
+      entry.coverBase64 = song.coverBase64;
+      entry.coverMime = song.coverMime;
     }
-    if ((song as any).year) entry.year = (song as any).year;
+    if (song.year) entry.year = song.year;
     if (song.addedAt && song.addedAt > (entry.addedAt ?? 0)) entry.addedAt = song.addedAt;
   }
-  return Array.from(map.entries()).map(([key, v]) => ({
-    id: key,
-    name: v.displayAlbum,
-    artist: v.displayArtist !== 'Artista desconocido' ? v.displayArtist : undefined,
-    coverBase64: v.coverBase64,
-    coverMime: v.coverMime,
-    songCount: v.songs.length,
-    year: v.year,
-    addedAt: v.addedAt,
-  }));
+  // El nombre de álbum/artista de display (el más frecuente) se calcula una sola
+  // vez por grupo, no en cada canción (evita un coste O(n²) durante el escaneo).
+  return Array.from(map.entries()).map(([key, v]) => {
+    const artist = pickBestName(v.songs.map((s) => s.artist || 'Artista desconocido'));
+    return {
+      id: key,
+      name: pickBestName(v.songs.map((s) => s.album || 'Álbum desconocido')),
+      artist: artist !== 'Artista desconocido' ? artist : undefined,
+      coverBase64: v.coverBase64,
+      coverMime: v.coverMime,
+      songCount: v.songs.length,
+      year: v.year,
+      addedAt: v.addedAt,
+    };
+  });
 }
 
 function groupByArtist(albums: LocalAlbum[]): LocalArtist[] {
   const map = new Map<string, {
     albums: LocalAlbum[];
-    displayName: string;
     coverBase64?: string;
     coverMime?: string;
   }>();
   for (const album of albums) {
-    const rawArtist = album.artist || 'Artista desconocido';
-    const key = normKey(rawArtist);
+    const key = normKey(album.artist || 'Artista desconocido');
     let entry = map.get(key);
     if (!entry) {
-      entry = { albums: [], displayName: rawArtist };
+      entry = { albums: [] };
       map.set(key, entry);
     }
     entry.albums.push(album);
-    const allNames = entry.albums.map((a) => a.artist || 'Artista desconocido');
-    entry.displayName = pickBestName(allNames);
     if (album.coverBase64) {
       entry.coverBase64 = album.coverBase64;
       entry.coverMime = album.coverMime;
@@ -264,7 +256,7 @@ function groupByArtist(albums: LocalAlbum[]): LocalArtist[] {
   }
   return Array.from(map.entries()).map(([key, v]) => ({
     id: key,
-    name: v.displayName,
+    name: pickBestName(v.albums.map((a) => a.artist || 'Artista desconocido')),
     coverBase64: v.coverBase64,
     coverMime: v.coverMime,
     albumCount: v.albums.length,
@@ -278,6 +270,13 @@ function buildCatalog(songs: Song[]): LocalCatalog {
   // `localCoverUrl(artistId)` funcionen en toda la app justo tras el escaneo.
   for (const a of albums) registerCover(a.id, a.coverBase64, a.coverMime);
   for (const a of artists) registerCover(a.id, a.coverBase64, a.coverMime);
+  // La carátula ya vive deduplicada en `coverIndex` (una por álbum). No la
+  // retenemos en cada canción: con miles de pistas serían cientos de MB en RAM.
+  // La reproducción y la UI la resuelven por `coverArt`/`albumId` vía coverIndex.
+  for (const s of songs) {
+    delete s.coverBase64;
+    delete s.coverMime;
+  }
   return { songs, albums, artists };
 }
 
