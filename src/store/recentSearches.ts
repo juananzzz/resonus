@@ -6,10 +6,16 @@ import { useAuthStore } from './auth';
 
 const MAX = 10;
 
+// SecureStore solo admite claves con [A-Za-z0-9._-]; saneamos serverUrl/username
+// (la URL trae ':' y '/') para no pasar una clave inválida.
+function safe(s: string): string {
+  return s.replace(/[^A-Za-z0-9._-]/g, '_');
+}
+
 function storageKey(): string {
   const { auth, offline } = useAuthStore.getState();
   if (offline) return 'resonus.recentSearches.offline';
-  if (auth) return `resonus.recentSearches.server.${auth.serverUrl}.${auth.username}`;
+  if (auth) return `resonus.recentSearches.server.${safe(auth.serverUrl)}.${safe(auth.username)}`;
   return 'resonus.recentSearches';
 }
 
