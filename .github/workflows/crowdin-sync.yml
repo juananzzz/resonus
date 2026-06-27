@@ -1,0 +1,108 @@
+name: Crowdin Translations Sync
+
+on:
+  # Upload new source strings when en.json changes on main.
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/i18n/locales/en.json'
+  # Pull the latest community translations once a day.
+  schedule:
+    - cron: '0 0 * * *'
+  # Allow manual runs.
+  workflow_dispatch:
+
+jobs:
+  sync-crowdin:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Skip everything cleanly until the Crowdin secrets are configured.
+      - name: Check Crowdin secrets
+        id: check
+        run: |
+          if [ -n "${{ secrets.CROWDIN_PROJECT_ID }}" ] && [ -n "${{ secrets.CROWDIN_API_TOKEN }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Crowdin secrets not set; skipping sync."
+          fi
+
+      # Upload only the source (en.json). Translations are owned by Crowdin;
+      # en.json + es.json are maintained in code (es is not a Crowdin target).
+      - name: Crowdin push (upload source)
+        if: steps.check.outputs.ready == 'true'
+        uses: crowdin/github-action@v2
+        with:
+          upload_sources: true
+          upload_translations: false
+          download_translations: false
+          project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
+          token: ${{ secrets.CROWDIN_API_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Download translations. skip_untranslated_* keeps the repo clean: no file
+      # for a language until it has real translations, and untranslated strings
+      # are omitted (they fall back to the English key in the app).
+      - name: Crowdin pull (download translations)
+        if: steps.check.outputs.ready == 'true'
+        uses: crowdin/github-action@v2
+        with:
+          upload_sources: false
+          upload_translations: false
+          download_translations: true
+          skip_untranslated_strings: true
+          skip_untranslated_files: true
+          export_only_approved: false
+          create_pull_request: false
+          project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
+          token: ${{ secrets.CROWDIN_API_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Drop any keys in the downloaded files that no longer exist in en.json,
+      # and never touch the code-owned en.json / es.json.
+      - name: Cleanup orphaned keys
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          python3 << 'EOF'
+          import json, glob, os
+          with open('src/i18n/locales/en.json', encoding='utf-8') as f:
+              en_keys = set(json.load(f).keys())
+          for path in glob.glob('src/i18n/locales/*.json'):
+              if os.path.basename(path) in ('en.json', 'es.json'):
+                  continue
+              with open(path, encoding='utf-8') as f:
+                  data = json.load(f)
+              cleaned = {k: v for k, v in data.items() if k in en_keys}
+              if cleaned != data:
+                  with open(path, 'w', encoding='utf-8') as f:
+                      json.dump(cleaned, f, ensure_ascii=False, indent=2, sort_keys=True)
+                      f.write('\n')
+                  print('Cleaned', os.path.basename(path))
+          EOF
+
+      - name: Check for changes
+        id: changes
+        if: steps.check.outputs.ready == 'true'
+        run: git diff --quiet && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create Pull Request
+        if: steps.check.outputs.ready == 'true' && steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update translations from Crowdin'
+          title: 'New Crowdin translations'
+          body: 'Community translations synced from Crowdin.'
+          branch: 'l10n_crowdin'
+          base: 'main'

@@ -1,14 +1,11 @@
-# Crowdin sync config (GitHub App integration).
-# Source language: English. Source file: src/i18n/locales/en.json (identity map).
-# Crowdin pushes each target language as src/i18n/locales/<code>.json via PRs.
+# Crowdin config, consumed by the GitHub Action (.github/workflows/crowdin-sync.yml),
+# which runs the Crowdin CLI. (The in-app GitHub integration was dropped because it
+# ignored skip_untranslated_* and kept committing English-clone files.)
 #
-# Do NOT hand-edit the translated files (es.json, etc.) — they are owned by
-# Crowdin. Only edit en.json (the source) in code; translate the rest in
-# Crowdin to avoid merge conflicts/regressions.
-#
-# skip_untranslated_files (per file): don't export a file for languages with no
-# translations, so the repo only gets a <lang>.json once it's actually translated.
+# Source language: English. English + Spanish are maintained in code (es is NOT a
+# Crowdin target); every other language comes from the community via Crowdin.
+# Download options (skip_untranslated_*) live in the workflow, not here.
+preserve_hierarchy: true
 files:
   - source: /src/i18n/locales/en.json
     translation: /src/i18n/locales/%two_letters_code%.json
-    skip_untranslated_files: true
