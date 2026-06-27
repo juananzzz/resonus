@@ -50,9 +50,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Download translations. skip_untranslated_* keeps the repo clean: no file
-      # for a language until it has real translations, and untranslated strings
-      # are omitted (they fall back to the English key in the app).
+      # Download translations. skip_untranslated_strings keeps the repo clean:
+      # untranslated strings are omitted (they fall back to the English key in
+      # the app) and fully-untranslated languages produce no file.
       - name: Crowdin pull (download translations)
         if: steps.check.outputs.ready == 'true'
         uses: crowdin/github-action@v2
@@ -61,7 +61,6 @@ jobs:
           upload_translations: false
           download_translations: true
           skip_untranslated_strings: true
-          skip_untranslated_files: true
           export_only_approved: false
           create_pull_request: false
           project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
