@@ -10,12 +10,19 @@ const LANGUAGES: { value: Language; label: string }[] = [
   { value: 'en', label: 'English' },
 ];
 
+const LIST_STYLES: { value: boolean; label: string }[] = [
+  { value: true, label: 'With artwork' },
+  { value: false, label: 'Compact' },
+];
+
 export default function DisplaySettings() {
   const t = useT();
   const language = useSettings((s) => s.language);
   const setLanguage = useSettings((s) => s.setLanguage);
   const showAudioQuality = useSettings((s) => s.showAudioQuality);
   const setShowAudioQuality = useSettings((s) => s.setShowAudioQuality);
+  const showListArtwork = useSettings((s) => s.showListArtwork);
+  const setShowListArtwork = useSettings((s) => s.setShowListArtwork);
 
   return (
     <SettingsPage title={t('Display')}>
@@ -50,6 +57,27 @@ export default function DisplaySettings() {
                 key={opt.value}
                 style={[settingsStyles.chip, active && settingsStyles.chipActive]}
                 onPress={() => setShowAudioQuality(opt.value)}
+              >
+                <Text style={[settingsStyles.chipText, active && settingsStyles.chipTextActive]}>
+                  {t(opt.label)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Text style={settingsStyles.sectionTitle}>{t('Song lists')}</Text>
+        <Text style={settingsStyles.hint}>
+          {t('Show the album artwork next to each song in playlists and favorites.')}
+        </Text>
+        <View style={settingsStyles.chips}>
+          {LIST_STYLES.map((opt) => {
+            const active = opt.value === showListArtwork;
+            return (
+              <Pressable
+                key={String(opt.value)}
+                style={[settingsStyles.chip, active && settingsStyles.chipActive]}
+                onPress={() => setShowListArtwork(opt.value)}
               >
                 <Text style={[settingsStyles.chipText, active && settingsStyles.chipTextActive]}>
                   {t(opt.label)}

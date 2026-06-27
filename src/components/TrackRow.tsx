@@ -2,6 +2,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { coverArtUrl } from '@/api/data';
 import { type Song } from '@/api/subsonic';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
@@ -9,8 +10,9 @@ import { usePlayerStore } from '@/store/player';
 import { useSongMenu, type SongMenuContext } from '@/store/songMenu';
 import { useSettings } from '@/store/settings';
 import { useT } from '@/i18n';
-import { colors, fontSize, spacing } from '@/theme';
+import { colors, fontSize, radius, spacing } from '@/theme';
 import { AudioQualityBadge } from './AudioQualityBadge';
+import { Cover } from './Cover';
 import { FavoriteButton } from './FavoriteButton';
 import { NowPlayingBars } from './NowPlayingBars';
 
@@ -29,6 +31,8 @@ interface Props {
   showFavorite?: boolean;
   /** Muestra el botón de menú ⋯ (por defecto sí; desactivado en offline). */
   showMenu?: boolean;
+  /** Muestra la mini carátula del álbum a la izquierda (estilo Spotify). */
+  showArtwork?: boolean;
   onPress: () => void;
 }
 
@@ -39,6 +43,7 @@ export function TrackRow({
   menuContext,
   showFavorite = true,
   showMenu = true,
+  showArtwork = false,
   onPress,
 }: Props) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
@@ -56,7 +61,16 @@ export function TrackRow({
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       onPress={onPress}
     >
-      {isCurrent ? (
+      {showArtwork ? (
+        <View style={styles.artwork}>
+          <Cover uri={coverArtUrl(song.coverArt ?? song.albumId, 100)} size={44} />
+          {isCurrent ? (
+            <View style={styles.artworkOverlay}>
+              <NowPlayingBars playing={isPlaying} />
+            </View>
+          ) : null}
+        </View>
+      ) : isCurrent ? (
         <View style={styles.leftSlot}>
           <NowPlayingBars playing={isPlaying} />
         </View>
@@ -114,6 +128,17 @@ const styles = StyleSheet.create({
     width: 24,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  artwork: {
+    width: 44,
+    height: 44,
+  },
+  artworkOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: radius.md,
   },
   info: {
     flex: 1,

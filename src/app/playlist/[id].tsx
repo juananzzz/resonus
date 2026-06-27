@@ -27,6 +27,7 @@ export default function PlaylistScreen() {
   const offline = useAuthStore((s) => s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
+  const showListArtwork = useSettings((s) => s.showListArtwork);
   const queryClient = useQueryClient();
   const toast = useToast((s) => s.show);
   const playing = usePlayerStore(currentSong);
@@ -106,6 +107,7 @@ export default function PlaylistScreen() {
         currentId={playing?.id}
         onMenu={() => setMenuOpen(true)}
         playlistId={id}
+        showArtwork={showListArtwork}
         onSort={data.songs.length > 1 ? openSort : undefined}
         onPlay={(start) => playQueue(displaySongs, start, data.playlist.name, `/playlist/${id}`)}
       />

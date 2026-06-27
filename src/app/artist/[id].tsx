@@ -31,6 +31,7 @@ import { useDominantColor } from '@/hooks/useDominantColor';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
+import { useSettings } from '@/store/settings';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 const WIDTH = Dimensions.get('window').width;
@@ -44,6 +45,7 @@ export default function ArtistScreen() {
   const t = useT();
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
+  const showListArtwork = useSettings((s) => s.showListArtwork);
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
   const [bioExpanded, setBioExpanded] = useState(false);
   const [songsExpanded, setSongsExpanded] = useState(false);
@@ -171,6 +173,7 @@ export default function ArtistScreen() {
                 song={song}
                 position={i + 1}
                 isCurrent={playing?.id === song.id}
+                showArtwork={showListArtwork}
                 onPress={() => playQueue(top, i, data.artist.name, `/artist/${id}`)}
               />
             ))}

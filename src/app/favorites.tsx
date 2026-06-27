@@ -19,6 +19,7 @@ export default function FavoritesScreen() {
   const offline = useAuthStore((s) => s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
+  const showListArtwork = useSettings((s) => s.showListArtwork);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
@@ -67,6 +68,7 @@ export default function FavoritesScreen() {
         accentColor={colors.accent}
         songs={displaySongs}
         currentId={playing?.id}
+        showArtwork={showListArtwork}
         onSort={displaySongs.length > 1 ? openSort : undefined}
         onPlay={(start) => playQueue(displaySongs, start, SOURCE_FAVORITES, '/favorites')}
       />

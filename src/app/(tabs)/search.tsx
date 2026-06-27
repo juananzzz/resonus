@@ -26,6 +26,7 @@ import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useRecentSearches } from '@/store/recentSearches';
+import { useSettings } from '@/store/settings';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
 const GENRE_W = (Dimensions.get('window').width - spacing.lg * 2 - spacing.sm) / 2;
@@ -38,6 +39,7 @@ export default function SearchScreen() {
   const [focused, setFocused] = useState(false);
   const debouncedQuery = useDebounce(query.trim(), 350);
   const playing = usePlayerStore(currentSong);
+  const showListArtwork = useSettings((s) => s.showListArtwork);
   const playQueue = usePlayerStore((s) => s.playQueue);
   const recent = useRecentSearches((s) => s.terms);
   const addRecent = useRecentSearches((s) => s.add);
@@ -181,6 +183,7 @@ export default function SearchScreen() {
                 key={song.id}
                 song={song}
                 isCurrent={playing?.id === song.id}
+                showArtwork={showListArtwork}
                 onPress={() => {
                   addRecent(debouncedQuery);
                   playQueue(data.songs, i);

@@ -27,34 +27,58 @@ interface SettingsState {
   maxBitRate: number;
   language: Language;
   showAudioQuality: AudioQualityMode;
+  /** Mostrar la mini carátula del álbum en las listas (playlists/favoritos). */
+  showListArtwork: boolean;
   setMaxBitRate: (value: number) => void;
   setLanguage: (language: Language) => void;
   setShowAudioQuality: (mode: AudioQualityMode) => void;
+  setShowListArtwork: (value: boolean) => void;
   hydrate: () => Promise<void>;
 }
 
-function persist(state: { maxBitRate: number; language: Language; showAudioQuality: AudioQualityMode }) {
+function persist(state: {
+  maxBitRate: number;
+  language: Language;
+  showAudioQuality: AudioQualityMode;
+  showListArtwork: boolean;
+}) {
   void setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function snapshot(get: () => SettingsState) {
+  const s = get();
+  return {
+    maxBitRate: s.maxBitRate,
+    language: s.language,
+    showAudioQuality: s.showAudioQuality,
+    showListArtwork: s.showListArtwork,
+  };
 }
 
 export const useSettings = create<SettingsState>((set, get) => ({
   maxBitRate: 0,
   language: 'es',
   showAudioQuality: 'off',
+  showListArtwork: true,
 
   setMaxBitRate: (maxBitRate) => {
     set({ maxBitRate });
-    persist({ maxBitRate, language: get().language, showAudioQuality: get().showAudioQuality });
+    persist(snapshot(get));
   },
 
   setLanguage: (language) => {
     set({ language });
-    persist({ maxBitRate: get().maxBitRate, language, showAudioQuality: get().showAudioQuality });
+    persist(snapshot(get));
   },
 
   setShowAudioQuality: (showAudioQuality) => {
     set({ showAudioQuality });
-    persist({ maxBitRate: get().maxBitRate, language: get().language, showAudioQuality });
+    persist(snapshot(get));
+  },
+
+  setShowListArtwork: (showListArtwork) => {
+    set({ showListArtwork });
+    persist(snapshot(get));
   },
 
   hydrate: async () => {
@@ -65,6 +89,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           maxBitRate: number;
           language: Language;
           showAudioQuality: AudioQualityMode | boolean;
+          showListArtwork: boolean;
         }>;
         if (typeof parsed.maxBitRate === 'number') {
           set({ maxBitRate: parsed.maxBitRate });
@@ -78,6 +103,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
           set({ showAudioQuality: 'everywhere' });
         } else if (parsed.showAudioQuality === false) {
           set({ showAudioQuality: 'off' });
+        }
+        if (typeof parsed.showListArtwork === 'boolean') {
+          set({ showListArtwork: parsed.showListArtwork });
         }
       }
     } catch {

@@ -51,6 +51,8 @@ interface Props {
   onSort?: () => void;
   /** Contenido extra al pie de la lista (p. ej. "Más de este artista"). */
   footer?: ReactNode;
+  /** Muestra la mini carátula del álbum en cada fila (playlists/favoritos). */
+  showArtwork?: boolean;
   onPlay: (startIndex: number) => void;
 }
 
@@ -71,6 +73,7 @@ export function TrackListView({
   playlistIndices,
   onSort,
   footer,
+  showArtwork,
   onPlay,
 }: Props) {
   const router = useRouter();
@@ -215,6 +218,7 @@ export function TrackListView({
             song={item}
             position={numbered ? item.track ?? index + 1 : undefined}
             isCurrent={currentId === item.id}
+            showArtwork={showArtwork}
             menuContext={
               playlistId
                 ? { playlistId, index: playlistIndices ? playlistIndices[index] : index }
