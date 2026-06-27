@@ -47,8 +47,11 @@ let lockActive = false;
 function ensurePlayer(): AudioPlayer {
   if (!audioPlayer) {
     audioPlayer = createAudioPlayer(null, { updateInterval: 500 });
-    // El listener vive durante toda la sesión (el player es un singleton).
+    // Los listeners viven durante toda la sesión (el player es un singleton).
     audioPlayer.addListener('playbackStatusUpdate', onStatus);
+    // Saltar pista desde la notificación / bloqueo → la cola la gestiona JS.
+    audioPlayer.addListener('remotePrevious', () => usePlayerStore.getState().previous());
+    audioPlayer.addListener('remoteNext', () => usePlayerStore.getState().next());
   }
   return audioPlayer;
 }
@@ -99,7 +102,12 @@ function applyLockScreen(song: Song) {
   const meta = metadataFor(song);
   if (!lockActive) {
     lockActive = true;
-    p.setActiveForLockScreen(true, meta, { showSeekForward: false, showSeekBackward: false });
+    p.setActiveForLockScreen(true, meta, {
+      showSeekForward: false,
+      showSeekBackward: false,
+      showSkipPrevious: true,
+      showSkipNext: true,
+    });
   } else {
     p.updateLockScreenMetadata(meta);
   }

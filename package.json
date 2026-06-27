@@ -54,6 +54,9 @@
     "autolinking": {
       "exclude": [
         "@expo/dom-webview"
+      ],
+      "buildFromSource": [
+        "expo-audio"
       ]
     }
   }

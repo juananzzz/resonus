@@ -1,2 +1,0 @@
-expo.modules.carauto
-xml automotive_app_desc
