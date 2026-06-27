@@ -331,6 +331,11 @@ export async function loadDeviceSongs(): Promise<Song[]> {
   const key = cacheKey('device');
   const cached = catalogCache.get(key);
   if (cached) return cached.songs;
+  const disk = await loadCatalogFromDisk('device');
+  if (disk) {
+    catalogCache.set(key, disk);
+    return disk.songs;
+  }
 
   const rawSongs: { id: string; filename: string; duration: number; uri: string; mtime: number }[] = [];
   let after: string | undefined;
@@ -384,6 +389,7 @@ export async function loadDeviceSongs(): Promise<Song[]> {
 
   const catalog = buildCatalog(songs);
   catalogCache.set(key, catalog);
+  void saveCatalogToDisk('device', undefined, catalog);
   return songs;
 }
 
@@ -398,6 +404,11 @@ export async function loadFolderSongs(treeUri: string): Promise<Song[]> {
   const key = cacheKey('folder', treeUri);
   const cached = catalogCache.get(key);
   if (cached) return cached.songs;
+  const disk = await loadCatalogFromDisk('folder', treeUri);
+  if (disk) {
+    catalogCache.set(key, disk);
+    return disk.songs;
+  }
 
   const rawSongs: { id: string; filename: string; uri: string; dirUri: string }[] = [];
 
@@ -450,6 +461,7 @@ export async function loadFolderSongs(treeUri: string): Promise<Song[]> {
 
   const catalog = buildCatalog(songs);
   catalogCache.set(key, catalog);
+  void saveCatalogToDisk('folder', treeUri, catalog);
   return songs;
 }
 
@@ -505,4 +517,49 @@ export function localCoverUrl(id: string | undefined): string | undefined {
 export function clearLocalCatalog(): void {
   catalogCache.clear();
   coverIndex.clear();
+}
+
+// ── Persistencia del catálogo en disco ──────────────────────────────────────
+// Evita re-leer los ID3 de todos los ficheros cada vez que se entra al modo
+// local: el catálogo (con carátulas) se guarda en disco y se recarga al
+// instante. El botón "Volver a escanear" fuerza un re-análisis.
+const CATALOG_DIR = FileSystem.documentDirectory + 'local-catalog/';
+
+function catalogFile(sourceMode: string, uri?: string): string {
+  return `${CATALOG_DIR}c_${hashKey(cacheKey(sourceMode, uri))}.json`;
+}
+
+async function saveCatalogToDisk(sourceMode: string, uri: string | undefined, catalog: LocalCatalog): Promise<void> {
+  try {
+    await FileSystem.makeDirectoryAsync(CATALOG_DIR, { intermediates: true }).catch(() => {});
+    await FileSystem.writeAsStringAsync(catalogFile(sourceMode, uri), JSON.stringify(catalog));
+  } catch {
+    // Si no se puede guardar, se re-analizará la próxima vez (no es crítico).
+  }
+}
+
+async function loadCatalogFromDisk(sourceMode: string, uri?: string): Promise<LocalCatalog | null> {
+  try {
+    const file = catalogFile(sourceMode, uri);
+    const info = await FileSystem.getInfoAsync(file);
+    if (!info.exists) return null;
+    const raw = await FileSystem.readAsStringAsync(file);
+    const catalog = JSON.parse(raw) as LocalCatalog;
+    if (!catalog?.songs?.length) return null;
+    // El índice de carátulas no se persiste aparte: se reconstruye al cargar.
+    for (const a of catalog.albums) registerCover(a.id, a.coverBase64, a.coverMime);
+    for (const a of catalog.artists) registerCover(a.id, a.coverBase64, a.coverMime);
+    return catalog;
+  } catch {
+    return null;
+  }
+}
+
+/** Borra el catálogo persistido en disco (al volver a escanear). */
+export async function clearLocalCatalogDisk(): Promise<void> {
+  try {
+    await FileSystem.deleteAsync(CATALOG_DIR, { idempotent: true });
+  } catch {
+    // ignore
+  }
 }

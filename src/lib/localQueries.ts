@@ -8,6 +8,7 @@ import { type Album, type Artist, type ArtistInfo, type Playlist, type SearchRes
 import { getItem, setItem } from '@/lib/storage';
 import {
   clearLocalCatalog,
+  clearLocalCatalogDisk,
   getLocalAlbums,
   getLocalAlbumSongs,
   getLocalArtists,
@@ -115,6 +116,7 @@ async function ensureCatalog() {
  */
 export async function rescan(): Promise<void> {
   clearLocalCatalog();
+  await clearLocalCatalogDisk();
   loadingPromise = null;
   await ensureCatalog();
 }
