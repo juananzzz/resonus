@@ -5,7 +5,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Field, SettingsPage, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
-import { colors } from '@/theme';
+import { colors, fontSize, spacing } from '@/theme';
 
 export default function AccountSettings() {
   const t = useT();
@@ -20,7 +20,15 @@ export default function AccountSettings() {
           <>
             <Text style={settingsStyles.sectionTitle}>{t('Offline mode')}</Text>
             <View style={settingsStyles.card}>
-              <Field label="" value={t('You are playing music stored on your device.')} />
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: fontSize.md,
+                  paddingVertical: spacing.lg,
+                }}
+              >
+                {t('You are playing music stored on your device.')}
+              </Text>
             </View>
             <Pressable style={settingsStyles.logout} onPress={() => logout()}>
               <Ionicons name="exit-outline" size={22} color={colors.danger} />
