@@ -14,7 +14,7 @@ Resonus connects to **Navidrome** or any **OpenSubsonic**-compatible server (Sub
 
 <p align="center">
   <a href="https://github.com/juananzzz/resonus/releases/latest"><img src="https://img.shields.io/github/v/release/juananzzz/resonus?color=%236366F1&label=latest" alt="Latest release" /></a>
-  <a href="https://discord.gg/hpDfszr8r"><img src="https://img.shields.io/discord/1520459566972670146?color=%235865F2&label=discord&logo=discord&logoColor=white" alt="Discord" /></a>
+  <a href="https://discord.gg/hpDfszr8r"><img src="https://img.shields.io/badge/discord-join-%235865F2?logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
 ## Features
