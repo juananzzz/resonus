@@ -340,7 +340,7 @@ export default function LoginScreen() {
                     <Ionicons name="globe-outline" size={20} color={colors.textMuted} />
                     <TextInput
                       style={styles.inputFlex}
-                      placeholder="https://musica.midominio.com"
+                       placeholder="https://my-music-server.com"
                       placeholderTextColor={colors.textMuted}
                       autoCapitalize="none"
                       autoCorrect={false}
