@@ -14,12 +14,12 @@ Resonus connects to **Navidrome** or any **OpenSubsonic**-compatible server (Sub
 
 ## Features
 
-- **Navidrome / OpenSubsonic** — multi-profile login (several servers + local).
-- **Local mode** — play music from a folder or the whole device, fully offline. Albums grouped by folder, embedded artwork, and a cached catalog so it doesn't re-scan every time.
-- **Browse & search** — home, artists (top songs, albums, similar), albums, genres, playlists, favorites.
-- **Playback** — background playback, lock-screen & notification controls, queue, shuffle/repeat, sleep timer, lyrics.
-- **Android Auto** — browse your library and control playback from the car.
-- **Queue sync** — resume where you left off across devices.
+- **Navidrome / OpenSubsonic** — multi-profile login
+- **Local mode** — play music offline from device or folder
+- **Browse & search** — home, artists, albums, genres, playlists, favorites
+- **Playback** — background playback, lock-screen controls, queue, shuffle, repeat, sleep timer, lyrics
+- **Android Auto**
+- **Queue sync across devices**
 
 ## Roadmap
 
