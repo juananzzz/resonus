@@ -8,7 +8,6 @@ import { ScreenHeader, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { useSettings } from '@/store/settings';
-import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing } from '@/theme';
 
 type Section = {
@@ -41,8 +40,6 @@ export default function SettingsScreen() {
   const logout = useAuthStore((s) => s.logout);
   const offline = useAuthStore((s) => s.offline);
 
-  const toast = useToast((s) => s.show);
-
   // En offline no hay cuenta de servidor; la sección "Biblioteca" pasa a ser
   // la música local (origen + volver a escanear).
   const visible = (offline ? SECTIONS.filter((s) => s.key !== 'account') : SECTIONS).map((s) =>
@@ -59,13 +56,7 @@ export default function SettingsScreen() {
           <Pressable
             key={s.key}
             style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
-            onPress={() => {
-              if (s.key === 'personalization') {
-                toast(t('Coming soon'));
-                return;
-              }
-              router.push(`/settings/${s.key}`);
-            }}
+            onPress={() => router.push(`/settings/${s.key}`)}
           >
             <Ionicons name={s.icon} size={26} color={colors.text} />
             <View style={styles.rowInfo}>
