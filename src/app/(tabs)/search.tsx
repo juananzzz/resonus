@@ -20,6 +20,7 @@ import { getGenres } from '@/api/subsonic';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { GenreCard } from '@/components/GenreCard';
+import { Message } from '@/components/Message';
 import { TrackRow } from '@/components/TrackRow';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useT } from '@/i18n';
@@ -46,7 +47,7 @@ export default function SearchScreen() {
   const removeRecent = useRecentSearches((s) => s.remove);
   const clearRecent = useRecentSearches((s) => s.clear);
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isError, refetch } = useQuery({
     queryKey: ['search', debouncedQuery],
     queryFn: () => search(debouncedQuery),
     enabled: canSearch && debouncedQuery.length > 1,
@@ -132,6 +133,11 @@ export default function SearchScreen() {
 
         {isFetching ? (
           <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
+        ) : isError ? (
+          <Message
+            text={t("Couldn't reach the server. Check your connection.")}
+            onRetry={() => refetch()}
+          />
         ) : null}
 
         {data && data.artists.length > 0 ? (

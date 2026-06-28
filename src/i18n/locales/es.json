@@ -58,6 +58,7 @@
   "Couldn't load the playlist.": "No se pudo cargar la lista.",
   "Couldn't play": "No se pudo reproducir",
   "Couldn't play the song": "No se pudo reproducir la canción",
+  "Couldn't reach the server. Check your connection.": "No se pudo conectar con el servidor. Comprueba tu conexión.",
   "Couldn't rescan": "No se pudo volver a escanear",
   "Couldn't sign in": "No se pudo iniciar sesión",
   "Couldn't sign in; check the account": "No se pudo entrar; revisa la cuenta",

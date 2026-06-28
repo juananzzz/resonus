@@ -25,6 +25,7 @@ import {
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { FavoritesArt } from '@/components/FavoritesArt';
+import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { useScanProgress } from '@/store/scanProgress';
@@ -190,6 +191,14 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const initial = offline ? 'O' : (auth?.username ?? '?').charAt(0).toUpperCase();
 
+  // Detecta si el servidor no responde (comparte caché con la sección "newest").
+  // Solo online: en local no hay servidor y la key la usa también QuickGrid.
+  const { isError: serverUnreachable } = useQuery({
+    queryKey: ['albumList', 'newest'],
+    queryFn: () => getAlbumList('newest'),
+    enabled: !!auth && !offline,
+  });
+
   async function onRefresh() {
     setRefreshing(true);
     await queryClient.invalidateQueries();
@@ -233,19 +242,28 @@ export default function HomeScreen() {
 
         <ExploreChips offline={offline} />
 
-        <QuickGrid />
-
-        {offline ? (
-          <>
-            <AlbumSection title={t('Recently added')} type="newest" />
-            <AlbumSection title={t('Most played')} type="frequent" />
-            <AlbumSection title={t('Shuffle')} type="random" />
-          </>
+        {!offline && serverUnreachable ? (
+          <Message
+            text={t("Couldn't reach the server. Check your connection.")}
+            onRetry={onRefresh}
+          />
         ) : (
           <>
-            <AlbumSection title={t('Recently added')} type="newest" />
-            <AlbumSection title={t('Recently played')} type="recent" />
-            <AlbumSection title={t('Most played')} type="frequent" />
+            <QuickGrid />
+
+            {offline ? (
+              <>
+                <AlbumSection title={t('Recently added')} type="newest" />
+                <AlbumSection title={t('Most played')} type="frequent" />
+                <AlbumSection title={t('Shuffle')} type="random" />
+              </>
+            ) : (
+              <>
+                <AlbumSection title={t('Recently added')} type="newest" />
+                <AlbumSection title={t('Recently played')} type="recent" />
+                <AlbumSection title={t('Most played')} type="frequent" />
+              </>
+            )}
           </>
         )}
       </ScrollView>

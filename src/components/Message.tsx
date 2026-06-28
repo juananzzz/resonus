@@ -1,6 +1,7 @@
 /** Mensaje centrado para estados de error o vacío, con reintento opcional. */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { colors, fontSize, radius, spacing } from '@/theme';
 
 export function Message({
@@ -10,12 +11,13 @@ export function Message({
   text: string;
   onRetry?: () => void;
 }) {
+  const t = useT();
   return (
     <View style={styles.container}>
       <Text style={styles.text}>{text}</Text>
       {onRetry ? (
         <Pressable style={styles.button} onPress={onRetry}>
-          <Text style={styles.buttonText}>Reintentar</Text>
+          <Text style={styles.buttonText}>{t('Retry')}</Text>
         </Pressable>
       ) : null}
     </View>
