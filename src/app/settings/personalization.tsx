@@ -30,7 +30,7 @@ export default function AppearanceSettings() {
             borderRadius: radius.pill,
           }}>
             <Text style={{ color: '#000', fontSize: fontSize.sm, fontWeight: '600' }}>
-              {t('Coming soon 🚧')}
+              {t('Coming soon')}
             </Text>
           </View>
         </View>

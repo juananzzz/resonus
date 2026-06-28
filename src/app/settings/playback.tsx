@@ -17,7 +17,7 @@ export default function PlaybackSettings() {
   const maxBitRate = useSettings((s) => s.maxBitRate);
   const setMaxBitRate = useSettings((s) => s.setMaxBitRate);
 
-  const soon = () => toast(t('Coming soon 🚧'));
+  const soon = () => toast(t('Coming soon'));
 
   return (
     <SettingsPage title={t('Quality & playback')}>

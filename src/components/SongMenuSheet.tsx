@@ -101,7 +101,7 @@ export function SongMenuSheet() {
 
   const soon = () => {
     close();
-    toast(t('Coming soon 🚧'));
+    toast(t('Coming soon'));
   };
 
   async function removeFromList() {
