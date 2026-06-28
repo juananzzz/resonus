@@ -221,9 +221,12 @@ export default function HomeScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             <Text style={styles.greeting}>{t('Your music')}</Text>
             {offline ? (
-              <View style={styles.offlineBadge}>
-                <Text style={styles.offlineBadgeText}>{t('Offline')}</Text>
-              </View>
+              <Ionicons
+                name="phone-portrait-outline"
+                size={28}
+                color={colors.accent}
+                accessibilityLabel={t('Offline')}
+              />
             ) : null}
           </View>
           <View style={styles.headerRight}>
@@ -343,17 +346,6 @@ const styles = StyleSheet.create({
   },
   rowContent: { paddingHorizontal: spacing.lg, gap: spacing.md },
   rowLoader: { marginVertical: spacing.xl },
-  offlineBadge: {
-    backgroundColor: colors.surfaceHighlight,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-  },
-  offlineBadgeText: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '600',
-  },
   scanPanel: {
     alignItems: 'center',
     gap: spacing.sm,
