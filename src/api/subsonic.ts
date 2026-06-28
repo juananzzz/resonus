@@ -17,8 +17,14 @@ export interface SubsonicAuth {
   token: string;
   /** salt aleatorio usado para generar el token */
   salt: string;
-  /** Tipo de servidor (para mostrar su logo); navidrome/opensubsonic. */
+  /** Tipo de servidor (para mostrar su logo); navidrome/opensubsonic/ampache. */
   serverType?: string;
+  /**
+   * Contraseña en claro, solo para servidores que no soportan bien la auth por
+   * token (Ampache). Se manda como `p=enc:<hex>` siguiendo el método clásico de
+   * Subsonic. Para los demás servidores no se guarda (se usa token + salt).
+   */
+  password?: string;
 }
 
 export interface Song {
@@ -89,6 +95,34 @@ function randomSalt(): string {
     .join('');
 }
 
+/** Ampache valida mal la auth por token; necesita la clásica (`p=enc:<hex>`). */
+function isAmpache(serverType?: string): boolean {
+  return serverType === 'ampache';
+}
+
+/** Hex de los bytes UTF-8 de una cadena, para el parámetro Subsonic `enc:`. */
+function hexEncodeUtf8(input: string): string {
+  let hex = '';
+  for (const char of input) {
+    const code = char.codePointAt(0)!;
+    const bytes: number[] =
+      code < 0x80
+        ? [code]
+        : code < 0x800
+          ? [0xc0 | (code >> 6), 0x80 | (code & 0x3f)]
+          : code < 0x10000
+            ? [0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f)]
+            : [
+                0xf0 | (code >> 18),
+                0x80 | ((code >> 12) & 0x3f),
+                0x80 | ((code >> 6) & 0x3f),
+                0x80 | (code & 0x3f),
+              ];
+    for (const b of bytes) hex += b.toString(16).padStart(2, '0');
+  }
+  return hex;
+}
+
 /**
  * Calcula las credenciales de token a partir de la contraseña.
  * Se hace una sola vez al iniciar sesión; luego se reutilizan salt y token.
@@ -104,7 +138,15 @@ export async function makeAuth(
     Crypto.CryptoDigestAlgorithm.MD5,
     password + salt,
   );
-  return { serverUrl: normalizeUrl(serverUrl), username, token, salt, serverType };
+  return {
+    serverUrl: normalizeUrl(serverUrl),
+    username,
+    token,
+    salt,
+    serverType,
+    // Ampache valida mal el token; guardamos la contraseña para usar `p=enc:`.
+    ...(isAmpache(serverType) ? { password } : {}),
+  };
 }
 
 /** Quita la barra final y asegura el esquema http(s). */
@@ -115,14 +157,12 @@ export function normalizeUrl(url: string): string {
 }
 
 function authParams(auth: SubsonicAuth): URLSearchParams {
-  return new URLSearchParams({
-    u: auth.username,
-    t: auth.token,
-    s: auth.salt,
-    v: API_VERSION,
-    c: CLIENT_NAME,
-    f: 'json',
-  });
+  const base = { u: auth.username, v: API_VERSION, c: CLIENT_NAME, f: 'json' };
+  // Auth clásica para Ampache; token + salt para el resto.
+  if (auth.password !== undefined) {
+    return new URLSearchParams({ ...base, p: `enc:${hexEncodeUtf8(auth.password)}` });
+  }
+  return new URLSearchParams({ ...base, t: auth.token, s: auth.salt });
 }
 
 function buildUrl(
