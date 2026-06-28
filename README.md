@@ -10,7 +10,7 @@
 
 ---
 
-Resonus connects to **Navidrome** or any **OpenSubsonic**-compatible server (Subsonic API), or plays the **music stored on your device**. Browse, search, build queues and listen with background playback, lock-screen controls and **Android Auto**.
+Resonus connects to **Navidrome**, **Ampache** or any **OpenSubsonic**-compatible server (Subsonic API), or plays the **music stored on your device**. Browse, search, build queues and listen with background playback, lock-screen controls and **Android Auto**.
 
 <p align="center">
   <a href="https://github.com/juananzzz/resonus/releases/latest"><img src="https://img.shields.io/github/v/release/juananzzz/resonus?color=%236366F1&label=latest" alt="Latest release" /></a>
