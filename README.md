@@ -26,7 +26,6 @@ Resonus connects to **Navidrome** or any **OpenSubsonic**-compatible server (Sub
 - [ ] Offline downloads (server → device)
 - [ ] Equalizer & crossfade
 - [ ] Local artwork in Android Auto
-- [ ] Ampache support
 - [ ] Jellyfin support
 - [ ] iOS support
 
