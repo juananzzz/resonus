@@ -23,7 +23,7 @@ Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/rele
 
 ## Features
 
-- **Navidrome / OpenSubsonic** — multi-profile login
+- **Navidrome / OpenSubsonic / Ampache** — multi-profile login
 - **Local mode** — play music offline from device or folder
 - **Browse & search** — home, artists, albums, genres, playlists, favorites
 - **Playback** — background playback, lock-screen controls, queue, shuffle, repeat, sleep timer, lyrics
