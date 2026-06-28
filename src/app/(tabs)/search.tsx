@@ -26,7 +26,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
-import { useRecentSearches } from '@/store/recentSearches';
+import { useRecentSearches, type RecentItem } from '@/store/recentSearches';
 import { useSettings } from '@/store/settings';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 
@@ -42,7 +42,7 @@ export default function SearchScreen() {
   const playing = usePlayerStore(currentSong);
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const playQueue = usePlayerStore((s) => s.playQueue);
-  const recent = useRecentSearches((s) => s.terms);
+  const recent = useRecentSearches((s) => s.items);
   const addRecent = useRecentSearches((s) => s.add);
   const removeRecent = useRecentSearches((s) => s.remove);
   const clearRecent = useRecentSearches((s) => s.clear);
@@ -64,6 +64,13 @@ export default function SearchScreen() {
   const showRecent = focused && isEmpty && recent.length > 0;
   const showBrowse = isEmpty && !showRecent && !!genres && genres.length > 0;
 
+  /** Subtítulo de un reciente: tipo (+ artista en álbumes/canciones). */
+  const recentLabel = (item: RecentItem): string => {
+    if (item.kind === 'artist') return t('Artist');
+    const type = item.kind === 'album' ? t('Album') : t('Song');
+    return item.artist ? `${type} · ${item.artist}` : type;
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.searchBar}>
@@ -79,7 +86,6 @@ export default function SearchScreen() {
           returnKeyType="search"
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          onSubmitEditing={() => addRecent(query)}
         />
         {query.length > 0 ? (
           <Pressable hitSlop={10} accessibilityLabel={t('Clear')} onPress={() => setQuery('')}>
@@ -101,20 +107,31 @@ export default function SearchScreen() {
               </Pressable>
             </View>
             <View>
-              {recent.map((term) => (
-                <Pressable key={term} style={styles.recentRow} onPress={() => setQuery(term)}>
-                  <Ionicons name="time-outline" size={22} color={colors.textSecondary} />
-                  <Text style={styles.recentText} numberOfLines={1}>
-                    {term}
-                  </Text>
-                  <Pressable
-                    hitSlop={10}
-                    accessibilityLabel={t('Clear')}
-                    onPress={() => removeRecent(term)}
-                  >
-                    <Ionicons name="close" size={20} color={colors.textMuted} />
+              {recent.map((item) => (
+                <Link key={`${item.kind}:${item.id}`} href={item.href} asChild>
+                  <Pressable style={styles.recentRow}>
+                    <Cover
+                      uri={coverArtUrl(item.coverArt ?? item.id, 100)}
+                      size={48}
+                      rounded={item.kind === 'artist'}
+                    />
+                    <View style={styles.recentInfo}>
+                      <Text style={styles.recentTitle} numberOfLines={1}>
+                        {item.title}
+                      </Text>
+                      <Text style={styles.recentSub} numberOfLines={1}>
+                        {recentLabel(item)}
+                      </Text>
+                    </View>
+                    <Pressable
+                      hitSlop={10}
+                      accessibilityLabel={t('Clear')}
+                      onPress={() => removeRecent(item)}
+                    >
+                      <Ionicons name="close" size={20} color={colors.textMuted} />
+                    </Pressable>
                   </Pressable>
-                </Pressable>
+                </Link>
               ))}
             </View>
           </View>
@@ -150,7 +167,18 @@ export default function SearchScreen() {
             >
               {data.artists.map((artist) => (
                 <Link key={artist.id} href={`/artist/${artist.id}`} asChild>
-                  <Pressable style={styles.artist} onPress={() => addRecent(debouncedQuery)}>
+                  <Pressable
+                    style={styles.artist}
+                    onPress={() =>
+                      addRecent({
+                        kind: 'artist',
+                        id: artist.id,
+                        title: artist.name,
+                        coverArt: artist.coverArt ?? artist.id,
+                        href: `/artist/${artist.id}`,
+                      })
+                    }
+                  >
                     <Cover
                       uri={coverArtUrl(artist.coverArt ?? artist.id, 200)}
                       size={110}
@@ -175,7 +203,20 @@ export default function SearchScreen() {
               contentContainerStyle={styles.albumRow}
             >
               {data.albums.map((album) => (
-                <AlbumCard key={album.id} album={album} />
+                <AlbumCard
+                  key={album.id}
+                  album={album}
+                  onPress={() =>
+                    addRecent({
+                      kind: 'album',
+                      id: album.id,
+                      title: album.name,
+                      artist: album.artist,
+                      coverArt: album.coverArt ?? album.id,
+                      href: `/album/${album.id}`,
+                    })
+                  }
+                />
               ))}
             </ScrollView>
           </View>
@@ -191,7 +232,16 @@ export default function SearchScreen() {
                 isCurrent={playing?.id === song.id}
                 showArtwork={showListArtwork}
                 onPress={() => {
-                  addRecent(debouncedQuery);
+                  if (song.albumId) {
+                    addRecent({
+                      kind: 'song',
+                      id: song.id,
+                      title: song.title,
+                      artist: song.artist,
+                      coverArt: song.coverArt ?? song.albumId,
+                      href: `/album/${song.albumId}`,
+                    });
+                  }
                   playQueue(data.songs, i);
                 }}
               />
@@ -246,9 +296,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  recentText: { flex: 1, color: colors.text, fontSize: fontSize.md },
+  recentInfo: { flex: 1 },
+  recentTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
+  recentSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
   albumRow: {
     gap: spacing.md,
   },

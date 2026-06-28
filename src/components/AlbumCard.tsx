@@ -9,16 +9,18 @@ import { Cover } from './Cover';
 interface Props {
   album: Album;
   width?: number;
+  /** Se llama al tocar la tarjeta (además de navegar al álbum). */
+  onPress?: () => void;
 }
 
-export function AlbumCard({ album, width = 150 }: Props) {
+export function AlbumCard({ album, width = 150, onPress }: Props) {
   const cover = coverArtUrl(album.coverArt ?? album.id, 300);
 
   return (
     <Link href={`/album/${album.id}`} asChild>
       {/* expo-router fusiona el estilo del Link en este hijo; debe ser un
           único objeto, no un array, así que lo aplanamos. */}
-      <Pressable style={StyleSheet.flatten([styles.container, { width }])}>
+      <Pressable style={StyleSheet.flatten([styles.container, { width }])} onPress={onPress}>
         <Cover uri={cover} size={width} />
         <Text style={styles.title} numberOfLines={1}>
           {album.name}
