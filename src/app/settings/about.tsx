@@ -14,7 +14,7 @@ export default function AboutSettings() {
     <SettingsPage title={t('About')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <View style={settingsStyles.card}>
-          <Field label="Versión" value="Resonus 1.0.0" />
+          <Field label={t('Version')} value="Resonus 0.1.0 (beta)" />
           <View style={settingsStyles.divider} />
           <Pressable style={settingsStyles.linkRow} onPress={() => Linking.openURL(REPO_URL)}>
             <Ionicons name="logo-github" size={22} color={colors.text} />
