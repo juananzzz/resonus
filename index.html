@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resonus — Music player for your server</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #121212;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 60px 24px; }
+    .hero { text-align: center; margin-bottom: 48px; }
+    .hero img { width: 100px; margin-bottom: 16px; }
+    .hero h1 { font-size: 2.5rem; font-weight: 800; color: #6366F1; margin-bottom: 8px; }
+    .hero p { font-size: 1.1rem; color: #a0a0a0; max-width: 480px; margin: 0 auto 24px; }
+    .badges { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 48px; }
+    .badges a { display: inline-block; }
+    .badges img { height: 24px; }
+
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 48px; }
+    .gallery img { width: 100%; border-radius: 8px; border: 1px solid #2a2a2a; }
+
+    .section { margin-bottom: 48px; }
+    .section h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin-bottom: 16px; }
+    .features { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .feature { background: #1e1e1e; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; }
+    .feature strong { display: block; color: #fff; margin-bottom: 4px; }
+    .feature span { color: #888; font-size: 0.9rem; }
+
+    .links { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+    .links a {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: 8px; text-decoration: none;
+      font-weight: 600; font-size: 0.95rem; transition: opacity 0.2s;
+    }
+    .links a:hover { opacity: 0.8; }
+    .btn-gh { background: #333; color: #fff; }
+    .btn-dl { background: #6366F1; color: #fff; }
+    .btn-discord { background: #5865F2; color: #fff; }
+
+    footer { text-align: center; color: #555; font-size: 0.85rem; margin-top: 48px; padding-top: 24px; border-top: 1px solid #1e1e1e; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <img src="./assets/images/icon-transparent.png" alt="Resonus">
+      <h1>Resonus</h1>
+      <p>A clean Android client for your Navidrome or OpenSubsonic server — and your local files.</p>
+      <div class="badges">
+        <a href="https://github.com/juananzzz/resonus/releases/latest"><img src="https://img.shields.io/github/v/release/juananzzz/resonus?color=%236366F1&label=latest" alt="Latest release"></a>
+        <a href="https://discord.gg/hpDfszr8r"><img src="https://img.shields.io/discord/1520459566972670146?color=%235865F2&label=discord&logo=discord&logoColor=white" alt="Discord"></a>
+        <a href="https://juananzzz.github.io/resonus/"><img src="https://img.shields.io/badge/website-resonus.app-%236366F1" alt="Website"></a>
+      </div>
+    </div>
+
+    <div class="gallery">
+      <img src="./assets/screenshots/Screenshot_20260627-190433.png" alt="Home">
+      <img src="./assets/screenshots/Screenshot_20260627-190527.png" alt="Player">
+      <img src="./assets/screenshots/Screenshot_20260627-190536.png" alt="Artist">
+      <img src="./assets/screenshots/Screenshot_20260627-192556.png" alt="Library">
+      <img src="./assets/screenshots/Screenshot_20260627-225448.png" alt="Search">
+      <img src="./assets/screenshots/Screenshot_20260627-225506.png" alt="Queue">
+      <img src="./assets/screenshots/Screenshot_20260627-230345.png" alt="Login">
+    </div>
+
+    <div class="section">
+      <h2>Features</h2>
+      <div class="features">
+        <div class="feature"><strong>Navidrome / OpenSubsonic</strong><span>Multi-profile login</span></div>
+        <div class="feature"><strong>Local mode</strong><span>Play music from your device offline</span></div>
+        <div class="feature"><strong>Browse &amp; search</strong><span>Artists, albums, genres, playlists, favorites</span></div>
+        <div class="feature"><strong>Playback</strong><span>Background playback, lock-screen, queue, lyrics</span></div>
+        <div class="feature"><strong>Android Auto</strong><span>Control from your car</span></div>
+        <div class="feature"><strong>Queue sync</strong><span>Resume across devices</span></div>
+      </div>
+    </div>
+
+    <div class="links">
+      <a href="https://github.com/juananzzz/resonus/releases/latest" class="btn-dl">Download latest APK</a>
+      <a href="https://github.com/juananzzz/resonus" class="btn-gh">View on GitHub</a>
+      <a href="https://discord.gg/hpDfszr8r" class="btn-discord">Join Discord</a>
+    </div>
+
+    <footer>MIT © juananzzz</footer>
+  </div>
+</body>
+</html>
