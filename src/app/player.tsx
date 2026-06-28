@@ -4,6 +4,7 @@ import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
+  ActivityIndicator,
   Dimensions,
   Pressable,
   StyleSheet,
@@ -70,6 +71,7 @@ export default function PlayerScreen() {
   const source = usePlayerStore((s) => s.source);
   const sourceHref = usePlayerStore((s) => s.sourceHref);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const isBuffering = usePlayerStore((s) => s.isBuffering);
   const positionSec = usePlayerStore((s) => s.positionSec);
   const durationSec = usePlayerStore((s) => s.durationSec);
   const shuffle = usePlayerStore((s) => s.shuffle);
@@ -311,12 +313,16 @@ export default function PlayerScreen() {
               accessibilityLabel={isPlaying ? t('Pause') : t('Play')}
               onPress={toggle}
             >
-              <Ionicons
-                name={isPlaying ? 'pause' : 'play'}
-                size={34}
-                color="#101010"
-                style={!isPlaying && { marginLeft: 3 }}
-              />
+              {isBuffering ? (
+                <ActivityIndicator size="small" color="#101010" />
+              ) : (
+                <Ionicons
+                  name={isPlaying ? 'pause' : 'play'}
+                  size={34}
+                  color="#101010"
+                  style={!isPlaying && { marginLeft: 3 }}
+                />
+              )}
             </Pressable>
             <Pressable
               hitSlop={10}

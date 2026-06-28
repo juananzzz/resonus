@@ -128,6 +128,7 @@ async function loadIndex(index: number, autoplay: boolean) {
       positionSec: 0,
       durationSec: song.duration ?? 0,
       isPlaying: autoplay,
+      isBuffering: autoplay,
     });
     if (autoplay) p.play();
     applyLockScreen(song);
@@ -156,10 +157,16 @@ function nextIndex(manual: boolean): number | null {
 /** Listener de estado de expo-audio: progreso, play/pausa y fin de pista. */
 function onStatus(status: AudioStatus) {
   const prev = usePlayerStore.getState();
+  // Bufferea si queremos reproducir pero el audio aún no fluye (carga inicial,
+  // rebuffer en streaming, seek…). Si está en pausa, no es buffering.
+  const intendPlay = status.playing || prev.isPlaying;
+  const buffering =
+    intendPlay && !status.didJustFinish && (status.isBuffering || !status.isLoaded);
   usePlayerStore.setState({
     positionSec: status.currentTime ?? 0,
     durationSec: status.duration || prev.durationSec,
     isPlaying: status.playing,
+    isBuffering: buffering,
   });
   // Sincronización de la cola con el servidor.
   if (status.playing) startPeriodicSync();
@@ -222,6 +229,8 @@ interface PlayerState {
   queue: Song[];
   index: number;
   isPlaying: boolean;
+  /** El audio está cargando/bufferando y aún no suena. */
+  isBuffering: boolean;
   positionSec: number;
   durationSec: number;
   volume: number;
@@ -267,6 +276,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   queue: [],
   index: 0,
   isPlaying: false,
+  isBuffering: false,
   positionSec: 0,
   durationSec: 0,
   volume: 1,
@@ -497,6 +507,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       queue: [],
       index: 0,
       isPlaying: false,
+      isBuffering: false,
       positionSec: 0,
       durationSec: 0,
       shuffle: false,

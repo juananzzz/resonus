@@ -5,7 +5,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolation,
@@ -34,6 +34,7 @@ export function MiniPlayer() {
   const router = useRouter();
   const song = usePlayerStore(currentSong);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const isBuffering = usePlayerStore((s) => s.isBuffering);
   const positionSec = usePlayerStore((s) => s.positionSec);
   const durationSec = usePlayerStore((s) => s.durationSec);
   const toggle = usePlayerStore((s) => s.toggle);
@@ -109,11 +110,15 @@ export function MiniPlayer() {
           toggle();
         }}
       >
-        <Ionicons
-          name={isPlaying ? 'pause' : 'play'}
-          size={28}
-          color={colors.text}
-        />
+        {isBuffering ? (
+          <ActivityIndicator size="small" color={colors.text} style={styles.spinner} />
+        ) : (
+          <Ionicons
+            name={isPlaying ? 'pause' : 'play'}
+            size={28}
+            color={colors.text}
+          />
+        )}
       </Pressable>
 
           <View style={styles.progressTrack} pointerEvents="none">
@@ -145,6 +150,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
   },
   progressFill: { height: 2, backgroundColor: colors.text },
+  spinner: { width: 28, height: 28 },
   info: {
     flex: 1,
   },
