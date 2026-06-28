@@ -29,7 +29,6 @@ Resonus connects to **Navidrome** or any **OpenSubsonic**-compatible server (Sub
   <img src="./assets/screenshots/Screenshot_20260627-190536.png" width="180" />
   <img src="./assets/screenshots/Screenshot_20260627-192556.png" width="180" />
   <img src="./assets/screenshots/Screenshot_20260627-225448.png" width="180" />
-  <img src="./assets/screenshots/Screenshot_20260627-225500.png" width="180" />
   <img src="./assets/screenshots/Screenshot_20260627-225506.png" width="180" />
   <img src="./assets/screenshots/Screenshot_20260627-230345.png" width="180" />
 </p>
