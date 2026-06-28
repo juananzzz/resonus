@@ -33,13 +33,10 @@ Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/rele
 ## Screenshots
 
 <p align="center">
-  <img src="./assets/screenshots/Screenshot_20260627-190433.png" width="180" />
-  <img src="./assets/screenshots/Screenshot_20260627-190527.png" width="180" />
-  <img src="./assets/screenshots/Screenshot_20260627-190536.png" width="180" />
-  <img src="./assets/screenshots/Screenshot_20260627-192556.png" width="180" />
-  <img src="./assets/screenshots/Screenshot_20260627-225448.png" width="180" />
-  <img src="./assets/screenshots/Screenshot_20260627-225506.png" width="180" />
-  <img src="./assets/screenshots/Screenshot_20260627-230345.png" width="180" />
+  <img src="./assets/screenshots/1.png" width="180" />
+  <img src="./assets/screenshots/2.png" width="180" />
+  <img src="./assets/screenshots/3.png" width="180" />
+  <img src="./assets/screenshots/4.png" width="180" />
 </p>
 
 ## Roadmap
