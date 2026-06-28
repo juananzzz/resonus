@@ -17,6 +17,10 @@ Resonus connects to **Navidrome** or any **OpenSubsonic**-compatible server (Sub
   <a href="https://discord.gg/hpDfszr8r"><img src="https://img.shields.io/badge/discord-join-%235865F2?logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
+## Download
+
+Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/releases/latest) page. Download the `.apk` file and install it on your Android device — no Play Store needed.
+
 ## Features
 
 - **Navidrome / OpenSubsonic** — multi-profile login
