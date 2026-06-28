@@ -244,6 +244,7 @@ export function SongMenuSheet() {
               label={t('Play next')}
               onPress={() => {
                 playNext(song);
+                toast(t('Playing next'));
                 close();
               }}
             />
@@ -252,6 +253,7 @@ export function SongMenuSheet() {
               label={t('Add to queue')}
               onPress={() => {
                 addToQueue(song);
+                toast(t('Added to queue'));
                 close();
               }}
             />
