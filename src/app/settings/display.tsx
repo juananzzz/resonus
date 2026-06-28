@@ -1,14 +1,14 @@
 /** Ajustes › Pantalla: idioma de la interfaz y calidad de audio. */
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { SettingsPage, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useSettings, AUDIO_QUALITY_OPTIONS, type Language } from '@/store/settings';
+import { colors, fontSize, radius, spacing } from '@/theme';
 
-const LANGUAGES: { value: Language; label: string }[] = [
-  { value: 'es', label: 'Español' },
-  { value: 'en', label: 'English' },
-];
+const LANG_LABEL: Record<Language, string> = { es: 'Español', en: 'English' };
 
 const LIST_STYLES: { value: boolean; label: string }[] = [
   { value: true, label: 'With artwork' },
@@ -16,9 +16,9 @@ const LIST_STYLES: { value: boolean; label: string }[] = [
 ];
 
 export default function DisplaySettings() {
+  const router = useRouter();
   const t = useT();
   const language = useSettings((s) => s.language);
-  const setLanguage = useSettings((s) => s.setLanguage);
   const showAudioQuality = useSettings((s) => s.showAudioQuality);
   const setShowAudioQuality = useSettings((s) => s.setShowAudioQuality);
   const showListArtwork = useSettings((s) => s.showListArtwork);
@@ -28,22 +28,23 @@ export default function DisplaySettings() {
     <SettingsPage title={t('Display')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <Text style={settingsStyles.sectionTitle}>{t('Language')}</Text>
-        <View style={settingsStyles.chips}>
-          {LANGUAGES.map((opt) => {
-            const active = opt.value === language;
-            return (
-              <Pressable
-                key={opt.value}
-                style={[settingsStyles.chip, active && settingsStyles.chipActive]}
-                onPress={() => setLanguage(opt.value)}
-              >
-                <Text style={[settingsStyles.chipText, active && settingsStyles.chipTextActive]}>
-                  {opt.label}
-                </Text>
-              </Pressable>
-            );
+        <Pressable
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.md,
+            backgroundColor: colors.surface,
+            borderRadius: radius.md,
+            padding: spacing.lg,
+            opacity: pressed ? 0.6 : 1,
           })}
-        </View>
+          onPress={() => router.push('/settings/language')}
+        >
+          <Text style={{ color: colors.text, fontSize: fontSize.md, flex: 1 }}>
+            {LANG_LABEL[language]}
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </Pressable>
 
         <Text style={settingsStyles.sectionTitle}>{t('Format & quality')}</Text>
         <Text style={settingsStyles.hint}>

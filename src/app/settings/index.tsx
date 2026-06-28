@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
+import { useSettings } from '@/store/settings';
 import { colors, fontSize, spacing } from '@/theme';
 
 type Section = {
@@ -15,6 +16,8 @@ type Section = {
   title: string;
   subtitle: string;
 };
+
+const LANG_LABEL: Record<string, string> = { es: 'Español', en: 'English' };
 
 const SECTIONS: Section[] = [
   { key: 'account', icon: 'person-circle-outline', title: 'Account', subtitle: 'Server · Sign out' },
@@ -32,6 +35,7 @@ const SECTIONS: Section[] = [
 export default function SettingsScreen() {
   const router = useRouter();
   const t = useT();
+  const lang = useSettings((s) => s.language);
   const logout = useAuthStore((s) => s.logout);
   const offline = useAuthStore((s) => s.offline);
 
@@ -57,7 +61,7 @@ export default function SettingsScreen() {
             <View style={styles.rowInfo}>
               <Text style={styles.rowTitle}>{t(s.title)}</Text>
               <Text style={styles.rowSubtitle} numberOfLines={1}>
-                {t(s.subtitle)}
+                {s.key === 'display' ? `${t(s.subtitle)} · ${LANG_LABEL[lang]}` : t(s.subtitle)}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
