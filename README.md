@@ -21,6 +21,19 @@ Resonus connects to **Navidrome** or any **OpenSubsonic**-compatible server (Sub
 - **Android Auto**
 - **Queue sync across devices**
 
+## Screenshots
+
+<p align="center">
+  <img src="./assets/screenshots/Screenshot_20260627-190433.png" width="180" />
+  <img src="./assets/screenshots/Screenshot_20260627-190527.png" width="180" />
+  <img src="./assets/screenshots/Screenshot_20260627-190536.png" width="180" />
+  <img src="./assets/screenshots/Screenshot_20260627-192556.png" width="180" />
+  <img src="./assets/screenshots/Screenshot_20260627-225448.png" width="180" />
+  <img src="./assets/screenshots/Screenshot_20260627-225500.png" width="180" />
+  <img src="./assets/screenshots/Screenshot_20260627-225506.png" width="180" />
+  <img src="./assets/screenshots/Screenshot_20260627-230345.png" width="180" />
+</p>
+
 ## Roadmap
 
 - [ ] Offline downloads (server → device)
