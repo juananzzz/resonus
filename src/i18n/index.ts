@@ -8,7 +8,7 @@
  *   1. Añádelo a `Language` en src/store/settings.ts (y a su `hydrate`).
  *   2. Crea `locales/fr.json` (clave inglesa → traducción) e impórtalo en `dictionaries`.
  *   3. Añade sus formas a `PLURALS` (singular/plural).
- *   4. Añade su opción a `LANGUAGES` en src/app/settings/display.tsx.
+ *   4. Añade su opción a `LANGUAGES` en src/app/settings/language.tsx.
  * El inglés no necesita diccionario (es la clave); lo no traducido cae a él.
  */
 import { useCallback } from 'react';

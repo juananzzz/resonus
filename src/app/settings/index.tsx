@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
-import { useSettings } from '@/store/settings';
+import { LANGUAGE_NAMES, useSettings } from '@/store/settings';
 import { colors, fontSize, spacing } from '@/theme';
 
 type Section = {
@@ -16,8 +16,6 @@ type Section = {
   title: string;
   subtitle: string;
 };
-
-const LANG_LABEL: Record<string, string> = { es: 'Español', en: 'English' };
 
 const SECTIONS: Section[] = [
   { key: 'account', icon: 'person-circle-outline', title: 'Account', subtitle: 'Server · Sign out' },
@@ -28,8 +26,7 @@ const SECTIONS: Section[] = [
     title: 'Quality & playback',
     subtitle: 'Quality · Crossfade · Equalizer',
   },
-  { key: 'display', icon: 'phone-portrait-outline', title: 'Display', subtitle: 'Language' },
-  { key: 'personalization', icon: 'color-palette-outline', title: 'Appearance', subtitle: 'Theme · Accent color · Coming soon' },
+  { key: 'personalization', icon: 'color-palette-outline', title: 'Appearance', subtitle: 'Language · Quality · Theme' },
   { key: 'about', icon: 'information-circle-outline', title: 'About', subtitle: 'Version · GitHub' },
 ];
 
@@ -62,7 +59,9 @@ export default function SettingsScreen() {
             <View style={styles.rowInfo}>
               <Text style={styles.rowTitle}>{t(s.title)}</Text>
               <Text style={styles.rowSubtitle} numberOfLines={1}>
-                {s.key === 'display' ? `${t(s.subtitle)} · ${LANG_LABEL[lang]}` : t(s.subtitle)}
+                {s.key === 'personalization'
+                  ? `${LANGUAGE_NAMES[lang]} · ${t('Theme')} · ${t('Song lists')}`
+                  : t(s.subtitle)}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />

@@ -15,6 +15,9 @@ export const BITRATE_OPTIONS = [
 
 export type Language = 'es' | 'en';
 
+/** Nombre de cada idioma en su propio idioma (para los selectores). */
+export const LANGUAGE_NAMES: Record<Language, string> = { es: 'Español', en: 'English' };
+
 export type AudioQualityMode = 'off' | 'player' | 'everywhere';
 
 export const AUDIO_QUALITY_OPTIONS: { label: string; value: AudioQualityMode }[] = [
