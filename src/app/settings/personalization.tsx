@@ -1,4 +1,4 @@
-/** Personalization placeholder — theme and accent color coming soon. */
+/** Appearance placeholder — theme and accent color coming soon. */
 import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, Text, View } from 'react-native';
 
@@ -6,11 +6,11 @@ import { SettingsPage, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { colors, fontSize, radius, spacing } from '@/theme';
 
-export default function PersonalizationSettings() {
+export default function AppearanceSettings() {
   const t = useT();
 
   return (
-    <SettingsPage title={t('Personalization')}>
+    <SettingsPage title={t('Appearance')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <View style={{
           backgroundColor: colors.surface,
@@ -30,7 +30,7 @@ export default function PersonalizationSettings() {
             borderRadius: radius.pill,
           }}>
             <Text style={{ color: '#000', fontSize: fontSize.sm, fontWeight: '600' }}>
-              {t('Coming soon')}
+              {t('Coming soon 🚧')}
             </Text>
           </View>
         </View>

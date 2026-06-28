@@ -29,7 +29,7 @@ const SECTIONS: Section[] = [
     subtitle: 'Quality · Crossfade · Equalizer',
   },
   { key: 'display', icon: 'phone-portrait-outline', title: 'Display', subtitle: 'Language' },
-  { key: 'personalization', icon: 'color-palette-outline', title: 'Personalization', subtitle: 'Theme · Accent color · Coming soon' },
+  { key: 'personalization', icon: 'color-palette-outline', title: 'Appearance', subtitle: 'Theme · Accent color · Coming soon' },
   { key: 'about', icon: 'information-circle-outline', title: 'About', subtitle: 'Version · GitHub' },
 ];
 
