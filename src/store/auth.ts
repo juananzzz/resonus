@@ -38,6 +38,11 @@ function same(a: Profile, b: Profile): boolean {
   return false;
 }
 
+function sameSource(a: OfflineSource, b: OfflineSource): boolean {
+  if (a.mode === 'folder' && b.mode === 'folder') return a.uri === b.uri;
+  return a.mode === b.mode;
+}
+
 function offlineLabel(source: OfflineSource): string {
   if (source.mode === 'folder') {
     const decoded = decodeURIComponent(source.uri);
@@ -152,8 +157,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await setItem(OFFLINE_SOURCE_KEY, JSON.stringify(source));
       const name = offlineLabel(source);
       const prof: OfflineProfile = { _type: 'offline', name, source };
+      // Si ya estábamos en un perfil local y solo cambiamos el origen, hay que
+      // actualizar ese perfil en vez de dejar el viejo y crear uno nuevo.
+      const prevSource = get().offlineSource;
       const profiles = [
-        ...get().profiles.filter((p) => !same(p, prof)),
+        ...get().profiles.filter((p) => {
+          if (same(p, prof)) return false;
+          if (
+            p._type === 'offline' &&
+            prevSource &&
+            sameSource(p.source, prevSource)
+          ) {
+            return false;
+          }
+          return true;
+        }),
         prof,
       ];
       await setItem(PROFILES_KEY, JSON.stringify(profiles));
