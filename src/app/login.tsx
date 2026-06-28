@@ -225,7 +225,7 @@ export default function LoginScreen() {
                   {overflow ? (
                     <Pressable style={styles.showMore} onPress={() => setShowAll(true)}>
                       <Text style={styles.showMoreText}>
-                        {t('Show all')} ({profiles.length})
+                        {t('+{n} more', { n: profiles.length - MAX_VISIBLE })}
                       </Text>
                       <Ionicons name="chevron-down" size={18} color={colors.accent} />
                     </Pressable>
