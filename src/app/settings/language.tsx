@@ -8,8 +8,8 @@ import { useSettings, type Language } from '@/store/settings';
 import { colors, fontSize, radius, spacing } from '@/theme';
 
 const LANGUAGES: { value: Language; label: string }[] = [
-  { value: 'es', label: 'Español' },
   { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español' },
 ];
 
 export default function LanguageSettings() {
@@ -21,7 +21,7 @@ export default function LanguageSettings() {
     <SettingsPage title={t('Language')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <View style={{ backgroundColor: colors.surface, borderRadius: radius.md, overflow: 'hidden' }}>
-          {LANGUAGES.map((opt, i) => {
+          {[...LANGUAGES].sort((a, b) => a.label.localeCompare(b.label)).map((opt, i) => {
             const active = opt.value === language;
             return (
               <Pressable
