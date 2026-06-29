@@ -41,7 +41,7 @@ export default function PlaylistScreen() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['playlist', id],
     queryFn: () => getPlaylist(id),
-    enabled: !!auth && !!id,
+    enabled: (!!auth || offline) && !!id,
   });
 
   const { songs: displaySongs, indices: playlistIndices, openSort, sortSheet } = useSongSort(
@@ -50,7 +50,7 @@ export default function PlaylistScreen() {
 
   async function onSaveEdit(changes: PlaylistEdit) {
     setEditing(false);
-    if (!auth) return;
+    if (!auth && !offline) return;
     try {
       await updatePlaylist(id, changes);
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
@@ -63,7 +63,7 @@ export default function PlaylistScreen() {
 
   async function onDelete() {
     setDeleting(false);
-    if (!auth) return;
+    if (!auth && !offline) return;
     try {
       await deletePlaylist(id);
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
@@ -148,6 +148,7 @@ export default function PlaylistScreen() {
           public: data.playlist.public ?? false,
         }}
         coverUri={coverArtUrl(data.playlist.coverArt ?? data.playlist.id, 500)}
+        hidePublic={offline}
         onCancel={() => setEditing(false)}
         onSave={onSaveEdit}
       />

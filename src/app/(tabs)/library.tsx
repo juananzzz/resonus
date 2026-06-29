@@ -23,6 +23,7 @@ import {
 } from '@/api/data';
 import { Cover } from '@/components/Cover';
 import { Dialog } from '@/components/Dialog';
+import { EmptyState } from '@/components/EmptyState';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { albumsLabel, songsLabel, useT } from '@/i18n';
@@ -64,7 +65,7 @@ function FavoritesEntry() {
   );
 }
 
-function PlaylistsTab() {
+function PlaylistsTab({ onNew }: { onNew?: () => void }) {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
@@ -85,6 +86,14 @@ function PlaylistsTab() {
         <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.accent} />
       }
       ListHeaderComponent={<FavoritesEntry />}
+      ListEmptyComponent={
+        <EmptyState
+          icon="list-outline"
+          title={t('No playlists yet')}
+          subtitle={t('Create your first playlist to get started.')}
+          action={onNew ? { label: t('New playlist'), onPress: onNew } : undefined}
+        />
+      }
       renderItem={({ item }: { item: Playlist }) => (
         <Link href={`/playlist/${item.id}`} asChild>
           <Pressable style={styles.row}>
@@ -135,7 +144,13 @@ function ArtistsTab() {
           </Pressable>
         </Link>
       )}
-      ListEmptyComponent={<Empty text={t('Star artists to see them here.')} />}
+      ListEmptyComponent={
+        <EmptyState
+          icon="people-outline"
+          title={t('No favorite artists')}
+          subtitle={t('Star artists to see them here.')}
+        />
+      }
     />
   );
 }
@@ -174,17 +189,19 @@ function AlbumsTab() {
           </Pressable>
         </Link>
       )}
-      ListEmptyComponent={<Empty text={t('Star albums to see them here.')} />}
+      ListEmptyComponent={
+        <EmptyState
+          icon="albums-outline"
+          title={t('No favorite albums')}
+          subtitle={t('Star albums to see them here.')}
+        />
+      }
     />
   );
 }
 
 function Loader() {
   return <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />;
-}
-
-function Empty({ text }: { text: string }) {
-  return <Text style={styles.empty}>{text}</Text>;
 }
 
 export default function LibraryScreen() {
@@ -200,7 +217,7 @@ export default function LibraryScreen() {
 
   async function onCreate(name: string) {
     setCreating(false);
-    if (!auth) return;
+    if (!auth && !offline) return;
     try {
       await createPlaylist(name);
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
@@ -215,16 +232,14 @@ export default function LibraryScreen() {
       <View style={styles.header}>
         <Text style={styles.heading}>{t('Library')}</Text>
         <View style={styles.headerActions}>
-          {!offline ? (
-            <Pressable
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={t('New playlist')}
-              onPress={() => setCreating(true)}
-            >
-              <Ionicons name="add" size={28} color={colors.text} />
-            </Pressable>
-          ) : null}
+          <Pressable
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t('New playlist')}
+            onPress={() => setCreating(true)}
+          >
+            <Ionicons name="add" size={28} color={colors.text} />
+          </Pressable>
         </View>
       </View>
 
@@ -256,7 +271,7 @@ export default function LibraryScreen() {
 
       <View style={{ flex: 1 }}>
         {segment === 'playlists' ? (
-          <PlaylistsTab />
+          <PlaylistsTab onNew={() => setCreating(true)} />
         ) : segment === 'albums' ? (
           <AlbumsTab />
         ) : (
@@ -303,10 +318,4 @@ const styles = StyleSheet.create({
   rowInfo: { flex: 1 },
   rowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
   rowSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
-  empty: {
-    color: colors.textMuted,
-    fontSize: fontSize.md,
-    textAlign: 'center',
-    marginTop: spacing.xl,
-  },
 });

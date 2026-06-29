@@ -28,11 +28,13 @@ interface Props {
   visible: boolean;
   initial: PlaylistEdit;
   coverUri?: string;
+  /** Oculta el interruptor de lista pública (p. ej. en modo local, sin servidor). */
+  hidePublic?: boolean;
   onCancel: () => void;
   onSave: (changes: PlaylistEdit) => void;
 }
 
-export function PlaylistEditSheet({ visible, initial, coverUri, onCancel, onSave }: Props) {
+export function PlaylistEditSheet({ visible, initial, coverUri, hidePublic, onCancel, onSave }: Props) {
   const t = useT();
   const [name, setName] = useState(initial.name);
   const [comment, setComment] = useState(initial.comment);
@@ -101,18 +103,20 @@ export function PlaylistEditSheet({ visible, initial, coverUri, onCancel, onSave
               textAlignVertical="top"
             />
 
-            <Pressable style={styles.switchRow} onPress={() => setIsPublic((v) => !v)}>
-              <View style={styles.switchInfo}>
-                <Text style={styles.switchTitle}>{t('Public playlist')}</Text>
-                <Text style={styles.switchSub}>{t('Visible to other users on the server')}</Text>
-              </View>
-              <Switch
-                value={isPublic}
-                onValueChange={setIsPublic}
-                trackColor={{ true: colors.accent, false: colors.surfaceHighlight }}
-                thumbColor="#fff"
-              />
-            </Pressable>
+            {hidePublic ? null : (
+              <Pressable style={styles.switchRow} onPress={() => setIsPublic((v) => !v)}>
+                <View style={styles.switchInfo}>
+                  <Text style={styles.switchTitle}>{t('Public playlist')}</Text>
+                  <Text style={styles.switchSub}>{t('Visible to other users on the server')}</Text>
+                </View>
+                <Switch
+                  value={isPublic}
+                  onValueChange={setIsPublic}
+                  trackColor={{ true: colors.accent, false: colors.surfaceHighlight }}
+                  thumbColor="#fff"
+                />
+              </Pressable>
+            )}
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>

@@ -229,8 +229,116 @@ export async function getTopSongs(artist: string, count = 10): Promise<Song[]> {
   return c.songs.filter((s) => s.artist === artist).slice(0, count);
 }
 
-export function getPlaylists(): Playlist[] {
-  return [];
+// ---- Listas de reproducción locales (modo sin conexión) -------------------
+// Se guardan como ids de canción; se resuelven contra el catálogo al leerlas,
+// así que canciones que ya no existan en el origen actual se omiten.
+const PLAYLISTS_KEY = 'resonus.localPlaylists';
+
+interface LocalPlaylistRec {
+  id: string;
+  name: string;
+  comment?: string;
+  songIds: string[];
+  createdAt: number;
+}
+
+let playlistCache: LocalPlaylistRec[] | null = null;
+
+async function loadPlaylists(): Promise<LocalPlaylistRec[]> {
+  if (playlistCache) return playlistCache;
+  try {
+    const raw = await getItem(PLAYLISTS_KEY);
+    playlistCache = raw ? (JSON.parse(raw) as LocalPlaylistRec[]) : [];
+  } catch {
+    playlistCache = [];
+  }
+  return playlistCache;
+}
+
+async function savePlaylists(list: LocalPlaylistRec[]) {
+  playlistCache = list;
+  await setItem(PLAYLISTS_KEY, JSON.stringify(list));
+}
+
+function newPlaylistId(): string {
+  return `lp_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function toPlaylist(rec: LocalPlaylistRec, songs: Song[]): Playlist {
+  const cover = songs.find((s) => s.coverArt || s.albumId);
+  return {
+    id: rec.id,
+    name: rec.name,
+    comment: rec.comment,
+    songCount: songs.length,
+    coverArt: cover?.coverArt ?? cover?.albumId,
+  };
+}
+
+/** Lista de listas locales (orden por creación, más recientes primero). */
+export async function getPlaylists(): Promise<Playlist[]> {
+  const [list, c] = await Promise.all([loadPlaylists(), ensureCatalog()]);
+  const byId = new Map((c?.songs ?? []).map((s) => [s.id, s]));
+  return list
+    .slice()
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map((rec) => toPlaylist(rec, rec.songIds.map((id) => byId.get(id)).filter(Boolean) as Song[]));
+}
+
+export async function getPlaylist(id: string): Promise<{ playlist: Playlist; songs: Song[] }> {
+  const [list, c] = await Promise.all([loadPlaylists(), ensureCatalog()]);
+  const rec = list.find((p) => p.id === id);
+  const byId = new Map((c?.songs ?? []).map((s) => [s.id, s]));
+  const songs = (rec?.songIds ?? []).map((sid) => byId.get(sid)).filter(Boolean) as Song[];
+  return {
+    playlist: rec ? toPlaylist(rec, songs) : { id, name: id, songCount: 0 },
+    songs,
+  };
+}
+
+export async function createPlaylist(name: string): Promise<void> {
+  const list = await loadPlaylists();
+  await savePlaylists([
+    { id: newPlaylistId(), name, songIds: [], createdAt: Date.now() },
+    ...list,
+  ]);
+}
+
+export async function addToPlaylist(playlistId: string, songId: string): Promise<void> {
+  const list = await loadPlaylists();
+  await savePlaylists(
+    list.map((p) => (p.id === playlistId ? { ...p, songIds: [...p.songIds, songId] } : p)),
+  );
+}
+
+export async function removeFromPlaylist(id: string, index: number): Promise<void> {
+  const list = await loadPlaylists();
+  await savePlaylists(
+    list.map((p) => (p.id === id ? { ...p, songIds: p.songIds.filter((_, i) => i !== index) } : p)),
+  );
+}
+
+export async function deletePlaylist(id: string): Promise<void> {
+  const list = await loadPlaylists();
+  await savePlaylists(list.filter((p) => p.id !== id));
+}
+
+export async function updatePlaylist(
+  id: string,
+  changes: { name?: string; comment?: string; public?: boolean },
+): Promise<void> {
+  const list = await loadPlaylists();
+  await savePlaylists(
+    list.map((p) =>
+      p.id === id
+        ? {
+            ...p,
+            ...(changes.name !== undefined ? { name: changes.name } : {}),
+            ...(changes.comment !== undefined ? { comment: changes.comment } : {}),
+          }
+        : p,
+    ),
+  );
 }
 
 export async function getStarred(): Promise<Starred> {

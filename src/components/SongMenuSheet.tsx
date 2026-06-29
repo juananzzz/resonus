@@ -77,7 +77,7 @@ export function SongMenuSheet() {
   const { data: playlists, isLoading: loadingPlaylists } = useQuery({
     queryKey: ['playlists'],
     queryFn: () => getPlaylists(),
-    enabled: !!auth && mode === 'playlists',
+    enabled: (!!auth || offline) && mode === 'playlists',
   });
 
   if (!song) return null;
@@ -88,7 +88,7 @@ export function SongMenuSheet() {
   };
 
   async function addTo(playlistId: string, playlistName: string) {
-    if (!auth || !song) return;
+    if ((!auth && !offline) || !song) return;
     close();
     try {
       await addToPlaylist(playlistId, song.id);
@@ -105,7 +105,7 @@ export function SongMenuSheet() {
   };
 
   async function removeFromList() {
-    if (!auth || !context) return;
+    if ((!auth && !offline) || !context) return;
     close();
     try {
       await removeFromPlaylist(context.playlistId, context.index);
@@ -202,14 +202,12 @@ export function SongMenuSheet() {
           </View>
         ) : (
           <>
-            {!offline ? (
-              <Action
-                icon="add-circle-outline"
-                label={t('Add to a playlist')}
-                onPress={() => setMode('playlists')}
-              />
-            ) : null}
-            {!offline && context ? (
+            <Action
+              icon="add-circle-outline"
+              label={t('Add to a playlist')}
+              onPress={() => setMode('playlists')}
+            />
+            {context ? (
               <Action
                 icon="remove-circle-outline"
                 label={t('Remove from playlist')}
