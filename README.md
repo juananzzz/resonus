@@ -17,7 +17,7 @@
 
 ## Download
 
-Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/releases/latest) page. Download the `.apk` file and install it on your Android device — no Play Store needed.
+Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/releases/latest) page and install it on your Android device.
 
 ## Features
 
