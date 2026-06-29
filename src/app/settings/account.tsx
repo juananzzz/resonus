@@ -39,7 +39,7 @@ export default function AccountSettings() {
           <>
             <Text style={settingsStyles.sectionTitle}>{t('Server')}</Text>
             <View style={settingsStyles.card}>
-              <Field label="URL" value={auth?.serverUrl ?? '—'} />
+              <Field label={t('URL')} value={auth?.serverUrl ?? '—'} />
               <View style={settingsStyles.divider} />
               <Field label={t('Username')} value={auth?.username ?? '—'} />
             </View>
