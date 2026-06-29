@@ -33,6 +33,8 @@ interface Props {
   coverUri?: string;
   /** Carátula personalizada (p. ej. el arte de Favoritos); sustituye a coverUri. */
   renderCover?: (size: number) => ReactNode;
+  /** Oculta la carátula de la cabecera y recupera ese espacio (p. ej. Favoritos). */
+  hideCover?: boolean;
   /** Color del degradado/barra si no hay carátula con color dominante. */
   accentColor?: string;
   songs: Song[];
@@ -63,6 +65,7 @@ export function TrackListView({
   meta,
   coverUri,
   renderCover,
+  hideCover,
   accentColor,
   songs,
   currentId,
@@ -86,19 +89,23 @@ export function TrackListView({
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const gradientH = insets.top + TOPBAR_H + COVER + 220;
+  // Sin carátula la cabecera es más corta: el degradado y el colapso de la
+  // barra se ajustan a una distancia menor para que la transición cuadre.
+  const cover = hideCover ? 0 : COVER;
+  const collapse = hideCover ? 120 : COVER;
+  const gradientH = insets.top + TOPBAR_H + cover + 220;
   const coverOpacity = scrollY.interpolate({
-    inputRange: [0, COVER * 0.7],
+    inputRange: [0, collapse * 0.7],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
   const barContentOpacity = scrollY.interpolate({
-    inputRange: [COVER * 0.5, COVER * 0.85],
+    inputRange: [collapse * 0.5, collapse * 0.85],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
   const barBgOpacity = scrollY.interpolate({
-    inputRange: [0, COVER * 0.85],
+    inputRange: [0, collapse * 0.85],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
@@ -139,9 +146,11 @@ export function TrackListView({
         })}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Animated.View style={[styles.coverCenter, { opacity: coverOpacity }]}>
-              {renderCover ? renderCover(COVER) : <Cover uri={coverUri} size={COVER} />}
-            </Animated.View>
+            {hideCover ? null : (
+              <Animated.View style={[styles.coverCenter, { opacity: coverOpacity }]}>
+                {renderCover ? renderCover(COVER) : <Cover uri={coverUri} size={COVER} />}
+              </Animated.View>
+            )}
             <Text style={styles.title} numberOfLines={2}>
               {title}
             </Text>

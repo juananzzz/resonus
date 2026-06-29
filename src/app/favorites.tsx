@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { getStarred } from '@/api/data';
-import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { TrackListView } from '@/components/TrackListView';
 import { useSongSort } from '@/hooks/useSongSort';
@@ -64,7 +63,7 @@ export default function FavoritesScreen() {
       <TrackListView
         title={t('Favorites')}
         meta={metaParts.join(' · ')}
-        renderCover={(size) => <FavoritesArt size={size} />}
+        hideCover
         accentColor={colors.accent}
         songs={displaySongs}
         currentId={playing?.id}
