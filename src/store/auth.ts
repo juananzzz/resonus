@@ -116,7 +116,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       _type: 'server',
     };
     await ping(auth);
-    const profiles = [...get().profiles.filter((p) => !same(p, auth)), auth];
+    // El perfil recién usado va el primero (orden por último uso).
+    const profiles = [auth, ...get().profiles.filter((p) => !same(p, auth))];
     await setItem(ACTIVE_KEY, JSON.stringify(auth));
     await setItem(PROFILES_KEY, JSON.stringify(profiles));
     await deleteItem(OFFLINE_KEY);
@@ -127,17 +128,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   switchProfile: async (profile) => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     await require('./player').usePlayerStore.getState().reset();
+    // Mueve el perfil elegido al principio (orden por último uso).
+    const reordered = [profile, ...get().profiles.filter((p) => !same(p, profile))];
     if (profile._type === 'offline') {
       await setItem(OFFLINE_KEY, '1');
       await setItem(OFFLINE_SOURCE_KEY, JSON.stringify(profile.source));
+      await setItem(PROFILES_KEY, JSON.stringify(reordered));
       queryClient.clear();
-      set({ auth: null, offline: true, offlineSource: profile.source });
+      set({ auth: null, offline: true, offlineSource: profile.source, profiles: reordered });
       return;
     }
     await ping(profile);
     await setItem(ACTIVE_KEY, JSON.stringify(profile));
+    await setItem(PROFILES_KEY, JSON.stringify(reordered));
     queryClient.clear();
-    set({ auth: profile });
+    set({ auth: profile, profiles: reordered });
   },
 
   removeProfile: async (profile) => {
@@ -161,6 +166,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // actualizar ese perfil en vez de dejar el viejo y crear uno nuevo.
       const prevSource = get().offlineSource;
       const profiles = [
+        prof,
         ...get().profiles.filter((p) => {
           if (same(p, prof)) return false;
           if (
@@ -172,7 +178,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
           return true;
         }),
-        prof,
       ];
       await setItem(PROFILES_KEY, JSON.stringify(profiles));
       clearLocalCatalog();

@@ -108,7 +108,7 @@ function ProfileRow({ profile, onTap, onRemove }: {
   );
 }
 
-const MAX_VISIBLE = 3;
+const MAX_VISIBLE = 5;
 
 export default function LoginScreen() {
   const login = useAuthStore((s) => s.login);
@@ -224,9 +224,7 @@ export default function LoginScreen() {
                   ))}
                   {overflow ? (
                     <Pressable style={styles.showMore} onPress={() => setShowAll(true)}>
-                      <Text style={styles.showMoreText}>
-                        {t('+{n} more', { n: profiles.length - MAX_VISIBLE })}
-                      </Text>
+                      <Text style={styles.showMoreText}>{t('Show all')}</Text>
                       <Ionicons name="chevron-down" size={18} color={colors.accent} />
                     </Pressable>
                   ) : null}
