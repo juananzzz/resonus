@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getGenres, type Genre } from '@/api/subsonic';
+import { EmptyState } from '@/components/EmptyState';
 import { GenreCard } from '@/components/GenreCard';
 import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
@@ -81,7 +82,7 @@ export default function GenresScreen() {
           columnWrapperStyle={{ gap: spacing.sm }}
           contentContainerStyle={styles.list}
           renderItem={({ item }: { item: Genre }) => <GenreCard name={item.value} />}
-          ListEmptyComponent={<Text style={styles.empty}>{t('No genres.')}</Text>}
+          ListEmptyComponent={<EmptyState icon="pricetags-outline" title={t('No genres.')} />}
         />
       )}
     </SafeAreaView>
@@ -114,5 +115,4 @@ const styles = StyleSheet.create({
     paddingBottom: SCREEN_BOTTOM_PADDING,
     gap: spacing.sm,
   },
-  empty: { color: colors.textMuted, fontSize: fontSize.md, textAlign: 'center', marginTop: spacing.xl },
 });

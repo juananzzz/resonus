@@ -19,6 +19,7 @@ import { coverArtUrl, search } from '@/api/data';
 import { getGenres } from '@/api/subsonic';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
+import { EmptyState } from '@/components/EmptyState';
 import { GenreCard } from '@/components/GenreCard';
 import { Message } from '@/components/Message';
 import { TrackRow } from '@/components/TrackRow';
@@ -154,6 +155,16 @@ export default function SearchScreen() {
           <Message
             text={t("Couldn't reach the server. Check your connection.")}
             onRetry={() => refetch()}
+          />
+        ) : data &&
+          debouncedQuery.length > 1 &&
+          data.artists.length === 0 &&
+          data.albums.length === 0 &&
+          data.songs.length === 0 ? (
+          <EmptyState
+            icon="search-outline"
+            title={t('No results')}
+            subtitle={t('No results for “{q}”', { q: debouncedQuery })}
           />
         ) : null}
 

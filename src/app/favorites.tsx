@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { getStarred } from '@/api/data';
+import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { TrackListView } from '@/components/TrackListView';
 import { useSongSort } from '@/hooks/useSongSort';
@@ -49,7 +50,11 @@ export default function FavoritesScreen() {
   if (displaySongs.length === 0 && offline) {
     return (
       <View style={styles.center}>
-        <Message text={t('Tap the heart on songs to see them here.')} />
+        <EmptyState
+          icon="heart-outline"
+          title={t('No favorites yet')}
+          subtitle={t('Tap the heart on songs to see them here.')}
+        />
       </View>
     );
   }

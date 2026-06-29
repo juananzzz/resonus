@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getAlbumsByGenre } from '@/api/subsonic';
 import { AlbumCard } from '@/components/AlbumCard';
+import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
@@ -74,7 +75,7 @@ export default function GenreScreen() {
               <ActivityIndicator style={{ marginVertical: spacing.lg }} color={colors.accent} />
             ) : null
           }
-          ListEmptyComponent={<Text style={styles.empty}>{t('No albums in this genre.')}</Text>}
+          ListEmptyComponent={<EmptyState icon="disc-outline" title={t('No albums in this genre.')} />}
         />
       )}
     </SafeAreaView>
@@ -92,5 +93,4 @@ const styles = StyleSheet.create({
   },
   title: { flex: 1, textAlign: 'center', color: colors.text, fontSize: fontSize.lg, fontWeight: '800' },
   list: { paddingHorizontal: spacing.lg, paddingBottom: SCREEN_BOTTOM_PADDING, gap: GAP },
-  empty: { color: colors.textMuted, fontSize: fontSize.md, textAlign: 'center', marginTop: spacing.xl },
 });

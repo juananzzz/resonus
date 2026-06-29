@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getRadioStations, type RadioStation } from '@/api/subsonic';
+import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
@@ -77,7 +78,7 @@ export default function RadioScreen() {
               <Ionicons name="play-circle" size={28} color={colors.accent} />
             </Pressable>
           )}
-          ListEmptyComponent={<Text style={styles.empty}>{t('No radio stations.')}</Text>}
+          ListEmptyComponent={<EmptyState icon="radio-outline" title={t('No radio stations.')} />}
         />
       )}
     </SafeAreaView>
@@ -106,5 +107,4 @@ const styles = StyleSheet.create({
   },
   rowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
   rowSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
-  empty: { color: colors.textMuted, fontSize: fontSize.md, textAlign: 'center', marginTop: spacing.xl },
 });
