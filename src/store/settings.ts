@@ -60,7 +60,7 @@ function snapshot(get: () => SettingsState) {
 
 export const useSettings = create<SettingsState>((set, get) => ({
   maxBitRate: 0,
-  language: 'es',
+  language: 'en',
   showAudioQuality: 'off',
   showListArtwork: true,
 
