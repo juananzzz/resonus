@@ -1,0 +1,65 @@
+name: Release APK
+
+# Genera el APK firmado y lo publica como borrador de Release al empujar un
+# tag con formato v* (p. ej. v0.1.0-beta). El borrador se revisa y se publica
+# a mano desde GitHub.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prebuild (Android)
+        run: pnpm expo prebuild --clean -p android
+
+      - name: Decode release keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Build release APK
+        env:
+          RESONUS_KEYSTORE_FILE: ${{ runner.temp }}/release.jks
+          RESONUS_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          RESONUS_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          RESONUS_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x android/gradlew
+          cd android && ./gradlew assembleRelease --no-daemon
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk "resonus-${{ github.ref_name }}.apk"
+
+      - name: Publish draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: resonus-${{ github.ref_name }}.apk
+          draft: true
+          generate_release_notes: true
