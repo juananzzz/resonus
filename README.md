@@ -51,6 +51,11 @@ Resonus ships in **English and Spanish**, maintained in the repository
 (`src/i18n/locales/`). English is the source language. Community translations
 for more languages are planned as the project matures.
 
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to
+set up the project, run it on an emulator, and open a pull request.
+
 ## License
 
 [MIT](./LICENSE) © juananzzz
