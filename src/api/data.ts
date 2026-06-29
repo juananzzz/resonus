@@ -108,9 +108,12 @@ export function getPlaylist(id: string): Promise<{ playlist: Subsonic.Playlist; 
   return Subsonic.getPlaylist(auth(), id);
 }
 
-export function renamePlaylist(id: string, name: string): Promise<void> {
+export function updatePlaylist(
+  id: string,
+  changes: { name?: string; comment?: string; public?: boolean },
+): Promise<void> {
   if (isOffline()) return Promise.resolve();
-  return Subsonic.renamePlaylist(auth(), id, name);
+  return Subsonic.updatePlaylist(auth(), id, changes);
 }
 
 export function removeFromPlaylist(id: string, index: number): Promise<void> {

@@ -6,9 +6,10 @@ import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { coverArtUrl, deletePlaylist, getPlaylist, renamePlaylist } from '@/api/data';
+import { coverArtUrl, deletePlaylist, getPlaylist, updatePlaylist } from '@/api/data';
 import { Dialog } from '@/components/Dialog';
 import { Message } from '@/components/Message';
+import { PlaylistEditSheet, type PlaylistEdit } from '@/components/PlaylistEditSheet';
 import { TrackListView } from '@/components/TrackListView';
 import { useSongSort } from '@/hooks/useSongSort';
 import { songsLabel, useT } from '@/i18n';
@@ -34,7 +35,7 @@ export default function PlaylistScreen() {
   const playQueue = usePlayerStore((s) => s.playQueue);
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [renaming, setRenaming] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -47,14 +48,14 @@ export default function PlaylistScreen() {
     data?.songs ?? [],
   );
 
-  async function onRename(name: string) {
-    setRenaming(false);
+  async function onSaveEdit(changes: PlaylistEdit) {
+    setEditing(false);
     if (!auth) return;
     try {
-      await renamePlaylist(id, name);
+      await updatePlaylist(id, changes);
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      toast(t('Playlist renamed'));
+      toast(t('Playlist updated'));
     } catch {
       toast(t("Couldn't complete the action"));
     }
@@ -120,11 +121,11 @@ export default function PlaylistScreen() {
             style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
             onPress={() => {
               setMenuOpen(false);
-              setRenaming(true);
+              setEditing(true);
             }}
           >
             <Ionicons name="create-outline" size={24} color={colors.text} />
-            <Text style={styles.actionText}>{t('Rename')}</Text>
+            <Text style={styles.actionText}>{t('Edit playlist')}</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
@@ -139,13 +140,16 @@ export default function PlaylistScreen() {
         </View>
       </Modal>
 
-      <Dialog
-        visible={renaming}
-        title={t('Rename playlist')}
-        input={{ initialValue: data.playlist.name, placeholder: t('Playlist name') }}
-        confirmLabel={t('Rename')}
-        onCancel={() => setRenaming(false)}
-        onConfirm={onRename}
+      <PlaylistEditSheet
+        visible={editing}
+        initial={{
+          name: data.playlist.name,
+          comment: data.playlist.comment ?? '',
+          public: data.playlist.public ?? false,
+        }}
+        coverUri={coverArtUrl(data.playlist.coverArt ?? data.playlist.id, 500)}
+        onCancel={() => setEditing(false)}
+        onSave={onSaveEdit}
       />
 
       <Dialog

@@ -85,6 +85,10 @@ export interface Playlist {
   name: string;
   songCount?: number;
   coverArt?: string;
+  /** Descripción de la lista. */
+  comment?: string;
+  /** Visible para otros usuarios del servidor. */
+  public?: boolean;
 }
 
 /** Genera un salt aleatorio en hexadecimal. */
@@ -327,13 +331,18 @@ export async function deletePlaylist(
   await request(auth, 'deletePlaylist.view', { id });
 }
 
-/** Renombra una lista de reproducción. */
-export async function renamePlaylist(
+/** Edita los metadatos de una lista: nombre, descripción y visibilidad. */
+export async function updatePlaylist(
   auth: SubsonicAuth,
   id: string,
-  name: string,
+  changes: { name?: string; comment?: string; public?: boolean },
 ): Promise<void> {
-  await request(auth, 'updatePlaylist.view', { playlistId: id, name });
+  await request(auth, 'updatePlaylist.view', {
+    playlistId: id,
+    name: changes.name,
+    comment: changes.comment,
+    public: changes.public === undefined ? undefined : String(changes.public),
+  });
 }
 
 /** Quita una canción de una lista por su índice (posición en la lista). */
