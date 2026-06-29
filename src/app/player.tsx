@@ -2,7 +2,8 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -67,6 +68,7 @@ function CircleButton({
 
 export default function PlayerScreen() {
   const router = useRouter();
+  const isFocused = useIsFocused();
   const song = usePlayerStore(currentSong);
   const source = usePlayerStore((s) => s.source);
   const sourceHref = usePlayerStore((s) => s.sourceHref);
@@ -169,10 +171,15 @@ export default function PlayerScreen() {
     transform: [{ translateY: transY.value }],
   }));
 
-  if (!song) {
-    router.back();
-    return null;
-  }
+  // Si no hay canción (p. ej. al vaciar la cola), cierra el reproductor. En un
+  // efecto (no en render) para no actualizar el Stack mientras se pinta otro
+  // componente, y solo si el player es la pantalla visible: si encima está la
+  // cola, dejamos que esa muestre su estado vacío en vez de cerrarla nosotros.
+  useEffect(() => {
+    if (!song && isFocused) router.back();
+  }, [song, isFocused, router]);
+
+  if (!song) return null;
 
   const isLocal = !!song.localUri;
   const favorited = !!song.starred || (favIds?.has(song.id) ?? false);

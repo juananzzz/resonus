@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { coverArtUrl } from '@/api/data';
 import { type Song } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
+import { EmptyState } from '@/components/EmptyState';
 import { NowPlayingBars } from '@/components/NowPlayingBars';
 import { usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
@@ -107,7 +108,13 @@ export default function QueueScreen() {
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Text style={styles.empty}>{t('The queue is empty.')}</Text>
+          <View style={styles.emptyWrap}>
+            <EmptyState
+              icon="list-outline"
+              title={t('The queue is empty.')}
+              subtitle={t('Play a song or album to start the queue.')}
+            />
+          </View>
         }
       />
     </SafeAreaView>
@@ -124,7 +131,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+  list: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+  emptyWrap: { flex: 1, justifyContent: 'center' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -152,10 +160,4 @@ const styles = StyleSheet.create({
   current: { color: colors.accent },
   artist: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  empty: {
-    color: colors.textMuted,
-    fontSize: fontSize.md,
-    textAlign: 'center',
-    marginTop: spacing.xl,
-  },
 });
