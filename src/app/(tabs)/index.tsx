@@ -249,6 +249,11 @@ export default function HomeScreen() {
             ) : null}
           </View>
           <View style={styles.headerRight}>
+            <Link href="/history" asChild>
+              <Pressable hitSlop={10} accessibilityLabel={t('History')}>
+                <Ionicons name="time-outline" size={24} color={colors.textSecondary} />
+              </Pressable>
+            </Link>
             <Link href="/settings" asChild>
               <Pressable hitSlop={10} accessibilityLabel={t('Settings')}>
                 <Ionicons name="settings-outline" size={24} color={colors.textSecondary} />

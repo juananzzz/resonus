@@ -32,7 +32,7 @@ import { FavoriteButton } from '@/components/FavoriteButton';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
-import { currentSong, SOURCE_FAVORITES, usePlayerStore } from '@/store/player';
+import { currentSong, SOURCE_FAVORITES, SOURCE_HISTORY, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useSongMenu } from '@/store/songMenu';
 import { useT } from '@/i18n';
@@ -213,7 +213,11 @@ export default function PlayerScreen() {
               <>
                 <Text style={styles.topLabel}>{t('PLAYING FROM')}</Text>
                 <Text style={styles.topSource} numberOfLines={1}>
-                  {source === SOURCE_FAVORITES ? t('Favorites') : source}
+                  {source === SOURCE_FAVORITES
+                    ? t('Favorites')
+                    : source === SOURCE_HISTORY
+                      ? t('History')
+                      : source}
                 </Text>
               </>
             ) : (

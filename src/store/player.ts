@@ -24,6 +24,7 @@ import { create } from 'zustand';
 import { coverArtUrl, getPlayQueue, savePlayQueue, scrobble, streamUrl, type Song } from '@/api/subsonic';
 import { useAuthStore } from './auth';
 import { usePlayCounts } from './playCounts';
+import { usePlayHistory } from './playHistory';
 import { useSettings } from './settings';
 import { useToast } from './toast';
 import { tg } from '@/i18n';
@@ -35,6 +36,7 @@ export type RepeatMode = 'off' | 'all' | 'one';
  * reales de álbum/lista). La cabecera del reproductor los resuelve con i18n.
  */
 export const SOURCE_FAVORITES = '@@favorites';
+export const SOURCE_HISTORY = '@@history';
 
 let sleepTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -143,6 +145,7 @@ function onTrackChanged(song: Song) {
   const auth = useAuthStore.getState().auth;
   if (auth) scrobble(auth, song.id);
   else if (useAuthStore.getState().offline) usePlayCounts.getState().bump(song.id);
+  usePlayHistory.getState().record(song);
   scheduleSync();
 }
 

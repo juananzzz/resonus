@@ -18,6 +18,7 @@ import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
 import { usePlayerStore } from '@/store/player';
 import { usePlayCounts } from '@/store/playCounts';
+import { usePlayHistory } from '@/store/playHistory';
 import { useRecentSearches } from '@/store/recentSearches';
 import { useSettings } from '@/store/settings';
 import { colors } from '@/theme';
@@ -37,6 +38,7 @@ export default function RootLayout() {
     useSettings.getState().hydrate();
     useRecentSearches.getState().hydrate();
     usePlayCounts.getState().hydrate();
+    usePlayHistory.getState().hydrate();
   }, [hydrate, activeProfile]);
 
   // Al iniciar sesión en un servidor, retoma la cola guardada (sin reproducir).
@@ -75,6 +77,7 @@ export default function RootLayout() {
                 <Stack.Screen name="genre/[name]" />
                 <Stack.Screen name="radio" />
                 <Stack.Screen name="favorites" />
+                <Stack.Screen name="history" />
                 <Stack.Screen name="settings/index" />
                 <Stack.Screen name="settings/account" />
                 <Stack.Screen name="settings/library" />
