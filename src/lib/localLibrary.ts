@@ -53,18 +53,61 @@ function cacheKey(sourceMode: string, uri?: string): string {
   return uri ? `${sourceMode}:${uri}` : sourceMode;
 }
 
+// ── Concurrencia acotada ─────────────────────────────────────────────────────
+
+/**
+ * Nº de ficheros cuyos tags se leen a la vez. Las lecturas ID3 son casi todo
+ * espera de I/O (saltos JS↔nativo), así que solaparlas acelera el escaneo varias
+ * veces. Un valor moderado evita saturar el bridge y la memoria (cada lectura
+ * puede traer una carátula de hasta ~2 MB).
+ */
+const SCAN_CONCURRENCY = 8;
+
+/** Aplica `worker` a `items` con como máximo `limit` tareas en vuelo a la vez. */
+async function mapPool<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  async function run(): Promise<void> {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await worker(items[i], i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, run));
+  return results;
+}
+
+/**
+ * Devuelve una función para llamar tras procesar cada fichero. Agrupa las
+ * actualizaciones del progreso (cada ~20 canciones) para no re-renderizar el
+ * indicador una vez por fichero durante el escaneo.
+ */
+function progressBumper(total: number): () => void {
+  let done = 0;
+  let pending = 0;
+  return () => {
+    done++;
+    pending++;
+    if (pending >= 20 || done === total) {
+      useScanProgress.getState().tick(pending);
+      pending = 0;
+    }
+  };
+}
+
 // ── Lectura de ID3 desde archivo ───────────────────────────────────────────
 
-/** Lee el tag ID3v2 completo: primero la cabecera, luego el resto. */
-async function readID3Full(uri: string): Promise<{ buf: Uint8Array; fileSize: number; mtime: number } | null> {
+/**
+ * Lee el buffer del tag ID3v2: primero la cabecera (10 B) y, si hay tag, el
+ * resto. Solo lecturas de bytes, sin `stat` (que es un salto nativo caro y solo
+ * hace falta para el fallback ID3v1, que resolvemos aparte y de forma perezosa).
+ */
+async function readTagBuffer(uri: string): Promise<Uint8Array | null> {
   try {
-    const info = await FileSystem.getInfoAsync(uri);
-    const fileSize = (info.exists && (info as any).size) ? (info as any).size as number : 0;
-    // modificationTime viene en segundos; lo pasamos a ms.
-    const mtime = (info.exists && (info as any).modificationTime)
-      ? ((info as any).modificationTime as number) * 1000
-      : 0;
-    // Leer solo la cabecera (10 bytes)
     const headB64 = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
       length: 10,
@@ -72,7 +115,7 @@ async function readID3Full(uri: string): Promise<{ buf: Uint8Array; fileSize: nu
     });
     const head = base64ToUint8(headB64);
     if (head.length < 10 || head[0] !== 0x49 || head[1] !== 0x44 || head[2] !== 0x33) {
-      return { buf: head, fileSize, mtime };
+      return head;
     }
     const tagSize = ((head[6] & 0x7f) << 21) | ((head[7] & 0x7f) << 14) | ((head[8] & 0x7f) << 7) | (head[9] & 0x7f);
     const total = 10 + tagSize;
@@ -86,39 +129,57 @@ async function readID3Full(uri: string): Promise<{ buf: Uint8Array; fileSize: nu
       length: limit,
       position: 0,
     });
-    return { buf: base64ToUint8(fullB64, Math.min(total, cap)), fileSize, mtime };
+    return base64ToUint8(fullB64, Math.min(total, cap));
   } catch {
     return null;
   }
 }
 
-async function readID3(uri: string): Promise<{ tags: ID3Tags | null; mtime: number }> {
-  const result = await readID3Full(uri);
-  if (!result) return { tags: null, mtime: 0 };
-  const mtime = result.mtime;
-  const tags = parseID3(result.buf);
-  // Si ID3v2 no encontró título y el archivo es > 128 B, intenta ID3v1 al final
-  if (!tags.title && result.fileSize > 128) {
+/** Lee tags ID3v2; si no hay título, intenta ID3v1 al final (leyendo tamaño ahí). */
+async function readTags(uri: string): Promise<ID3Tags | null> {
+  const buf = await readTagBuffer(uri);
+  if (!buf) return null;
+  const tags = parseID3(buf);
+  // Solo si ID3v2 no dio título vamos al final por un tag ID3v1. Es raro, así
+  // que el `stat` (para saber el tamaño y leer los últimos 128 B) se paga aquí
+  // y no en cada fichero.
+  if (!tags.title) {
     try {
-      const tailB64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-        length: 128,
-        position: result.fileSize - 128,
-      });
-      const tail = base64ToUint8(tailB64);
-      const v1 = parseID3(tail);
-      if (v1.title) {
-        tags.title = v1.title;
-        tags.artist = tags.artist || v1.artist;
-        tags.album = tags.album || v1.album;
-        tags.track = tags.track ?? v1.track;
-        tags.year = tags.year ?? v1.year;
+      const info = await FileSystem.getInfoAsync(uri);
+      const fileSize = info.exists ? ((info as any).size as number) || 0 : 0;
+      if (fileSize > 128) {
+        const tailB64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+          length: 128,
+          position: fileSize - 128,
+        });
+        const v1 = parseID3(base64ToUint8(tailB64));
+        if (v1.title) {
+          tags.title = v1.title;
+          tags.artist = tags.artist || v1.artist;
+          tags.album = tags.album || v1.album;
+          tags.track = tags.track ?? v1.track;
+          tags.year = tags.year ?? v1.year;
+        }
       }
     } catch {
       // ignorar errores leyendo el final
     }
   }
-  return { tags, mtime };
+  return tags;
+}
+
+/** Lee el `mtime` (ms) de un fichero para "Añadidos recientemente" (modo carpeta). */
+async function readMtime(uri: string): Promise<number> {
+  try {
+    const info = await FileSystem.getInfoAsync(uri);
+    // modificationTime viene en segundos; lo pasamos a ms.
+    return info.exists && (info as any).modificationTime
+      ? ((info as any).modificationTime as number) * 1000
+      : 0;
+  } catch {
+    return 0;
+  }
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -361,14 +422,14 @@ export async function loadDeviceSongs(): Promise<Song[]> {
     hasNext = page.hasNextPage;
   }
 
-  const songs: Song[] = [];
-  const scan = useScanProgress.getState();
-  scan.start(rawSongs.length);
+  useScanProgress.getState().start(rawSongs.length);
+  const bump = progressBumper(rawSongs.length);
+  let songs: Song[];
   try {
-    for (const raw of rawSongs) {
+    songs = await mapPool(rawSongs, SCAN_CONCURRENCY, async (raw) => {
       let tags = null;
       try {
-        ({ tags } = await readID3(raw.uri));
+        tags = await readTags(raw.uri);
       } catch {
         // Si falla la lectura ID3, seguimos con el nombre de fichero.
       }
@@ -379,9 +440,9 @@ export async function loadDeviceSongs(): Promise<Song[]> {
       // directorio del fichero, no las etiquetas de cada pista.
       const dir = parentDirOf(raw.uri);
       if (dir) assignFolderAlbum(base, dir, !!tags?.album);
-      songs.push(base);
-      useScanProgress.getState().tick();
-    }
+      bump();
+      return base as Song;
+    });
   } finally {
     useScanProgress.getState().done();
   }
@@ -432,15 +493,16 @@ export async function loadFolderSongs(treeUri: string): Promise<Song[]> {
 
   await walk(treeUri, 0);
 
-  const songs: Song[] = [];
-  const scan = useScanProgress.getState();
-  scan.start(rawSongs.length);
+  useScanProgress.getState().start(rawSongs.length);
+  const bump = progressBumper(rawSongs.length);
+  let songs: Song[];
   try {
-    for (const raw of rawSongs) {
+    songs = await mapPool(rawSongs, SCAN_CONCURRENCY, async (raw) => {
       let tags = null;
       let mtime = 0;
       try {
-        ({ tags, mtime } = await readID3(raw.uri));
+        // SAF no da mtime en readDirectoryAsync; se lee en paralelo con los tags.
+        [tags, mtime] = await Promise.all([readTags(raw.uri), readMtime(raw.uri)]);
       } catch {
         // Si falla la lectura ID3, seguimos con el nombre de fichero.
       }
@@ -451,9 +513,9 @@ export async function loadFolderSongs(treeUri: string): Promise<Song[]> {
       // ficheros sueltos en la raíz elegida se agrupan por su etiqueta de
       // álbum (p. ej. un single).
       if (raw.dirUri !== treeUri) assignFolderAlbum(base, raw.dirUri, !!tags?.album);
-      songs.push(base);
-      useScanProgress.getState().tick();
-    }
+      bump();
+      return base as Song;
+    });
   } finally {
     useScanProgress.getState().done();
   }

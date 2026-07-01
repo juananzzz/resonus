@@ -13,7 +13,8 @@ interface ScanProgressState {
   /** Total de ficheros a analizar (0 si aún no se sabe). */
   total: number;
   start: (total: number) => void;
-  tick: () => void;
+  /** Suma `n` canciones analizadas (agrupado para no renderizar por fichero). */
+  tick: (n?: number) => void;
   done: () => void;
 }
 
@@ -22,6 +23,6 @@ export const useScanProgress = create<ScanProgressState>((set) => ({
   count: 0,
   total: 0,
   start: (total) => set({ scanning: true, count: 0, total }),
-  tick: () => set((s) => ({ count: s.count + 1 })),
+  tick: (n = 1) => set((s) => ({ count: s.count + n })),
   done: () => set({ scanning: false }),
 }));

@@ -2,10 +2,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
+  Easing,
   FlatList,
   Pressable,
   RefreshControl,
@@ -171,12 +173,29 @@ function ScanningPanel() {
   const t = useT();
   const count = useScanProgress((s) => s.count);
   const total = useScanProgress((s) => s.total);
+  const fraction = total > 0 ? Math.min(count / total, 1) : 0;
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: fraction,
+      duration: 250,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false,
+    }).start();
+  }, [fraction, anim]);
+  const width = anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
   return (
     <View style={styles.scanPanel}>
-      <ActivityIndicator color={colors.accent} size="large" />
       <Text style={styles.scanTitle}>{t('Scanning your music…')}</Text>
+      {total > 0 ? (
+        <View style={styles.scanBarTrack}>
+          <Animated.View style={[styles.scanBarFill, { width }]} />
+        </View>
+      ) : (
+        <ActivityIndicator color={colors.accent} />
+      )}
       <Text style={styles.scanSub}>
-        {total > 0 ? `${count} / ${total}` : `${count}`}
+        {total > 0 ? `${count} / ${total} · ${Math.round(fraction * 100)}%` : `${count}`}
       </Text>
     </View>
   );
@@ -350,11 +369,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
   },
+  scanBarTrack: {
+    width: '100%',
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.surfaceHighlight,
+    overflow: 'hidden',
+    marginTop: spacing.xs,
+  },
+  scanBarFill: { height: '100%', borderRadius: 3, backgroundColor: colors.accent },
   scanTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
-  scanSub: { color: colors.textSecondary, fontSize: fontSize.sm },
+  scanSub: { color: colors.textSecondary, fontSize: fontSize.sm, fontVariant: ['tabular-nums'] },
 });
