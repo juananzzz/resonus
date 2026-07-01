@@ -51,6 +51,11 @@ Resonus ships in **English and Spanish**, maintained in the repository
 (`src/i18n/locales/`). English is the source language. Community translations
 for more languages are planned as the project matures.
 
+## Community
+
+Join the [Discord server](https://discord.gg/hpDfszr8r) to share feedback,
+report bugs, ask questions, or just follow along with development.
+
 ## Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to
