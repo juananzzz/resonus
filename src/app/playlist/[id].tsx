@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { coverArtUrl, deletePlaylist, getPlaylist, updatePlaylist } from '@/api/data';
 import { Dialog } from '@/components/Dialog';
+import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { PlaylistEditSheet, type PlaylistEdit } from '@/components/PlaylistEditSheet';
 import { TrackListView } from '@/components/TrackListView';
@@ -110,6 +111,13 @@ export default function PlaylistScreen() {
         playlistId={id}
         showArtwork={showListArtwork}
         onSort={data.songs.length > 1 ? openSort : undefined}
+        emptyState={
+          <EmptyState
+            icon="musical-notes-outline"
+            title={t('This playlist is empty')}
+            subtitle={t('Add songs from the ⋯ menu of any song.')}
+          />
+        }
         onPlay={(start) => playQueue(displaySongs, start, data.playlist.name, `/playlist/${id}`)}
       />
       {sortSheet}

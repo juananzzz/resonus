@@ -53,6 +53,8 @@ interface Props {
   onSort?: () => void;
   /** Contenido extra al pie de la lista (p. ej. "Más de este artista"). */
   footer?: ReactNode;
+  /** Qué mostrar bajo la cabecera cuando no hay canciones (p. ej. playlist vacía). */
+  emptyState?: ReactNode;
   /** Muestra la mini carátula del álbum en cada fila (playlists/favoritos). */
   showArtwork?: boolean;
   onPlay: (startIndex: number) => void;
@@ -76,6 +78,7 @@ export function TrackListView({
   playlistIndices,
   onSort,
   footer,
+  emptyState,
   showArtwork,
   onPlay,
 }: Props) {
@@ -236,6 +239,7 @@ export function TrackListView({
             onPress={() => onPlay(index)}
           />
         )}
+        ListEmptyComponent={emptyState ? <>{emptyState}</> : null}
         ListFooterComponent={footer ? <>{footer}</> : null}
       />
 

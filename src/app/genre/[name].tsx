@@ -75,7 +75,13 @@ export default function GenreScreen() {
               <ActivityIndicator style={{ marginVertical: spacing.lg }} color={colors.accent} />
             ) : null
           }
-          ListEmptyComponent={<EmptyState icon="disc-outline" title={t('No albums in this genre.')} />}
+          ListEmptyComponent={
+            <EmptyState
+              icon="disc-outline"
+              title={t('No albums in this genre')}
+              subtitle={t('Try exploring another genre.')}
+            />
+          }
         />
       )}
     </SafeAreaView>

@@ -82,7 +82,13 @@ export default function GenresScreen() {
           columnWrapperStyle={{ gap: spacing.sm }}
           contentContainerStyle={styles.list}
           renderItem={({ item }: { item: Genre }) => <GenreCard name={item.value} />}
-          ListEmptyComponent={<EmptyState icon="pricetags-outline" title={t('No genres.')} />}
+          ListEmptyComponent={
+            <EmptyState
+              icon="pricetags-outline"
+              title={t('No genres yet')}
+              subtitle={t("Genres come from your music's tags.")}
+            />
+          }
         />
       )}
     </SafeAreaView>

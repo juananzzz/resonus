@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getAlbumList, type AlbumListType } from '@/api/data';
 import { AlbumCard } from '@/components/AlbumCard';
+import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
@@ -106,6 +107,21 @@ export default function BrowseAlbumsScreen() {
             isFetchingNextPage ? (
               <ActivityIndicator style={{ marginVertical: spacing.lg }} color={colors.accent} />
             ) : null
+          }
+          ListEmptyComponent={
+            sort === 'frequent' ? (
+              <EmptyState
+                icon="play-outline"
+                title={t('Nothing played yet')}
+                subtitle={t('Your most played albums will show up here.')}
+              />
+            ) : (
+              <EmptyState
+                icon="disc-outline"
+                title={t('No albums yet')}
+                subtitle={t('Your library looks empty.')}
+              />
+            )
           }
         />
       )}

@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { coverArtUrl, getArtists } from '@/api/data';
 import { Cover } from '@/components/Cover';
+import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { albumsLabel, useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
@@ -91,6 +92,21 @@ export default function BrowseArtistsScreen() {
               </Pressable>
             </Link>
           )}
+          ListEmptyComponent={
+            query.trim() ? (
+              <EmptyState
+                icon="search-outline"
+                title={t('No results')}
+                subtitle={t('No results for “{q}”', { q: query.trim() })}
+              />
+            ) : (
+              <EmptyState
+                icon="people-outline"
+                title={t('No artists yet')}
+                subtitle={t('Your library looks empty.')}
+              />
+            )
+          }
         />
       )}
     </SafeAreaView>

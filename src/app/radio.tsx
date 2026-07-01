@@ -78,7 +78,13 @@ export default function RadioScreen() {
               <Ionicons name="play-circle" size={28} color={colors.accent} />
             </Pressable>
           )}
-          ListEmptyComponent={<EmptyState icon="radio-outline" title={t('No radio stations.')} />}
+          ListEmptyComponent={
+            <EmptyState
+              icon="radio-outline"
+              title={t('No radio stations')}
+              subtitle={t("Add internet radio stations on your server and they'll show up here.")}
+            />
+          }
         />
       )}
     </SafeAreaView>
