@@ -23,9 +23,10 @@ Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/rele
 
 - **Navidrome / OpenSubsonic / Ampache** — multi-profile login
 - **Local mode** — play music offline from device or folder
+- **Offline downloads** — save albums, playlists or songs to your device (original quality or transcoded) and play them from the local profile, no connection needed
 - **Browse & search** — home, artists, albums, genres, playlists, favorites
 - **Playback** — background playback, lock-screen controls, queue, shuffle, repeat, sleep timer, lyrics
-- **Android Auto**
+- **Android Auto** — including artwork for local music
 - **Queue sync across devices**
 
 ## Screenshots
@@ -39,9 +40,7 @@ Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/rele
 
 ## Roadmap
 
-- [ ] Offline downloads (server → device)
 - [ ] Equalizer & crossfade
-- [ ] Local artwork in Android Auto
 - [ ] Jellyfin support
 - [ ] iOS support
 
