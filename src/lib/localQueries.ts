@@ -121,8 +121,8 @@ export async function rescan(): Promise<void> {
   await ensureCatalog();
 }
 
-function toAlbum(local: { id: string; name: string; artist?: string; coverBase64?: string; coverMime?: string; songCount: number; year?: number }): Album {
-  registerCover(local.id, local.coverBase64, local.coverMime);
+function toAlbum(local: { id: string; name: string; artist?: string; coverUri?: string; songCount: number; year?: number }): Album {
+  registerCover(local.id, local.coverUri);
   return {
     id: local.id,
     name: local.name,
@@ -134,8 +134,8 @@ function toAlbum(local: { id: string; name: string; artist?: string; coverBase64
   };
 }
 
-function toArtist(local: { id: string; name: string; coverBase64?: string; coverMime?: string; albumCount: number }): Artist {
-  registerCover(local.id, local.coverBase64, local.coverMime);
+function toArtist(local: { id: string; name: string; coverUri?: string; albumCount: number }): Artist {
+  registerCover(local.id, local.coverUri);
   return {
     id: local.id,
     name: local.name,

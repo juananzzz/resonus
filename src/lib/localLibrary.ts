@@ -24,8 +24,14 @@ export interface LocalAlbum {
   id: string;
   name: string;
   artist?: string;
+  /**
+   * Carátula embebida, solo transitoria durante el escaneo (y en catálogos
+   * antiguos en disco): se vuelca a fichero y queda `coverUri` en su lugar.
+   */
   coverBase64?: string;
   coverMime?: string;
+  /** URI `file://` de la carátula volcada a disco. */
+  coverUri?: string;
   songCount: number;
   year?: number;
   /** Fecha del fichero más reciente del álbum (ms), para "Añadidos recientemente". */
@@ -35,8 +41,8 @@ export interface LocalAlbum {
 export interface LocalArtist {
   id: string;
   name: string;
-  coverBase64?: string;
-  coverMime?: string;
+  /** URI `file://` de la carátula (heredada de uno de sus álbumes). */
+  coverUri?: string;
   albumCount: number;
 }
 
@@ -299,8 +305,7 @@ function groupByAlbum(songs: Song[]): LocalAlbum[] {
 function groupByArtist(albums: LocalAlbum[]): LocalArtist[] {
   const map = new Map<string, {
     albums: LocalAlbum[];
-    coverBase64?: string;
-    coverMime?: string;
+    coverUri?: string;
   }>();
   for (const album of albums) {
     const key = normKey(album.artist || 'Artista desconocido');
@@ -310,28 +315,29 @@ function groupByArtist(albums: LocalAlbum[]): LocalArtist[] {
       map.set(key, entry);
     }
     entry.albums.push(album);
-    if (album.coverBase64) {
-      entry.coverBase64 = album.coverBase64;
-      entry.coverMime = album.coverMime;
-    }
+    if (album.coverUri) entry.coverUri = album.coverUri;
   }
   return Array.from(map.entries()).map(([key, v]) => ({
     id: key,
     name: pickBestName(v.albums.map((a) => a.artist || 'Artista desconocido')),
-    coverBase64: v.coverBase64,
-    coverMime: v.coverMime,
+    coverUri: v.coverUri,
     albumCount: v.albums.length,
   }));
 }
 
-function buildCatalog(songs: Song[]): LocalCatalog {
+async function buildCatalog(songs: Song[]): Promise<LocalCatalog> {
   const albums = groupByAlbum(songs);
+  // Las carátulas embebidas se vuelcan a ficheros y se referencian por URI
+  // `file://`: así el catálogo/coverIndex no retienen megas de base64 en RAM,
+  // y Android Auto puede embeber la carátula (su puente nativo solo sabe leer
+  // file://; un data URI ni se pinta ni respeta el límite de binder).
+  await flushAlbumCovers(albums);
   const artists = groupByArtist(albums);
-  // Registra las carátulas embebidas para que `localCoverUrl(albumId)` y
+  // Registra las carátulas para que `localCoverUrl(albumId)` y
   // `localCoverUrl(artistId)` funcionen en toda la app justo tras el escaneo.
-  for (const a of albums) registerCover(a.id, a.coverBase64, a.coverMime);
-  for (const a of artists) registerCover(a.id, a.coverBase64, a.coverMime);
-  // La carátula ya vive deduplicada en `coverIndex` (una por álbum). No la
+  for (const a of albums) registerCover(a.id, a.coverUri);
+  for (const a of artists) registerCover(a.id, a.coverUri);
+  // La carátula ya vive deduplicada en disco (una por álbum). No la
   // retenemos en cada canción: con miles de pistas serían cientos de MB en RAM.
   // La reproducción y la UI la resuelven por `coverArt`/`albumId` vía coverIndex.
   for (const s of songs) {
@@ -448,7 +454,7 @@ export async function loadDeviceSongs(): Promise<Song[]> {
   }
   songs.sort((a, b) => a.title.localeCompare(b.title));
 
-  const catalog = buildCatalog(songs);
+  const catalog = await buildCatalog(songs);
   catalogCache.set(key, catalog);
   void saveCatalogToDisk('device', undefined, catalog);
   return songs;
@@ -521,7 +527,7 @@ export async function loadFolderSongs(treeUri: string): Promise<Song[]> {
   }
   songs.sort((a, b) => a.title.localeCompare(b.title));
 
-  const catalog = buildCatalog(songs);
+  const catalog = await buildCatalog(songs);
   catalogCache.set(key, catalog);
   void saveCatalogToDisk('folder', treeUri, catalog);
   return songs;
@@ -564,10 +570,8 @@ export function getLocalArtistAlbums(sourceMode: string, artistName: string, uri
 
 const coverIndex = new Map<string, string>();
 
-export function registerCover(id: string, base64?: string, mime?: string) {
-  if (base64 && !coverIndex.has(id)) {
-    coverIndex.set(id, `data:${mime || 'image/jpeg'};base64,${base64}`);
-  }
+export function registerCover(id: string, uri?: string) {
+  if (uri && !coverIndex.has(id)) coverIndex.set(id, uri);
 }
 
 export function localCoverUrl(id: string | undefined): string | undefined {
@@ -586,9 +590,56 @@ export function clearLocalCatalog(): void {
 // local: el catálogo (con carátulas) se guarda en disco y se recarga al
 // instante. El botón "Volver a escanear" fuerza un re-análisis.
 const CATALOG_DIR = FileSystem.documentDirectory + 'local-catalog/';
+// Dentro de CATALOG_DIR para que "Volver a escanear" (que borra el directorio
+// entero) no deje carátulas huérfanas acumulándose.
+const COVERS_DIR = CATALOG_DIR + 'covers/';
 
 function catalogFile(sourceMode: string, uri?: string): string {
   return `${CATALOG_DIR}c_${hashKey(cacheKey(sourceMode, uri))}.json`;
+}
+
+/**
+ * Vuelca la carátula embebida (base64) de cada álbum a un fichero y deja en su
+ * lugar `coverUri`. Los álbumes sin carátula quedan sin `coverUri` (placeholder).
+ */
+async function flushAlbumCovers(albums: LocalAlbum[]): Promise<void> {
+  const pending = albums.filter((a) => a.coverBase64);
+  if (pending.length > 0) {
+    await FileSystem.makeDirectoryAsync(COVERS_DIR, { intermediates: true }).catch(() => {});
+    await mapPool(pending, SCAN_CONCURRENCY, async (a) => {
+      const ext = a.coverMime === 'image/png' ? 'png' : 'jpg';
+      const file = `${COVERS_DIR}${hashKey(a.id)}.${ext}`;
+      try {
+        await FileSystem.writeAsStringAsync(file, a.coverBase64!, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        a.coverUri = file;
+      } catch {
+        // Si no se puede escribir, el álbum se queda con el placeholder.
+      }
+    });
+  }
+  for (const a of albums) {
+    delete a.coverBase64;
+    delete a.coverMime;
+  }
+}
+
+/**
+ * Migración de catálogos antiguos: los artistas llevaban la carátula en base64;
+ * ahora heredan la URI del primer álbum suyo que tenga carátula en disco.
+ */
+function migrateArtistCovers(catalog: LocalCatalog): void {
+  const byArtist = new Map<string, string>();
+  for (const al of catalog.albums) {
+    const key = normKey(al.artist || 'Artista desconocido');
+    if (al.coverUri && !byArtist.has(key)) byArtist.set(key, al.coverUri);
+  }
+  for (const ar of catalog.artists) {
+    delete (ar as any).coverBase64;
+    delete (ar as any).coverMime;
+    if (!ar.coverUri) ar.coverUri = byArtist.get(ar.id);
+  }
 }
 
 async function saveCatalogToDisk(sourceMode: string, uri: string | undefined, catalog: LocalCatalog): Promise<void> {
@@ -608,9 +659,16 @@ async function loadCatalogFromDisk(sourceMode: string, uri?: string): Promise<Lo
     const raw = await FileSystem.readAsStringAsync(file);
     const catalog = JSON.parse(raw) as LocalCatalog;
     if (!catalog?.songs?.length) return null;
+    // Migración: los catálogos antiguos llevan las carátulas embebidas en
+    // base64. Se vuelcan a ficheros una vez y se regraba el catálogo aligerado.
+    if (catalog.albums.some((a) => a.coverBase64)) {
+      await flushAlbumCovers(catalog.albums);
+      migrateArtistCovers(catalog);
+      void saveCatalogToDisk(sourceMode, uri, catalog);
+    }
     // El índice de carátulas no se persiste aparte: se reconstruye al cargar.
-    for (const a of catalog.albums) registerCover(a.id, a.coverBase64, a.coverMime);
-    for (const a of catalog.artists) registerCover(a.id, a.coverBase64, a.coverMime);
+    for (const a of catalog.albums) registerCover(a.id, a.coverUri);
+    for (const a of catalog.artists) registerCover(a.id, a.coverUri);
     return catalog;
   } catch {
     return null;
