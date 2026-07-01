@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { SettingsPage, settingsStyles } from '@/components/SettingsUI';
+import { SelectList, SettingsPage, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import {
   AUDIO_QUALITY_OPTIONS,
@@ -39,46 +39,24 @@ export default function AppearanceSettings() {
         </Pressable>
 
         <Text style={settingsStyles.sectionTitle}>{t('Quality labels')}</Text>
+        <SelectList
+          options={AUDIO_QUALITY_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
+          value={showAudioQuality}
+          onChange={setShowAudioQuality}
+        />
         <Text style={settingsStyles.hint}>
           {t('Displays the audio format, bitrate, and Lossless / Hi-Res labels next to each song.')}
         </Text>
-        <View style={settingsStyles.chips}>
-          {AUDIO_QUALITY_OPTIONS.map((opt) => {
-            const active = opt.value === showAudioQuality;
-            return (
-              <Pressable
-                key={opt.value}
-                style={[settingsStyles.chip, active && settingsStyles.chipActive]}
-                onPress={() => setShowAudioQuality(opt.value)}
-              >
-                <Text style={[settingsStyles.chipText, active && settingsStyles.chipTextActive]}>
-                  {t(opt.label)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
 
         <Text style={settingsStyles.sectionTitle}>{t('Song lists')}</Text>
+        <SelectList
+          options={LIST_STYLES.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
+          value={showListArtwork}
+          onChange={setShowListArtwork}
+        />
         <Text style={settingsStyles.hint}>
           {t('Show the album artwork next to each song in playlists and favorites.')}
         </Text>
-        <View style={settingsStyles.chips}>
-          {LIST_STYLES.map((opt) => {
-            const active = opt.value === showListArtwork;
-            return (
-              <Pressable
-                key={String(opt.value)}
-                style={[settingsStyles.chip, active && settingsStyles.chipActive]}
-                onPress={() => setShowListArtwork(opt.value)}
-              >
-                <Text style={[settingsStyles.chipText, active && settingsStyles.chipTextActive]}>
-                  {t(opt.label)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
 
         <Text style={settingsStyles.sectionTitle}>{t('Theme')}</Text>
         <View style={styles.soonCard}>

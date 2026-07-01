@@ -30,6 +30,49 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
   );
 }
 
+/**
+ * Lista de opciones "elige una" agrupada en una tarjeta, con checkmark en la
+ * activa. Sustituye a los chips: más limpia y sin saltos de línea. Las
+ * etiquetas llegan ya traducidas desde quien la usa.
+ */
+export function SelectList<T extends string | number | boolean>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <View style={settingsStyles.selectCard}>
+      {options.map((opt, i) => {
+        const active = opt.value === value;
+        return (
+          <Pressable
+            key={String(opt.value)}
+            style={({ pressed }) => [
+              settingsStyles.selectRow,
+              i > 0 && settingsStyles.selectRowBorder,
+              pressed && { opacity: 0.6 },
+            ]}
+            onPress={() => onChange(opt.value)}
+          >
+            <Text style={[settingsStyles.selectRowText, active && settingsStyles.selectRowTextActive]}>
+              {opt.label}
+            </Text>
+            {active ? (
+              <Ionicons name="checkmark-circle" size={22} color={colors.accent} />
+            ) : (
+              <View style={{ width: 22 }} />
+            )}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 /** Pareja etiqueta/valor para datos de solo lectura. */
 export function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -66,6 +109,16 @@ export const settingsStyles = StyleSheet.create({
   fieldLabel: { color: colors.textMuted, fontSize: fontSize.xs, marginBottom: 2 },
   fieldValue: { color: colors.text, fontSize: fontSize.md },
   divider: { height: 1, backgroundColor: colors.border },
+  selectCard: { backgroundColor: colors.surface, borderRadius: radius.md, overflow: 'hidden' },
+  selectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  selectRowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
+  selectRowText: { color: colors.textSecondary, fontSize: fontSize.md, flex: 1 },
+  selectRowTextActive: { color: colors.text, fontWeight: '600' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
     paddingVertical: spacing.sm,

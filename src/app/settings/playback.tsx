@@ -1,8 +1,8 @@
 /** Ajustes › Calidad y reproducción: bitrate, crossfade y ecualizador. */
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text } from 'react-native';
 
-import { SettingsPage, settingsStyles } from '@/components/SettingsUI';
+import { SelectList, SettingsPage, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { BITRATE_OPTIONS, useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
@@ -25,25 +25,15 @@ export default function PlaybackSettings() {
         {!offline ? (
           <>
             <Text style={settingsStyles.sectionTitle}>{t('Streaming quality')}</Text>
-            <View style={settingsStyles.chips}>
-              {BITRATE_OPTIONS.map((opt) => {
-                const active = opt.value === maxBitRate;
-                return (
-                  <Pressable
-                    key={opt.value}
-                    style={[settingsStyles.chip, active && settingsStyles.chipActive]}
-                    onPress={() => {
-                      setMaxBitRate(opt.value);
-                      toast(t('Quality: {label}', { label: opt.label }));
-                    }}
-                  >
-                    <Text style={[settingsStyles.chipText, active && settingsStyles.chipTextActive]}>
-                      {opt.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            <SelectList
+              options={BITRATE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+              value={maxBitRate}
+              onChange={(value) => {
+                const opt = BITRATE_OPTIONS.find((o) => o.value === value);
+                setMaxBitRate(value);
+                if (opt) toast(t('Quality: {label}', { label: opt.label }));
+              }}
+            />
             <Text style={settingsStyles.hint}>
               {t('“Original” uses the highest quality; a lower bitrate saves data.')}
             </Text>
