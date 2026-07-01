@@ -26,7 +26,7 @@ Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/rele
 - **Offline downloads** — save albums, playlists or songs to your device (original quality or transcoded) and play them from the local profile, no connection needed
 - **Browse & search** — home, artists, albums, genres, playlists, favorites
 - **Playback** — background playback, lock-screen controls, queue, shuffle, repeat, sleep timer, lyrics
-- **Android Auto** — including artwork for local music
+- **Android Auto**
 - **Queue sync across devices**
 
 ## Screenshots
