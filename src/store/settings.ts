@@ -28,11 +28,14 @@ export const AUDIO_QUALITY_OPTIONS: { label: string; value: AudioQualityMode }[]
 
 interface SettingsState {
   maxBitRate: number;
+  /** Calidad de descarga: 0 = fichero original; resto, bitrate transcodificado. */
+  downloadBitRate: number;
   language: Language;
   showAudioQuality: AudioQualityMode;
   /** Mostrar la mini carátula del álbum en las listas (playlists/favoritos). */
   showListArtwork: boolean;
   setMaxBitRate: (value: number) => void;
+  setDownloadBitRate: (value: number) => void;
   setLanguage: (language: Language) => void;
   setShowAudioQuality: (mode: AudioQualityMode) => void;
   setShowListArtwork: (value: boolean) => void;
@@ -41,6 +44,7 @@ interface SettingsState {
 
 function persist(state: {
   maxBitRate: number;
+  downloadBitRate: number;
   language: Language;
   showAudioQuality: AudioQualityMode;
   showListArtwork: boolean;
@@ -52,6 +56,7 @@ function snapshot(get: () => SettingsState) {
   const s = get();
   return {
     maxBitRate: s.maxBitRate,
+    downloadBitRate: s.downloadBitRate,
     language: s.language,
     showAudioQuality: s.showAudioQuality,
     showListArtwork: s.showListArtwork,
@@ -60,12 +65,18 @@ function snapshot(get: () => SettingsState) {
 
 export const useSettings = create<SettingsState>((set, get) => ({
   maxBitRate: 0,
+  downloadBitRate: 0,
   language: 'en',
   showAudioQuality: 'off',
   showListArtwork: true,
 
   setMaxBitRate: (maxBitRate) => {
     set({ maxBitRate });
+    persist(snapshot(get));
+  },
+
+  setDownloadBitRate: (downloadBitRate) => {
+    set({ downloadBitRate });
     persist(snapshot(get));
   },
 
@@ -90,12 +101,16 @@ export const useSettings = create<SettingsState>((set, get) => ({
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<{
           maxBitRate: number;
+          downloadBitRate: number;
           language: Language;
           showAudioQuality: AudioQualityMode | boolean;
           showListArtwork: boolean;
         }>;
         if (typeof parsed.maxBitRate === 'number') {
           set({ maxBitRate: parsed.maxBitRate });
+        }
+        if (typeof parsed.downloadBitRate === 'number') {
+          set({ downloadBitRate: parsed.downloadBitRate });
         }
         if (parsed.language === 'es' || parsed.language === 'en') {
           set({ language: parsed.language });

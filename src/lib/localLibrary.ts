@@ -206,7 +206,7 @@ export function normKey(s: string): string {
 }
 
 /** Hash estable y corto (FNV-1a → base36) para usar como id de ruta seguro. */
-function hashKey(s: string): string {
+export function hashKey(s: string): string {
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);

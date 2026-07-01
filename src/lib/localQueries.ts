@@ -6,13 +6,10 @@ import { useAuthStore } from '@/store/auth';
 import { usePlayCounts } from '@/store/playCounts';
 import { type Album, type Artist, type ArtistInfo, type Playlist, type SearchResult, type Song, type StarType, type Starred } from '@/api/subsonic';
 import { getItem, setItem } from '@/lib/storage';
+import { getDownloadsCatalog } from '@/store/downloads';
 import {
   clearLocalCatalog,
   clearLocalCatalogDisk,
-  getLocalAlbums,
-  getLocalAlbumSongs,
-  getLocalArtists,
-  getLocalArtistAlbums,
   getLocalCatalog,
   loadDeviceSongs,
   loadFolderSongs,
@@ -88,7 +85,30 @@ function sourceInfo() {
 
 let loadingPromise: Promise<any> | null = null;
 
-async function ensureCatalog() {
+/** Forma mínima común de álbum/artista entre el escaneo y las descargas. */
+interface CatAlbum {
+  id: string;
+  name: string;
+  artist?: string;
+  coverUri?: string;
+  songCount?: number;
+  year?: number;
+  addedAt?: number;
+}
+interface CatArtist {
+  id: string;
+  name: string;
+  coverUri?: string;
+  albumCount?: number;
+}
+interface MergedCatalog {
+  songs: Song[];
+  albums: CatAlbum[];
+  artists: CatArtist[];
+}
+
+/** Catálogo del origen elegido (device/folder), cargándolo si hace falta. */
+async function ensureScanCatalog() {
   const { mode, key } = sourceInfo();
   const cached = getLocalCatalog(mode, key);
   if (cached) return cached;
@@ -109,6 +129,43 @@ async function ensureCatalog() {
   return getLocalCatalog(mode, key);
 }
 
+/** Artistas del escaneo + de las descargas, fusionados por clave de nombre. */
+function mergeArtists(base: CatArtist[], extra: CatArtist[]): CatArtist[] {
+  const map = new Map(base.map((a) => [a.id, { ...a }]));
+  for (const ar of extra) {
+    const existing = map.get(ar.id);
+    if (existing) {
+      existing.albumCount = (existing.albumCount ?? 0) + (ar.albumCount ?? 0);
+      if (!existing.coverUri) existing.coverUri = ar.coverUri;
+    } else {
+      map.set(ar.id, { ...ar });
+    }
+  }
+  return Array.from(map.values());
+}
+
+/**
+ * Catálogo del perfil local = escaneo del origen + descargas del servidor,
+ * fusionados. Si el escaneo falla (p. ej. sin permiso de audio), las descargas
+ * se muestran igualmente. No hay duplicados posibles: MediaStore/SAF no ven el
+ * directorio privado de descargas.
+ */
+async function ensureCatalog(): Promise<MergedCatalog | null> {
+  // Sin origen elegido no se escanea nada: el perfil local puede vivir solo de
+  // las descargas (elegir origen de música local es opcional).
+  const hasSource = !!useAuthStore.getState().offlineSource;
+  const [base, dl] = await Promise.all([
+    hasSource ? ensureScanCatalog().catch(() => undefined) : Promise.resolve(undefined),
+    getDownloadsCatalog().catch(() => ({ songs: [], albums: [], artists: [] })),
+  ]);
+  if (dl.songs.length === 0) return base ?? null;
+  return {
+    songs: [...(base?.songs ?? []), ...dl.songs],
+    albums: [...(base?.albums ?? []), ...dl.albums],
+    artists: mergeArtists(base?.artists ?? [], dl.artists),
+  };
+}
+
 /**
  * Vuelve a escanear el origen local: descarta el catálogo cacheado (y las
  * carátulas) y lo reconstruye leyendo de nuevo las etiquetas de los ficheros.
@@ -121,7 +178,7 @@ export async function rescan(): Promise<void> {
   await ensureCatalog();
 }
 
-function toAlbum(local: { id: string; name: string; artist?: string; coverUri?: string; songCount: number; year?: number }): Album {
+function toAlbum(local: CatAlbum): Album {
   registerCover(local.id, local.coverUri);
   return {
     id: local.id,
@@ -134,7 +191,7 @@ function toAlbum(local: { id: string; name: string; artist?: string; coverUri?: 
   };
 }
 
-function toArtist(local: { id: string; name: string; coverUri?: string; albumCount: number }): Artist {
+function toArtist(local: CatArtist): Artist {
   registerCover(local.id, local.coverUri);
   return {
     id: local.id,
@@ -190,11 +247,17 @@ export async function getAllAlbums(): Promise<Album[]> {
 }
 
 export async function getAlbum(albumId: string): Promise<{ album: Album; songs: Song[] }> {
-  const { mode, key } = sourceInfo();
-  await ensureCatalog();
-  const songs = getLocalAlbumSongs(mode, albumId, key);
-  const albums = getLocalAlbums(mode, key);
-  const album = albums.find((a) => a.id === albumId);
+  const c = await ensureCatalog();
+  const songs = (c?.songs ?? [])
+    .filter((s) => (s.albumId || normKey(s.album || 'Álbum desconocido')) === albumId)
+    // Orden por nº de pista (las que no lo tengan, al final por título).
+    .sort((a, b) => {
+      const ta = a.track ?? Infinity;
+      const tb = b.track ?? Infinity;
+      if (ta !== tb) return ta - tb;
+      return a.title.localeCompare(b.title);
+    });
+  const album = c?.albums.find((a) => a.id === albumId);
   return {
     album: album ? toAlbum(album) : { id: albumId, name: albumId, songCount: songs.length },
     songs,
@@ -208,11 +271,11 @@ export async function getArtists(): Promise<Artist[]> {
 }
 
 export async function getArtist(artistId: string): Promise<{ artist: Artist; albums: Album[] }> {
-  const { mode, key } = sourceInfo();
-  await ensureCatalog();
-  const albums = getLocalArtistAlbums(mode, artistId, key);
-  const allArtists = getLocalArtists(mode, key);
-  const artist = allArtists.find((a) => a.id === artistId);
+  const c = await ensureCatalog();
+  const albums = (c?.albums ?? []).filter(
+    (a) => normKey(a.artist || 'Artista desconocido') === artistId,
+  );
+  const artist = c?.artists.find((a) => a.id === artistId);
   return {
     artist: artist ? toArtist(artist) : { id: artistId, name: artistId, albumCount: albums.length },
     albums: albums.map(toAlbum),
@@ -321,6 +384,27 @@ export async function removeFromPlaylist(id: string, index: number): Promise<voi
 export async function deletePlaylist(id: string): Promise<void> {
   const list = await loadPlaylists();
   await savePlaylists(list.filter((p) => p.id !== id));
+}
+
+/** Crea o actualiza una lista local (la usan las descargas de playlists). */
+export async function upsertLocalPlaylist(
+  id: string,
+  name: string,
+  songIds: string[],
+  comment?: string,
+): Promise<void> {
+  const list = await loadPlaylists();
+  if (list.some((p) => p.id === id)) {
+    await savePlaylists(list.map((p) => (p.id === id ? { ...p, name, comment, songIds } : p)));
+  } else {
+    await savePlaylists([{ id, name, comment, songIds, createdAt: Date.now() }, ...list]);
+  }
+}
+
+/** Borra las listas locales con ese prefijo de id (limpieza de descargas). */
+export async function deleteLocalPlaylistsByPrefix(prefix: string): Promise<void> {
+  const list = await loadPlaylists();
+  await savePlaylists(list.filter((p) => !p.id.startsWith(prefix)));
 }
 
 export async function updatePlaylist(

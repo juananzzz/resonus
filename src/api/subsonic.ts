@@ -606,6 +606,11 @@ export function coverArtUrl(
   return buildUrl(auth, 'getCoverArt.view', { id, size });
 }
 
+/** URL de descarga del fichero original, sin transcodificar. */
+export function downloadUrl(auth: SubsonicAuth, id: string): string {
+  return buildUrl(auth, 'download.view', { id });
+}
+
 /**
  * URL de streaming de una canción. Si `maxBitRate` > 0, el servidor
  * transcodifica a ese bitrate (kbps) para ahorrar datos.

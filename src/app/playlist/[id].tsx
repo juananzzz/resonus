@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useShallow } from 'zustand/react/shallow';
 
 import { coverArtUrl, deletePlaylist, getPlaylist, updatePlaylist } from '@/api/data';
 import { Dialog } from '@/components/Dialog';
@@ -16,6 +17,7 @@ import { useSongSort } from '@/hooks/useSongSort';
 import { songsLabel, useT } from '@/i18n';
 import { formatTotalDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
+import { groupDownloadState, useDownloads } from '@/store/downloads';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
@@ -38,12 +40,21 @@ export default function PlaylistScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDownload, setConfirmDownload] = useState(false);
+  const [confirmRemoveDl, setConfirmRemoveDl] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['playlist', id],
     queryFn: () => getPlaylist(id),
     enabled: (!!auth || offline) && !!id,
   });
+
+  const songIds = (data?.songs ?? []).map((s) => s.id);
+  const download = useDownloads(
+    useShallow((s) => groupDownloadState(s, `playlist:${id}`, songIds)),
+  );
+  const downloadPlaylist = useDownloads((s) => s.downloadPlaylist);
+  const deleteSongs = useDownloads((s) => s.deleteSongs);
 
   const { songs: displaySongs, indices: playlistIndices, openSort, sortSheet } = useSongSort(
     data?.songs ?? [],
@@ -111,6 +122,17 @@ export default function PlaylistScreen() {
         playlistId={id}
         showArtwork={showListArtwork}
         onSort={data.songs.length > 1 ? openSort : undefined}
+        download={
+          !offline && data.songs.length > 0
+            ? {
+                ...download,
+                onPress: () => {
+                  if (download.status === 'none') setConfirmDownload(true);
+                  else if (download.status === 'done') setConfirmRemoveDl(true);
+                },
+              }
+            : undefined
+        }
         emptyState={
           <EmptyState
             icon="musical-notes-outline"
@@ -159,6 +181,33 @@ export default function PlaylistScreen() {
         hidePublic={offline}
         onCancel={() => setEditing(false)}
         onSave={onSaveEdit}
+      />
+
+      <Dialog
+        visible={confirmDownload}
+        title={t('Download “{name}”?', { name: data.playlist.name })}
+        message={t('{songs} will be saved to this device.', {
+          songs: songsLabel(data.songs.length, lang),
+        })}
+        confirmLabel={t('Download')}
+        onCancel={() => setConfirmDownload(false)}
+        onConfirm={() => {
+          setConfirmDownload(false);
+          void downloadPlaylist(data.playlist, data.songs);
+        }}
+      />
+
+      <Dialog
+        visible={confirmRemoveDl}
+        title={t('Remove download?')}
+        message={t('“{name}” will no longer be available offline.', { name: data.playlist.name })}
+        confirmLabel={t('Remove')}
+        destructive
+        onCancel={() => setConfirmRemoveDl(false)}
+        onConfirm={() => {
+          setConfirmRemoveDl(false);
+          void deleteSongs(songIds);
+        }}
       />
 
       <Dialog

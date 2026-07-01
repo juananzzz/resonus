@@ -7,7 +7,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useRef, type ReactNode } from 'react';
-import { Animated, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Song, type StarType } from '@/api/subsonic';
@@ -43,6 +51,13 @@ interface Props {
   numbered?: boolean;
   /** Si se indica, muestra un corazón para marcar el álbum como favorito. */
   favorite?: { id: string; type: StarType; starred: boolean };
+  /** Botón de descarga sin conexión (cabecera de álbum/playlist). */
+  download?: {
+    status: 'none' | 'active' | 'done';
+    /** Progreso 0..1 mientras `status` es 'active'. */
+    progress: number;
+    onPress: () => void;
+  };
   /** Si se indica, muestra un botón ⋯. */
   onMenu?: () => void;
   /** Si se indica, el menú de cada canción permite quitarla de esta playlist. */
@@ -73,6 +88,7 @@ export function TrackListView({
   currentId,
   numbered,
   favorite,
+  download,
   onMenu,
   playlistId,
   playlistIndices,
@@ -177,6 +193,36 @@ export function TrackListView({
                     starred={favorite.starred}
                     size={28}
                   />
+                ) : null}
+                {download ? (
+                  <Pressable
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      download.status === 'done' ? t('Remove download') : t('Download')
+                    }
+                    onPress={download.onPress}
+                    style={styles.downloadWrap}
+                  >
+                    {download.status === 'active' ? (
+                      <>
+                        <ActivityIndicator size="small" color={colors.accent} />
+                        <Text style={styles.downloadProgress}>
+                          {Math.round(download.progress * 100)}%
+                        </Text>
+                      </>
+                    ) : (
+                      <Ionicons
+                        name={
+                          download.status === 'done'
+                            ? 'arrow-down-circle'
+                            : 'arrow-down-circle-outline'
+                        }
+                        size={26}
+                        color={download.status === 'done' ? colors.accent : colors.textSecondary}
+                      />
+                    )}
+                  </Pressable>
                 ) : null}
                 {onSort ? (
                   <Pressable
@@ -317,6 +363,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
+  },
+  downloadWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  downloadProgress: {
+    color: colors.accent,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    minWidth: 32,
   },
   actionsRight: {
     flexDirection: 'row',

@@ -23,6 +23,7 @@ import {
 } from '@/api/data';
 import { normKey } from '@/lib/localLibrary';
 import { useAuthStore } from '@/store/auth';
+import { useDownloads } from '@/store/downloads';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu } from '@/store/songMenu';
 import { useToast } from '@/store/toast';
@@ -66,6 +67,9 @@ export function SongMenuSheet() {
   const sleepTimerMinutes = usePlayerStore((s) => s.sleepTimerMinutes);
   const toast = useToast((s) => s.show);
   const t = useT();
+  const downloaded = useDownloads((s) => !!(song && s.files[song.id]));
+  const downloadSong = useDownloads((s) => s.downloadSong);
+  const deleteDownloads = useDownloads((s) => s.deleteSongs);
 
   const [mode, setMode] = useState<'actions' | 'playlists' | 'sleep'>('actions');
 
@@ -98,11 +102,6 @@ export function SongMenuSheet() {
       toast(t("Couldn't add to the playlist"));
     }
   }
-
-  const soon = () => {
-    close();
-    toast(t('Coming soon'));
-  };
 
   async function removeFromList() {
     if ((!auth && !offline) || !context) return;
@@ -271,7 +270,27 @@ export function SongMenuSheet() {
               label={t('Lyrics')}
               onPress={() => go('/lyrics')}
             />
-            {!offline ? <Action icon="download-outline" label={t('Download')} onPress={soon} /> : null}
+            {downloaded ? (
+              <Action
+                icon="arrow-down-circle"
+                label={t('Remove download')}
+                onPress={() => {
+                  void deleteDownloads([song.id]);
+                  toast(t('Download removed'));
+                  close();
+                }}
+              />
+            ) : !offline && !song.url ? (
+              <Action
+                icon="download-outline"
+                label={t('Download')}
+                onPress={() => {
+                  void downloadSong(song);
+                  toast(t('Downloading…'));
+                  close();
+                }}
+              />
+            ) : null}
             <Action
               icon="moon-outline"
               label={

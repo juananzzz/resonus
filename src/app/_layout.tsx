@@ -16,6 +16,7 @@ import { SongMenuSheet } from '@/components/SongMenuSheet';
 import { Toast } from '@/components/Toast';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
+import { useDownloads } from '@/store/downloads';
 import { usePlayerStore } from '@/store/player';
 import { usePlayCounts } from '@/store/playCounts';
 import { usePlayHistory } from '@/store/playHistory';
@@ -29,7 +30,9 @@ export default function RootLayout() {
   const offlineSource = useAuthStore((s) => s.offlineSource);
   const hydrating = useAuthStore((s) => s.hydrating);
   const hydrate = useAuthStore((s) => s.hydrate);
-  const ready = !!auth || (offline && !!offlineSource);
+  // Con descargas, el perfil local funciona sin haber elegido origen de música.
+  const hasDownloads = useDownloads((s) => Object.keys(s.files).length > 0);
+  const ready = !!auth || (offline && (!!offlineSource || hasDownloads));
   // Perfil activo identificado para recargar búsquedas recientes al cambiar
   const activeProfile = auth ? `${auth.serverUrl}|${auth.username}` : offline ? 'offline' : '';
 
@@ -39,6 +42,7 @@ export default function RootLayout() {
     useRecentSearches.getState().hydrate();
     usePlayCounts.getState().hydrate();
     usePlayHistory.getState().hydrate();
+    void useDownloads.getState().hydrate();
   }, [hydrate, activeProfile]);
 
   // Al iniciar sesión en un servidor, retoma la cola guardada (sin reproducir).
@@ -82,11 +86,12 @@ export default function RootLayout() {
                 <Stack.Screen name="settings/account" />
                 <Stack.Screen name="settings/library" />
                 <Stack.Screen name="settings/playback" />
+                <Stack.Screen name="settings/downloads" />
                 <Stack.Screen name="settings/language" />
                 <Stack.Screen name="settings/personalization" />
                 <Stack.Screen name="settings/about" />
               </Stack.Protected>
-              <Stack.Protected guard={offline && !offlineSource}>
+              <Stack.Protected guard={offline && !offlineSource && !hasDownloads}>
                 <Stack.Screen name="offline" />
               </Stack.Protected>
               <Stack.Protected guard={!auth && !offline}>

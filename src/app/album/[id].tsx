@@ -1,15 +1,19 @@
 /** Detalle de un álbum con sus canciones. */
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { useShallow } from 'zustand/react/shallow';
 
 import { coverArtUrl, getAlbum } from '@/api/data';
+import { Dialog } from '@/components/Dialog';
 import { Message } from '@/components/Message';
 import { MoreFromArtist } from '@/components/MoreFromArtist';
 import { TrackListView } from '@/components/TrackListView';
 import { songsLabel, useT } from '@/i18n';
 import { formatTotalDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
+import { groupDownloadState, useDownloads } from '@/store/downloads';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { colors } from '@/theme';
@@ -17,16 +21,24 @@ import { colors } from '@/theme';
 export default function AlbumScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
+  const offline = useAuthStore((s) => s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
+  const [confirmDownload, setConfirmDownload] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['album', id],
     queryFn: () => getAlbum(id),
     enabled: canFetch && !!id,
   });
+
+  const songIds = data?.songs.map((s) => s.id) ?? [];
+  const download = useDownloads(useShallow((s) => groupDownloadState(s, `album:${id}`, songIds)));
+  const downloadAlbum = useDownloads((s) => s.downloadAlbum);
+  const deleteSongs = useDownloads((s) => s.deleteSongs);
 
   if (isLoading) {
     return (
@@ -51,26 +63,64 @@ export default function AlbumScreen() {
   if (totalSec > 0) metaParts.push(formatTotalDuration(totalSec));
 
   return (
-    <TrackListView
-      title={data.album.name}
-      subtitle={data.album.artist}
-      artistId={data.album.artistId}
-      meta={metaParts.join(' · ')}
-      coverUri={coverArtUrl(data.album.coverArt ?? data.album.id, 500)}
-      songs={data.songs}
-      currentId={playing?.id}
-      numbered
-      favorite={{ id: data.album.id, type: 'album', starred: !!data.album.starred }}
-      footer={
-        data.album.artistId ? (
-          <MoreFromArtist
-            artistId={data.album.artistId}
-            artistName={data.album.artist ?? ''}
-            currentAlbumId={data.album.id}
-          />
-        ) : undefined
-      }
-      onPlay={(start) => playQueue(data.songs, start, data.album.name, `/album/${id}`)}
-    />
+    <>
+      <TrackListView
+        title={data.album.name}
+        subtitle={data.album.artist}
+        artistId={data.album.artistId}
+        meta={metaParts.join(' · ')}
+        coverUri={coverArtUrl(data.album.coverArt ?? data.album.id, 500)}
+        songs={data.songs}
+        currentId={playing?.id}
+        numbered
+        favorite={{ id: data.album.id, type: 'album', starred: !!data.album.starred }}
+        download={
+          !offline
+            ? {
+                ...download,
+                onPress: () => {
+                  if (download.status === 'none') setConfirmDownload(true);
+                  else if (download.status === 'done') setConfirmDelete(true);
+                },
+              }
+            : undefined
+        }
+        footer={
+          data.album.artistId ? (
+            <MoreFromArtist
+              artistId={data.album.artistId}
+              artistName={data.album.artist ?? ''}
+              currentAlbumId={data.album.id}
+            />
+          ) : undefined
+        }
+        onPlay={(start) => playQueue(data.songs, start, data.album.name, `/album/${id}`)}
+      />
+      <Dialog
+        visible={confirmDownload}
+        title={t('Download “{name}”?', { name: data.album.name })}
+        message={t('{songs} will be saved to this device.', {
+          songs: songsLabel(data.songs.length, lang),
+        })}
+        confirmLabel={t('Download')}
+        onCancel={() => setConfirmDownload(false)}
+        onConfirm={() => {
+          setConfirmDownload(false);
+          void downloadAlbum(data.album, data.songs);
+        }}
+      />
+      <Dialog
+        visible={confirmDelete}
+        title={t('Remove download?')}
+        message={t('“{name}” will no longer be available offline.', { name: data.album.name })}
+        confirmLabel={t('Remove')}
+        destructive
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={() => {
+          setConfirmDelete(false);
+          void deleteSongs(songIds);
+        }}
+      />
+    </>
   );
 }

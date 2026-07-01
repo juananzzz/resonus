@@ -6,6 +6,7 @@ import { coverArtUrl } from '@/api/data';
 import { type Song } from '@/api/subsonic';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
+import { useDownloads } from '@/store/downloads';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu, type SongMenuContext } from '@/store/songMenu';
 import { useSettings } from '@/store/settings';
@@ -55,6 +56,7 @@ export function TrackRow({
   // favoritos (fiable), ya que no todos los endpoints traen `starred`.
   const favIds = useFavoriteIds(showFavorite);
   const favorited = showFavorite && (!!song.starred || (favIds?.has(song.id) ?? false));
+  const downloaded = useDownloads((s) => !!s.files[song.id]);
 
   return (
     <Pressable
@@ -85,10 +87,17 @@ export function TrackRow({
         >
           {song.title}
         </Text>
-        {song.artist ? (
-          <Text style={styles.artist} numberOfLines={1}>
-            {song.artist}
-          </Text>
+        {downloaded || song.artist ? (
+          <View style={styles.subRow}>
+            {downloaded ? (
+              <Ionicons name="arrow-down-circle" size={13} color={colors.accent} />
+            ) : null}
+            {song.artist ? (
+              <Text style={styles.artist} numberOfLines={1}>
+                {song.artist}
+              </Text>
+            ) : null}
+          </View>
         ) : null}
       </View>
 
@@ -150,10 +159,16 @@ const styles = StyleSheet.create({
   current: {
     color: colors.accent,
   },
+  subRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
   artist: {
     color: colors.textSecondary,
     fontSize: fontSize.xs,
-    marginTop: 2,
+    flexShrink: 1,
   },
   duration: {
     color: colors.textMuted,

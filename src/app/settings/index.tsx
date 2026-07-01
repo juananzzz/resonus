@@ -26,6 +26,7 @@ const SECTIONS: Section[] = [
     title: 'Quality & playback',
     subtitle: 'Quality · Crossfade · Equalizer',
   },
+  { key: 'downloads', icon: 'download-outline', title: 'Downloads', subtitle: 'Quality · Storage' },
   { key: 'personalization', icon: 'color-palette-outline', title: 'Appearance', subtitle: 'Language · Quality · Theme' },
   { key: 'about', icon: 'information-circle-outline', title: 'About', subtitle: 'Version · GitHub' },
 ];
