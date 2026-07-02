@@ -36,6 +36,10 @@ interface SettingsState {
   showListArtwork: boolean;
   /** Duración de cada canción en las listas (Spotify no la muestra). */
   showSongDuration: boolean;
+  /** Al acabar la cola, seguir con canciones parecidas (getSimilarSongs2). */
+  autoplaySimilar: boolean;
+  /** Vibración sutil al usar los controles. */
+  hapticsEnabled: boolean;
   /** Foto circular del artista junto a su nombre en la pantalla de álbum. */
   showArtistPhoto: boolean;
   /** Visibilidad de botones opcionales, para quien prefiera una UI mínima. */
@@ -49,6 +53,8 @@ interface SettingsState {
   setShowAudioQuality: (mode: AudioQualityMode) => void;
   setShowListArtwork: (value: boolean) => void;
   setShowSongDuration: (value: boolean) => void;
+  setAutoplaySimilar: (value: boolean) => void;
+  setHapticsEnabled: (value: boolean) => void;
   setShowArtistPhoto: (value: boolean) => void;
   setShowHistoryButton: (value: boolean) => void;
   setShowProfileButton: (value: boolean) => void;
@@ -70,6 +76,8 @@ function snapshot(get: () => SettingsState) {
     showAudioQuality: s.showAudioQuality,
     showListArtwork: s.showListArtwork,
     showSongDuration: s.showSongDuration,
+    autoplaySimilar: s.autoplaySimilar,
+    hapticsEnabled: s.hapticsEnabled,
     showArtistPhoto: s.showArtistPhoto,
     showHistoryButton: s.showHistoryButton,
     showProfileButton: s.showProfileButton,
@@ -85,6 +93,8 @@ export const useSettings = create<SettingsState>((set, get) => ({
   showAudioQuality: 'off',
   showListArtwork: true,
   showSongDuration: true,
+  autoplaySimilar: true,
+  hapticsEnabled: true,
   showArtistPhoto: true,
   showHistoryButton: true,
   showProfileButton: true,
@@ -118,6 +128,16 @@ export const useSettings = create<SettingsState>((set, get) => ({
 
   setShowSongDuration: (showSongDuration) => {
     set({ showSongDuration });
+    persist(snapshot(get));
+  },
+
+  setAutoplaySimilar: (autoplaySimilar) => {
+    set({ autoplaySimilar });
+    persist(snapshot(get));
+  },
+
+  setHapticsEnabled: (hapticsEnabled) => {
+    set({ hapticsEnabled });
     persist(snapshot(get));
   },
 
@@ -157,6 +177,8 @@ export const useSettings = create<SettingsState>((set, get) => ({
           showAudioQuality: AudioQualityMode | boolean;
           showListArtwork: boolean;
           showSongDuration: boolean;
+          autoplaySimilar: boolean;
+          hapticsEnabled: boolean;
           showArtistPhoto: boolean;
           showHistoryButton: boolean;
           showProfileButton: boolean;
@@ -184,6 +206,12 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.showSongDuration === 'boolean') {
           set({ showSongDuration: parsed.showSongDuration });
+        }
+        if (typeof parsed.autoplaySimilar === 'boolean') {
+          set({ autoplaySimilar: parsed.autoplaySimilar });
+        }
+        if (typeof parsed.hapticsEnabled === 'boolean') {
+          set({ hapticsEnabled: parsed.hapticsEnabled });
         }
         if (typeof parsed.showArtistPhoto === 'boolean') {
           set({ showArtistPhoto: parsed.showArtistPhoto });

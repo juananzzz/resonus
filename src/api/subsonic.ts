@@ -433,6 +433,20 @@ export async function getTopSongs(
   return res.topSongs?.song ?? [];
 }
 
+/** Canciones parecidas a una dada (getSimilarSongs2): autoplay / radio. */
+export async function getSimilarSongs(
+  auth: SubsonicAuth,
+  id: string,
+  count = 20,
+): Promise<Song[]> {
+  const res = await request<{ similarSongs2?: { song?: Song[] } }>(
+    auth,
+    'getSimilarSongs2.view',
+    { id, count },
+  );
+  return res.similarSongs2?.song ?? [];
+}
+
 export interface ArtistInfo {
   biography?: string;
   imageUrl?: string;

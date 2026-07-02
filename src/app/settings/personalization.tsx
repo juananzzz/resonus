@@ -37,6 +37,8 @@ export default function AppearanceSettings() {
   const setShowCastButton = useSettings((s) => s.setShowCastButton);
   const showOutputButton = useSettings((s) => s.showOutputButton);
   const setShowOutputButton = useSettings((s) => s.setShowOutputButton);
+  const hapticsEnabled = useSettings((s) => s.hapticsEnabled);
+  const setHapticsEnabled = useSettings((s) => s.setHapticsEnabled);
 
   return (
     <SettingsPage title={t('Appearance')}>
@@ -99,6 +101,16 @@ export default function AppearanceSettings() {
         />
         <Text style={settingsStyles.hint}>
           {t("Hide the buttons you don't use for a cleaner interface.")}
+        </Text>
+
+        <Text style={settingsStyles.sectionTitle}>{t('Interaction')}</Text>
+        <SwitchList
+          options={[
+            { label: t('Vibration'), value: hapticsEnabled, onChange: setHapticsEnabled },
+          ]}
+        />
+        <Text style={settingsStyles.hint}>
+          {t('A subtle vibration when using the controls.')}
         </Text>
 
         <Text style={settingsStyles.sectionTitle}>{t('Theme')}</Text>

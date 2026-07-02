@@ -2,7 +2,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, ScrollView, Text } from 'react-native';
 
-import { SelectList, SettingsPage, settingsStyles } from '@/components/SettingsUI';
+import { SelectList, SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { BITRATE_OPTIONS, useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
@@ -16,6 +16,8 @@ export default function PlaybackSettings() {
   const offline = useAuthStore((s) => s.offline);
   const maxBitRate = useSettings((s) => s.maxBitRate);
   const setMaxBitRate = useSettings((s) => s.setMaxBitRate);
+  const autoplaySimilar = useSettings((s) => s.autoplaySimilar);
+  const setAutoplaySimilar = useSettings((s) => s.setAutoplaySimilar);
 
   const soon = () => toast(t('Coming soon'));
 
@@ -37,6 +39,18 @@ export default function PlaybackSettings() {
         ) : null}
 
         <Text style={settingsStyles.sectionTitle}>{t('Playback')}</Text>
+        {!offline ? (
+          <>
+            <SwitchList
+              options={[
+                { label: t('Autoplay'), value: autoplaySimilar, onChange: setAutoplaySimilar },
+              ]}
+            />
+            <Text style={settingsStyles.hint}>
+              {t('Keep playing similar songs when your queue ends.')}
+            </Text>
+          </>
+        ) : null}
         <Pressable style={settingsStyles.rowButton} onPress={soon}>
           <Ionicons name="git-compare-outline" size={22} color={colors.text} />
           <Text style={settingsStyles.rowText}>{t('Crossfade')}</Text>

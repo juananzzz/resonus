@@ -21,7 +21,16 @@ import {
 } from 'expo-audio';
 import { create } from 'zustand';
 
-import { coverArtUrl, getPlayQueue, savePlayQueue, scrobble, streamUrl, type Song } from '@/api/subsonic';
+import {
+  coverArtUrl,
+  getPlayQueue,
+  getSimilarSongs,
+  savePlayQueue,
+  scrobble,
+  streamUrl,
+  type Song,
+} from '@/api/subsonic';
+import { tapHaptic } from '@/lib/haptics';
 import { deleteItem, getItem, setItem } from '@/lib/storage';
 import { useAuthStore } from './auth';
 import {
@@ -221,6 +230,38 @@ function onTrackChanged(song: Song) {
   if (auth) scrobble(auth, song.id);
   else if (useAuthStore.getState().offline) usePlayCounts.getState().bump(song.id);
   usePlayHistory.getState().record(song);
+  scheduleSync();
+  void maybeQueueAutoplay();
+}
+
+// ── Autoplay: al acercarse el final de la cola, encolar canciones parecidas ──
+// (estilo Spotify). Solo online, con el ajuste activo y sin repetir petición
+// para la misma última canción.
+let autoplayFetchedFor: string | null = null;
+
+async function maybeQueueAutoplay() {
+  const { queue, index, repeat } = usePlayerStore.getState();
+  // Con repeat la cola nunca "se acaba"; y si aún quedan 2+ canciones, aún no.
+  if (repeat !== 'off' || index < queue.length - 2) return;
+  const { auth, offline } = useAuthStore.getState();
+  if (!auth || offline || !useSettings.getState().autoplaySimilar) return;
+  const last = queue[queue.length - 1];
+  if (!last || last.url || autoplayFetchedFor === last.id) return;
+  autoplayFetchedFor = last.id;
+  let similar: Song[];
+  try {
+    similar = await getSimilarSongs(auth, last.id, 20);
+  } catch {
+    return; // sin autoplay: la reproducción parará al final, como antes
+  }
+  const st = usePlayerStore.getState();
+  // La cola pudo cambiar mientras respondía el servidor; solo añadimos si la
+  // última canción sigue siendo la misma.
+  if (st.queue[st.queue.length - 1]?.id !== last.id) return;
+  const have = new Set(st.queue.map((s) => s.id));
+  const fresh = similar.filter((s) => !have.has(s.id) && !s.url).slice(0, 10);
+  if (fresh.length === 0) return;
+  usePlayerStore.setState({ queue: [...st.queue, ...fresh] });
   scheduleSync();
 }
 
@@ -509,6 +550,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   playQueue: async (songs, startIndex = 0, source, sourceHref) => {
     if (songs.length === 0) return;
     attachAppState();
+    autoplayFetchedFor = null;
     set({
       queue: songs,
       index: startIndex,
@@ -545,6 +587,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   toggle: () => {
+    tapHaptic();
     if (remoteKind()) {
       if (get().isPlaying) {
         remotePause();
@@ -770,6 +813,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   reset: async () => {
     get().cancelSleepTimer();
+    autoplayFetchedFor = null;
     stopPeriodicSync();
     if (syncTimer) {
       clearTimeout(syncTimer);

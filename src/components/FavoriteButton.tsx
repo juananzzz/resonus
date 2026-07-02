@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, type GestureResponderEvent } from 'react-native';
 
 import { star, unstar, type StarType } from '@/api/data';
+import { tapHaptic } from '@/lib/haptics';
 import { useAuthStore } from '@/store/auth';
 import { useT } from '@/i18n';
 import { colors } from '@/theme';
@@ -34,6 +35,7 @@ export function FavoriteButton({ id, type = 'song', starred, size = 22 }: Props)
   async function toggle(e?: GestureResponderEvent) {
     e?.stopPropagation();
     if ((!auth && !offline) || busy) return;
+    tapHaptic();
     const nextFav = !fav;
     setFav(nextFav); // actualización optimista
     setBusy(true);
