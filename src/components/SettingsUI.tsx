@@ -1,7 +1,8 @@
 /** Piezas compartidas por la pantalla de Ajustes y sus sub-pantallas. */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useState } from 'react';
+import { LayoutAnimation, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
@@ -31,9 +32,10 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
 }
 
 /**
- * Lista de opciones "elige una" agrupada en una tarjeta, con checkmark en la
- * activa. Sustituye a los chips: más limpia y sin saltos de línea. Las
- * etiquetas llegan ya traducidas desde quien la usa.
+ * Selector "elige una" plegable (estilo Spotify): colapsado muestra solo la
+ * opción activa; al tocarla se despliega en el sitio la lista completa con
+ * checkmark en la activa, y elegir vuelve a plegar. Las etiquetas llegan ya
+ * traducidas desde quien lo usa.
  */
 export function SelectList<T extends string | number | boolean>({
   options,
@@ -44,10 +46,35 @@ export function SelectList<T extends string | number | boolean>({
   value: T;
   onChange: (value: T) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const active = options.find((o) => o.value === value) ?? options[0];
+
+  function toggle(next: boolean) {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded(next);
+  }
+
+  if (!expanded) {
+    return (
+      <View style={settingsStyles.selectCard}>
+        <Pressable
+          accessibilityRole="button"
+          style={({ pressed }) => [settingsStyles.selectRow, pressed && { opacity: 0.6 }]}
+          onPress={() => toggle(true)}
+        >
+          <Text style={[settingsStyles.selectRowText, settingsStyles.selectRowTextActive]}>
+            {active?.label}
+          </Text>
+          <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <View style={settingsStyles.selectCard}>
       {options.map((opt, i) => {
-        const active = opt.value === value;
+        const isActive = opt.value === value;
         return (
           <Pressable
             key={String(opt.value)}
@@ -56,12 +83,15 @@ export function SelectList<T extends string | number | boolean>({
               i > 0 && settingsStyles.selectRowBorder,
               pressed && { opacity: 0.6 },
             ]}
-            onPress={() => onChange(opt.value)}
+            onPress={() => {
+              toggle(false);
+              if (!isActive) onChange(opt.value);
+            }}
           >
-            <Text style={[settingsStyles.selectRowText, active && settingsStyles.selectRowTextActive]}>
+            <Text style={[settingsStyles.selectRowText, isActive && settingsStyles.selectRowTextActive]}>
               {opt.label}
             </Text>
-            {active ? (
+            {isActive ? (
               <Ionicons name="checkmark-circle" size={22} color={colors.accent} />
             ) : (
               <View style={{ width: 22 }} />

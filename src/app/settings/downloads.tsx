@@ -52,11 +52,7 @@ export default function DownloadsSettings() {
             <SelectList
               options={BITRATE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
               value={downloadBitRate}
-              onChange={(value) => {
-                const opt = BITRATE_OPTIONS.find((o) => o.value === value);
-                setDownloadBitRate(value);
-                if (opt) toast(t('Quality: {label}', { label: opt.label }));
-              }}
+              onChange={setDownloadBitRate}
             />
             <Text style={settingsStyles.hint}>
               {t('“Original” uses the highest quality; a lower bitrate saves data.')}

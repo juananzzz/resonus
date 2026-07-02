@@ -28,11 +28,7 @@ export default function PlaybackSettings() {
             <SelectList
               options={BITRATE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
               value={maxBitRate}
-              onChange={(value) => {
-                const opt = BITRATE_OPTIONS.find((o) => o.value === value);
-                setMaxBitRate(value);
-                if (opt) toast(t('Quality: {label}', { label: opt.label }));
-              }}
+              onChange={setMaxBitRate}
             />
             <Text style={settingsStyles.hint}>
               {t('“Original” uses the highest quality; a lower bitrate saves data.')}
