@@ -21,7 +21,7 @@ interface Props {
   title: string;
   message?: string;
   /** Si se indica, muestra un campo de texto inicializado con `initialValue`. */
-  input?: { placeholder?: string; initialValue?: string };
+  input?: { placeholder?: string; initialValue?: string; secure?: boolean };
   confirmLabel: string;
   destructive?: boolean;
   onCancel: () => void;
@@ -62,6 +62,7 @@ export function Dialog({
               placeholderTextColor={colors.textMuted}
               value={value}
               onChangeText={setValue}
+              secureTextEntry={input.secure}
               autoFocus
             />
           ) : null}

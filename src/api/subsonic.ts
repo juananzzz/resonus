@@ -25,6 +25,12 @@ export interface SubsonicAuth {
    * Subsonic. Para los demás servidores no se guarda (se usa token + salt).
    */
   password?: string;
+  /**
+   * Contraseña para la API nativa de Navidrome (JWT), que necesita usuario y
+   * contraseña en claro. Solo se guarda en perfiles Navidrome; la auth
+   * Subsonic sigue yendo por token + salt (por eso no reutiliza `password`).
+   */
+  ndPassword?: string;
 }
 
 export interface Song {
@@ -152,6 +158,8 @@ export async function makeAuth(
     serverType,
     // Ampache valida mal el token; guardamos la contraseña para usar `p=enc:`.
     ...(isAmpache(serverType) ? { password } : {}),
+    // Navidrome: la API nativa (subir carátulas) necesita la contraseña.
+    ...(serverType === 'navidrome' ? { ndPassword: password } : {}),
   };
 }
 

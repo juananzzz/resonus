@@ -68,6 +68,11 @@ interface AuthState {
   ) => Promise<void>;
   switchProfile: (profile: Profile) => Promise<void>;
   removeProfile: (profile: Profile) => Promise<void>;
+  /**
+   * Guarda la contraseña de la API nativa de Navidrome en el perfil activo
+   * (para perfiles creados antes de que el login la guardara).
+   */
+  saveNativePassword: (password: string) => Promise<void>;
   enterOffline: () => Promise<void>;
   setOfflineSource: (source: OfflineSource | null) => Promise<void>;
   logout: () => Promise<void>;
@@ -149,6 +154,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const profiles = get().profiles.filter((p) => !same(p, profile));
     await setItem(PROFILES_KEY, JSON.stringify(profiles));
     set({ profiles });
+  },
+
+  saveNativePassword: async (password) => {
+    const current = get().auth;
+    if (!current) return;
+    const auth: ServerProfile = { ...current, ndPassword: password, _type: 'server' };
+    const profiles = get().profiles.map((p) =>
+      same(p, auth) ? auth : p,
+    );
+    await setItem(ACTIVE_KEY, JSON.stringify(auth));
+    await setItem(PROFILES_KEY, JSON.stringify(profiles));
+    set({ auth, profiles });
   },
 
   enterOffline: async () => {
