@@ -32,7 +32,18 @@ import {
   castStop,
   initCast,
   isCastConnected,
+  type CastEvents,
 } from './cast';
+import {
+  initUpnp,
+  isUpnpConnected,
+  upnpDisconnect,
+  upnpLoad,
+  upnpPause,
+  upnpPlay,
+  upnpSeek,
+  upnpSetVolume,
+} from './upnp';
 import { usePlayCounts } from './playCounts';
 import { usePlayHistory } from './playHistory';
 import { useSettings } from './settings';
@@ -125,11 +136,43 @@ function applyLockScreen(song: Song) {
   }
 }
 
-/** Carga la pista en `index` en el Chromecast y sincroniza el estado. */
-async function castLoadIndex(index: number, autoplay: boolean, startSec = 0) {
+// ── Salida remota (Chromecast o renderer UPnP/DLNA) ────────────────────────
+
+/** Salida remota activa, si la hay. Solo puede haber una a la vez. */
+function remoteKind(): 'cast' | 'upnp' | null {
+  if (isCastConnected()) return 'cast';
+  if (isUpnpConnected()) return 'upnp';
+  return null;
+}
+
+function remotePlay() {
+  if (remoteKind() === 'upnp') void upnpPlay();
+  else void castPlay();
+}
+
+function remotePause() {
+  if (remoteKind() === 'upnp') void upnpPause();
+  else void castPause();
+}
+
+function remoteSeek(sec: number) {
+  if (remoteKind() === 'upnp') void upnpSeek(sec);
+  else void castSeek(sec);
+}
+
+function remoteSetVolume(volume: number) {
+  if (remoteKind() === 'upnp') upnpSetVolume(volume);
+  else castSetVolume(volume);
+}
+
+/** Carga la pista en `index` en la salida remota y sincroniza el estado. */
+async function remoteLoadIndex(index: number, autoplay: boolean, startSec = 0) {
   const song = usePlayerStore.getState().queue[index];
   if (!song) return;
-  const ok = await castLoad(song, autoplay, startSec);
+  const ok =
+    remoteKind() === 'upnp'
+      ? await upnpLoad(song, autoplay, startSec)
+      : await castLoad(song, autoplay, startSec);
   if (!ok) {
     useToast.getState().show(tg("This song can't be cast"));
     usePlayerStore.setState({ index, isPlaying: false, isBuffering: false });
@@ -147,7 +190,7 @@ async function castLoadIndex(index: number, autoplay: boolean, startSec = 0) {
 
 /** Carga la pista en `index` y (opcionalmente) la reproduce. */
 async function loadIndex(index: number, autoplay: boolean) {
-  if (isCastConnected()) return castLoadIndex(index, autoplay);
+  if (remoteKind()) return remoteLoadIndex(index, autoplay);
   const { queue, repeat } = usePlayerStore.getState();
   const song = queue[index];
   if (!song) return;
@@ -190,9 +233,9 @@ function nextIndex(manual: boolean): number | null {
 
 /** Listener de estado de expo-audio: progreso, play/pausa y fin de pista. */
 function onStatus(status: AudioStatus) {
-  // Con sesión de cast la salida es el Chromecast: el player local está en
-  // pausa y sus estados no deben pisar los que llegan del cast.
-  if (isCastConnected()) return;
+  // Con salida remota (Chromecast/UPnP) el player local está en pausa y sus
+  // estados no deben pisar los que llegan del aparato remoto.
+  if (remoteKind()) return;
   const prev = usePlayerStore.getState();
   // Bufferea si queremos reproducir pero el audio aún no fluye (carga inicial,
   // rebuffer en streaming, seek…). Si está en pausa, no es buffering.
@@ -262,13 +305,15 @@ function attachAppState() {
   });
 }
 
-// ── Integración con Chromecast (ver src/store/cast.ts) ─────────────────────
-
-/** Engancha los eventos de la sesión de cast a la cola. Llamar una vez. */
-export function initCastIntegration() {
-  initCast({
+/**
+ * Engancha los eventos de las salidas remotas (Chromecast y UPnP) a la cola.
+ * Ambas comparten los mismos handlers; ver src/store/cast.ts y upnp.ts.
+ * Llamar una vez al arrancar.
+ */
+export function initRemoteIntegration() {
+  const events: CastEvents = {
     onConnected: () => {
-      // Transfiere la pista actual al Chromecast y silencia el player local.
+      // Transfiere la pista actual al aparato y silencia el player local.
       const { queue, index, positionSec, isPlaying } = usePlayerStore.getState();
       try {
         audioPlayer?.pause();
@@ -279,7 +324,7 @@ export function initCastIntegration() {
       } catch {
         // ignore
       }
-      if (queue[index]) void castLoadIndex(index, isPlaying, positionSec);
+      if (queue[index]) void remoteLoadIndex(index, isPlaying, positionSec);
     },
     onDisconnected: (lastPositionSec) => {
       // Vuelve al player local, en pausa, donde se quedó el cast.
@@ -308,14 +353,24 @@ export function initCastIntegration() {
     onFinished: () => {
       const { repeat, index } = usePlayerStore.getState();
       if (repeat === 'one') {
-        void castLoadIndex(index, true);
+        void remoteLoadIndex(index, true);
         return;
       }
       const ni = nextIndex(false);
       if (ni == null) usePlayerStore.setState({ isPlaying: false });
       else void loadIndex(ni, true);
     },
+  };
+  initCast({
+    ...events,
+    onConnected: () => {
+      // Exclusión mutua: si había un renderer UPnP activo, se suelta en
+      // silencio (la reproducción sigue en el Chromecast recién conectado).
+      if (isUpnpConnected()) void upnpDisconnect(true);
+      events.onConnected();
+    },
   });
+  initUpnp(events);
 }
 
 interface PlayerState {
@@ -419,12 +474,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   toggle: () => {
-    if (isCastConnected()) {
+    if (remoteKind()) {
       if (get().isPlaying) {
-        void castPause();
+        remotePause();
         set({ isPlaying: false });
       } else {
-        void castPlay();
+        remotePlay();
         set({ isPlaying: true });
       }
       return;
@@ -456,14 +511,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   seekTo: (sec) => {
-    if (isCastConnected()) void castSeek(sec);
+    if (remoteKind()) remoteSeek(sec);
     else audioPlayer?.seekTo(sec);
     set({ positionSec: sec });
   },
 
   setVolume: (v) => {
     const volume = Math.max(0, Math.min(1, v));
-    if (isCastConnected()) castSetVolume(volume);
+    if (remoteKind()) remoteSetVolume(volume);
     else if (audioPlayer) audioPlayer.volume = volume;
     set({ volume });
   },
@@ -546,7 +601,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setSleepTimer: (minutes) => {
     if (sleepTimeout) clearTimeout(sleepTimeout);
     sleepTimeout = setTimeout(() => {
-      if (isCastConnected()) void castPause();
+      if (remoteKind()) remotePause();
       else audioPlayer?.pause();
       sleepTimeout = null;
       set({ isPlaying: false, sleepTimerMinutes: null });
@@ -600,7 +655,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       clearTimeout(syncTimer);
       syncTimer = null;
     }
-    if (isCastConnected()) void castStop();
+    // Al resetear (cambio de perfil/salir) se corta la salida remota sin
+    // reanudar en local: la cola va a desaparecer igualmente.
+    if (remoteKind() === 'cast') void castStop();
+    else if (remoteKind() === 'upnp') void upnpDisconnect(true);
     try {
       audioPlayer?.pause();
       if (lockActive) {

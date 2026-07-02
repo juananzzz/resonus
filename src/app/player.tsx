@@ -3,7 +3,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -30,6 +30,7 @@ import { AudioQualityBadge } from '@/components/AudioQualityBadge';
 import { CastIconButton } from '@/components/CastIconButton';
 import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { OutputSheet } from '@/components/OutputSheet';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
@@ -37,6 +38,7 @@ import { useCast } from '@/store/cast';
 import { currentSong, SOURCE_FAVORITES, SOURCE_HISTORY, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useSongMenu } from '@/store/songMenu';
+import { useUpnp } from '@/store/upnp';
 import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
 
@@ -92,6 +94,9 @@ export default function PlayerScreen() {
   const showQualityBadge = showQuality === 'player' || showQuality === 'everywhere';
   const offline = useAuthStore((s) => s.offline);
   const castDevice = useCast((s) => (s.connected ? s.deviceName : null));
+  const upnpDevice = useUpnp((s) => (s.connected ? s.deviceName : null));
+  const remoteDevice = castDevice ?? upnpDevice;
+  const [outputOpen, setOutputOpen] = useState(false);
   const favIds = useFavoriteIds(!!song && (!song?.localUri || offline));
 
   // Deslizar la carátula: izquierda → siguiente, derecha → anterior. A
@@ -234,11 +239,11 @@ export default function PlayerScreen() {
           )}
         </View>
 
-        {castDevice ? (
+        {remoteDevice ? (
           <View style={styles.castRow}>
             <Ionicons name="tv-outline" size={13} color={colors.accent} />
             <Text style={styles.castText} numberOfLines={1}>
-              {t('Playing on {device}', { device: castDevice })}
+              {t('Playing on {device}', { device: remoteDevice })}
             </Text>
           </View>
         ) : null}
@@ -371,8 +376,19 @@ export default function PlayerScreen() {
 
           <View style={styles.bottomRow}>
             <View style={styles.bottomSlot}>{!offline ? <CastIconButton /> : null}</View>
-            {/* Placeholder: será el selector de salida UPnP/DLNA cuando llegue. */}
-            <MaterialIcons name="speaker" size={22} color={colors.textMuted} />
+            <Pressable
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t('Output')}
+              disabled={offline}
+              onPress={() => setOutputOpen(true)}
+            >
+              <MaterialIcons
+                name="speaker"
+                size={22}
+                color={upnpDevice ? colors.accent : offline ? colors.textMuted : colors.text}
+              />
+            </Pressable>
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
@@ -384,6 +400,7 @@ export default function PlayerScreen() {
           </View>
         </View>
         </SafeAreaView>
+        <OutputSheet visible={outputOpen} onClose={() => setOutputOpen(false)} />
       </Animated.View>
     </GestureDetector>
   );

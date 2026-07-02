@@ -1,0 +1,26 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+group = 'expo.modules.upnpcast'
+version = '0.0.1'
+
+def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
+apply from: expoModulesCorePlugin
+applyKotlinExpoModulesCorePlugin()
+useCoreDependencies()
+useExpoPublishing()
+
+android {
+  namespace "expo.modules.upnpcast"
+  compileSdk rootProject.ext.compileSdkVersion ?: 35
+  defaultConfig {
+    minSdkVersion rootProject.ext.minSdkVersion ?: 24
+    targetSdkVersion rootProject.ext.targetSdkVersion ?: 35
+  }
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+  // Descubrimiento SSDP + control AVTransport (sustituto moderno de Cling).
+  implementation "com.yinnho.upnpcast:upnpcast:1.1.2"
+}

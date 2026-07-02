@@ -96,6 +96,9 @@ export function initCast(events: CastEvents): void {
   const end = () => {
     client = null;
     session = null;
+    // Si ya se cerró a mano (castEndSession, al pasar a UPnP), no reavisar:
+    // el player ya tiene otra salida y no debe reanudar en local.
+    if (!useCast.getState().connected) return;
     useCast.setState({ connected: false, deviceName: null });
     events.onDisconnected(lastPositionSec);
   };
@@ -178,6 +181,30 @@ export function castSetVolume(volume: number): void {
 export async function castStop(): Promise<void> {
   try {
     await client?.stop();
+  } catch {
+    // ignore
+  }
+}
+
+/** Termina la sesión de cast reanudando en el teléfono (selector de salida). */
+export async function castDisconnect(): Promise<void> {
+  if (!cast || !isCastConnected()) return;
+  try {
+    // end() (onSessionEnded) avisará al player para reanudar en local.
+    await cast.CastContext.getSessionManager().endCurrentSession(true);
+  } catch {
+    // ignore
+  }
+}
+
+/** Termina la sesión de cast entera (p. ej. al pasar a una salida UPnP). */
+export async function castEndSession(): Promise<void> {
+  if (!cast || !isCastConnected()) return;
+  // Desconecta ya en el estado para que el player enrute a la salida nueva
+  // sin esperar al evento onSessionEnded (que llega con retraso y se ignora).
+  useCast.setState({ connected: false, deviceName: null });
+  try {
+    await cast.CastContext.getSessionManager().endCurrentSession(true);
   } catch {
     // ignore
   }

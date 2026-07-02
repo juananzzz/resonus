@@ -1,0 +1,7 @@
+{
+  "name": "upnp-cast",
+  "version": "0.0.1",
+  "description": "UPnP/DLNA casting bridge for Resonus (local Expo module)",
+  "main": "index.ts",
+  "private": true
+}

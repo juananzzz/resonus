@@ -17,7 +17,7 @@ import { Toast } from '@/components/Toast';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
 import { useDownloads } from '@/store/downloads';
-import { initCastIntegration, usePlayerStore } from '@/store/player';
+import { initRemoteIntegration, usePlayerStore } from '@/store/player';
 import { usePlayCounts } from '@/store/playCounts';
 import { usePlayHistory } from '@/store/playHistory';
 import { useRecentSearches } from '@/store/recentSearches';
@@ -45,7 +45,7 @@ export default function RootLayout() {
     usePlayHistory.getState().hydrate();
     useSortPrefs.getState().hydrate();
     void useDownloads.getState().hydrate();
-    initCastIntegration();
+    initRemoteIntegration();
   }, [hydrate, activeProfile]);
 
   // Al iniciar sesión en un servidor, retoma la cola guardada (sin reproducir).
