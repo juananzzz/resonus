@@ -1,5 +1,5 @@
 /** Ajustes › Acerca de: versión y enlace al repositorio. */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Field, SettingsPage, settingsStyles } from '@/components/SettingsUI';
@@ -14,7 +14,7 @@ export default function AboutSettings() {
     <SettingsPage title={t('About')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <View style={settingsStyles.card}>
-          <Field label={t('Version')} value="Resonus 0.1.1 (beta)" />
+          <Field label={t('Version')} value="Resonus 0.1.2 (beta)" />
           <View style={settingsStyles.divider} />
           <Pressable style={settingsStyles.linkRow} onPress={() => Linking.openURL(REPO_URL)}>
             <Ionicons name="logo-github" size={22} color={colors.text} />
