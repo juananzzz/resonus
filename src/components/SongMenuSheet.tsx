@@ -65,8 +65,10 @@ export function SongMenuSheet() {
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const playNext = usePlayerStore((s) => s.playNext);
   const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
+  const setSleepAtSongEnd = usePlayerStore((s) => s.setSleepAtSongEnd);
   const cancelSleepTimer = usePlayerStore((s) => s.cancelSleepTimer);
   const sleepTimerMinutes = usePlayerStore((s) => s.sleepTimerMinutes);
+  const sleepAtSongEnd = usePlayerStore((s) => s.sleepAtSongEnd);
   const toast = useToast((s) => s.show);
   const t = useT();
   const downloaded = useDownloads((s) => !!(song && s.files[song.id]));
@@ -209,7 +211,18 @@ export function SongMenuSheet() {
                 <Text style={styles.actionText}>{t('{n} minutes', { n: m })}</Text>
               </Pressable>
             ))}
-            {sleepTimerMinutes ? (
+            <Pressable
+              style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+              onPress={() => {
+                setSleepAtSongEnd();
+                toast(t('Will pause when the song ends'));
+                close();
+              }}
+            >
+              <Ionicons name="musical-note-outline" size={24} color={colors.text} />
+              <Text style={styles.actionText}>{t('When the song ends')}</Text>
+            </Pressable>
+            {sleepTimerMinutes || sleepAtSongEnd ? (
               <Pressable
                 style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
                 onPress={() => {
@@ -322,7 +335,9 @@ export function SongMenuSheet() {
               label={
                 sleepTimerMinutes
                   ? t('Sleep timer ({n} min)', { n: sleepTimerMinutes })
-                  : t('Sleep timer')
+                  : sleepAtSongEnd
+                    ? t('Sleep timer (end of song)')
+                    : t('Sleep timer')
               }
               onPress={() => setMode('sleep')}
             />

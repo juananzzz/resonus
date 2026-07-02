@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { coverArtUrl, search } from '@/api/data';
+import { coverArtUrl, getPlaylists, search } from '@/api/data';
 import { getGenres } from '@/api/subsonic';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
@@ -60,6 +60,20 @@ export default function SearchScreen() {
     queryFn: () => getGenres(auth!),
     enabled: !!auth,
   });
+
+  // Playlists: search3 de Subsonic no las devuelve, así que se filtran por
+  // nombre en cliente (la lista completa ya está cacheada por otras pantallas).
+  const { data: playlists } = useQuery({
+    queryKey: ['playlists'],
+    queryFn: () => getPlaylists(),
+    enabled: canSearch && debouncedQuery.length > 1,
+  });
+  const playlistMatches =
+    debouncedQuery.length > 1
+      ? (playlists ?? []).filter((p) =>
+          p.name.toLowerCase().includes(debouncedQuery.toLowerCase()),
+        )
+      : [];
 
   const isEmpty = query.trim().length === 0;
   const showRecent = focused && isEmpty && recent.length > 0;
@@ -160,7 +174,8 @@ export default function SearchScreen() {
           debouncedQuery.length > 1 &&
           data.artists.length === 0 &&
           data.albums.length === 0 &&
-          data.songs.length === 0 ? (
+          data.songs.length === 0 &&
+          playlistMatches.length === 0 ? (
           <EmptyState
             icon="search-outline"
             title={t('No results')}
@@ -256,6 +271,29 @@ export default function SearchScreen() {
                   playQueue(data.songs, i);
                 }}
               />
+            ))}
+          </View>
+        ) : null}
+
+        {playlistMatches.length > 0 ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('Playlists')}</Text>
+            {playlistMatches.map((p) => (
+              <Link key={p.id} href={`/playlist/${p.id}`} asChild>
+                <Pressable style={styles.recentRow}>
+                  <Cover uri={coverArtUrl(p.coverArt ?? p.id, 100)} size={48} />
+                  <View style={styles.recentInfo}>
+                    <Text style={styles.recentTitle} numberOfLines={1}>
+                      {p.name}
+                    </Text>
+                    {p.songCount != null ? (
+                      <Text style={styles.recentSub}>
+                        {t('{n} songs', { n: p.songCount })}
+                      </Text>
+                    ) : null}
+                  </View>
+                </Pressable>
+              </Link>
             ))}
           </View>
         ) : null}

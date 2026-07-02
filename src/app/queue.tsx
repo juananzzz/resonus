@@ -1,84 +1,81 @@
-/** Cola de reproducción: ver, reordenar y quitar canciones. */
+/** Cola de reproducción: ver, reordenar (arrastrando) y quitar canciones. */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ReorderableList, {
+  useReorderableDrag,
+  type ReorderableListReorderEvent,
+} from 'react-native-reorderable-list';
 
 import { coverArtUrl } from '@/api/data';
 import { type Song } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
+import { formatTotalDuration } from '@/lib/format';
 import { usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
 import { listPerf } from '@/lib/listPerf';
 
+// ReorderableList no admite removeClippedSubviews (necesita las celdas
+// montadas para animar el drag); usamos el resto de props de rendimiento.
+const queueListPerf = {
+  initialNumToRender: listPerf.initialNumToRender,
+  maxToRenderPerBatch: listPerf.maxToRenderPerBatch,
+  windowSize: listPerf.windowSize,
+};
+
+function QueueRow({ item, i }: { item: Song; i: number }) {
+  const jumpTo = usePlayerStore((s) => s.jumpTo);
+  const removeAt = usePlayerStore((s) => s.removeAt);
+  const isCurrent = usePlayerStore((s) => s.index === i);
+  const showListArtwork = useSettings((s) => s.showListArtwork);
+  const drag = useReorderableDrag();
+
+  return (
+    <View style={styles.row}>
+      <Pressable style={styles.main} onPress={() => jumpTo(i)} onLongPress={drag}>
+        {showListArtwork ? (
+          <View style={styles.artwork}>
+            <Cover uri={coverArtUrl(item.coverArt ?? item.albumId, 100)} size={44} />
+          </View>
+        ) : (
+          <View style={styles.leftSlot}>
+            <Text style={[styles.position, isCurrent && styles.current]}>{i + 1}</Text>
+          </View>
+        )}
+        <View style={styles.info}>
+          <Text style={[styles.title, isCurrent && styles.current]} numberOfLines={1}>
+            {item.title}
+          </Text>
+          {item.artist ? (
+            <Text style={styles.artist} numberOfLines={1}>
+              {item.artist}
+            </Text>
+          ) : null}
+        </View>
+      </Pressable>
+
+      <View style={styles.actions}>
+        <Pressable hitSlop={6} onPress={() => removeAt(i)}>
+          <Ionicons name="close" size={22} color={colors.textSecondary} />
+        </Pressable>
+        <Pressable hitSlop={6} onPressIn={drag}>
+          <Ionicons name="reorder-two" size={24} color={colors.textSecondary} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 export default function QueueScreen() {
   const t = useT();
   const router = useRouter();
   const queue = usePlayerStore((s) => s.queue);
-  const index = usePlayerStore((s) => s.index);
-  const jumpTo = usePlayerStore((s) => s.jumpTo);
-  const removeAt = usePlayerStore((s) => s.removeAt);
   const moveTrack = usePlayerStore((s) => s.moveTrack);
-  const showListArtwork = useSettings((s) => s.showListArtwork);
-
-  function renderItem({ item, index: i }: { item: Song; index: number }) {
-    const isCurrent = i === index;
-    return (
-      <View style={[styles.row, isCurrent && styles.rowCurrent]}>
-        <Pressable style={styles.main} onPress={() => jumpTo(i)}>
-          {showListArtwork ? (
-            <View style={styles.artwork}>
-              <Cover uri={coverArtUrl(item.coverArt ?? item.albumId, 100)} size={44} />
-            </View>
-          ) : (
-            <View style={styles.leftSlot}>
-              <Text style={[styles.position, isCurrent && styles.current]}>{i + 1}</Text>
-            </View>
-          )}
-          <View style={styles.info}>
-            <Text
-              style={[styles.title, isCurrent && styles.current]}
-              numberOfLines={1}
-            >
-              {item.title}
-            </Text>
-            {item.artist ? (
-              <Text style={styles.artist} numberOfLines={1}>
-                {item.artist}
-              </Text>
-            ) : null}
-          </View>
-        </Pressable>
-
-        <View style={styles.actions}>
-          <Pressable hitSlop={6} disabled={i === 0} onPress={() => moveTrack(i, i - 1)}>
-            <Ionicons
-              name="chevron-up"
-              size={22}
-              color={i === 0 ? colors.textMuted : colors.textSecondary}
-            />
-          </Pressable>
-          <Pressable
-            hitSlop={6}
-            disabled={i === queue.length - 1}
-            onPress={() => moveTrack(i, i + 1)}
-          >
-            <Ionicons
-              name="chevron-down"
-              size={22}
-              color={i === queue.length - 1 ? colors.textMuted : colors.textSecondary}
-            />
-          </Pressable>
-          <Pressable hitSlop={6} onPress={() => removeAt(i)}>
-            <Ionicons name="close" size={22} color={colors.textSecondary} />
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
+  const totalSec = queue.reduce((acc, s) => acc + (s.duration ?? 0), 0);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -86,15 +83,24 @@ export default function QueueScreen() {
         <Pressable hitSlop={12} onPress={() => router.back()}>
           <Ionicons name="chevron-down" size={28} color={colors.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>{t('Queue')}</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>{t('Queue')}</Text>
+          {/* Sin subtítulo para radios (duración desconocida) o una sola canción. */}
+          {queue.length > 1 && totalSec > 0 ? (
+            <Text style={styles.headerSub}>
+              {t('{n} songs', { n: queue.length })} · {formatTotalDuration(totalSec)}
+            </Text>
+          ) : null}
+        </View>
         <View style={{ width: 28 }} />
       </View>
 
-      <FlatList
-        {...listPerf}
+      <ReorderableList
+        {...queueListPerf}
         data={queue}
         keyExtractor={(item, i) => `${item.id}-${i}`}
-        renderItem={renderItem}
+        renderItem={({ item, index }) => <QueueRow item={item} i={index} />}
+        onReorder={({ from, to }: ReorderableListReorderEvent) => moveTrack(from, to)}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
@@ -119,15 +125,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
+  headerCenter: { alignItems: 'center' },
   headerTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
+  headerSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
   list: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
   emptyWrap: { flex: 1, justifyContent: 'center' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.sm,
+    // Fondo opaco para que la fila arrastrada tape a las demás al pasar.
+    backgroundColor: colors.background,
   },
-  rowCurrent: {},
   main: {
     flex: 1,
     flexDirection: 'row',

@@ -22,6 +22,7 @@ import {
 import { create } from 'zustand';
 
 import { coverArtUrl, getPlayQueue, savePlayQueue, scrobble, streamUrl, type Song } from '@/api/subsonic';
+import { deleteItem, getItem, setItem } from '@/lib/storage';
 import { useAuthStore } from './auth';
 import {
   castLoad,
@@ -255,6 +256,7 @@ function onStatus(status: AudioStatus) {
     if (prev.isPlaying) scheduleSync(); // acaba de pausar
   }
   if (status.didJustFinish) {
+    if (handleSleepAtSongEnd()) return;
     const ni = nextIndex(false);
     if (ni == null) {
       usePlayerStore.setState({ isPlaying: false });
@@ -264,13 +266,73 @@ function onStatus(status: AudioStatus) {
   }
 }
 
+/**
+ * Temporizador "al terminar la canción": si está activo, para aquí y deja la
+ * siguiente pista cargada en pausa. Devuelve true si consumió el fin de pista.
+ */
+function handleSleepAtSongEnd(): boolean {
+  const { sleepAtSongEnd, repeat } = usePlayerStore.getState();
+  if (!sleepAtSongEnd) return false;
+  usePlayerStore.setState({ sleepAtSongEnd: false, isPlaying: false });
+  audioPlayer?.pause();
+  const ni = nextIndex(false);
+  if (ni != null && repeat !== 'one') void loadIndex(ni, false);
+  return true;
+}
+
+// ── Persistencia local de la cola (reanudar al reabrir la app) ─────────────
+// Complementa la sincronización con el servidor: funciona también en modo
+// local/offline y conserva canciones descargadas y radios, que el servidor
+// no admite en savePlayQueue.
+
+// SecureStore solo admite claves con [A-Za-z0-9._-] (mismo criterio que
+// playHistory); saneamos serverUrl/username.
+function safeKey(s: string): string {
+  return s.replace(/[^A-Za-z0-9._-]/g, '_');
+}
+
+/** Clave por perfil, o null si no hay perfil activo. */
+function queueStorageKey(): string | null {
+  const { auth, offline } = useAuthStore.getState();
+  if (offline) return 'resonus.queue.offline';
+  if (auth) return `resonus.queue.server.${safeKey(auth.serverUrl)}.${safeKey(auth.username)}`;
+  return null;
+}
+
+interface StoredQueue {
+  queue: Song[];
+  index: number;
+  positionSec: number;
+}
+
+function saveQueueLocal() {
+  const key = queueStorageKey();
+  if (!key) return;
+  const { queue, index, positionSec } = usePlayerStore.getState();
+  if (queue.length === 0) return;
+  // Tope de tamaño por prudencia con SecureStore; 500 canciones dan de sobra.
+  const payload: StoredQueue = {
+    queue: queue.slice(0, 500),
+    index: Math.min(index, 499),
+    positionSec,
+  };
+  void setItem(key, JSON.stringify(payload));
+}
+
+/** Olvida la cola guardada del perfil activo (el usuario la vació adrede). */
+function clearQueueLocal() {
+  const key = queueStorageKey();
+  if (key) void deleteItem(key);
+}
+
 // ── Sincronización de la cola con el servidor (savePlayQueue/getPlayQueue) ──
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 let syncInterval: ReturnType<typeof setInterval> | null = null;
 let appStateAttached = false;
 
-/** Guarda la cola actual en el servidor (si hay sesión y no es radio/local). */
+/** Guarda la cola en este dispositivo y, si hay sesión, en el servidor. */
 function syncQueueNow() {
+  saveQueueLocal();
   const auth = useAuthStore.getState().auth;
   if (!auth) return;
   const { queue, index, positionSec } = usePlayerStore.getState();
@@ -351,6 +413,7 @@ export function initRemoteIntegration() {
       }
     },
     onFinished: () => {
+      if (handleSleepAtSongEnd()) return;
       const { repeat, index } = usePlayerStore.getState();
       if (repeat === 'one') {
         void remoteLoadIndex(index, true);
@@ -386,6 +449,8 @@ interface PlayerState {
   repeat: RepeatMode;
   originalQueue: Song[] | null;
   sleepTimerMinutes: number | null;
+  /** Pausar al terminar la pista actual (temporizador "fin de la canción"). */
+  sleepAtSongEnd: boolean;
   /** De dónde salió la cola actual (álbum, lista, artista…), si se conoce. */
   source: string | null;
   /** Ruta del origen para poder navegar a él desde el reproductor. */
@@ -409,9 +474,14 @@ interface PlayerState {
   toggleShuffle: () => void;
   cycleRepeat: () => void;
   setSleepTimer: (minutes: number) => void;
+  setSleepAtSongEnd: () => void;
   cancelSleepTimer: () => void;
   /** Restaura la cola guardada en el servidor (sin reproducir). */
   restoreFromServer: () => Promise<void>;
+  /** Restaura la cola guardada en este dispositivo (sin reproducir). */
+  restoreFromStorage: () => Promise<void>;
+  /** Retoma la última cola: primero la copia local; si no hay, la del servidor. */
+  restoreQueue: () => Promise<void>;
   reset: () => Promise<void>;
 }
 
@@ -432,6 +502,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   repeat: 'off',
   originalQueue: null,
   sleepTimerMinutes: null,
+  sleepAtSongEnd: false,
   source: null,
   sourceHref: null,
 
@@ -534,6 +605,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (index < 0 || index >= queue.length) return;
     const next = queue.filter((_, i) => i !== index);
     if (next.length === 0) {
+      clearQueueLocal();
       await get().reset();
       return;
     }
@@ -545,6 +617,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     } else {
       set({ queue: next, index: index < cur ? cur - 1 : cur });
     }
+    scheduleSync();
   },
 
   moveTrack: async (from, to) => {
@@ -567,6 +640,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     else if (from < index && to >= index) newIndex = index - 1;
     else if (from > index && to <= index) newIndex = index + 1;
     set({ queue: next, index: newIndex });
+    scheduleSync();
   },
 
   toggleShuffle: () => {
@@ -606,13 +680,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       sleepTimeout = null;
       set({ isPlaying: false, sleepTimerMinutes: null });
     }, minutes * 60_000);
-    set({ sleepTimerMinutes: minutes });
+    set({ sleepTimerMinutes: minutes, sleepAtSongEnd: false });
+  },
+
+  setSleepAtSongEnd: () => {
+    if (sleepTimeout) clearTimeout(sleepTimeout);
+    sleepTimeout = null;
+    set({ sleepTimerMinutes: null, sleepAtSongEnd: true });
   },
 
   cancelSleepTimer: () => {
     if (sleepTimeout) clearTimeout(sleepTimeout);
     sleepTimeout = null;
-    set({ sleepTimerMinutes: null });
+    set({ sleepTimerMinutes: null, sleepAtSongEnd: false });
   },
 
   restoreFromServer: async () => {
@@ -646,6 +726,46 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     await loadIndex(index, false);
     if (positionSec > 0) audioPlayer?.seekTo(positionSec);
     usePlayerStore.setState({ positionSec, isPlaying: false });
+  },
+
+  restoreFromStorage: async () => {
+    const key = queueStorageKey();
+    if (!key || get().queue.length > 0) return;
+    let saved: StoredQueue | null = null;
+    try {
+      const raw = await getItem(key);
+      saved = raw ? (JSON.parse(raw) as StoredQueue) : null;
+    } catch {
+      return;
+    }
+    if (!saved || !Array.isArray(saved.queue) || saved.queue.length === 0) return;
+    // Si entre tanto ya se empezó a reproducir algo, no pisamos la cola.
+    if (get().queue.length > 0) return;
+    const index = Math.min(Math.max(0, saved.index ?? 0), saved.queue.length - 1);
+    const positionSec =
+      typeof saved.positionSec === 'number' && Number.isFinite(saved.positionSec)
+        ? Math.max(0, saved.positionSec)
+        : 0;
+    attachAppState();
+    set({
+      queue: saved.queue,
+      index,
+      positionSec,
+      durationSec: saved.queue[index]?.duration ?? 0,
+      isPlaying: false,
+      source: null,
+      sourceHref: null,
+    });
+    await loadIndex(index, false);
+    if (positionSec > 0) audioPlayer?.seekTo(positionSec);
+    usePlayerStore.setState({ positionSec, isPlaying: false });
+  },
+
+  restoreQueue: async () => {
+    // La copia local es la más fiel (incluye descargas, radios y el modo
+    // offline); la del servidor queda de respaldo para sesiones nuevas.
+    await get().restoreFromStorage();
+    if (get().queue.length === 0) await get().restoreFromServer();
   },
 
   reset: async () => {

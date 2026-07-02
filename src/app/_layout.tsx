@@ -48,10 +48,11 @@ export default function RootLayout() {
     initRemoteIntegration();
   }, [hydrate, activeProfile]);
 
-  // Al iniciar sesión en un servidor, retoma la cola guardada (sin reproducir).
+  // Al entrar en un perfil (servidor o local), retoma la cola guardada
+  // (sin reproducir): primero la copia del dispositivo, si no la del servidor.
   useEffect(() => {
-    if (auth) void usePlayerStore.getState().restoreFromServer();
-  }, [auth]);
+    if (ready) void usePlayerStore.getState().restoreQueue();
+  }, [ready, activeProfile]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>

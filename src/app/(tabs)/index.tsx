@@ -213,6 +213,16 @@ export default function HomeScreen() {
   const showProfileButton = useSettings((s) => s.showProfileButton);
   const initial = offline ? 'O' : (auth?.username ?? '?').charAt(0).toUpperCase();
 
+  // Saludo según la hora (estilo Spotify). Tramos a la española: mañana hasta
+  // las 13, tarde hasta las 21, noche el resto (incluida la madrugada).
+  const hour = new Date().getHours();
+  const greeting =
+    hour >= 6 && hour < 13
+      ? t('Good morning')
+      : hour >= 13 && hour < 21
+        ? t('Good afternoon')
+        : t('Good evening');
+
   // Detecta si el servidor no responde (comparte caché con la sección "newest").
   // Solo online: en local no hay servidor y la key la usa también QuickGrid.
   const { isError: serverUnreachable } = useQuery({
@@ -241,7 +251,7 @@ export default function HomeScreen() {
       >
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <Text style={styles.greeting}>{t('Your music')}</Text>
+            <Text style={styles.greeting}>{greeting}</Text>
             {offline ? (
               <Ionicons
                 name="phone-portrait-outline"
