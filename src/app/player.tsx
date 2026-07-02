@@ -27,11 +27,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { coverArtUrl } from '@/api/data';
 import { AudioQualityBadge } from '@/components/AudioQualityBadge';
+import { CastIconButton } from '@/components/CastIconButton';
 import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
+import { useCast } from '@/store/cast';
 import { currentSong, SOURCE_FAVORITES, SOURCE_HISTORY, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useSongMenu } from '@/store/songMenu';
@@ -89,6 +91,7 @@ export default function PlayerScreen() {
   const showQuality = useSettings((s) => s.showAudioQuality);
   const showQualityBadge = showQuality === 'player' || showQuality === 'everywhere';
   const offline = useAuthStore((s) => s.offline);
+  const castDevice = useCast((s) => (s.connected ? s.deviceName : null));
   const favIds = useFavoriteIds(!!song && (!song?.localUri || offline));
 
   // Deslizar la carátula: izquierda → siguiente, derecha → anterior. A
@@ -224,12 +227,22 @@ export default function PlayerScreen() {
               <Text style={styles.topTitle}>{t('NOW PLAYING')}</Text>
             )}
           </Pressable>
+          {!offline ? <CastIconButton /> : null}
           {isLocal && !offline ? (
             <View style={{ width: 40 }} />
           ) : (
             <CircleButton name="ellipsis-vertical" label={t('More options')} onPress={() => openMenu(song)} />
           )}
         </View>
+
+        {castDevice ? (
+          <View style={styles.castRow}>
+            <Ionicons name="tv-outline" size={13} color={colors.accent} />
+            <Text style={styles.castText} numberOfLines={1}>
+              {t('Playing on {device}', { device: castDevice })}
+            </Text>
+          </View>
+        ) : null}
 
         <View style={styles.coverWrap}>
           <GestureDetector gesture={coverPan}>
@@ -385,6 +398,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
   },
+  castRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  castText: { color: colors.accent, fontSize: fontSize.sm, fontWeight: '600' },
   circle: {
     width: 40,
     height: 40,

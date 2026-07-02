@@ -23,6 +23,16 @@ import { create } from 'zustand';
 
 import { coverArtUrl, getPlayQueue, savePlayQueue, scrobble, streamUrl, type Song } from '@/api/subsonic';
 import { useAuthStore } from './auth';
+import {
+  castLoad,
+  castPause,
+  castPlay,
+  castSeek,
+  castSetVolume,
+  castStop,
+  initCast,
+  isCastConnected,
+} from './cast';
 import { usePlayCounts } from './playCounts';
 import { usePlayHistory } from './playHistory';
 import { useSettings } from './settings';
@@ -115,8 +125,29 @@ function applyLockScreen(song: Song) {
   }
 }
 
+/** Carga la pista en `index` en el Chromecast y sincroniza el estado. */
+async function castLoadIndex(index: number, autoplay: boolean, startSec = 0) {
+  const song = usePlayerStore.getState().queue[index];
+  if (!song) return;
+  const ok = await castLoad(song, autoplay, startSec);
+  if (!ok) {
+    useToast.getState().show(tg("This song can't be cast"));
+    usePlayerStore.setState({ index, isPlaying: false, isBuffering: false });
+    return;
+  }
+  usePlayerStore.setState({
+    index,
+    positionSec: startSec,
+    durationSec: song.duration ?? 0,
+    isPlaying: autoplay,
+    isBuffering: autoplay,
+  });
+  onTrackChanged(song);
+}
+
 /** Carga la pista en `index` y (opcionalmente) la reproduce. */
 async function loadIndex(index: number, autoplay: boolean) {
+  if (isCastConnected()) return castLoadIndex(index, autoplay);
   const { queue, repeat } = usePlayerStore.getState();
   const song = queue[index];
   if (!song) return;
@@ -159,6 +190,9 @@ function nextIndex(manual: boolean): number | null {
 
 /** Listener de estado de expo-audio: progreso, play/pausa y fin de pista. */
 function onStatus(status: AudioStatus) {
+  // Con sesión de cast la salida es el Chromecast: el player local está en
+  // pausa y sus estados no deben pisar los que llegan del cast.
+  if (isCastConnected()) return;
   const prev = usePlayerStore.getState();
   // Bufferea si queremos reproducir pero el audio aún no fluye (carga inicial,
   // rebuffer en streaming, seek…). Si está en pausa, no es buffering.
@@ -225,6 +259,62 @@ function attachAppState() {
   appStateAttached = true;
   AppState.addEventListener('change', (st) => {
     if (st !== 'active') syncQueueNow();
+  });
+}
+
+// ── Integración con Chromecast (ver src/store/cast.ts) ─────────────────────
+
+/** Engancha los eventos de la sesión de cast a la cola. Llamar una vez. */
+export function initCastIntegration() {
+  initCast({
+    onConnected: () => {
+      // Transfiere la pista actual al Chromecast y silencia el player local.
+      const { queue, index, positionSec, isPlaying } = usePlayerStore.getState();
+      try {
+        audioPlayer?.pause();
+        if (lockActive) {
+          audioPlayer?.clearLockScreenControls();
+          lockActive = false;
+        }
+      } catch {
+        // ignore
+      }
+      if (queue[index]) void castLoadIndex(index, isPlaying, positionSec);
+    },
+    onDisconnected: (lastPositionSec) => {
+      // Vuelve al player local, en pausa, donde se quedó el cast.
+      const { queue, index } = usePlayerStore.getState();
+      if (!queue[index]) return;
+      void (async () => {
+        await loadIndex(index, false);
+        if (lastPositionSec > 0) audioPlayer?.seekTo(lastPositionSec);
+        usePlayerStore.setState({ positionSec: lastPositionSec, isPlaying: false });
+      })();
+    },
+    onProgress: (positionSec, durationSec) => {
+      usePlayerStore.setState({
+        positionSec,
+        durationSec: durationSec || usePlayerStore.getState().durationSec,
+      });
+    },
+    onPlayingChanged: (isPlaying, isBuffering) => {
+      usePlayerStore.setState({ isPlaying, isBuffering });
+      if (isPlaying) startPeriodicSync();
+      else {
+        stopPeriodicSync();
+        scheduleSync();
+      }
+    },
+    onFinished: () => {
+      const { repeat, index } = usePlayerStore.getState();
+      if (repeat === 'one') {
+        void castLoadIndex(index, true);
+        return;
+      }
+      const ni = nextIndex(false);
+      if (ni == null) usePlayerStore.setState({ isPlaying: false });
+      else void loadIndex(ni, true);
+    },
   });
 }
 
@@ -329,6 +419,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   toggle: () => {
+    if (isCastConnected()) {
+      if (get().isPlaying) {
+        void castPause();
+        set({ isPlaying: false });
+      } else {
+        void castPlay();
+        set({ isPlaying: true });
+      }
+      return;
+    }
     const p = audioPlayer;
     if (!p) return;
     if (get().isPlaying) {
@@ -356,13 +456,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   seekTo: (sec) => {
-    audioPlayer?.seekTo(sec);
+    if (isCastConnected()) void castSeek(sec);
+    else audioPlayer?.seekTo(sec);
     set({ positionSec: sec });
   },
 
   setVolume: (v) => {
     const volume = Math.max(0, Math.min(1, v));
-    if (audioPlayer) audioPlayer.volume = volume;
+    if (isCastConnected()) castSetVolume(volume);
+    else if (audioPlayer) audioPlayer.volume = volume;
     set({ volume });
   },
 
@@ -444,7 +546,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setSleepTimer: (minutes) => {
     if (sleepTimeout) clearTimeout(sleepTimeout);
     sleepTimeout = setTimeout(() => {
-      audioPlayer?.pause();
+      if (isCastConnected()) void castPause();
+      else audioPlayer?.pause();
       sleepTimeout = null;
       set({ isPlaying: false, sleepTimerMinutes: null });
     }, minutes * 60_000);
@@ -497,6 +600,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       clearTimeout(syncTimer);
       syncTimer = null;
     }
+    if (isCastConnected()) void castStop();
     try {
       audioPlayer?.pause();
       if (lockActive) {
