@@ -2,7 +2,7 @@
  * Barra de reproducción compacta sobre la barra de pestañas. Muestra la
  * canción actual y un botón play/pausa; al tocarla abre el reproductor.
  */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';

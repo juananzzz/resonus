@@ -1,5 +1,5 @@
 /** Pantalla de Actividad / Historial: canciones escuchadas, la más reciente primero. */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/EmptyState';

@@ -1,5 +1,5 @@
 /** Explorar todos los artistas del servidor, con filtro rápido. */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';

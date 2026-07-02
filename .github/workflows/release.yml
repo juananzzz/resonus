@@ -44,6 +44,8 @@ jobs:
       - name: Decode release keystore
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
 
+      # Solo arquitecturas de dispositivos reales: x86/x86_64 son emuladores
+      # y engordan el APK universal sin beneficio para nadie.
       - name: Build release APK
         env:
           RESONUS_KEYSTORE_FILE: ${{ runner.temp }}/release.jks
@@ -52,7 +54,7 @@ jobs:
           RESONUS_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x android/gradlew
-          cd android && ./gradlew assembleRelease --no-daemon
+          cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
 
       - name: Rename APK
         run: cp android/app/build/outputs/apk/release/app-release.apk "resonus-${{ github.ref_name }}.apk"

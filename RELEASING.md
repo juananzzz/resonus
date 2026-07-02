@@ -55,4 +55,7 @@ de Release con el APK adjunto, para que lo revises antes de publicarlo.
   el prebuild (la carpeta `android/` está en `.gitignore` y se regenera). En builds
   locales sin esas variables de entorno, el release sigue firmándose con la clave de
   debug, así que no afecta al desarrollo.
-- El APK es universal (todas las arquitecturas). Vale para distribuir por GitHub.
+- El APK es universal pero solo con arquitecturas de dispositivos reales
+  (`armeabi-v7a` + `arm64-v8a`); x86/x86_64 (emuladores) se excluyen para
+  reducir tamaño. El release además va minificado con R8 (`enableProguardInReleaseBuilds`
+  y `enableShrinkResourcesInReleaseBuilds` en `app.json`).

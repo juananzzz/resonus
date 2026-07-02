@@ -1,5 +1,5 @@
 /** Explorar todos los álbumes del servidor, con orden y scroll infinito. */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';

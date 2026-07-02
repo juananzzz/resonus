@@ -1,5 +1,5 @@
 /** Emisoras de radio del servidor (exploración desde Inicio). */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import {

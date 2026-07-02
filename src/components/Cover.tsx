@@ -1,5 +1,5 @@
 /** Carátula cuadrada con marcador de posición cuando no hay imagen. */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image, type ImageStyle } from 'expo-image';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 

@@ -1,5 +1,5 @@
 /** Fila de una canción dentro de una lista (álbum, playlist, resultados). */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { coverArtUrl } from '@/api/data';

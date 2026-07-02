@@ -1,5 +1,5 @@
 /** Inicio de sesión: elección de tipo de servidor + credenciales. */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import {

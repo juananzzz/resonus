@@ -1,5 +1,5 @@
 /** Ajustes › Descargas: calidad, espacio ocupado y limpieza. */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 

@@ -2,7 +2,7 @@
  * Navegación principal por pestañas: Inicio, Buscar y Biblioteca.
  * Barra inferior sólida sobre el fondo de la app.
  */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

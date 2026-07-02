@@ -1,5 +1,5 @@
 /** Corazón para marcar/desmarcar favoritos (star/unstar de Subsonic). */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Pressable, type GestureResponderEvent } from 'react-native';

@@ -3,7 +3,7 @@
  * desvanece al hacer scroll y barra fija que se colapsa) y la lista de
  * canciones. Compartida por las pantallas de álbum y de lista de reproducción.
  */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useRef, type ReactNode } from 'react';

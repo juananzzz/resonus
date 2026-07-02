@@ -1,5 +1,5 @@
 /** Ajustes › Calidad y reproducción: bitrate, crossfade y ecualizador. */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, ScrollView, Text } from 'react-native';
 
 import { SelectList, SettingsPage, settingsStyles } from '@/components/SettingsUI';

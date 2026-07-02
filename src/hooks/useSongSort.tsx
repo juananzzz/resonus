@@ -7,7 +7,7 @@
  * propio menú como nodo a renderizar. Con `persistKey` el orden elegido se
  * guarda en disco y se recuerda entre visitas.
  */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { type ReactNode, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

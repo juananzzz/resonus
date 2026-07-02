@@ -1,5 +1,5 @@
 /** Carátula del acceso a Favoritos: degradado verde-azulado con un corazón. */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { radius } from '@/theme';

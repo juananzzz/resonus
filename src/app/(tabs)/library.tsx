@@ -1,5 +1,5 @@
 /** Biblioteca: listas (con acceso fijo a Favoritos) y artistas. Ajustes. */
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { useState } from 'react';
