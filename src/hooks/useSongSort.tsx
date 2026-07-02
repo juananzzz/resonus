@@ -4,7 +4,8 @@
  *
  * Devuelve la lista ya ordenada, el mapeo a los índices originales (para
  * acciones como "quitar de la lista"), un disparador para abrir el menú y el
- * propio menú como nodo a renderizar.
+ * propio menú como nodo a renderizar. Con `persistKey` el orden elegido se
+ * guarda en disco y se recuerda entre visitas.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { type ReactNode, useState } from 'react';
@@ -13,10 +14,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Song } from '@/api/subsonic';
 import { useT } from '@/i18n';
+import {
+  DEFAULT_SORT,
+  useSortPrefs,
+  type SortDir,
+  type SortField,
+  type SortPref,
+} from '@/store/sortPrefs';
 import { colors, fontSize, radius, spacing } from '@/theme';
-
-type SortField = 'recent' | 'alpha';
-type SortDir = 'asc' | 'desc';
 
 const SORT_LABEL: Record<SortField, string> = {
   recent: 'Recent',
@@ -34,12 +39,19 @@ interface SortResult {
   sortSheet: ReactNode;
 }
 
-export function useSongSort(source: Song[]): SortResult {
+export function useSongSort(source: Song[], persistKey?: string): SortResult {
   const t = useT();
   const insets = useSafeAreaInsets();
-  const [field, setField] = useState<SortField>('recent');
-  const [dir, setDir] = useState<SortDir>('asc');
+  const stored = useSortPrefs((s) => (persistKey ? s.prefs[persistKey] : undefined));
+  const setPref = useSortPrefs((s) => s.setPref);
+  const [local, setLocal] = useState<SortPref>(DEFAULT_SORT);
   const [open, setOpen] = useState(false);
+
+  const { field, dir } = persistKey ? (stored ?? DEFAULT_SORT) : local;
+  function update(next: SortPref) {
+    if (persistKey) setPref(persistKey, next);
+    else setLocal(next);
+  }
 
   // La lista llega del servidor en orden de adición (recientes ascendente).
   const ordered = source.map((song, idx) => ({ song, idx }));
@@ -57,7 +69,7 @@ export function useSongSort(source: Song[]): SortResult {
             <Pressable
               key={f}
               style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
-              onPress={() => setField(f)}
+              onPress={() => update({ field: f, dir })}
             >
               <Text style={[styles.actionText, active && { color: colors.accent }]}>
                 {t(SORT_LABEL[f])}
@@ -83,7 +95,7 @@ export function useSongSort(source: Song[]): SortResult {
               <Pressable
                 key={d}
                 style={[styles.dirChip, active && styles.dirChipActive]}
-                onPress={() => setDir(d)}
+                onPress={() => update({ field, dir: d })}
               >
                 <Ionicons
                   name={d === 'asc' ? 'arrow-up' : 'arrow-down'}

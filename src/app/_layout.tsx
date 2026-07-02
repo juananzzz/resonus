@@ -22,6 +22,7 @@ import { usePlayCounts } from '@/store/playCounts';
 import { usePlayHistory } from '@/store/playHistory';
 import { useRecentSearches } from '@/store/recentSearches';
 import { useSettings } from '@/store/settings';
+import { useSortPrefs } from '@/store/sortPrefs';
 import { colors } from '@/theme';
 
 export default function RootLayout() {
@@ -42,6 +43,7 @@ export default function RootLayout() {
     useRecentSearches.getState().hydrate();
     usePlayCounts.getState().hydrate();
     usePlayHistory.getState().hydrate();
+    useSortPrefs.getState().hydrate();
     void useDownloads.getState().hydrate();
   }, [hydrate, activeProfile]);
 

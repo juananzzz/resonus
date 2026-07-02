@@ -29,7 +29,7 @@ export default function FavoritesScreen() {
     enabled: canFetch,
   });
 
-  const { songs: displaySongs, openSort, sortSheet } = useSongSort(data?.songs ?? []);
+  const { songs: displaySongs, openSort, sortSheet } = useSongSort(data?.songs ?? [], 'favorites');
 
   if (isLoading) {
     return (

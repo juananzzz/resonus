@@ -58,6 +58,7 @@ export default function PlaylistScreen() {
 
   const { songs: displaySongs, indices: playlistIndices, openSort, sortSheet } = useSongSort(
     data?.songs ?? [],
+    `playlist:${id}`,
   );
 
   async function onSaveEdit(changes: PlaylistEdit) {
