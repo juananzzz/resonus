@@ -3,7 +3,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -12,6 +12,7 @@ import { Dialog } from '@/components/Dialog';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { PlaylistEditSheet, type PlaylistEdit } from '@/components/PlaylistEditSheet';
+import { TrackListSkeleton } from '@/components/TrackListSkeleton';
 import { TrackListView } from '@/components/TrackListView';
 import { useSongSort } from '@/hooks/useSongSort';
 import { songsLabel, useT } from '@/i18n';
@@ -88,11 +89,7 @@ export default function PlaylistScreen() {
   }
 
   if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
+    return <TrackListSkeleton />;
   }
 
   if (isError || !data) {

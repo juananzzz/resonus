@@ -2,13 +2,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 
 import { coverArtUrl, getAlbum } from '@/api/data';
 import { Dialog } from '@/components/Dialog';
 import { Message } from '@/components/Message';
 import { MoreFromArtist } from '@/components/MoreFromArtist';
+import { TrackListSkeleton } from '@/components/TrackListSkeleton';
 import { TrackListView } from '@/components/TrackListView';
 import { songsLabel, useT } from '@/i18n';
 import { formatTotalDuration } from '@/lib/format';
@@ -42,11 +43,7 @@ export default function AlbumScreen() {
   const deleteSongs = useDownloads((s) => s.deleteSongs);
 
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center' }}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
+    return <TrackListSkeleton />;
   }
 
   if (isError || !data) {

@@ -22,6 +22,7 @@ export default function LanguageSettings() {
           options={[...LANGUAGES].sort((a, b) => a.label.localeCompare(b.label))}
           value={language}
           onChange={setLanguage}
+          collapsible={false}
         />
       </ScrollView>
     </SettingsPage>

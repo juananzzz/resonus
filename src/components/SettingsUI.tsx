@@ -34,27 +34,31 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
 /**
  * Selector "elige una" plegable (estilo Spotify): colapsado muestra solo la
  * opción activa; al tocarla se despliega en el sitio la lista completa con
- * checkmark en la activa, y elegir vuelve a plegar. Las etiquetas llegan ya
- * traducidas desde quien lo usa.
+ * checkmark en la activa, y elegir vuelve a plegar. Con `collapsible: false`
+ * la lista se muestra siempre completa (p. ej. la pantalla de Idioma). Las
+ * etiquetas llegan ya traducidas desde quien lo usa.
  */
 export function SelectList<T extends string | number | boolean>({
   options,
   value,
   onChange,
+  collapsible = true,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
+  collapsible?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const active = options.find((o) => o.value === value) ?? options[0];
 
   function toggle(next: boolean) {
+    if (!collapsible) return;
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpanded(next);
   }
 
-  if (!expanded) {
+  if (collapsible && !expanded) {
     return (
       <View style={settingsStyles.selectCard}>
         <Pressable
