@@ -93,7 +93,8 @@ export function addToPlaylist(playlistId: string, songId: string): Promise<void>
   return Subsonic.addToPlaylist(auth(), playlistId, songId);
 }
 
-export function createPlaylist(name: string): Promise<void> {
+/** Crea una playlist vacía y devuelve su id. */
+export function createPlaylist(name: string): Promise<string> {
   if (isOffline()) return Local.createPlaylist(name);
   return Subsonic.createPlaylist(auth(), name);
 }

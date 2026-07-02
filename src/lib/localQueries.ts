@@ -359,12 +359,11 @@ export async function getPlaylist(id: string): Promise<{ playlist: Playlist; son
   };
 }
 
-export async function createPlaylist(name: string): Promise<void> {
+export async function createPlaylist(name: string): Promise<string> {
   const list = await loadPlaylists();
-  await savePlaylists([
-    { id: newPlaylistId(), name, songIds: [], createdAt: Date.now() },
-    ...list,
-  ]);
+  const id = newPlaylistId();
+  await savePlaylists([{ id, name, songIds: [], createdAt: Date.now() }, ...list]);
+  return id;
 }
 
 export async function addToPlaylist(playlistId: string, songId: string): Promise<void> {

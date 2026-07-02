@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   addToPlaylist,
   coverArtUrl,
+  createPlaylist,
   getPlaylists,
   removeFromPlaylist,
   star,
@@ -28,8 +29,9 @@ import { usePlayerStore } from '@/store/player';
 import { useSongMenu } from '@/store/songMenu';
 import { useToast } from '@/store/toast';
 import { useT } from '@/i18n';
-import { colors, fontSize, spacing } from '@/theme';
+import { colors, fontSize, radius, spacing } from '@/theme';
 import { Cover } from './Cover';
+import { Dialog } from './Dialog';
 
 function Action({
   icon,
@@ -72,6 +74,7 @@ export function SongMenuSheet() {
   const deleteDownloads = useDownloads((s) => s.deleteSongs);
 
   const [mode, setMode] = useState<'actions' | 'playlists' | 'sleep'>('actions');
+  const [creating, setCreating] = useState(false);
 
   // Al abrir el menú para una canción, volvemos siempre a la vista de acciones.
   useEffect(() => {
@@ -100,6 +103,20 @@ export function SongMenuSheet() {
       toast(t('Added to “{name}”', { name: playlistName }));
     } catch {
       toast(t("Couldn't add to the playlist"));
+    }
+  }
+
+  async function createAndAdd(name: string) {
+    setCreating(false);
+    if ((!auth && !offline) || !song || !name.trim()) return;
+    close();
+    try {
+      const id = await createPlaylist(name.trim());
+      await addToPlaylist(id, song.id);
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      toast(t('Added to “{name}”', { name: name.trim() }));
+    } catch {
+      toast(t("Couldn't create the playlist"));
     }
   }
 
@@ -143,6 +160,15 @@ export function SongMenuSheet() {
             >
               <Ionicons name="chevron-back" size={24} color={colors.text} />
               <Text style={styles.actionText}>{t('Add to a playlist')}</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+              onPress={() => setCreating(true)}
+            >
+              <View style={styles.newPlaylistIcon}>
+                <Ionicons name="add" size={24} color={colors.text} />
+              </View>
+              <Text style={styles.actionText}>{t('New playlist')}</Text>
             </Pressable>
             {loadingPlaylists ? (
               <ActivityIndicator style={{ marginVertical: spacing.lg }} color={colors.accent} />
@@ -303,6 +329,15 @@ export function SongMenuSheet() {
           </>
         )}
       </View>
+
+      <Dialog
+        visible={creating}
+        title={t('New playlist')}
+        input={{ placeholder: t('Playlist name') }}
+        confirmLabel={t('Create')}
+        onCancel={() => setCreating(false)}
+        onConfirm={createAndAdd}
+      />
     </Modal>
   );
 }
@@ -336,4 +371,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   actionText: { color: colors.text, fontSize: fontSize.md },
+  newPlaylistIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

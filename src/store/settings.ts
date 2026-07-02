@@ -34,21 +34,27 @@ interface SettingsState {
   showAudioQuality: AudioQualityMode;
   /** Mostrar la mini carátula del álbum en las listas (playlists/favoritos). */
   showListArtwork: boolean;
+  /** Foto circular del artista junto a su nombre en la pantalla de álbum. */
+  showArtistPhoto: boolean;
+  /** Visibilidad de botones opcionales, para quien prefiera una UI mínima. */
+  showHistoryButton: boolean;
+  showProfileButton: boolean;
+  showCastButton: boolean;
+  showOutputButton: boolean;
   setMaxBitRate: (value: number) => void;
   setDownloadBitRate: (value: number) => void;
   setLanguage: (language: Language) => void;
   setShowAudioQuality: (mode: AudioQualityMode) => void;
   setShowListArtwork: (value: boolean) => void;
+  setShowArtistPhoto: (value: boolean) => void;
+  setShowHistoryButton: (value: boolean) => void;
+  setShowProfileButton: (value: boolean) => void;
+  setShowCastButton: (value: boolean) => void;
+  setShowOutputButton: (value: boolean) => void;
   hydrate: () => Promise<void>;
 }
 
-function persist(state: {
-  maxBitRate: number;
-  downloadBitRate: number;
-  language: Language;
-  showAudioQuality: AudioQualityMode;
-  showListArtwork: boolean;
-}) {
+function persist(state: ReturnType<typeof snapshot>) {
   void setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
@@ -60,6 +66,11 @@ function snapshot(get: () => SettingsState) {
     language: s.language,
     showAudioQuality: s.showAudioQuality,
     showListArtwork: s.showListArtwork,
+    showArtistPhoto: s.showArtistPhoto,
+    showHistoryButton: s.showHistoryButton,
+    showProfileButton: s.showProfileButton,
+    showCastButton: s.showCastButton,
+    showOutputButton: s.showOutputButton,
   };
 }
 
@@ -69,6 +80,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
   language: 'en',
   showAudioQuality: 'off',
   showListArtwork: true,
+  showArtistPhoto: true,
+  showHistoryButton: true,
+  showProfileButton: true,
+  showCastButton: true,
+  showOutputButton: true,
 
   setMaxBitRate: (maxBitRate) => {
     set({ maxBitRate });
@@ -95,6 +111,31 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
+  setShowArtistPhoto: (showArtistPhoto) => {
+    set({ showArtistPhoto });
+    persist(snapshot(get));
+  },
+
+  setShowHistoryButton: (showHistoryButton) => {
+    set({ showHistoryButton });
+    persist(snapshot(get));
+  },
+
+  setShowProfileButton: (showProfileButton) => {
+    set({ showProfileButton });
+    persist(snapshot(get));
+  },
+
+  setShowCastButton: (showCastButton) => {
+    set({ showCastButton });
+    persist(snapshot(get));
+  },
+
+  setShowOutputButton: (showOutputButton) => {
+    set({ showOutputButton });
+    persist(snapshot(get));
+  },
+
   hydrate: async () => {
     try {
       const raw = await getItem(STORAGE_KEY);
@@ -105,6 +146,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
           language: Language;
           showAudioQuality: AudioQualityMode | boolean;
           showListArtwork: boolean;
+          showArtistPhoto: boolean;
+          showHistoryButton: boolean;
+          showProfileButton: boolean;
+          showCastButton: boolean;
+          showOutputButton: boolean;
         }>;
         if (typeof parsed.maxBitRate === 'number') {
           set({ maxBitRate: parsed.maxBitRate });
@@ -124,6 +170,21 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.showListArtwork === 'boolean') {
           set({ showListArtwork: parsed.showListArtwork });
+        }
+        if (typeof parsed.showArtistPhoto === 'boolean') {
+          set({ showArtistPhoto: parsed.showArtistPhoto });
+        }
+        if (typeof parsed.showHistoryButton === 'boolean') {
+          set({ showHistoryButton: parsed.showHistoryButton });
+        }
+        if (typeof parsed.showProfileButton === 'boolean') {
+          set({ showProfileButton: parsed.showProfileButton });
+        }
+        if (typeof parsed.showCastButton === 'boolean') {
+          set({ showCastButton: parsed.showCastButton });
+        }
+        if (typeof parsed.showOutputButton === 'boolean') {
+          set({ showOutputButton: parsed.showOutputButton });
         }
       }
     } catch {

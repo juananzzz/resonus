@@ -36,6 +36,8 @@ interface Props {
   subtitle?: string;
   /** Si se indica, el subtítulo lleva al artista al pulsarlo. */
   artistId?: string;
+  /** Foto circular del artista junto al subtítulo (estilo Spotify). */
+  artistImageUri?: string;
   /** Línea de metadatos (p. ej. "Álbum · 2021 · 12 canciones · 48 min"). */
   meta?: string;
   coverUri?: string;
@@ -79,6 +81,7 @@ export function TrackListView({
   title,
   subtitle,
   artistId,
+  artistImageUri,
   meta,
   coverUri,
   renderCover,
@@ -175,7 +178,16 @@ export function TrackListView({
             </Text>
             {subtitle ? (
               artistId ? (
-                <Pressable hitSlop={6} onPress={() => router.push(`/artist/${artistId}`)}>
+                <Pressable
+                  hitSlop={6}
+                  style={styles.subtitleRow}
+                  onPress={() => router.push(`/artist/${artistId}`)}
+                >
+                  {artistImageUri ? (
+                    <View style={styles.artistPhoto}>
+                      <Cover uri={artistImageUri} size={24} />
+                    </View>
+                  ) : null}
                   <Text style={[styles.subtitle, styles.subtitleLink]}>{subtitle}</Text>
                 </Pressable>
               ) : (
@@ -347,6 +359,18 @@ const styles = StyleSheet.create({
   subtitleLink: {
     color: colors.text,
     fontWeight: '700',
+  },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.sm,
+  },
+  artistPhoto: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   meta: {
     color: colors.textSecondary,

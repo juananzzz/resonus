@@ -1,7 +1,7 @@
 /** Piezas compartidas por la pantalla de Ajustes y sus sub-pantallas. */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
@@ -69,6 +69,32 @@ export function SelectList<T extends string | number | boolean>({
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+/** Grupo de interruptores agrupado en una tarjeta (estilo Spotify). */
+export function SwitchList({
+  options,
+}: {
+  options: { label: string; value: boolean; onChange: (value: boolean) => void }[];
+}) {
+  return (
+    <View style={settingsStyles.selectCard}>
+      {options.map((opt, i) => (
+        <View
+          key={opt.label}
+          style={[settingsStyles.selectRow, i > 0 && settingsStyles.selectRowBorder]}
+        >
+          <Text style={settingsStyles.selectRowText}>{opt.label}</Text>
+          <Switch
+            value={opt.value}
+            onValueChange={opt.onChange}
+            trackColor={{ false: colors.border, true: colors.accent }}
+            thumbColor={colors.text}
+          />
+        </View>
+      ))}
     </View>
   );
 }

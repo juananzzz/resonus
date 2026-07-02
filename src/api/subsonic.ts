@@ -70,6 +70,8 @@ export interface Album {
   songCount?: number;
   year?: number;
   starred?: string;
+  /** Sellos discográficos (extensión OpenSubsonic; Navidrome los envía). */
+  recordLabels?: { name: string }[];
 }
 
 export interface Artist {
@@ -315,12 +317,22 @@ export async function addToPlaylist(
   });
 }
 
-/** Crea una lista de reproducción vacía con el nombre dado. */
+/** Crea una lista de reproducción vacía y devuelve su id. */
 export async function createPlaylist(
   auth: SubsonicAuth,
   name: string,
-): Promise<void> {
-  await request(auth, 'createPlaylist.view', { name });
+): Promise<string> {
+  const res = await request<{ playlist?: { id: string } }>(
+    auth,
+    'createPlaylist.view',
+    { name },
+  );
+  if (res.playlist?.id) return res.playlist.id;
+  // Algunos servidores no devuelven la playlist creada: la buscamos por nombre.
+  const lists = await getPlaylists(auth);
+  const created = lists.find((p) => p.name === name);
+  if (!created) throw new Error('No se encontró la playlist creada');
+  return created.id;
 }
 
 /** Elimina una lista de reproducción. */

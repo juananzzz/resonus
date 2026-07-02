@@ -3,7 +3,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { SelectList, SettingsPage, settingsStyles } from '@/components/SettingsUI';
+import { SelectList, SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import {
   AUDIO_QUALITY_OPTIONS,
@@ -25,6 +25,16 @@ export default function AppearanceSettings() {
   const setShowAudioQuality = useSettings((s) => s.setShowAudioQuality);
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const setShowListArtwork = useSettings((s) => s.setShowListArtwork);
+  const showArtistPhoto = useSettings((s) => s.showArtistPhoto);
+  const setShowArtistPhoto = useSettings((s) => s.setShowArtistPhoto);
+  const showHistoryButton = useSettings((s) => s.showHistoryButton);
+  const setShowHistoryButton = useSettings((s) => s.setShowHistoryButton);
+  const showProfileButton = useSettings((s) => s.showProfileButton);
+  const setShowProfileButton = useSettings((s) => s.setShowProfileButton);
+  const showCastButton = useSettings((s) => s.showCastButton);
+  const setShowCastButton = useSettings((s) => s.setShowCastButton);
+  const showOutputButton = useSettings((s) => s.showOutputButton);
+  const setShowOutputButton = useSettings((s) => s.setShowOutputButton);
 
   return (
     <SettingsPage title={t('Appearance')}>
@@ -56,6 +66,29 @@ export default function AppearanceSettings() {
         />
         <Text style={settingsStyles.hint}>
           {t('Show the album artwork next to each song in playlists and favorites.')}
+        </Text>
+
+        <Text style={settingsStyles.sectionTitle}>{t('Albums')}</Text>
+        <SwitchList
+          options={[
+            { label: t('Artist photo'), value: showArtistPhoto, onChange: setShowArtistPhoto },
+          ]}
+        />
+        <Text style={settingsStyles.hint}>
+          {t('Show a round artist photo next to the name on album screens.')}
+        </Text>
+
+        <Text style={settingsStyles.sectionTitle}>{t('Buttons')}</Text>
+        <SwitchList
+          options={[
+            { label: t('History'), value: showHistoryButton, onChange: setShowHistoryButton },
+            { label: t('Profile'), value: showProfileButton, onChange: setShowProfileButton },
+            { label: t('Cast'), value: showCastButton, onChange: setShowCastButton },
+            { label: t('Output'), value: showOutputButton, onChange: setShowOutputButton },
+          ]}
+        />
+        <Text style={settingsStyles.hint}>
+          {t("Hide the buttons you don't use for a cleaner interface.")}
         </Text>
 
         <Text style={settingsStyles.sectionTitle}>{t('Theme')}</Text>

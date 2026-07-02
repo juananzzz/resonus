@@ -31,6 +31,7 @@ import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { useScanProgress } from '@/store/scanProgress';
+import { useSettings } from '@/store/settings';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 import { listPerf } from '@/lib/listPerf';
 
@@ -208,6 +209,8 @@ export default function HomeScreen() {
   const queryClient = useQueryClient();
   const t = useT();
   const [refreshing, setRefreshing] = useState(false);
+  const showHistoryButton = useSettings((s) => s.showHistoryButton);
+  const showProfileButton = useSettings((s) => s.showProfileButton);
   const initial = offline ? 'O' : (auth?.username ?? '?').charAt(0).toUpperCase();
 
   // Detecta si el servidor no responde (comparte caché con la sección "newest").
@@ -249,19 +252,23 @@ export default function HomeScreen() {
             ) : null}
           </View>
           <View style={styles.headerRight}>
-            <Link href="/history" asChild>
-              <Pressable hitSlop={10} accessibilityLabel={t('History')}>
-                <Ionicons name="time-outline" size={24} color={colors.textSecondary} />
-              </Pressable>
-            </Link>
+            {showHistoryButton ? (
+              <Link href="/history" asChild>
+                <Pressable hitSlop={10} accessibilityLabel={t('History')}>
+                  <Ionicons name="time-outline" size={24} color={colors.textSecondary} />
+                </Pressable>
+              </Link>
+            ) : null}
             <Link href="/settings" asChild>
               <Pressable hitSlop={10} accessibilityLabel={t('Settings')}>
                 <Ionicons name="settings-outline" size={24} color={colors.textSecondary} />
               </Pressable>
             </Link>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initial}</Text>
-            </View>
+            {showProfileButton ? (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{initial}</Text>
+              </View>
+            ) : null}
           </View>
         </View>
 

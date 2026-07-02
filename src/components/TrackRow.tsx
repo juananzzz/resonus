@@ -7,15 +7,13 @@ import { type Song } from '@/api/subsonic';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
 import { useDownloads } from '@/store/downloads';
-import { usePlayerStore } from '@/store/player';
 import { useSongMenu, type SongMenuContext } from '@/store/songMenu';
 import { useSettings } from '@/store/settings';
 import { useT } from '@/i18n';
-import { colors, fontSize, radius, spacing } from '@/theme';
+import { colors, fontSize, spacing } from '@/theme';
 import { AudioQualityBadge } from './AudioQualityBadge';
 import { Cover } from './Cover';
 import { FavoriteButton } from './FavoriteButton';
-import { NowPlayingBars } from './NowPlayingBars';
 
 interface Props {
   song: Song;
@@ -47,7 +45,6 @@ export function TrackRow({
   showArtwork = false,
   onPress,
 }: Props) {
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
   const showQuality = useSettings((s) => s.showAudioQuality);
@@ -66,15 +63,6 @@ export function TrackRow({
       {showArtwork ? (
         <View style={styles.artwork}>
           <Cover uri={coverArtUrl(song.coverArt ?? song.albumId, 100)} size={44} />
-          {isCurrent ? (
-            <View style={styles.artworkOverlay}>
-              <NowPlayingBars playing={isPlaying} />
-            </View>
-          ) : null}
-        </View>
-      ) : isCurrent ? (
-        <View style={styles.leftSlot}>
-          <NowPlayingBars playing={isPlaying} />
         </View>
       ) : position !== undefined ? (
         <Text style={[styles.position, styles.leftSlot]}>{position}</Text>
@@ -141,13 +129,6 @@ const styles = StyleSheet.create({
   artwork: {
     width: 44,
     height: 44,
-  },
-  artworkOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderRadius: radius.md,
   },
   info: {
     flex: 1,

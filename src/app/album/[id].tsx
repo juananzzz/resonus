@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 
 import { coverArtUrl, getAlbum } from '@/api/data';
@@ -16,7 +16,7 @@ import { useAuthStore } from '@/store/auth';
 import { groupDownloadState, useDownloads } from '@/store/downloads';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
-import { colors } from '@/theme';
+import { colors, fontSize, spacing } from '@/theme';
 
 export default function AlbumScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,6 +24,7 @@ export default function AlbumScreen() {
   const offline = useAuthStore((s) => s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
+  const showArtistPhoto = useSettings((s) => s.showArtistPhoto);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
   const [confirmDownload, setConfirmDownload] = useState(false);
@@ -56,6 +57,11 @@ export default function AlbumScreen() {
     );
   }
 
+  const labels = (data.album.recordLabels ?? []).map((l) => l.name).filter(Boolean);
+  const labelText = labels.length
+    ? `℗ ${data.album.year ? `${data.album.year} ` : ''}${labels.join(' · ')}`
+    : null;
+
   const totalSec = data.songs.reduce((acc, s) => acc + (s.duration ?? 0), 0);
   const metaParts = [t('Album')];
   if (data.album.year) metaParts.push(String(data.album.year));
@@ -68,6 +74,11 @@ export default function AlbumScreen() {
         title={data.album.name}
         subtitle={data.album.artist}
         artistId={data.album.artistId}
+        artistImageUri={
+          showArtistPhoto && data.album.artistId
+            ? coverArtUrl(data.album.artistId, 100)
+            : undefined
+        }
         meta={metaParts.join(' · ')}
         coverUri={coverArtUrl(data.album.coverArt ?? data.album.id, 500)}
         songs={data.songs}
@@ -86,12 +97,27 @@ export default function AlbumScreen() {
             : undefined
         }
         footer={
-          data.album.artistId ? (
-            <MoreFromArtist
-              artistId={data.album.artistId}
-              artistName={data.album.artist ?? ''}
-              currentAlbumId={data.album.id}
-            />
+          data.album.artistId || labelText ? (
+            <>
+              {data.album.artistId ? (
+                <MoreFromArtist
+                  artistId={data.album.artistId}
+                  artistName={data.album.artist ?? ''}
+                  currentAlbumId={data.album.id}
+                />
+              ) : null}
+              {labelText ? (
+                <Text
+                  style={{
+                    color: colors.textMuted,
+                    fontSize: fontSize.xs,
+                    marginTop: spacing.lg,
+                  }}
+                >
+                  {labelText}
+                </Text>
+              ) : null}
+            </>
           ) : undefined
         }
         onPlay={(start) => playQueue(data.songs, start, data.album.name, `/album/${id}`)}

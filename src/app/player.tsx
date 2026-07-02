@@ -92,6 +92,8 @@ export default function PlayerScreen() {
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
   const showQuality = useSettings((s) => s.showAudioQuality);
+  const showCastButton = useSettings((s) => s.showCastButton);
+  const showOutputButton = useSettings((s) => s.showOutputButton);
   const showQualityBadge = showQuality === 'player' || showQuality === 'everywhere';
   const offline = useAuthStore((s) => s.offline);
   const castDevice = useCast((s) => (s.connected ? s.deviceName : null));
@@ -376,20 +378,24 @@ export default function PlayerScreen() {
           </View>
 
           <View style={styles.bottomRow}>
-            <View style={styles.bottomSlot}>{!offline ? <CastIconButton /> : null}</View>
-            <Pressable
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel={t('Output')}
-              disabled={offline}
-              onPress={() => setOutputOpen(true)}
-            >
-              <MaterialIcons
-                name="speaker"
-                size={22}
-                color={upnpDevice ? colors.accent : offline ? colors.textMuted : colors.text}
-              />
-            </Pressable>
+            <View style={styles.bottomSlot}>
+              {!offline && showCastButton ? <CastIconButton /> : null}
+            </View>
+            {showOutputButton ? (
+              <Pressable
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={t('Output')}
+                disabled={offline}
+                onPress={() => setOutputOpen(true)}
+              >
+                <MaterialIcons
+                  name="speaker"
+                  size={22}
+                  color={upnpDevice ? colors.accent : offline ? colors.textMuted : colors.text}
+                />
+              </Pressable>
+            ) : null}
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
