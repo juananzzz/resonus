@@ -1,14 +1,20 @@
 /** Fila de una canción dentro de una lista (álbum, playlist, resultados). */
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import ReanimatedSwipeable, {
+  type SwipeableMethods,
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import { coverArtUrl } from '@/api/data';
 import { type Song } from '@/api/subsonic';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
 import { useDownloads } from '@/store/downloads';
+import { usePlayerStore } from '@/store/player';
 import { useSongMenu, type SongMenuContext } from '@/store/songMenu';
 import { useSettings } from '@/store/settings';
+import { useToast } from '@/store/toast';
 import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
 import { AudioQualityBadge } from './AudioQualityBadge';
@@ -48,6 +54,9 @@ export function TrackRow({
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
   const showQuality = useSettings((s) => s.showAudioQuality);
+  const addToQueue = usePlayerStore((s) => s.addToQueue);
+  const toast = useToast((s) => s.show);
+  const swipeRef = useRef<SwipeableMethods>(null);
 
   // Favorito = marcado por el endpoint o presente en la lista central de
   // favoritos (fiable), ya que no todos los endpoints traen `starred`.
@@ -55,7 +64,28 @@ export function TrackRow({
   const favorited = showFavorite && (!!song.starred || (favIds?.has(song.id) ?? false));
   const downloaded = useDownloads((s) => !!s.files[song.id]);
 
+  // Swipe a la derecha = añadir a la cola (gesto estilo Spotify). La fila
+  // vuelve sola a su sitio; la acción de fondo solo asoma durante el gesto.
+  function onSwipeToQueue() {
+    swipeRef.current?.close();
+    addToQueue(song);
+    toast(t('Added to queue'));
+  }
+
   return (
+    <ReanimatedSwipeable
+      ref={swipeRef}
+      renderLeftActions={() => (
+        <View style={styles.queueAction}>
+          <Ionicons name="list" size={22} color={colors.text} />
+        </View>
+      )}
+      leftThreshold={64}
+      friction={2}
+      onSwipeableWillOpen={(direction) => {
+        if (direction === 'left') onSwipeToQueue();
+      }}
+    >
     <Pressable
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       onPress={onPress}
@@ -103,6 +133,7 @@ export function TrackRow({
         </Pressable>
       ) : null}
     </Pressable>
+    </ReanimatedSwipeable>
   );
 }
 
@@ -112,6 +143,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     gap: spacing.md,
+    // Opaca para tapar la acción de swipe mientras la fila está en reposo.
+    backgroundColor: colors.background,
+  },
+  queueAction: {
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.accent,
   },
   pressed: {
     opacity: 0.6,
