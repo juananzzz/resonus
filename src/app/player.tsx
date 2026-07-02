@@ -227,7 +227,6 @@ export default function PlayerScreen() {
               <Text style={styles.topTitle}>{t('NOW PLAYING')}</Text>
             )}
           </Pressable>
-          {!offline ? <CastIconButton /> : null}
           {isLocal && !offline ? (
             <View style={{ width: 40 }} />
           ) : (
@@ -371,7 +370,8 @@ export default function PlayerScreen() {
           </View>
 
           <View style={styles.bottomRow}>
-            <MaterialIcons name="cast" size={22} color={colors.textMuted} />
+            <View style={styles.bottomSlot}>{!offline ? <CastIconButton /> : null}</View>
+            {/* Placeholder: será el selector de salida UPnP/DLNA cuando llegue. */}
             <MaterialIcons name="speaker" size={22} color={colors.textMuted} />
             <Pressable
               hitSlop={10}
@@ -485,5 +485,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.sm,
     marginTop: spacing.sm,
+  },
+  // Hueco fijo para el botón de Cast: no se renderiza en el perfil local (ni
+  // en web), y sin el hueco los otros botones de la fila saltarían de sitio.
+  bottomSlot: {
+    width: 40,
+    height: 40,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   },
 });
