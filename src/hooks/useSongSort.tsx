@@ -26,6 +26,8 @@ import { colors, fontSize, radius, spacing } from '@/theme';
 const SORT_LABEL: Record<SortField, string> = {
   recent: 'Recent',
   alpha: 'Alphabetical',
+  artist: 'Artist',
+  album: 'Album',
 };
 
 interface SortResult {
@@ -54,8 +56,18 @@ export function useSongSort(source: Song[], persistKey?: string): SortResult {
   }
 
   // La lista llega del servidor en orden de adición (recientes ascendente).
+  const cmp = (a?: string, b?: string) => (a ?? '').localeCompare(b ?? '');
   const ordered = source.map((song, idx) => ({ song, idx }));
-  if (field === 'alpha') ordered.sort((a, b) => a.song.title.localeCompare(b.song.title));
+  if (field === 'alpha') ordered.sort((a, b) => cmp(a.song.title, b.song.title));
+  if (field === 'artist')
+    ordered.sort((a, b) => cmp(a.song.artist, b.song.artist) || cmp(a.song.title, b.song.title));
+  if (field === 'album')
+    ordered.sort(
+      (a, b) =>
+        cmp(a.song.album, b.song.album) ||
+        (a.song.track ?? 0) - (b.song.track ?? 0) ||
+        cmp(a.song.title, b.song.title),
+    );
   if (dir === 'desc') ordered.reverse();
 
   const sortSheet = (
@@ -63,7 +75,7 @@ export function useSongSort(source: Song[], persistKey?: string): SortResult {
       <Pressable style={styles.backdrop} onPress={() => setOpen(false)} />
       <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}>
         <Text style={styles.sheetTitle}>{t('Sort by')}</Text>
-        {(['recent', 'alpha'] as SortField[]).map((f) => {
+        {(['recent', 'alpha', 'artist', 'album'] as SortField[]).map((f) => {
           const active = field === f;
           return (
             <Pressable

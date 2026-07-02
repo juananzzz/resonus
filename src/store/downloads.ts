@@ -247,6 +247,8 @@ interface DownloadsState {
   hydrate: () => Promise<void>;
   downloadAlbum: (album: Album, songs: Song[]) => Promise<void>;
   downloadPlaylist: (playlist: Playlist, songs: Song[]) => Promise<void>;
+  /** Descarga todas las canciones favoritas (grupo 'favorites'). */
+  downloadFavorites: (songs: Song[]) => Promise<void>;
   downloadSong: (song: Song) => Promise<void>;
   /** Borra los ficheros de esas canciones y las quita del catálogo. */
   deleteSongs: (songIds: string[]) => Promise<void>;
@@ -381,6 +383,16 @@ export const useDownloads = create<DownloadsState>((set, get) => {
           playlist.comment,
         );
       }
+    },
+
+    downloadFavorites: async (songs) => {
+      // Álbumes implicados: los de las canciones (entrada parcial si hace falta).
+      const byId = new Map<string, Album>();
+      for (const s of songs) {
+        const al = albumFromSong(s);
+        if (!byId.has(al.id)) byId.set(al.id, al);
+      }
+      await downloadGroup('favorites', songs, Array.from(byId.values()));
     },
 
     deleteSongs: async (songIds) => {

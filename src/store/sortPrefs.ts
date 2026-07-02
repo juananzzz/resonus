@@ -9,7 +9,7 @@ import { getItem, setItem } from '@/lib/storage';
 
 const KEY = 'resonus.sortPrefs';
 
-export type SortField = 'recent' | 'alpha';
+export type SortField = 'recent' | 'alpha' | 'artist' | 'album';
 export type SortDir = 'asc' | 'desc';
 
 export interface SortPref {
