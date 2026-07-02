@@ -1,4 +1,8 @@
-/** Carátula del acceso a Favoritos: degradado verde-azulado con un corazón. */
+/**
+ * Carátula del acceso a Favoritos: degradado índigo → celeste con un corazón,
+ * como "Canciones que te gustan" de Spotify. La cabecera de la pantalla de
+ * Favoritos usa el índigo oscurecido (ver HEADER_COLOR allí).
+ */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -7,7 +11,7 @@ import { radius } from '@/theme';
 export function FavoritesArt({ size }: { size: number }) {
   return (
     <LinearGradient
-      colors={['#3be477', '#2a7de0'] as const}
+      colors={['#450af5', '#8e8ee5'] as const}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{

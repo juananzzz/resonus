@@ -34,6 +34,8 @@ interface SettingsState {
   showAudioQuality: AudioQualityMode;
   /** Mostrar la mini carátula del álbum en las listas (playlists/favoritos). */
   showListArtwork: boolean;
+  /** Duración de cada canción en las listas (Spotify no la muestra). */
+  showSongDuration: boolean;
   /** Foto circular del artista junto a su nombre en la pantalla de álbum. */
   showArtistPhoto: boolean;
   /** Visibilidad de botones opcionales, para quien prefiera una UI mínima. */
@@ -46,6 +48,7 @@ interface SettingsState {
   setLanguage: (language: Language) => void;
   setShowAudioQuality: (mode: AudioQualityMode) => void;
   setShowListArtwork: (value: boolean) => void;
+  setShowSongDuration: (value: boolean) => void;
   setShowArtistPhoto: (value: boolean) => void;
   setShowHistoryButton: (value: boolean) => void;
   setShowProfileButton: (value: boolean) => void;
@@ -66,6 +69,7 @@ function snapshot(get: () => SettingsState) {
     language: s.language,
     showAudioQuality: s.showAudioQuality,
     showListArtwork: s.showListArtwork,
+    showSongDuration: s.showSongDuration,
     showArtistPhoto: s.showArtistPhoto,
     showHistoryButton: s.showHistoryButton,
     showProfileButton: s.showProfileButton,
@@ -80,6 +84,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
   language: 'en',
   showAudioQuality: 'off',
   showListArtwork: true,
+  showSongDuration: true,
   showArtistPhoto: true,
   showHistoryButton: true,
   showProfileButton: true,
@@ -108,6 +113,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
 
   setShowListArtwork: (showListArtwork) => {
     set({ showListArtwork });
+    persist(snapshot(get));
+  },
+
+  setShowSongDuration: (showSongDuration) => {
+    set({ showSongDuration });
     persist(snapshot(get));
   },
 
@@ -146,6 +156,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           language: Language;
           showAudioQuality: AudioQualityMode | boolean;
           showListArtwork: boolean;
+          showSongDuration: boolean;
           showArtistPhoto: boolean;
           showHistoryButton: boolean;
           showProfileButton: boolean;
@@ -170,6 +181,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.showListArtwork === 'boolean') {
           set({ showListArtwork: parsed.showListArtwork });
+        }
+        if (typeof parsed.showSongDuration === 'boolean') {
+          set({ showSongDuration: parsed.showSongDuration });
         }
         if (typeof parsed.showArtistPhoto === 'boolean') {
           set({ showArtistPhoto: parsed.showArtistPhoto });

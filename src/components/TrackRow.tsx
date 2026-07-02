@@ -54,6 +54,7 @@ export function TrackRow({
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
   const showQuality = useSettings((s) => s.showAudioQuality);
+  const showDuration = useSettings((s) => s.showSongDuration);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const toast = useToast((s) => s.show);
   const swipeRef = useRef<SwipeableMethods>(null);
@@ -121,7 +122,7 @@ export function TrackRow({
 
       {favorited ? <FavoriteButton id={song.id} starred size={20} /> : null}
       {showQuality === 'everywhere' ? <AudioQualityBadge song={song} /> : null}
-      <Text style={styles.duration}>{formatDuration(song.duration)}</Text>
+      {showDuration ? <Text style={styles.duration}>{formatDuration(song.duration)}</Text> : null}
       {showMenu ? (
         <Pressable
           hitSlop={8}

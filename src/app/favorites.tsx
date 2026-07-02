@@ -18,6 +18,12 @@ import { currentSong, SOURCE_FAVORITES, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { colors } from '@/theme';
 
+// Cabecera índigo → negro (estilo "Canciones que te gustan" de Spotify): el
+// índigo del arte de Favoritos (#450af5, ver FavoritesArt) oscurecido para que
+// el texto blanco se lea y el degradado funda limpio con el fondo, igual que
+// los tonos oscuros que useDominantColor elige en álbumes y playlists.
+const HEADER_COLOR = '#290693';
+
 export default function FavoritesScreen() {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const offline = useAuthStore((s) => s.offline);
@@ -81,7 +87,7 @@ export default function FavoritesScreen() {
         title={t('Favorites')}
         meta={metaParts.join(' · ')}
         hideCover
-        accentColor={colors.accent}
+        accentColor={HEADER_COLOR}
         songs={displaySongs}
         currentId={playing?.id}
         showArtwork={showListArtwork}

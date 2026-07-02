@@ -25,6 +25,8 @@ export default function AppearanceSettings() {
   const setShowAudioQuality = useSettings((s) => s.setShowAudioQuality);
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const setShowListArtwork = useSettings((s) => s.setShowListArtwork);
+  const showSongDuration = useSettings((s) => s.showSongDuration);
+  const setShowSongDuration = useSettings((s) => s.setShowSongDuration);
   const showArtistPhoto = useSettings((s) => s.showArtistPhoto);
   const setShowArtistPhoto = useSettings((s) => s.setShowArtistPhoto);
   const showHistoryButton = useSettings((s) => s.showHistoryButton);
@@ -66,6 +68,14 @@ export default function AppearanceSettings() {
         />
         <Text style={settingsStyles.hint}>
           {t('Show the album artwork next to each song in playlists and favorites.')}
+        </Text>
+        <SwitchList
+          options={[
+            { label: t('Song duration'), value: showSongDuration, onChange: setShowSongDuration },
+          ]}
+        />
+        <Text style={settingsStyles.hint}>
+          {t('Show the length of each song in lists.')}
         </Text>
 
         <Text style={settingsStyles.sectionTitle}>{t('Albums')}</Text>

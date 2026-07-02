@@ -38,7 +38,9 @@ export default function HistoryScreen() {
       title={t('History')}
       meta={songsLabel(songs.length, lang)}
       hideCover
-      accentColor={colors.accent}
+      // Acento oscurecido (~60%), como los tonos oscuros que useDominantColor
+      // elige en álbumes: el degradado funde limpio a negro (ver Favoritos).
+      accentColor="#116f32"
       songs={songs}
       currentId={playing?.id}
       showArtwork={showListArtwork}
