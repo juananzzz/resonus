@@ -2,6 +2,8 @@
  * Consultas del catálogo local que replican la API Subsonic.
  * Si el catálogo aún no se ha cargado, lo carga bajo demanda.
  */
+import * as FileSystem from 'expo-file-system/legacy';
+
 import { useAuthStore } from '@/store/auth';
 import { usePlayCounts } from '@/store/playCounts';
 import { type Album, type Artist, type ArtistInfo, type Playlist, type SearchResult, type Song, type StarType, type Starred } from '@/api/subsonic';
@@ -303,6 +305,8 @@ interface LocalPlaylistRec {
   comment?: string;
   songIds: string[];
   createdAt: number;
+  /** Carátula personalizada (file:// copiado a PLAYLIST_COVERS_DIR). */
+  coverUri?: string;
 }
 
 let playlistCache: LocalPlaylistRec[] | null = null;
@@ -334,7 +338,7 @@ function toPlaylist(rec: LocalPlaylistRec, songs: Song[]): Playlist {
     name: rec.name,
     comment: rec.comment,
     songCount: songs.length,
-    coverArt: cover?.coverArt ?? cover?.albumId,
+    coverArt: rec.coverUri ?? cover?.coverArt ?? cover?.albumId,
   };
 }
 
@@ -382,7 +386,35 @@ export async function removeFromPlaylist(id: string, index: number): Promise<voi
 
 export async function deletePlaylist(id: string): Promise<void> {
   const list = await loadPlaylists();
+  deleteCoverFile(list.find((p) => p.id === id)?.coverUri);
   await savePlaylists(list.filter((p) => p.id !== id));
+}
+
+// ── Carátula personalizada de listas locales ────────────────────────────────
+// La imagen elegida se copia a un directorio propio: fuera de local-catalog/,
+// que "Volver a escanear" borra entero y se llevaría la carátula por delante.
+const PLAYLIST_COVERS_DIR = FileSystem.documentDirectory + 'playlist-covers/';
+
+function deleteCoverFile(uri?: string) {
+  if (uri) void FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+}
+
+export async function setLocalPlaylistCover(id: string, srcUri: string): Promise<void> {
+  await FileSystem.makeDirectoryAsync(PLAYLIST_COVERS_DIR, { intermediates: true }).catch(() => {});
+  // Nombre nuevo en cada cambio: si se reutilizara la misma URI, expo-image
+  // seguiría enseñando la imagen anterior que tiene cacheada.
+  const safe = id.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const dest = `${PLAYLIST_COVERS_DIR}${safe}-${Date.now()}.jpg`;
+  await FileSystem.copyAsync({ from: srcUri, to: dest });
+  const list = await loadPlaylists();
+  deleteCoverFile(list.find((p) => p.id === id)?.coverUri);
+  await savePlaylists(list.map((p) => (p.id === id ? { ...p, coverUri: dest } : p)));
+}
+
+export async function removeLocalPlaylistCover(id: string): Promise<void> {
+  const list = await loadPlaylists();
+  deleteCoverFile(list.find((p) => p.id === id)?.coverUri);
+  await savePlaylists(list.map((p) => (p.id === id ? { ...p, coverUri: undefined } : p)));
 }
 
 /** Crea o actualiza una lista local (la usan las descargas de playlists). */
@@ -403,6 +435,7 @@ export async function upsertLocalPlaylist(
 /** Borra las listas locales con ese prefijo de id (limpieza de descargas). */
 export async function deleteLocalPlaylistsByPrefix(prefix: string): Promise<void> {
   const list = await loadPlaylists();
+  for (const p of list) if (p.id.startsWith(prefix)) deleteCoverFile(p.coverUri);
   await savePlaylists(list.filter((p) => !p.id.startsWith(prefix)));
 }
 

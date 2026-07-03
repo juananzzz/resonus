@@ -576,6 +576,8 @@ export function registerCover(id: string, uri?: string) {
 
 export function localCoverUrl(id: string | undefined): string | undefined {
   if (!id) return undefined;
+  // Las carátulas personalizadas de listas ya llegan como URI de fichero.
+  if (id.startsWith('file://')) return id;
   return coverIndex.get(id);
 }
 

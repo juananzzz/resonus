@@ -178,6 +178,7 @@ export default function PlaylistScreen() {
         coverUri={coverArtUrl(data.playlist.coverArt ?? data.playlist.id, 500)}
         hidePublic={offline}
         coverUploadId={!offline && auth?.serverType === 'navidrome' ? id : undefined}
+        localCoverId={offline ? id : undefined}
         onCancel={() => setEditing(false)}
         onSave={onSaveEdit}
       />

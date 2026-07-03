@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { deletePlaylistImage, NavidromeError, uploadPlaylistImage } from '@/api/navidrome';
+import { removeLocalPlaylistCover, setLocalPlaylistCover } from '@/lib/localQueries';
 import { Cover } from '@/components/Cover';
 import { Dialog } from '@/components/Dialog';
 import { useT } from '@/i18n';
@@ -47,6 +48,11 @@ interface Props {
    * imagen local (API nativa de Navidrome ≥ 0.61). Solo perfiles Navidrome.
    */
   coverUploadId?: string;
+  /**
+   * Id de una lista del perfil local: habilita cambiar la carátula copiando
+   * la imagen al almacenamiento de la app (sin servidor de por medio).
+   */
+  localCoverId?: string;
   onCancel: () => void;
   onSave: (changes: PlaylistEdit) => void;
 }
@@ -57,6 +63,7 @@ export function PlaylistEditSheet({
   coverUri,
   hidePublic,
   coverUploadId,
+  localCoverId,
   onCancel,
   onSave,
 }: Props) {
@@ -110,8 +117,28 @@ export function PlaylistEditSheet({
   }
 
   async function runCoverAction(action: CoverAction) {
-    if (!coverUploadId || !auth) return;
     setCoverError(null);
+    if (localCoverId) {
+      // Lista del perfil local: la carátula se copia/borra en el dispositivo.
+      setUploading(true);
+      try {
+        if (action.kind === 'upload') {
+          await setLocalPlaylistCover(localCoverId, action.image.uri);
+          setPickedUri(action.image.uri);
+        } else {
+          await removeLocalPlaylistCover(localCoverId);
+          setPickedUri(null);
+        }
+        void queryClient.invalidateQueries({ queryKey: ['playlist', localCoverId] });
+        void queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      } catch {
+        setCoverError(t("Couldn't update the cover"));
+      } finally {
+        setUploading(false);
+      }
+      return;
+    }
+    if (!coverUploadId || !auth) return;
     if (!auth.ndPassword) {
       // Perfil de antes de guardar la contraseña: pedirla una vez.
       setPendingAction(action);
@@ -188,7 +215,7 @@ export function PlaylistEditSheet({
         >
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.coverWrap}>
-              {coverUploadId ? (
+              {coverUploadId || localCoverId ? (
                 <>
                   <Pressable
                     onPress={() => void pickCover()}
