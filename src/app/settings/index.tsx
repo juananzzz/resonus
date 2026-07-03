@@ -84,8 +84,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.md,
+    paddingVertical: spacing.sm,
   },
   // Mismo avatar que la cabecera de Inicio (anillo de acento) por coherencia.
   avatar: {
@@ -103,8 +102,8 @@ const styles = StyleSheet.create({
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
-    paddingVertical: spacing.lg,
+    gap: spacing.md,
+    paddingVertical: spacing.sm + 2,
   },
   sectionRowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '600', flex: 1 },
 });

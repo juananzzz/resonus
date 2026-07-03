@@ -339,7 +339,7 @@ export const settingsStyles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.xl + spacing.sm,
     paddingVertical: spacing.md,
-    marginTop: spacing.xxl,
+    marginTop: spacing.lg,
   },
   pillButtonText: { color: '#000', fontSize: fontSize.md, fontWeight: '700' },
 });
