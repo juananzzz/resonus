@@ -6,6 +6,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+// gesture-handler no exporta SectionList; su ScrollView como scroll interno
+// hace que el swipe-a-cola de las filas conviva con el scroll (ver TrackRow).
+import { ScrollView as GHScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Dialog } from '@/components/Dialog';
@@ -93,6 +96,7 @@ export default function HistoryScreen() {
       ) : (
         <SectionList
           {...listPerf}
+          renderScrollComponent={(props) => <GHScrollView {...props} />}
           sections={sections}
           keyExtractor={(item) => item.song.id}
           stickySectionHeadersEnabled={false}

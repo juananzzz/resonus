@@ -3,6 +3,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import ReanimatedSwipeable, {
+  SwipeDirection,
   type SwipeableMethods,
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
 
@@ -68,6 +69,8 @@ export function TrackRow({
 
   // Swipe a la derecha = añadir a la cola (gesto estilo Spotify). La fila
   // vuelve sola a su sitio; la acción de fondo solo asoma durante el gesto.
+  // OJO: el gesto solo convive bien con el scroll si la lista contenedora es
+  // de react-native-gesture-handler (FlatList/ScrollView de esa librería).
   function onSwipeToQueue() {
     swipeRef.current?.close();
     tapHaptic();
@@ -83,10 +86,13 @@ export function TrackRow({
           <Ionicons name="list" size={22} color={colors.text} />
         </View>
       )}
-      leftThreshold={64}
-      friction={2}
+      leftThreshold={48}
+      friction={1}
+      overshootLeft={false}
       onSwipeableWillOpen={(direction) => {
-        if (direction === 'left') onSwipeToQueue();
+        // `direction` es la dirección del GESTO (no el lado del panel):
+        // deslizar a la derecha (abre la acción izquierda) llega como RIGHT.
+        if (direction === SwipeDirection.RIGHT) onSwipeToQueue();
       }}
     >
     <Pressable

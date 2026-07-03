@@ -16,6 +16,9 @@ import {
   Text,
   View,
 } from 'react-native';
+// La lista debe ser de gesture-handler para que el swipe-a-cola de las filas
+// no pelee con el scroll vertical (con la FlatList de RN el gesto sale flaky).
+import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Song, type StarType } from '@/api/subsonic';
@@ -154,7 +157,7 @@ export function TrackListView({
         <LinearGradient colors={[headerColor, colors.background]} style={StyleSheet.absoluteFill} />
       </Animated.View>
 
-      <Animated.FlatList
+      <GHFlatList
         {...listPerf}
         data={songs}
         keyExtractor={(item) => item.id}

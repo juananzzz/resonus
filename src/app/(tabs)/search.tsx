@@ -7,12 +7,14 @@ import {
   ActivityIndicator,
   Dimensions,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+// ScrollView de gesture-handler: necesario para que el swipe-a-cola de las
+// filas de canciones conviva con el scroll (ver TrackRow).
+import { ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { coverArtUrl, getPlaylists, search } from '@/api/data';

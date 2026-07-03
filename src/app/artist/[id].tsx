@@ -9,11 +9,13 @@ import {
   Animated,
   Dimensions,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+// ScrollView de gesture-handler: necesario para que el swipe-a-cola de las
+// filas de "Populares" conviva con el scroll (ver TrackRow).
+import { ScrollView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -121,7 +123,7 @@ export default function ArtistScreen() {
 
   return (
     <View style={styles.root}>
-      <Animated.ScrollView
+      <ScrollView
         contentContainerStyle={{ paddingBottom: SCREEN_BOTTOM_PADDING }}
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
@@ -254,7 +256,7 @@ export default function ArtistScreen() {
             </ScrollView>
           </View>
         ) : null}
-      </Animated.ScrollView>
+      </ScrollView>
 
       {/* Barra fija: el botón de volver siempre; fondo + título + play al colapsar. */}
       <View style={[styles.bar, { height: insets.top + 48, paddingTop: insets.top }]}>
