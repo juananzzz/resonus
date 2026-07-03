@@ -45,7 +45,6 @@ interface SettingsState {
   /** Visibilidad de botones opcionales, para quien prefiera una UI mínima. */
   showHistoryButton: boolean;
   showProfileButton: boolean;
-  showOutputButton: boolean;
   setMaxBitRate: (value: number) => void;
   setDownloadBitRate: (value: number) => void;
   setLanguage: (language: Language) => void;
@@ -57,7 +56,6 @@ interface SettingsState {
   setPlayerColorBackground: (value: boolean) => void;
   setShowHistoryButton: (value: boolean) => void;
   setShowProfileButton: (value: boolean) => void;
-  setShowOutputButton: (value: boolean) => void;
   /** Vuelve a los valores de fábrica (el idioma se conserva). */
   resetToDefaults: () => void;
   hydrate: () => Promise<void>;
@@ -81,7 +79,6 @@ function snapshot(get: () => SettingsState) {
     playerColorBackground: s.playerColorBackground,
     showHistoryButton: s.showHistoryButton,
     showProfileButton: s.showProfileButton,
-    showOutputButton: s.showOutputButton,
   };
 }
 
@@ -98,7 +95,6 @@ const DEFAULTS = {
   playerColorBackground: true,
   showHistoryButton: true,
   showProfileButton: true,
-  showOutputButton: true,
 };
 
 export const useSettings = create<SettingsState>((set, get) => ({
@@ -159,11 +155,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
-  setShowOutputButton: (showOutputButton) => {
-    set({ showOutputButton });
-    persist(snapshot(get));
-  },
-
   resetToDefaults: () => {
     // El idioma se conserva: restablecer no debería cambiarte de idioma.
     set({ ...DEFAULTS, language: get().language });
@@ -186,7 +177,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
           playerColorBackground: boolean;
           showHistoryButton: boolean;
           showProfileButton: boolean;
-          showOutputButton: boolean;
         }>;
         if (typeof parsed.maxBitRate === 'number') {
           set({ maxBitRate: parsed.maxBitRate });
@@ -224,9 +214,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.showProfileButton === 'boolean') {
           set({ showProfileButton: parsed.showProfileButton });
-        }
-        if (typeof parsed.showOutputButton === 'boolean') {
-          set({ showOutputButton: parsed.showOutputButton });
         }
       }
     } catch {

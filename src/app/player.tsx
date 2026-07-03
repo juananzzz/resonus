@@ -97,7 +97,6 @@ export default function PlayerScreen() {
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
   const showQuality = useSettings((s) => s.showAudioQuality);
-  const showOutputButton = useSettings((s) => s.showOutputButton);
   const showQualityBadge = showQuality === 'player' || showQuality === 'everywhere';
   const offline = useAuthStore((s) => s.offline);
   const castDevice = useCast((s) => (s.connected ? s.deviceName : null));
@@ -408,27 +407,25 @@ export default function PlayerScreen() {
 
           <View style={styles.bottomRow}>
             <View style={styles.bottomSlot}>
-              {showOutputButton || remoteDevice ? (
-                <Pressable
-                  hitSlop={10}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('Devices')}
-                  disabled={offline}
-                  onPress={() => setOutputOpen(true)}
-                  style={styles.deviceRow}
-                >
-                  <MaterialIcons
-                    name="devices"
-                    size={22}
-                    color={remoteDevice ? colors.accent : offline ? colors.textMuted : colors.text}
-                  />
-                  {remoteDevice ? (
-                    <Text style={styles.deviceName} numberOfLines={1}>
-                      {remoteDevice}
-                    </Text>
-                  ) : null}
-                </Pressable>
-              ) : null}
+              <Pressable
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={t('Devices')}
+                disabled={offline}
+                onPress={() => setOutputOpen(true)}
+                style={styles.deviceRow}
+              >
+                <MaterialIcons
+                  name="devices"
+                  size={22}
+                  color={remoteDevice ? colors.accent : offline ? colors.textMuted : colors.text}
+                />
+                {remoteDevice ? (
+                  <Text style={styles.deviceName} numberOfLines={1}>
+                    {remoteDevice}
+                  </Text>
+                ) : null}
+              </Pressable>
             </View>
             <Pressable
               hitSlop={10}

@@ -34,8 +34,6 @@ export default function AppearanceSettings() {
   const setShowHistoryButton = useSettings((s) => s.setShowHistoryButton);
   const showProfileButton = useSettings((s) => s.showProfileButton);
   const setShowProfileButton = useSettings((s) => s.setShowProfileButton);
-  const showOutputButton = useSettings((s) => s.showOutputButton);
-  const setShowOutputButton = useSettings((s) => s.setShowOutputButton);
 
   return (
     <SettingsPage title={t('Appearance')}>
@@ -88,28 +86,22 @@ export default function AppearanceSettings() {
         <SwitchList
           options={[
             {
-              label: t('Artist photo'),
+              label: t('Show artist photo'),
               description: t('Show a round artist photo next to the name on album screens.'),
               value: showArtistPhoto,
               onChange: setShowArtistPhoto,
             },
             {
-              label: t('History'),
+              label: t('Show history button'),
               description: t('The clock button on Home.'),
               value: showHistoryButton,
               onChange: setShowHistoryButton,
             },
             {
-              label: t('Profile'),
+              label: t('Show profile button'),
               description: t('Your avatar on Home.'),
               value: showProfileButton,
               onChange: setShowProfileButton,
-            },
-            {
-              label: t('Devices'),
-              description: t('The output button in the player.'),
-              value: showOutputButton,
-              onChange: setShowOutputButton,
             },
           ]}
         />
