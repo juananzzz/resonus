@@ -29,6 +29,8 @@ export default function AppearanceSettings() {
   const setShowSongDuration = useSettings((s) => s.setShowSongDuration);
   const showArtistPhoto = useSettings((s) => s.showArtistPhoto);
   const setShowArtistPhoto = useSettings((s) => s.setShowArtistPhoto);
+  const playerColorBackground = useSettings((s) => s.playerColorBackground);
+  const setPlayerColorBackground = useSettings((s) => s.setPlayerColorBackground);
   const showHistoryButton = useSettings((s) => s.showHistoryButton);
   const setShowHistoryButton = useSettings((s) => s.setShowHistoryButton);
   const showProfileButton = useSettings((s) => s.showProfileButton);
@@ -86,6 +88,20 @@ export default function AppearanceSettings() {
         />
         <Text style={settingsStyles.hint}>
           {t('Show a round artist photo next to the name on album screens.')}
+        </Text>
+
+        <Text style={settingsStyles.sectionTitle}>{t('Player')}</Text>
+        <SwitchList
+          options={[
+            {
+              label: t('Colored background'),
+              value: playerColorBackground,
+              onChange: setPlayerColorBackground,
+            },
+          ]}
+        />
+        <Text style={settingsStyles.hint}>
+          {t('Tint the player background with the cover color.')}
         </Text>
 
         <Text style={settingsStyles.sectionTitle}>{t('Buttons')}</Text>

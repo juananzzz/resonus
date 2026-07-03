@@ -155,6 +155,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     marginTop: spacing.lg,
     marginBottom: spacing.xl,
+    // El player ya no tiene padding lateral global (por el slider): el margen
+    // de la tarjeta lo pone ella misma.
+    marginHorizontal: spacing.xl,
     padding: spacing.lg,
   },
   title: { color: colors.text, fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.sm },

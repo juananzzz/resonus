@@ -42,6 +42,8 @@ interface SettingsState {
   hapticsEnabled: boolean;
   /** Foto circular del artista junto a su nombre en la pantalla de álbum. */
   showArtistPhoto: boolean;
+  /** Fondo del reproductor teñido con el color dominante de la carátula. */
+  playerColorBackground: boolean;
   /** Visibilidad de botones opcionales, para quien prefiera una UI mínima. */
   showHistoryButton: boolean;
   showProfileButton: boolean;
@@ -55,6 +57,7 @@ interface SettingsState {
   setAutoplaySimilar: (value: boolean) => void;
   setHapticsEnabled: (value: boolean) => void;
   setShowArtistPhoto: (value: boolean) => void;
+  setPlayerColorBackground: (value: boolean) => void;
   setShowHistoryButton: (value: boolean) => void;
   setShowProfileButton: (value: boolean) => void;
   setShowOutputButton: (value: boolean) => void;
@@ -77,6 +80,7 @@ function snapshot(get: () => SettingsState) {
     autoplaySimilar: s.autoplaySimilar,
     hapticsEnabled: s.hapticsEnabled,
     showArtistPhoto: s.showArtistPhoto,
+    playerColorBackground: s.playerColorBackground,
     showHistoryButton: s.showHistoryButton,
     showProfileButton: s.showProfileButton,
     showOutputButton: s.showOutputButton,
@@ -93,6 +97,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
   autoplaySimilar: true,
   hapticsEnabled: true,
   showArtistPhoto: true,
+  playerColorBackground: true,
   showHistoryButton: true,
   showProfileButton: true,
   showOutputButton: true,
@@ -142,6 +147,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
+  setPlayerColorBackground: (playerColorBackground) => {
+    set({ playerColorBackground });
+    persist(snapshot(get));
+  },
+
   setShowHistoryButton: (showHistoryButton) => {
     set({ showHistoryButton });
     persist(snapshot(get));
@@ -171,6 +181,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           autoplaySimilar: boolean;
           hapticsEnabled: boolean;
           showArtistPhoto: boolean;
+          playerColorBackground: boolean;
           showHistoryButton: boolean;
           showProfileButton: boolean;
           showOutputButton: boolean;
@@ -205,6 +216,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.showArtistPhoto === 'boolean') {
           set({ showArtistPhoto: parsed.showArtistPhoto });
+        }
+        if (typeof parsed.playerColorBackground === 'boolean') {
+          set({ playerColorBackground: parsed.playerColorBackground });
         }
         if (typeof parsed.showHistoryButton === 'boolean') {
           set({ showHistoryButton: parsed.showHistoryButton });

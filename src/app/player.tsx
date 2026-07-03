@@ -33,7 +33,9 @@ import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { LyricsCard } from '@/components/LyricsCard';
 import { OutputSheet } from '@/components/OutputSheet';
+import { useDominantColor } from '@/hooks/useDominantColor';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
+import { useLyrics } from '@/hooks/useLyrics';
 import { formatDuration } from '@/lib/format';
 import { useAuthStore } from '@/store/auth';
 import { useCast } from '@/store/cast';
@@ -49,6 +51,8 @@ const SCREEN_H = Dimensions.get('window').height;
 const COVER = SCREEN_W - spacing.xl * 2;
 const SWIPE_THRESHOLD = SCREEN_W * 0.25;
 const DISMISS_THRESHOLD = 120;
+// Cuánto asoma la tarjeta de letra bajo la primera página (invita a deslizar).
+const LYRICS_PEEK = 56;
 
 function CircleButton({
   name,
@@ -102,6 +106,17 @@ export default function PlayerScreen() {
   const [outputOpen, setOutputOpen] = useState(false);
   const canLyrics = !offline && !song?.url;
   const favIds = useFavoriteIds(!!song && (!song?.localUri || offline));
+
+  // La capa de datos resuelve la carátula: del servidor (online) o del índice
+  // local por álbum (offline). Ya no se guarda el base64 en cada canción.
+  const cover = song ? coverArtUrl(song.coverArt ?? song.albumId, 600) : undefined;
+  // Fondo estilo Spotify: degradado del color dominante de la carátula
+  // (desactivable en Ajustes → Aspecto).
+  const colorBackground = useSettings((s) => s.playerColorBackground);
+  const dominant = useDominantColor(colorBackground ? cover : undefined);
+  // Misma query que usa la tarjeta de letra (cacheada): aquí solo para saber
+  // si hay letra y dejar la tarjeta asomando bajo la primera página.
+  const { data: lyrics } = useLyrics(canLyrics ? (song ?? undefined) : undefined);
 
   // El player es desplazable (como Spotify): la primera "página" ocupa la
   // pantalla y debajo asoma la tarjeta de la letra. La altura real la da el
@@ -205,9 +220,6 @@ export default function PlayerScreen() {
 
   const isLocal = !!song.localUri;
   const favorited = !!song.starred || (favIds?.has(song.id) ?? false);
-  // La capa de datos resuelve la carátula: del servidor (online) o del índice
-  // local por álbum (offline). Ya no se guarda el base64 en cada canción.
-  const cover = coverArtUrl(song.coverArt ?? song.albumId, 600);
   const duration = durationSec || song.duration || 0;
   const repeatActive = repeat !== 'off';
 
@@ -215,7 +227,7 @@ export default function PlayerScreen() {
     <GestureDetector gesture={dismissPan}>
       <Animated.View style={[styles.root, rootStyle]}>
         <LinearGradient
-          colors={['#3a4042', colors.background] as const}
+          colors={[colorBackground ? dominant : '#3a4042', colors.background] as const}
           style={StyleSheet.absoluteFill}
         />
         <SafeAreaView style={styles.safe}>
@@ -232,7 +244,7 @@ export default function PlayerScreen() {
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
         >
-        <View style={{ height: pageH || SCREEN_H * 0.85 }}>
+        <View style={{ height: pageH ? pageH - (lyrics ? LYRICS_PEEK : 0) : SCREEN_H * 0.85 }}>
         <View style={styles.topBar}>
           <CircleButton name="chevron-down" label={t('Close')} onPress={() => router.back()} />
           <Pressable
@@ -266,15 +278,6 @@ export default function PlayerScreen() {
             <CircleButton name="ellipsis-vertical" label={t('More options')} onPress={() => openMenu(song)} />
           )}
         </View>
-
-        {remoteDevice ? (
-          <View style={styles.castRow}>
-            <Ionicons name="tv-outline" size={13} color={colors.accent} />
-            <Text style={styles.castText} numberOfLines={1}>
-              {t('Playing on {device}', { device: remoteDevice })}
-            </Text>
-          </View>
-        ) : null}
 
         <View style={styles.coverWrap}>
           <GestureDetector gesture={coverPan}>
@@ -328,12 +331,13 @@ export default function PlayerScreen() {
 
           <View style={styles.progress}>
             <Slider
+              style={styles.slider}
               minimumValue={0}
               maximumValue={duration}
               value={positionSec}
               onSlidingComplete={seekTo}
               minimumTrackTintColor={colors.text}
-              maximumTrackTintColor={colors.surfaceHighlight}
+              maximumTrackTintColor="rgba(255,255,255,0.35)"
               thumbTintColor={colors.text}
             />
             <View style={styles.times}>
@@ -404,19 +408,25 @@ export default function PlayerScreen() {
 
           <View style={styles.bottomRow}>
             <View style={styles.bottomSlot}>
-              {showOutputButton ? (
+              {showOutputButton || remoteDevice ? (
                 <Pressable
                   hitSlop={10}
                   accessibilityRole="button"
                   accessibilityLabel={t('Devices')}
                   disabled={offline}
                   onPress={() => setOutputOpen(true)}
+                  style={styles.deviceRow}
                 >
                   <MaterialIcons
                     name="devices"
                     size={22}
                     color={remoteDevice ? colors.accent : offline ? colors.textMuted : colors.text}
                   />
+                  {remoteDevice ? (
+                    <Text style={styles.deviceName} numberOfLines={1}>
+                      {remoteDevice}
+                    </Text>
+                  ) : null}
                 </Pressable>
               ) : null}
             </View>
@@ -442,26 +452,19 @@ export default function PlayerScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  safe: { flex: 1, paddingHorizontal: spacing.xl },
+  // El padding lateral vive en cada sección (no aquí): así el slider puede
+  // sobresalir su margen interno sin que el ScrollView recorte el pulgar.
+  safe: { flex: 1 },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
   },
-  castRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  castText: { color: colors.accent, fontSize: fontSize.sm, fontWeight: '600' },
   circle: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -496,6 +499,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.xl,
   },
   meta: {
     flexDirection: 'row',
@@ -513,7 +517,16 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   progress: { marginBottom: spacing.md },
-  times: { flexDirection: 'row', justifyContent: 'space-between' },
+  // Compensa el margen interno del slider (~15px, donde centra el pulgar en
+  // los extremos): la pista visible va de borde a borde del contenido, como
+  // Spotify, y el pulgar sobresale hacia el hueco sin que nada lo recorte.
+  slider: { marginHorizontal: -15 },
+  // Pegados a la barra: el slider trae mucho aire vertical (zona táctil).
+  times: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: -2,
+  },
   time: { color: colors.textMuted, fontSize: fontSize.xs },
   controls: {
     flexDirection: 'row',
@@ -537,12 +550,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     marginTop: spacing.sm,
   },
-  // Hueco fijo para el botón de Cast: no se renderiza en el perfil local (ni
-  // en web), y sin el hueco los otros botones de la fila saltarían de sitio.
+  // Hueco flexible para el botón de dispositivos: mantiene la cola en su
+  // sitio aunque el botón esté oculto, y deja crecer el nombre del aparato.
   bottomSlot: {
-    width: 40,
+    flex: 1,
     height: 40,
     alignItems: 'flex-start',
     justifyContent: 'center',
+  },
+  // Como Spotify Connect: icono + nombre del aparato en acento al castear.
+  deviceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    maxWidth: '100%',
+    paddingRight: spacing.lg,
+  },
+  deviceName: {
+    color: colors.accent,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    flexShrink: 1,
   },
 });

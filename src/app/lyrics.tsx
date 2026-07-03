@@ -68,6 +68,7 @@ export default function LyricsScreen() {
 
       <View style={styles.controls}>
         <Slider
+          style={styles.slider}
           minimumValue={0}
           maximumValue={duration}
           value={positionSec}
@@ -120,7 +121,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
   },
   controls: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
-  times: { flexDirection: 'row', justifyContent: 'space-between' },
+  // Igual que en el player: la pista visible de borde a borde del contenido.
+  slider: { marginHorizontal: -15 },
+  times: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: -2,
+  },
   time: { color: 'rgba(255,255,255,0.7)', fontSize: fontSize.xs },
   playButton: {
     alignSelf: 'center',
