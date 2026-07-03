@@ -97,6 +97,8 @@ export interface Playlist {
   comment?: string;
   /** Visible para otros usuarios del servidor. */
   public?: boolean;
+  /** Usuario dueño de la lista ("System" en las smartlists de serie de Ampache). */
+  owner?: string;
 }
 
 /** Genera un salt aleatorio en hexadecimal. */
@@ -297,19 +299,24 @@ export async function getPlaylists(auth: SubsonicAuth): Promise<Playlist[]> {
     auth,
     'getPlaylists.view',
   );
-  return res.playlists?.playlist ?? [];
+  const lists = res.playlists?.playlist ?? [];
+  // Ampache mezcla sus smartlists de serie (dueño "System": "Album 1*"…) con
+  // las listas del usuario; se ocultan porque no son editables desde la app.
+  return isAmpache(auth.serverType) ? lists.filter((p) => p.owner !== 'System') : lists;
 }
 
 export async function getPlaylist(
   auth: SubsonicAuth,
   id: string,
 ): Promise<{ playlist: Playlist; songs: Song[] }> {
-  const res = await request<{ playlist: Playlist & { entry?: Song[] } }>(
+  type Node = Playlist & { entry?: Song[] };
+  const res = await request<{ playlist: Node | Node[] }>(
     auth,
     'getPlaylist.view',
     { id },
   );
-  const { entry, ...playlist } = res.playlist;
+  // Ampache 6 devuelve `playlist` como array de un elemento (fuera de spec).
+  const { entry, ...playlist } = Array.isArray(res.playlist) ? res.playlist[0] : res.playlist;
   return { playlist, songs: entry ?? [] };
 }
 
@@ -330,12 +337,14 @@ export async function createPlaylist(
   auth: SubsonicAuth,
   name: string,
 ): Promise<string> {
-  const res = await request<{ playlist?: { id: string } }>(
+  const res = await request<{ playlist?: { id: string } | { id: string }[] }>(
     auth,
     'createPlaylist.view',
     { name },
   );
-  if (res.playlist?.id) return res.playlist.id;
+  // Ampache 6 devuelve `playlist` como array de un elemento (fuera de spec).
+  const node = Array.isArray(res.playlist) ? res.playlist[0] : res.playlist;
+  if (node?.id) return node.id;
   // Algunos servidores no devuelven la playlist creada: la buscamos por nombre.
   const lists = await getPlaylists(auth);
   const created = lists.find((p) => p.name === name);
