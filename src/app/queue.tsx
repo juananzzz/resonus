@@ -1,6 +1,7 @@
-/** Cola de reproducción: ver, reordenar (arrastrando) y quitar canciones. */
+/** Cola de reproducción: ver, reordenar (arrastrando), quitar y limpiar. */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ReorderableList, {
@@ -11,6 +12,7 @@ import ReorderableList, {
 import { coverArtUrl } from '@/api/data';
 import { type Song } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
+import { Dialog } from '@/components/Dialog';
 import { EmptyState } from '@/components/EmptyState';
 import { formatTotalDuration } from '@/lib/format';
 import { tapHaptic } from '@/lib/haptics';
@@ -76,6 +78,8 @@ export default function QueueScreen() {
   const router = useRouter();
   const queue = usePlayerStore((s) => s.queue);
   const moveTrack = usePlayerStore((s) => s.moveTrack);
+  const clearQueue = usePlayerStore((s) => s.clearQueue);
+  const [confirmClear, setConfirmClear] = useState(false);
   const totalSec = queue.reduce((acc, s) => acc + (s.duration ?? 0), 0);
 
   return (
@@ -93,7 +97,19 @@ export default function QueueScreen() {
             </Text>
           ) : null}
         </View>
-        <View style={{ width: 28 }} />
+        {queue.length > 1 ? (
+          <Pressable
+            style={styles.headerAction}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={t('Clear queue')}
+            onPress={() => setConfirmClear(true)}
+          >
+            <Ionicons name="trash-outline" size={22} color={colors.textSecondary} />
+          </Pressable>
+        ) : (
+          <View style={{ width: 28 }} />
+        )}
       </View>
 
       <ReorderableList
@@ -116,6 +132,19 @@ export default function QueueScreen() {
           </View>
         }
       />
+
+      <Dialog
+        visible={confirmClear}
+        title={t('Clear queue')}
+        message={t('The current song keeps playing.')}
+        confirmLabel={t('Clear all')}
+        destructive
+        onCancel={() => setConfirmClear(false)}
+        onConfirm={() => {
+          setConfirmClear(false);
+          clearQueue();
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -130,6 +159,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerCenter: { alignItems: 'center' },
+  headerAction: { width: 28, alignItems: 'center' },
   headerTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
   headerSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
   list: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },

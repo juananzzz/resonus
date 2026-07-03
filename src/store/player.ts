@@ -198,8 +198,22 @@ async function remoteLoadIndex(index: number, autoplay: boolean, startSec = 0) {
   onTrackChanged(song);
 }
 
+/**
+ * Mantiene el bloque "en cola" (canciones añadidas a mano, contiguas tras la
+ * actual) al cambiar de pista: avanzar a la siguiente consume una; saltar a
+ * cualquier otra posición disuelve el bloque (pasa a ser cola normal).
+ */
+function consumeQueuedOnIndexChange(next: number) {
+  const { index, queuedCount } = usePlayerStore.getState();
+  if (next === index || queuedCount === 0) return;
+  usePlayerStore.setState({
+    queuedCount: next === index + 1 ? queuedCount - 1 : 0,
+  });
+}
+
 /** Carga la pista en `index` y (opcionalmente) la reproduce. */
 async function loadIndex(index: number, autoplay: boolean) {
+  consumeQueuedOnIndexChange(index);
   if (remoteKind()) return remoteLoadIndex(index, autoplay);
   const { queue, repeat } = usePlayerStore.getState();
   const song = queue[index];
@@ -480,6 +494,12 @@ export function initRemoteIntegration() {
 interface PlayerState {
   queue: Song[];
   index: number;
+  /**
+   * Canciones añadidas a mano con "añadir a la cola" aún pendientes; ocupan
+   * las posiciones index+1..index+queuedCount (estilo "Next in queue" de
+   * Spotify: suenan justo después de la actual, antes de que siga la lista).
+   */
+  queuedCount: number;
   isPlaying: boolean;
   /** El audio está cargando/bufferando y aún no suena. */
   isBuffering: boolean;
@@ -512,6 +532,8 @@ interface PlayerState {
   jumpTo: (index: number) => void;
   removeAt: (index: number) => void;
   moveTrack: (from: number, to: number) => void;
+  /** Vacía la cola dejando solo la canción actual (sigue sonando). */
+  clearQueue: () => void;
   toggleShuffle: () => void;
   cycleRepeat: () => void;
   setSleepTimer: (minutes: number) => void;
@@ -534,6 +556,7 @@ export function currentSong(state: PlayerState): Song | null {
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   queue: [],
   index: 0,
+  queuedCount: 0,
   isPlaying: false,
   isBuffering: false,
   positionSec: 0,
@@ -554,6 +577,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({
       queue: songs,
       index: startIndex,
+      queuedCount: 0,
       positionSec: 0,
       durationSec: 0,
       shuffle: false,
@@ -564,25 +588,30 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     await loadIndex(startIndex, true);
   },
 
+  // Estilo Spotify: lo añadido a mano suena justo después de la actual (y de
+  // lo ya añadido antes), no al final de la lista en reproducción.
   addToQueue: (song) => {
-    const { queue } = get();
+    const { queue, index, queuedCount } = get();
     if (queue.length === 0) {
       void get().playQueue([song], 0);
       return;
     }
-    set({ queue: [...queue, song] });
+    const next = [...queue];
+    next.splice(Math.min(index + queuedCount + 1, next.length), 0, song);
+    set({ queue: next, queuedCount: queuedCount + 1 });
     scheduleSync();
   },
 
   playNext: (song) => {
-    const { queue, index } = get();
+    const { queue, index, queuedCount } = get();
     if (queue.length === 0) {
       void get().playQueue([song], 0);
       return;
     }
     const next = [...queue];
     next.splice(index + 1, 0, song);
-    set({ queue: next });
+    // Se cuela al principio del bloque "en cola"; el bloque crece con ella.
+    set({ queue: next, queuedCount: queuedCount + 1 });
     scheduleSync();
   },
 
@@ -644,7 +673,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   removeAt: async (index) => {
-    const { queue, index: cur } = get();
+    const { queue, index: cur, queuedCount } = get();
     if (index < 0 || index >= queue.length) return;
     const next = queue.filter((_, i) => i !== index);
     if (next.length === 0) {
@@ -653,13 +682,27 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return;
     }
     if (index === cur) {
-      // Quitamos la actual: cargamos la que ocupa ahora esa posición.
+      // Quitamos la actual: cargamos la que ocupa ahora esa posición. Si era
+      // la primera del bloque "en cola", pasa a sonar y queda consumida.
       const newIndex = Math.min(cur, next.length - 1);
-      set({ queue: next, index: newIndex });
+      set({ queue: next, index: newIndex, queuedCount: Math.max(0, queuedCount - 1) });
       await loadIndex(newIndex, get().isPlaying);
     } else {
-      set({ queue: next, index: index < cur ? cur - 1 : cur });
+      const inQueuedBlock = index > cur && index <= cur + queuedCount;
+      set({
+        queue: next,
+        index: index < cur ? cur - 1 : cur,
+        queuedCount: inQueuedBlock ? queuedCount - 1 : queuedCount,
+      });
     }
+    scheduleSync();
+  },
+
+  clearQueue: () => {
+    const { queue, index } = get();
+    const current = queue[index];
+    if (!current) return;
+    set({ queue: [current], index: 0, queuedCount: 0, originalQueue: null });
     scheduleSync();
   },
 
@@ -682,7 +725,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (from === index) newIndex = to;
     else if (from < index && to >= index) newIndex = index - 1;
     else if (from > index && to <= index) newIndex = index + 1;
-    set({ queue: next, index: newIndex });
+    // Reordenar a mano disuelve el bloque "en cola" (el usuario toma el control).
+    set({ queue: next, index: newIndex, queuedCount: 0 });
     scheduleSync();
   },
 
@@ -698,12 +742,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       }
       const newQueue = current ? [current, ...rest] : rest;
       // La actual sigue sonando; solo reordenamos y la dejamos en el índice 0.
-      set({ shuffle: true, originalQueue: queue, queue: newQueue, index: 0 });
+      // Barajar disuelve el bloque "en cola" (las posiciones ya no existen).
+      set({ shuffle: true, originalQueue: queue, queue: newQueue, index: 0, queuedCount: 0 });
     } else if (originalQueue && current) {
       const newIndex = Math.max(0, originalQueue.findIndex((s) => s.id === current.id));
-      set({ shuffle: false, queue: originalQueue, index: newIndex, originalQueue: null });
+      set({
+        shuffle: false,
+        queue: originalQueue,
+        index: newIndex,
+        originalQueue: null,
+        queuedCount: 0,
+      });
     } else {
-      set({ shuffle: false, originalQueue: null });
+      set({ shuffle: false, originalQueue: null, queuedCount: 0 });
     }
     scheduleSync();
   },
@@ -835,6 +886,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({
       queue: [],
       index: 0,
+      queuedCount: 0,
       isPlaying: false,
       isBuffering: false,
       positionSec: 0,
