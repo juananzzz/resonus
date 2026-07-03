@@ -1,8 +1,12 @@
-/** Piezas compartidas por la pantalla de Ajustes y sus sub-pantallas. */
+/**
+ * Piezas compartidas por la pantalla de Ajustes y sus sub-pantallas, estilo
+ * Spotify actual: lista plana sin tarjetas, filas con descripción gris debajo,
+ * switch a la derecha y grupos de radios siempre visibles para elegir opción.
+ */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { LayoutAnimation, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Dimensions, Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
@@ -32,116 +36,182 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
 }
 
 /**
- * Selector "elige una" plegable (estilo Spotify): colapsado muestra solo la
- * opción activa; al tocarla se despliega en el sitio la lista completa con
- * checkmark en la activa, y elegir vuelve a plegar. Con `collapsible: false`
- * la lista se muestra siempre completa (p. ej. la pantalla de Idioma). Con
- * `label` la fila plegada se explica sola ("Etiquetas de calidad · Nunca") y
- * puede vivir dentro de una tarjeta junto a otras filas (`embedded`). Las
- * etiquetas llegan ya traducidas desde quien lo usa.
+ * Fila plana de ajustes: etiqueta blanca, descripción gris debajo y lo que
+ * toque a la derecha (chevron con `onPress`, texto en `right`, o ambos).
+ */
+export function SettingRow({
+  label,
+  description,
+  icon,
+  right,
+  chevron,
+  destructive,
+  onPress,
+}: {
+  label: string;
+  description?: string;
+  /**
+   * Icono a la izquierda: lo llevan las filas de ACCIÓN (escanear, limpiar…)
+   * para distinguirse a simple vista de los datos de solo lectura.
+   */
+  icon?: keyof typeof Ionicons.glyphMap;
+  /** Texto gris a la derecha (valor actual, "Próximamente"…). */
+  right?: string;
+  /** Flecha a la derecha: solo para filas que navegan a otra pantalla. */
+  chevron?: boolean;
+  destructive?: boolean;
+  onPress?: () => void;
+}) {
+  const body = (
+    <>
+      {icon ? (
+        <Ionicons name={icon} size={20} color={destructive ? colors.danger : colors.text} />
+      ) : null}
+      <View style={settingsStyles.rowLabelBox}>
+        <Text style={[settingsStyles.rowLabel, destructive && { color: colors.danger }]}>
+          {label}
+        </Text>
+        {description ? <Text style={settingsStyles.rowDescription}>{description}</Text> : null}
+      </View>
+      {right ? <Text style={settingsStyles.rowValue}>{right}</Text> : null}
+      {chevron ? <Ionicons name="chevron-forward" size={20} color={colors.textMuted} /> : null}
+    </>
+  );
+  if (!onPress) return <View style={settingsStyles.row}>{body}</View>;
+  return (
+    <Pressable
+      style={({ pressed }) => [settingsStyles.row, pressed && { opacity: 0.6 }]}
+      onPress={onPress}
+    >
+      {body}
+    </Pressable>
+  );
+}
+
+/** Alto aproximado de cada opción del menú flotante (para calcular si cabe). */
+const MENU_ITEM_H = 42;
+
+/**
+ * Selector "elige una" compacto: una sola fila con el valor actual ("Calidad
+ * de streaming · Original ⌄") que al tocarla abre un menú flotante pequeño
+ * anclado a la derecha (estilo dropdown de Android) con las opciones; elegir
+ * lo cierra. Con `collapsible: false` se pinta como lista de radios siempre a
+ * la vista (p. ej. la pantalla de Idioma). Las etiquetas llegan ya traducidas
+ * desde quien lo usa.
  */
 export function SelectList<T extends string | number | boolean>({
   options,
   value,
   onChange,
-  collapsible = true,
   label,
   description,
-  embedded = false,
+  collapsible = true,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
-  collapsible?: boolean;
   label?: string;
   description?: string;
-  embedded?: boolean;
+  collapsible?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [menuTop, setMenuTop] = useState<number | null>(null);
+  const rowRef = useRef<View>(null);
   const active = options.find((o) => o.value === value) ?? options[0];
-  const wrapStyle = embedded ? undefined : settingsStyles.selectCard;
 
-  function toggle(next: boolean) {
-    if (!collapsible) return;
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpanded(next);
+  function openMenu() {
+    rowRef.current?.measureInWindow((_x, y, _w, h) => {
+      // Debajo de la fila; si no cabe, por encima (sin salirse de pantalla).
+      const winH = Dimensions.get('window').height;
+      const menuH = options.length * MENU_ITEM_H + spacing.sm * 2;
+      const below = y + h - spacing.xs;
+      setMenuTop(
+        below + menuH > winH - spacing.xl ? Math.max(spacing.xl, y - menuH) : below,
+      );
+    });
   }
 
-  if (collapsible && !expanded) {
+  if (!collapsible) {
     return (
-      <View style={wrapStyle}>
-        <Pressable
-          accessibilityRole="button"
-          style={({ pressed }) => [
-            settingsStyles.selectRow,
-            embedded && settingsStyles.selectRowBorder,
-            pressed && { opacity: 0.6 },
-          ]}
-          onPress={() => toggle(true)}
-        >
-          <View style={settingsStyles.rowLabelBox}>
-            <Text style={settingsStyles.selectRowTextActive}>{label ?? active?.label}</Text>
-            {description ? (
-              <Text style={settingsStyles.rowDescription}>{description}</Text>
-            ) : null}
-          </View>
-          {label ? <Text style={settingsStyles.selectRowValue}>{active?.label}</Text> : null}
-          <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
-        </Pressable>
+      <View>
+        {options.map((opt) => {
+          const isActive = opt.value === value;
+          return (
+            <Pressable
+              key={String(opt.value)}
+              style={({ pressed }) => [settingsStyles.row, pressed && { opacity: 0.6 }]}
+              onPress={() => {
+                if (!isActive) onChange(opt.value);
+              }}
+            >
+              <Text style={[settingsStyles.rowLabel, { flex: 1 }]}>{opt.label}</Text>
+              <Ionicons
+                name={isActive ? 'radio-button-on' : 'radio-button-off'}
+                size={22}
+                color={isActive ? colors.accent : colors.textMuted}
+              />
+            </Pressable>
+          );
+        })}
       </View>
     );
   }
 
   return (
-    <View style={wrapStyle}>
-      {label ? (
-        <Pressable
-          style={[settingsStyles.selectRow, embedded && settingsStyles.selectRowBorder]}
-          onPress={() => toggle(false)}
-        >
-          <Text style={[settingsStyles.selectRowTextActive, { flex: 1 }]}>{label}</Text>
-          <Ionicons name="chevron-up" size={20} color={colors.textMuted} />
-        </Pressable>
-      ) : null}
-      {options.map((opt, i) => {
-        const isActive = opt.value === value;
-        return (
-          <Pressable
-            key={String(opt.value)}
-            style={({ pressed }) => [
-              settingsStyles.selectRow,
-              (i > 0 || !!label || embedded) && settingsStyles.selectRowBorder,
-              pressed && { opacity: 0.6 },
-            ]}
-            onPress={() => {
-              toggle(false);
-              if (!isActive) onChange(opt.value);
-            }}
-          >
-            <Text style={[settingsStyles.selectRowText, isActive && settingsStyles.selectRowTextActive]}>
-              {opt.label}
-            </Text>
-            {isActive ? (
-              <Ionicons name="checkmark-circle" size={22} color={colors.accent} />
-            ) : (
-              <View style={{ width: 22 }} />
-            )}
-          </Pressable>
-        );
-      })}
-    </View>
+    <>
+      <Pressable
+        ref={rowRef}
+        accessibilityRole="button"
+        style={({ pressed }) => [settingsStyles.row, pressed && { opacity: 0.6 }]}
+        onPress={openMenu}
+      >
+        <View style={settingsStyles.rowLabelBox}>
+          <Text style={settingsStyles.rowLabel}>{label ?? active?.label}</Text>
+          {description ? <Text style={settingsStyles.rowDescription}>{description}</Text> : null}
+        </View>
+        {label ? <Text style={settingsStyles.rowValue}>{active?.label}</Text> : null}
+        <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
+      </Pressable>
+
+      <Modal
+        transparent
+        statusBarTranslucent
+        animationType="fade"
+        visible={menuTop != null}
+        onRequestClose={() => setMenuTop(null)}
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => setMenuTop(null)} />
+        {menuTop != null ? (
+          <View style={[settingsStyles.menu, { top: menuTop }]}>
+            {options.map((opt) => {
+              const isActive = opt.value === value;
+              return (
+                <Pressable
+                  key={String(opt.value)}
+                  style={({ pressed }) => [settingsStyles.menuItem, pressed && { opacity: 0.6 }]}
+                  onPress={() => {
+                    setMenuTop(null);
+                    if (!isActive) onChange(opt.value);
+                  }}
+                >
+                  <Text
+                    style={[settingsStyles.menuItemText, isActive && { color: colors.accent }]}
+                  >
+                    {opt.label}
+                  </Text>
+                  {isActive ? <Ionicons name="checkmark" size={18} color={colors.accent} /> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+      </Modal>
+    </>
   );
 }
 
-/**
- * Grupo de interruptores agrupado en una tarjeta (estilo Spotify). La
- * explicación de cada ajuste va en `description`, dentro de la propia fila
- * (nada de párrafos sueltos entre tarjetas). `children` permite colar filas
- * extra al final de la misma tarjeta (p. ej. un SelectList embebido).
- */
+/** Grupo de interruptores, uno por fila, con su ayuda dentro de la fila. */
 export function SwitchList({
   options,
-  children,
 }: {
   options: {
     label: string;
@@ -149,17 +219,13 @@ export function SwitchList({
     value: boolean;
     onChange: (value: boolean) => void;
   }[];
-  children?: React.ReactNode;
 }) {
   return (
-    <View style={settingsStyles.selectCard}>
-      {options.map((opt, i) => (
-        <View
-          key={opt.label}
-          style={[settingsStyles.selectRow, i > 0 && settingsStyles.selectRowBorder]}
-        >
+    <View>
+      {options.map((opt) => (
+        <View key={opt.label} style={settingsStyles.row}>
           <View style={settingsStyles.rowLabelBox}>
-            <Text style={settingsStyles.selectRowTextActive}>{opt.label}</Text>
+            <Text style={settingsStyles.rowLabel}>{opt.label}</Text>
             {opt.description ? (
               <Text style={settingsStyles.rowDescription}>{opt.description}</Text>
             ) : null}
@@ -172,7 +238,6 @@ export function SwitchList({
           />
         </View>
       ))}
-      {children}
     </View>
   );
 }
@@ -199,70 +264,63 @@ export const settingsStyles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
-  content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: SCREEN_BOTTOM_PADDING },
-  // Título de sección estilo Spotify: negrita normal, sin mayúsculas gritonas.
+  content: { padding: spacing.lg, paddingBottom: SCREEN_BOTTOM_PADDING },
+  // Título de grupo estilo Spotify: negrita clara, con aire por encima.
   sectionTitle: {
     color: colors.text,
-    fontSize: fontSize.md,
+    fontSize: fontSize.lg,
     fontWeight: '700',
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
     marginBottom: spacing.xs,
   },
-  card: { backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: spacing.lg },
+  sectionDescription: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    marginBottom: spacing.xs,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+  },
+  rowLabel: { color: colors.text, fontSize: fontSize.md },
+  rowLabelBox: { flex: 1 },
+  rowDescription: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
+  rowValue: { color: colors.textSecondary, fontSize: fontSize.sm },
+  // Menú flotante anclado a la derecha (estilo dropdown de Android).
+  menu: {
+    position: 'absolute',
+    right: spacing.lg,
+    minWidth: 170,
+    backgroundColor: colors.surfaceHighlight,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    height: MENU_ITEM_H,
+  },
+  menuItemText: { color: colors.text, fontSize: fontSize.sm, flex: 1 },
   field: { paddingVertical: spacing.md },
   fieldLabel: { color: colors.textMuted, fontSize: fontSize.xs, marginBottom: 2 },
   fieldValue: { color: colors.text, fontSize: fontSize.md },
-  divider: { height: 1, backgroundColor: colors.border },
-  selectCard: { backgroundColor: colors.surface, borderRadius: radius.md, overflow: 'hidden' },
-  selectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  selectRowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
-  selectRowText: { color: colors.textSecondary, fontSize: fontSize.md, flex: 1 },
-  selectRowTextActive: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
-  // Columna etiqueta + descripción dentro de una fila (la ayuda vive aquí).
-  rowLabelBox: { flex: 1, paddingRight: spacing.md },
-  rowDescription: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
-  selectRowValue: { color: colors.textSecondary, fontSize: fontSize.sm, marginRight: spacing.xs },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
+  // Botón píldora blanco centrado (el "Cerrar sesión" de Spotify).
+  pillButton: {
+    alignSelf: 'center',
+    backgroundColor: colors.text,
     borderRadius: radius.pill,
-    backgroundColor: colors.surfaceHighlight,
-  },
-  chipActive: { backgroundColor: colors.accent },
-  chipText: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '600' },
-  chipTextActive: { color: '#000' },
-  hint: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: spacing.xs },
-  rowButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.lg,
-  },
-  rowText: { color: colors.text, fontSize: fontSize.md, flex: 1 },
-  soonTag: { color: colors.textMuted, fontSize: fontSize.xs },
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+    paddingHorizontal: spacing.xl + spacing.sm,
     paddingVertical: spacing.md,
+    marginTop: spacing.xxl,
   },
-  logout: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    marginTop: spacing.xl,
-  },
-  logoutText: { color: colors.danger, fontSize: fontSize.md, fontWeight: '600' },
+  pillButtonText: { color: '#000', fontSize: fontSize.md, fontWeight: '700' },
 });

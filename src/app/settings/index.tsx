@@ -1,91 +1,147 @@
-/** Ajustes: lista de categorías estilo Spotify. Cada una abre su sub-pantalla. */
+/**
+ * Ajustes estilo Spotify: la cuenta arriba como fila de perfil (avatar +
+ * nombre + servidor), tres categorías como filas planas, el botón píldora de
+ * cerrar sesión y un pie con el enlace al repositorio.
+ */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ScreenHeader, settingsStyles } from '@/components/SettingsUI';
+import { Dialog } from '@/components/Dialog';
+import { ScreenHeader, SettingRow, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
-import { LANGUAGE_NAMES, useSettings } from '@/store/settings';
+import { useSettings } from '@/store/settings';
+import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing } from '@/theme';
 
-type Section = {
-  key: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  subtitle: string;
-};
-
-const SECTIONS: Section[] = [
-  { key: 'account', icon: 'person-circle-outline', title: 'Account', subtitle: 'Server · Sign out' },
-  { key: 'library', icon: 'server-outline', title: 'Library', subtitle: 'Scan · Clear cache' },
-  {
-    key: 'playback',
-    icon: 'musical-notes-outline',
-    title: 'Quality & playback',
-    subtitle: 'Quality · Crossfade · Equalizer',
-  },
-  { key: 'downloads', icon: 'download-outline', title: 'Downloads', subtitle: 'Quality · Storage' },
-  { key: 'personalization', icon: 'color-palette-outline', title: 'Appearance', subtitle: 'Language · Quality · Theme' },
-  { key: 'about', icon: 'information-circle-outline', title: 'About', subtitle: 'Version · GitHub' },
-];
+const REPO_URL = 'https://github.com/juananzzz/resonus';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const t = useT();
-  const lang = useSettings((s) => s.language);
+  const auth = useAuthStore((s) => s.auth);
   const logout = useAuthStore((s) => s.logout);
   const offline = useAuthStore((s) => s.offline);
+  const resetToDefaults = useSettings((s) => s.resetToDefaults);
+  const toast = useToast((s) => s.show);
+  const [confirmReset, setConfirmReset] = useState(false);
 
-  // En offline no hay cuenta de servidor; la sección "Biblioteca" pasa a ser
-  // la música local (origen + volver a escanear).
-  const visible = (offline ? SECTIONS.filter((s) => s.key !== 'account') : SECTIONS).map((s) =>
-    offline && s.key === 'library'
-      ? { ...s, title: 'Local music', subtitle: 'Source · Rescan' }
-      : s,
-  );
+  const initial = offline ? 'O' : (auth?.username ?? '?').charAt(0).toUpperCase();
+  const name = offline ? t('Local profile') : auth?.username ?? '—';
+  const detail = offline
+    ? t('Music on your device')
+    : auth?.serverUrl.replace(/^https?:\/\//, '') ?? '';
+
+  // Reproducción es todo de servidor (bitrates, autoplay); en offline no pinta
+  // nada. "Biblioteca" pasa a ser la música local.
+  const sections = [
+    ...(offline ? [] : [{ key: 'playback', title: 'Quality & playback' }]),
+    { key: 'library', title: offline ? 'Local music' : 'Library' },
+    { key: 'personalization', title: 'Appearance' },
+  ];
 
   return (
     <SafeAreaView style={settingsStyles.safe} edges={['top']}>
       <ScreenHeader title={t('Settings')} />
       <ScrollView contentContainerStyle={settingsStyles.content}>
-        {visible.map((s) => (
+        <View style={styles.profileRow}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initial}</Text>
+          </View>
+          <View style={settingsStyles.rowLabelBox}>
+            <Text style={styles.profileName}>{name}</Text>
+            <Text style={settingsStyles.rowDescription} numberOfLines={1}>
+              {detail}
+            </Text>
+          </View>
+        </View>
+
+        {sections.map((s) => (
           <Pressable
             key={s.key}
-            style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
+            style={({ pressed }) => [styles.sectionRow, pressed && { opacity: 0.6 }]}
             onPress={() => router.push(`/settings/${s.key}`)}
           >
-            <Ionicons name={s.icon} size={26} color={colors.text} />
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowTitle}>{t(s.title)}</Text>
-              <Text style={styles.rowSubtitle} numberOfLines={1}>
-                {s.key === 'personalization'
-                  ? `${LANGUAGE_NAMES[lang]} · ${t('Theme')} · ${t('Song lists')}`
-                  : t(s.subtitle)}
-              </Text>
-            </View>
+            <Text style={styles.sectionRowTitle}>{t(s.title)}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </Pressable>
         ))}
 
-        <Pressable style={settingsStyles.logout} onPress={() => logout()}>
-          <Ionicons name={offline ? 'exit-outline' : 'log-out-outline'} size={22} color={colors.danger} />
-          <Text style={settingsStyles.logoutText}>{offline ? t('Exit offline mode') : t('Sign out')}</Text>
+        <SettingRow
+          icon="arrow-undo-outline"
+          label={t('Restore default settings')}
+          onPress={() => setConfirmReset(true)}
+        />
+
+        <Pressable style={settingsStyles.pillButton} onPress={() => logout()}>
+          <Text style={settingsStyles.pillButtonText}>
+            {offline ? t('Exit offline mode') : t('Sign out')}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.footer, pressed && { opacity: 0.6 }]}
+          hitSlop={8}
+          accessibilityRole="link"
+          onPress={() => Linking.openURL(REPO_URL)}
+        >
+          <Ionicons name="logo-github" size={16} color={colors.textMuted} />
+          <Text style={styles.footerText}>GitHub</Text>
         </Pressable>
       </ScrollView>
+
+      <Dialog
+        visible={confirmReset}
+        title={t('Restore default settings')}
+        message={t('Your preferences will go back to their defaults. Your language stays.')}
+        confirmLabel={t('Restore')}
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={() => {
+          setConfirmReset(false);
+          resetToDefaults();
+          toast(t('Settings restored'));
+        }}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
+  profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
+    gap: spacing.md,
     paddingVertical: spacing.md,
+    marginBottom: spacing.md,
   },
-  rowInfo: { flex: 1 },
-  rowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
-  rowSubtitle: { color: colors.textSecondary, fontSize: fontSize.sm, marginTop: 2 },
+  // Mismo avatar que la cabecera de Inicio (anillo de acento) por coherencia.
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surfaceHighlight,
+    borderWidth: 2,
+    borderColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
+  profileName: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+  },
+  sectionRowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '600', flex: 1 },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xl,
+  },
+  footerText: { color: colors.textMuted, fontSize: fontSize.sm },
 });

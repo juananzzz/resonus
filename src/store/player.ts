@@ -30,7 +30,6 @@ import {
   streamUrl,
   type Song,
 } from '@/api/subsonic';
-import { tapHaptic } from '@/lib/haptics';
 import { deleteItem, getItem, setItem } from '@/lib/storage';
 import { useAuthStore } from './auth';
 import {
@@ -616,7 +615,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   toggle: () => {
-    tapHaptic();
     if (remoteKind()) {
       if (get().isPlaying) {
         remotePause();

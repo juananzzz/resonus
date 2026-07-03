@@ -1,16 +1,20 @@
 /** Ajustes › Aspecto: idioma, reproductor, listas e interfaz. */
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text } from 'react-native';
 
-import { SelectList, SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
+import {
+  SelectList,
+  SettingRow,
+  SettingsPage,
+  settingsStyles,
+  SwitchList,
+} from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import {
   AUDIO_QUALITY_OPTIONS,
   LANGUAGE_NAMES,
   useSettings,
 } from '@/store/settings';
-import { colors, fontSize, radius, spacing } from '@/theme';
 
 export default function AppearanceSettings() {
   const router = useRouter();
@@ -32,20 +36,16 @@ export default function AppearanceSettings() {
   const setShowProfileButton = useSettings((s) => s.setShowProfileButton);
   const showOutputButton = useSettings((s) => s.showOutputButton);
   const setShowOutputButton = useSettings((s) => s.setShowOutputButton);
-  const hapticsEnabled = useSettings((s) => s.hapticsEnabled);
-  const setHapticsEnabled = useSettings((s) => s.setHapticsEnabled);
 
   return (
     <SettingsPage title={t('Appearance')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
-        <Pressable
-          style={({ pressed }) => [styles.linkCard, pressed && { opacity: 0.6 }]}
+        <SettingRow
+          label={t('Language')}
+          description={LANGUAGE_NAMES[language]}
+          chevron
           onPress={() => router.push('/settings/language')}
-        >
-          <Text style={styles.linkLabel}>{t('Language')}</Text>
-          <Text style={settingsStyles.selectRowValue}>{LANGUAGE_NAMES[language]}</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-        </Pressable>
+        />
 
         <Text style={settingsStyles.sectionTitle}>{t('Player')}</Text>
         <SwitchList
@@ -74,16 +74,15 @@ export default function AppearanceSettings() {
               onChange: setShowSongDuration,
             },
           ]}
-        >
-          <SelectList
-            embedded
-            label={t('Quality labels')}
-            description={t('Format, bitrate and Lossless / Hi-Res.')}
-            options={AUDIO_QUALITY_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
-            value={showAudioQuality}
-            onChange={setShowAudioQuality}
-          />
-        </SwitchList>
+        />
+
+        <SelectList
+          label={t('Quality labels')}
+          description={t('Format, bitrate and Lossless / Hi-Res.')}
+          options={AUDIO_QUALITY_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
+          value={showAudioQuality}
+          onChange={setShowAudioQuality}
+        />
 
         <Text style={settingsStyles.sectionTitle}>{t('Interface')}</Text>
         <SwitchList
@@ -112,32 +111,9 @@ export default function AppearanceSettings() {
               value: showOutputButton,
               onChange: setShowOutputButton,
             },
-            {
-              label: t('Vibration'),
-              description: t('A subtle vibration when using the controls.'),
-              value: hapticsEnabled,
-              onChange: setHapticsEnabled,
-            },
           ]}
         />
-
-        <View style={settingsStyles.rowButton}>
-          <Ionicons name="color-palette-outline" size={22} color={colors.text} />
-          <Text style={settingsStyles.rowText}>{t('Theme')}</Text>
-          <Text style={settingsStyles.soonTag}>{t('Soon')}</Text>
-        </View>
       </ScrollView>
     </SettingsPage>
   );
 }
-
-const styles = StyleSheet.create({
-  linkCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.lg,
-  },
-  linkLabel: { color: colors.text, fontSize: fontSize.md, fontWeight: '600', flex: 1 },
-});

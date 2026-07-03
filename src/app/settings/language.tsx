@@ -1,4 +1,4 @@
-/** Language picker — list with checkmark on the active language. */
+/** Language picker — list with a radio on the active language. */
 import { ScrollView } from 'react-native';
 
 import { SelectList, SettingsPage, settingsStyles } from '@/components/SettingsUI';

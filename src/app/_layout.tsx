@@ -87,13 +87,10 @@ export default function RootLayout() {
                 <Stack.Screen name="favorites" />
                 <Stack.Screen name="history" />
                 <Stack.Screen name="settings/index" />
-                <Stack.Screen name="settings/account" />
                 <Stack.Screen name="settings/library" />
                 <Stack.Screen name="settings/playback" />
-                <Stack.Screen name="settings/downloads" />
                 <Stack.Screen name="settings/language" />
                 <Stack.Screen name="settings/personalization" />
-                <Stack.Screen name="settings/about" />
               </Stack.Protected>
               <Stack.Protected guard={offline && !offlineSource && !hasDownloads}>
                 <Stack.Screen name="offline" />

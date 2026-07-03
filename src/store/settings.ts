@@ -38,8 +38,6 @@ interface SettingsState {
   showSongDuration: boolean;
   /** Al acabar la cola, seguir con canciones parecidas (getSimilarSongs2). */
   autoplaySimilar: boolean;
-  /** Vibración sutil al usar los controles. */
-  hapticsEnabled: boolean;
   /** Foto circular del artista junto a su nombre en la pantalla de álbum. */
   showArtistPhoto: boolean;
   /** Fondo del reproductor teñido con el color dominante de la carátula. */
@@ -55,12 +53,13 @@ interface SettingsState {
   setShowListArtwork: (value: boolean) => void;
   setShowSongDuration: (value: boolean) => void;
   setAutoplaySimilar: (value: boolean) => void;
-  setHapticsEnabled: (value: boolean) => void;
   setShowArtistPhoto: (value: boolean) => void;
   setPlayerColorBackground: (value: boolean) => void;
   setShowHistoryButton: (value: boolean) => void;
   setShowProfileButton: (value: boolean) => void;
   setShowOutputButton: (value: boolean) => void;
+  /** Vuelve a los valores de fábrica (el idioma se conserva). */
+  resetToDefaults: () => void;
   hydrate: () => Promise<void>;
 }
 
@@ -78,7 +77,6 @@ function snapshot(get: () => SettingsState) {
     showListArtwork: s.showListArtwork,
     showSongDuration: s.showSongDuration,
     autoplaySimilar: s.autoplaySimilar,
-    hapticsEnabled: s.hapticsEnabled,
     showArtistPhoto: s.showArtistPhoto,
     playerColorBackground: s.playerColorBackground,
     showHistoryButton: s.showHistoryButton,
@@ -87,20 +85,24 @@ function snapshot(get: () => SettingsState) {
   };
 }
 
-export const useSettings = create<SettingsState>((set, get) => ({
+/** Valores de fábrica de todas las preferencias. */
+const DEFAULTS = {
   maxBitRate: 0,
   downloadBitRate: 0,
-  language: 'en',
-  showAudioQuality: 'off',
+  language: 'en' as Language,
+  showAudioQuality: 'off' as AudioQualityMode,
   showListArtwork: true,
   showSongDuration: true,
   autoplaySimilar: true,
-  hapticsEnabled: true,
   showArtistPhoto: true,
   playerColorBackground: true,
   showHistoryButton: true,
   showProfileButton: true,
   showOutputButton: true,
+};
+
+export const useSettings = create<SettingsState>((set, get) => ({
+  ...DEFAULTS,
 
   setMaxBitRate: (maxBitRate) => {
     set({ maxBitRate });
@@ -137,11 +139,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
-  setHapticsEnabled: (hapticsEnabled) => {
-    set({ hapticsEnabled });
-    persist(snapshot(get));
-  },
-
   setShowArtistPhoto: (showArtistPhoto) => {
     set({ showArtistPhoto });
     persist(snapshot(get));
@@ -167,6 +164,12 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
+  resetToDefaults: () => {
+    // El idioma se conserva: restablecer no debería cambiarte de idioma.
+    set({ ...DEFAULTS, language: get().language });
+    persist(snapshot(get));
+  },
+
   hydrate: async () => {
     try {
       const raw = await getItem(STORAGE_KEY);
@@ -179,7 +182,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
           showListArtwork: boolean;
           showSongDuration: boolean;
           autoplaySimilar: boolean;
-          hapticsEnabled: boolean;
           showArtistPhoto: boolean;
           playerColorBackground: boolean;
           showHistoryButton: boolean;
@@ -210,9 +212,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.autoplaySimilar === 'boolean') {
           set({ autoplaySimilar: parsed.autoplaySimilar });
-        }
-        if (typeof parsed.hapticsEnabled === 'boolean') {
-          set({ hapticsEnabled: parsed.hapticsEnabled });
         }
         if (typeof parsed.showArtistPhoto === 'boolean') {
           set({ showArtistPhoto: parsed.showArtistPhoto });

@@ -15,7 +15,6 @@ import { Cover } from '@/components/Cover';
 import { Dialog } from '@/components/Dialog';
 import { EmptyState } from '@/components/EmptyState';
 import { formatTotalDuration } from '@/lib/format';
-import { tapHaptic } from '@/lib/haptics';
 import { usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useT } from '@/i18n';
@@ -118,7 +117,6 @@ export default function QueueScreen() {
         keyExtractor={(item, i) => `${item.id}-${i}`}
         renderItem={({ item, index }) => <QueueRow item={item} i={index} />}
         onReorder={({ from, to }: ReorderableListReorderEvent) => {
-          tapHaptic();
           moveTrack(from, to);
         }}
         contentContainerStyle={styles.list}

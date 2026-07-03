@@ -11,7 +11,6 @@ import { coverArtUrl } from '@/api/data';
 import { type Song } from '@/api/subsonic';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
-import { tapHaptic } from '@/lib/haptics';
 import { useDownloads } from '@/store/downloads';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu, type SongMenuContext } from '@/store/songMenu';
@@ -73,7 +72,6 @@ export function TrackRow({
   // de react-native-gesture-handler (FlatList/ScrollView de esa librería).
   function onSwipeToQueue() {
     swipeRef.current?.close();
-    tapHaptic();
     addToQueue(song);
     toast(t('Added to queue'));
   }
