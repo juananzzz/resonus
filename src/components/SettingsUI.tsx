@@ -35,7 +35,9 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
  * Selector "elige una" plegable (estilo Spotify): colapsado muestra solo la
  * opción activa; al tocarla se despliega en el sitio la lista completa con
  * checkmark en la activa, y elegir vuelve a plegar. Con `collapsible: false`
- * la lista se muestra siempre completa (p. ej. la pantalla de Idioma). Las
+ * la lista se muestra siempre completa (p. ej. la pantalla de Idioma). Con
+ * `label` la fila plegada se explica sola ("Etiquetas de calidad · Nunca") y
+ * puede vivir dentro de una tarjeta junto a otras filas (`embedded`). Las
  * etiquetas llegan ya traducidas desde quien lo usa.
  */
 export function SelectList<T extends string | number | boolean>({
@@ -43,14 +45,21 @@ export function SelectList<T extends string | number | boolean>({
   value,
   onChange,
   collapsible = true,
+  label,
+  description,
+  embedded = false,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
   collapsible?: boolean;
+  label?: string;
+  description?: string;
+  embedded?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const active = options.find((o) => o.value === value) ?? options[0];
+  const wrapStyle = embedded ? undefined : settingsStyles.selectCard;
 
   function toggle(next: boolean) {
     if (!collapsible) return;
@@ -60,15 +69,23 @@ export function SelectList<T extends string | number | boolean>({
 
   if (collapsible && !expanded) {
     return (
-      <View style={settingsStyles.selectCard}>
+      <View style={wrapStyle}>
         <Pressable
           accessibilityRole="button"
-          style={({ pressed }) => [settingsStyles.selectRow, pressed && { opacity: 0.6 }]}
+          style={({ pressed }) => [
+            settingsStyles.selectRow,
+            embedded && settingsStyles.selectRowBorder,
+            pressed && { opacity: 0.6 },
+          ]}
           onPress={() => toggle(true)}
         >
-          <Text style={[settingsStyles.selectRowText, settingsStyles.selectRowTextActive]}>
-            {active?.label}
-          </Text>
+          <View style={settingsStyles.rowLabelBox}>
+            <Text style={settingsStyles.selectRowTextActive}>{label ?? active?.label}</Text>
+            {description ? (
+              <Text style={settingsStyles.rowDescription}>{description}</Text>
+            ) : null}
+          </View>
+          {label ? <Text style={settingsStyles.selectRowValue}>{active?.label}</Text> : null}
           <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
         </Pressable>
       </View>
@@ -76,7 +93,16 @@ export function SelectList<T extends string | number | boolean>({
   }
 
   return (
-    <View style={settingsStyles.selectCard}>
+    <View style={wrapStyle}>
+      {label ? (
+        <Pressable
+          style={[settingsStyles.selectRow, embedded && settingsStyles.selectRowBorder]}
+          onPress={() => toggle(false)}
+        >
+          <Text style={[settingsStyles.selectRowTextActive, { flex: 1 }]}>{label}</Text>
+          <Ionicons name="chevron-up" size={20} color={colors.textMuted} />
+        </Pressable>
+      ) : null}
       {options.map((opt, i) => {
         const isActive = opt.value === value;
         return (
@@ -84,7 +110,7 @@ export function SelectList<T extends string | number | boolean>({
             key={String(opt.value)}
             style={({ pressed }) => [
               settingsStyles.selectRow,
-              i > 0 && settingsStyles.selectRowBorder,
+              (i > 0 || !!label || embedded) && settingsStyles.selectRowBorder,
               pressed && { opacity: 0.6 },
             ]}
             onPress={() => {
@@ -107,11 +133,23 @@ export function SelectList<T extends string | number | boolean>({
   );
 }
 
-/** Grupo de interruptores agrupado en una tarjeta (estilo Spotify). */
+/**
+ * Grupo de interruptores agrupado en una tarjeta (estilo Spotify). La
+ * explicación de cada ajuste va en `description`, dentro de la propia fila
+ * (nada de párrafos sueltos entre tarjetas). `children` permite colar filas
+ * extra al final de la misma tarjeta (p. ej. un SelectList embebido).
+ */
 export function SwitchList({
   options,
+  children,
 }: {
-  options: { label: string; value: boolean; onChange: (value: boolean) => void }[];
+  options: {
+    label: string;
+    description?: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+  }[];
+  children?: React.ReactNode;
 }) {
   return (
     <View style={settingsStyles.selectCard}>
@@ -120,7 +158,12 @@ export function SwitchList({
           key={opt.label}
           style={[settingsStyles.selectRow, i > 0 && settingsStyles.selectRowBorder]}
         >
-          <Text style={settingsStyles.selectRowText}>{opt.label}</Text>
+          <View style={settingsStyles.rowLabelBox}>
+            <Text style={settingsStyles.selectRowTextActive}>{opt.label}</Text>
+            {opt.description ? (
+              <Text style={settingsStyles.rowDescription}>{opt.description}</Text>
+            ) : null}
+          </View>
           <Switch
             value={opt.value}
             onValueChange={opt.onChange}
@@ -129,6 +172,7 @@ export function SwitchList({
           />
         </View>
       ))}
+      {children}
     </View>
   );
 }
@@ -156,11 +200,11 @@ export const settingsStyles = StyleSheet.create({
   },
   headerTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
   content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: SCREEN_BOTTOM_PADDING },
+  // Título de sección estilo Spotify: negrita normal, sin mayúsculas gritonas.
   sectionTitle: {
-    color: colors.textSecondary,
-    fontSize: fontSize.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    color: colors.text,
+    fontSize: fontSize.md,
+    fontWeight: '700',
     marginTop: spacing.lg,
     marginBottom: spacing.xs,
   },
@@ -178,7 +222,11 @@ export const settingsStyles = StyleSheet.create({
   },
   selectRowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
   selectRowText: { color: colors.textSecondary, fontSize: fontSize.md, flex: 1 },
-  selectRowTextActive: { color: colors.text, fontWeight: '600' },
+  selectRowTextActive: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
+  // Columna etiqueta + descripción dentro de una fila (la ayuda vive aquí).
+  rowLabelBox: { flex: 1, paddingRight: spacing.md },
+  rowDescription: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
+  selectRowValue: { color: colors.textSecondary, fontSize: fontSize.sm, marginRight: spacing.xs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
     paddingVertical: spacing.sm,

@@ -97,7 +97,6 @@ export default function LibrarySettings() {
       <ScrollView contentContainerStyle={settingsStyles.content}>
         {offline ? (
           <>
-            <Text style={settingsStyles.sectionTitle}>{t('Offline mode')}</Text>
             <View style={settingsStyles.card}>
               <Field
                 label={t('Source')}
@@ -126,7 +125,6 @@ export default function LibrarySettings() {
           </>
         ) : (
           <>
-            <Text style={settingsStyles.sectionTitle}>{t('Library')}</Text>
             <View style={settingsStyles.card}>
               <Field
                 label={t('Scan status')}
@@ -141,7 +139,6 @@ export default function LibrarySettings() {
           </>
         )}
 
-        <Text style={settingsStyles.sectionTitle}>{t('Storage')}</Text>
         <Pressable style={settingsStyles.rowButton} onPress={clearCache}>
           <Ionicons name="trash-outline" size={22} color={colors.text} />
           <Text style={settingsStyles.rowText}>{t('Clear cache')}</Text>

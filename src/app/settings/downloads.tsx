@@ -47,20 +47,15 @@ export default function DownloadsSettings() {
     <SettingsPage title={t('Downloads')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         {!offline ? (
-          <>
-            <Text style={settingsStyles.sectionTitle}>{t('Download quality')}</Text>
-            <SelectList
-              options={BITRATE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
-              value={downloadBitRate}
-              onChange={setDownloadBitRate}
-            />
-            <Text style={settingsStyles.hint}>
-              {t('“Original” uses the highest quality; a lower bitrate saves data.')}
-            </Text>
-          </>
+          <SelectList
+            label={t('Download quality')}
+            description={t('“Original” uses the highest quality; a lower bitrate saves data.')}
+            options={BITRATE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+            value={downloadBitRate}
+            onChange={setDownloadBitRate}
+          />
         ) : null}
 
-        <Text style={settingsStyles.sectionTitle}>{t('Storage')}</Text>
         <View style={settingsStyles.card}>
           <Field
             label={t('Storage used')}

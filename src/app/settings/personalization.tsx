@@ -1,4 +1,4 @@
-/** Ajustes › Aspecto: idioma, etiquetas de calidad, listas y (pronto) tema. */
+/** Ajustes › Aspecto: idioma, reproductor, listas e interfaz. */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -11,11 +11,6 @@ import {
   useSettings,
 } from '@/store/settings';
 import { colors, fontSize, radius, spacing } from '@/theme';
-
-const LIST_STYLES: { value: boolean; label: string }[] = [
-  { value: true, label: 'With artwork' },
-  { value: false, label: 'Compact' },
-];
 
 export default function AppearanceSettings() {
   const router = useRouter();
@@ -43,96 +38,93 @@ export default function AppearanceSettings() {
   return (
     <SettingsPage title={t('Appearance')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
-        <Text style={settingsStyles.sectionTitle}>{t('Language')}</Text>
         <Pressable
           style={({ pressed }) => [styles.linkCard, pressed && { opacity: 0.6 }]}
           onPress={() => router.push('/settings/language')}
         >
-          <Text style={styles.linkText}>{LANGUAGE_NAMES[language]}</Text>
+          <Text style={styles.linkLabel}>{t('Language')}</Text>
+          <Text style={settingsStyles.selectRowValue}>{LANGUAGE_NAMES[language]}</Text>
           <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </Pressable>
-
-        <Text style={settingsStyles.sectionTitle}>{t('Quality labels')}</Text>
-        <SelectList
-          options={AUDIO_QUALITY_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
-          value={showAudioQuality}
-          onChange={setShowAudioQuality}
-        />
-        <Text style={settingsStyles.hint}>
-          {t('Displays the audio format, bitrate, and Lossless / Hi-Res labels next to each song.')}
-        </Text>
-
-        <Text style={settingsStyles.sectionTitle}>{t('Song lists')}</Text>
-        <SelectList
-          options={LIST_STYLES.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
-          value={showListArtwork}
-          onChange={setShowListArtwork}
-        />
-        <Text style={settingsStyles.hint}>
-          {t('Show the album artwork next to each song in playlists and favorites.')}
-        </Text>
-        <SwitchList
-          options={[
-            { label: t('Song duration'), value: showSongDuration, onChange: setShowSongDuration },
-          ]}
-        />
-        <Text style={settingsStyles.hint}>
-          {t('Show the length of each song in lists.')}
-        </Text>
-
-        <Text style={settingsStyles.sectionTitle}>{t('Albums')}</Text>
-        <SwitchList
-          options={[
-            { label: t('Artist photo'), value: showArtistPhoto, onChange: setShowArtistPhoto },
-          ]}
-        />
-        <Text style={settingsStyles.hint}>
-          {t('Show a round artist photo next to the name on album screens.')}
-        </Text>
 
         <Text style={settingsStyles.sectionTitle}>{t('Player')}</Text>
         <SwitchList
           options={[
             {
               label: t('Colored background'),
+              description: t('Tint the player background with the cover color.'),
               value: playerColorBackground,
               onChange: setPlayerColorBackground,
             },
           ]}
         />
-        <Text style={settingsStyles.hint}>
-          {t('Tint the player background with the cover color.')}
-        </Text>
 
-        <Text style={settingsStyles.sectionTitle}>{t('Buttons')}</Text>
+        <Text style={settingsStyles.sectionTitle}>{t('Song lists')}</Text>
         <SwitchList
           options={[
-            { label: t('History'), value: showHistoryButton, onChange: setShowHistoryButton },
-            { label: t('Profile'), value: showProfileButton, onChange: setShowProfileButton },
-            { label: t('Devices'), value: showOutputButton, onChange: setShowOutputButton },
+            {
+              label: t('With artwork'),
+              description: t('Show the album artwork next to each song in playlists and favorites.'),
+              value: showListArtwork,
+              onChange: setShowListArtwork,
+            },
+            {
+              label: t('Song duration'),
+              value: showSongDuration,
+              onChange: setShowSongDuration,
+            },
           ]}
-        />
-        <Text style={settingsStyles.hint}>
-          {t("Hide the buttons you don't use for a cleaner interface.")}
-        </Text>
+        >
+          <SelectList
+            embedded
+            label={t('Quality labels')}
+            description={t('Format, bitrate and Lossless / Hi-Res.')}
+            options={AUDIO_QUALITY_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
+            value={showAudioQuality}
+            onChange={setShowAudioQuality}
+          />
+        </SwitchList>
 
-        <Text style={settingsStyles.sectionTitle}>{t('Interaction')}</Text>
+        <Text style={settingsStyles.sectionTitle}>{t('Interface')}</Text>
         <SwitchList
           options={[
-            { label: t('Vibration'), value: hapticsEnabled, onChange: setHapticsEnabled },
+            {
+              label: t('Artist photo'),
+              description: t('Show a round artist photo next to the name on album screens.'),
+              value: showArtistPhoto,
+              onChange: setShowArtistPhoto,
+            },
+            {
+              label: t('History'),
+              description: t('The clock button on Home.'),
+              value: showHistoryButton,
+              onChange: setShowHistoryButton,
+            },
+            {
+              label: t('Profile'),
+              description: t('Your avatar on Home.'),
+              value: showProfileButton,
+              onChange: setShowProfileButton,
+            },
+            {
+              label: t('Devices'),
+              description: t('The output button in the player.'),
+              value: showOutputButton,
+              onChange: setShowOutputButton,
+            },
+            {
+              label: t('Vibration'),
+              description: t('A subtle vibration when using the controls.'),
+              value: hapticsEnabled,
+              onChange: setHapticsEnabled,
+            },
           ]}
         />
-        <Text style={settingsStyles.hint}>
-          {t('A subtle vibration when using the controls.')}
-        </Text>
 
-        <Text style={settingsStyles.sectionTitle}>{t('Theme')}</Text>
-        <View style={styles.soonCard}>
-          <Ionicons name="color-palette-outline" size={40} color={colors.textMuted} />
-          <Text style={styles.soonText}>{t('Choose your theme, accent color and more.')}</Text>
-          <View style={styles.soonPill}>
-            <Text style={styles.soonPillText}>{t('Coming soon')}</Text>
-          </View>
+        <View style={settingsStyles.rowButton}>
+          <Ionicons name="color-palette-outline" size={22} color={colors.text} />
+          <Text style={settingsStyles.rowText}>{t('Theme')}</Text>
+          <Text style={settingsStyles.soonTag}>{t('Soon')}</Text>
         </View>
       </ScrollView>
     </SettingsPage>
@@ -147,20 +139,5 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.lg,
   },
-  linkText: { color: colors.text, fontSize: fontSize.md, flex: 1 },
-  soonCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.xl,
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  soonText: { color: colors.textSecondary, fontSize: fontSize.md, textAlign: 'center' },
-  soonPill: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-  },
-  soonPillText: { color: '#000', fontSize: fontSize.sm, fontWeight: '600' },
+  linkLabel: { color: colors.text, fontSize: fontSize.md, fontWeight: '600', flex: 1 },
 });

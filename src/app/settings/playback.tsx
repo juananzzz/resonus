@@ -26,29 +26,23 @@ export default function PlaybackSettings() {
       <ScrollView contentContainerStyle={settingsStyles.content}>
         {!offline ? (
           <>
-            <Text style={settingsStyles.sectionTitle}>{t('Streaming quality')}</Text>
             <SelectList
+              label={t('Streaming quality')}
+              description={t('“Original” uses the highest quality; a lower bitrate saves data.')}
               options={BITRATE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
               value={maxBitRate}
               onChange={setMaxBitRate}
             />
-            <Text style={settingsStyles.hint}>
-              {t('“Original” uses the highest quality; a lower bitrate saves data.')}
-            </Text>
-          </>
-        ) : null}
-
-        <Text style={settingsStyles.sectionTitle}>{t('Playback')}</Text>
-        {!offline ? (
-          <>
             <SwitchList
               options={[
-                { label: t('Autoplay'), value: autoplaySimilar, onChange: setAutoplaySimilar },
+                {
+                  label: t('Autoplay'),
+                  description: t('Keep playing similar songs when your queue ends.'),
+                  value: autoplaySimilar,
+                  onChange: setAutoplaySimilar,
+                },
               ]}
             />
-            <Text style={settingsStyles.hint}>
-              {t('Keep playing similar songs when your queue ends.')}
-            </Text>
           </>
         ) : null}
         <Pressable style={settingsStyles.rowButton} onPress={soon}>

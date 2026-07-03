@@ -18,7 +18,6 @@ export default function AccountSettings() {
       <ScrollView contentContainerStyle={settingsStyles.content}>
         {offline ? (
           <>
-            <Text style={settingsStyles.sectionTitle}>{t('Offline mode')}</Text>
             <View style={settingsStyles.card}>
               <Text
                 style={{
@@ -37,7 +36,6 @@ export default function AccountSettings() {
           </>
         ) : (
           <>
-            <Text style={settingsStyles.sectionTitle}>{t('Server')}</Text>
             <View style={settingsStyles.card}>
               <Field label={t('URL')} value={auth?.serverUrl ?? '—'} />
               <View style={settingsStyles.divider} />
