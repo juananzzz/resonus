@@ -572,6 +572,53 @@ export async function getLyrics(
   return res.lyrics?.value?.trim() ?? '';
 }
 
+export interface LyricLine {
+  /** Milisegundos desde el inicio de la pista; solo en letra sincronizada. */
+  start?: number;
+  value: string;
+}
+
+export interface SongLyrics {
+  synced: boolean;
+  lines: LyricLine[];
+}
+
+/**
+ * Letra estructurada por id de canción (extensión OpenSubsonic `songLyrics`,
+ * la soportan Navidrome y Ampache 7): líneas con timestamp si la letra está
+ * sincronizada. Lanza en servidores sin la extensión; null si no hay letra.
+ */
+export async function getLyricsBySongId(
+  auth: SubsonicAuth,
+  id: string,
+): Promise<SongLyrics | null> {
+  interface StructuredLyrics {
+    synced?: boolean;
+    /** Desplazamiento global en ms; positivo = la letra debe aparecer antes. */
+    offset?: number;
+    line?: { start?: number; value?: string }[];
+  }
+  const res = await request<{ lyricsList?: { structuredLyrics?: StructuredLyrics[] } }>(
+    auth,
+    'getLyricsBySongId.view',
+    { id },
+  );
+  const all = res.lyricsList?.structuredLyrics ?? [];
+  const pick = all.find((l) => l.synced && l.line?.length) ?? all.find((l) => l.line?.length);
+  if (!pick?.line?.length) return null;
+  const synced = !!pick.synced;
+  const offset = pick.offset ?? 0;
+  return {
+    synced,
+    lines: pick.line.map((ln) => ({
+      value: ln.value ?? '',
+      ...(synced && ln.start !== undefined
+        ? { start: Math.max(0, ln.start - offset) }
+        : {}),
+    })),
+  };
+}
+
 export interface SavedQueue {
   entries: Song[];
   current?: string;

@@ -102,9 +102,9 @@ export default function RootLayout() {
                 <Stack.Screen name="login" />
               </Stack.Protected>
               {/* Modales compartidos por servidor y offline (requieren canción activa). */}
-              <Stack.Screen name="lyrics" options={{ presentation: 'modal' }} />
               <Stack.Screen name="player" options={{ presentation: 'modal' }} />
               <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="lyrics" options={{ presentation: 'modal' }} />
             </Stack>
             {auth || offline ? <GlobalMiniPlayer /> : null}
             {auth || offline ? <SongMenuSheet /> : null}

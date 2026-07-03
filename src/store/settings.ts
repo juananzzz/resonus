@@ -45,7 +45,6 @@ interface SettingsState {
   /** Visibilidad de botones opcionales, para quien prefiera una UI mínima. */
   showHistoryButton: boolean;
   showProfileButton: boolean;
-  showCastButton: boolean;
   showOutputButton: boolean;
   setMaxBitRate: (value: number) => void;
   setDownloadBitRate: (value: number) => void;
@@ -58,7 +57,6 @@ interface SettingsState {
   setShowArtistPhoto: (value: boolean) => void;
   setShowHistoryButton: (value: boolean) => void;
   setShowProfileButton: (value: boolean) => void;
-  setShowCastButton: (value: boolean) => void;
   setShowOutputButton: (value: boolean) => void;
   hydrate: () => Promise<void>;
 }
@@ -81,7 +79,6 @@ function snapshot(get: () => SettingsState) {
     showArtistPhoto: s.showArtistPhoto,
     showHistoryButton: s.showHistoryButton,
     showProfileButton: s.showProfileButton,
-    showCastButton: s.showCastButton,
     showOutputButton: s.showOutputButton,
   };
 }
@@ -98,7 +95,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
   showArtistPhoto: true,
   showHistoryButton: true,
   showProfileButton: true,
-  showCastButton: true,
   showOutputButton: true,
 
   setMaxBitRate: (maxBitRate) => {
@@ -156,11 +152,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
-  setShowCastButton: (showCastButton) => {
-    set({ showCastButton });
-    persist(snapshot(get));
-  },
-
   setShowOutputButton: (showOutputButton) => {
     set({ showOutputButton });
     persist(snapshot(get));
@@ -182,7 +173,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
           showArtistPhoto: boolean;
           showHistoryButton: boolean;
           showProfileButton: boolean;
-          showCastButton: boolean;
           showOutputButton: boolean;
         }>;
         if (typeof parsed.maxBitRate === 'number') {
@@ -221,9 +211,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.showProfileButton === 'boolean') {
           set({ showProfileButton: parsed.showProfileButton });
-        }
-        if (typeof parsed.showCastButton === 'boolean') {
-          set({ showCastButton: parsed.showCastButton });
         }
         if (typeof parsed.showOutputButton === 'boolean') {
           set({ showOutputButton: parsed.showOutputButton });

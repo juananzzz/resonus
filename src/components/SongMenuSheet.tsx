@@ -304,11 +304,6 @@ export function SongMenuSheet() {
                 close();
               }}
             />
-            <Action
-              icon="musical-notes-outline"
-              label={t('Lyrics')}
-              onPress={() => go('/lyrics')}
-            />
             {downloaded ? (
               <Action
                 icon="arrow-down-circle"

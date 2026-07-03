@@ -1,8 +1,9 @@
 /**
- * Selector de salida de audio: este teléfono o un renderer UPnP/DLNA de la
- * red. Al abrirse busca renderers (~5 s). El Chromecast tiene su propio botón
- * (SDK de Google), pero si su sesión está activa aparece aquí como salida
- * actual y elegir otra cosa la termina.
+ * Selector de salida de audio (estilo Spotify Connect): este teléfono, un
+ * renderer UPnP/DLNA de la red o Chromecast. Al abrirse busca renderers
+ * (~5 s); la fila de Chromecast abre el selector nativo del SDK de Google, y
+ * si su sesión está activa aparece aquí como salida actual (elegir otra cosa
+ * la termina).
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -11,7 +12,7 @@ import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useT } from '@/i18n';
-import { castDisconnect, useCast } from '@/store/cast';
+import { castAvailable, castDisconnect, castShowDialog, useCast } from '@/store/cast';
 import { useToast } from '@/store/toast';
 import {
   upnpAvailable,
@@ -102,6 +103,15 @@ export function OutputSheet({ visible, onClose }: { visible: boolean; onClose: (
             icon={<MaterialIcons name="cast-connected" size={22} color={colors.accent} />}
             label={castName}
             active
+          />
+        ) : castAvailable() ? (
+          <Row
+            icon={<MaterialIcons name="cast" size={22} color={colors.text} />}
+            label={t('Chromecast')}
+            onPress={() => {
+              onClose();
+              void castShowDialog();
+            }}
           />
         ) : null}
 

@@ -52,6 +52,20 @@ export function isCastConnected(): boolean {
   return useCast.getState().connected;
 }
 
+/** ¿Hay módulo nativo de Google Cast? (no en web ni builds sin Play Services). */
+export function castAvailable(): boolean {
+  return cast != null;
+}
+
+/** Abre el selector nativo de aparatos Chromecast (diálogo del SDK). */
+export async function castShowDialog(): Promise<void> {
+  try {
+    await cast?.CastContext.showCastDialog();
+  } catch {
+    // Sin Play Services no hay diálogo que abrir.
+  }
+}
+
 /** Engancha los listeners de sesión. Llamar una sola vez (desde el player). */
 export function initCast(events: CastEvents): void {
   if (initialized || Platform.OS === 'web') return;

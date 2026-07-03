@@ -33,8 +33,6 @@ export default function AppearanceSettings() {
   const setShowHistoryButton = useSettings((s) => s.setShowHistoryButton);
   const showProfileButton = useSettings((s) => s.showProfileButton);
   const setShowProfileButton = useSettings((s) => s.setShowProfileButton);
-  const showCastButton = useSettings((s) => s.showCastButton);
-  const setShowCastButton = useSettings((s) => s.setShowCastButton);
   const showOutputButton = useSettings((s) => s.showOutputButton);
   const setShowOutputButton = useSettings((s) => s.setShowOutputButton);
   const hapticsEnabled = useSettings((s) => s.hapticsEnabled);
@@ -95,8 +93,7 @@ export default function AppearanceSettings() {
           options={[
             { label: t('History'), value: showHistoryButton, onChange: setShowHistoryButton },
             { label: t('Profile'), value: showProfileButton, onChange: setShowProfileButton },
-            { label: t('Cast'), value: showCastButton, onChange: setShowCastButton },
-            { label: t('Output'), value: showOutputButton, onChange: setShowOutputButton },
+            { label: t('Devices'), value: showOutputButton, onChange: setShowOutputButton },
           ]}
         />
         <Text style={settingsStyles.hint}>

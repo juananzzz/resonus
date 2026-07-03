@@ -4,11 +4,12 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -28,9 +29,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { coverArtUrl } from '@/api/data';
 import { AudioQualityBadge } from '@/components/AudioQualityBadge';
-import { CastIconButton } from '@/components/CastIconButton';
 import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { LyricsCard } from '@/components/LyricsCard';
 import { OutputSheet } from '@/components/OutputSheet';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
@@ -92,7 +93,6 @@ export default function PlayerScreen() {
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
   const showQuality = useSettings((s) => s.showAudioQuality);
-  const showCastButton = useSettings((s) => s.showCastButton);
   const showOutputButton = useSettings((s) => s.showOutputButton);
   const showQualityBadge = showQuality === 'player' || showQuality === 'everywhere';
   const offline = useAuthStore((s) => s.offline);
@@ -100,7 +100,17 @@ export default function PlayerScreen() {
   const upnpDevice = useUpnp((s) => (s.connected ? s.deviceName : null));
   const remoteDevice = castDevice ?? upnpDevice;
   const [outputOpen, setOutputOpen] = useState(false);
+  const canLyrics = !offline && !song?.url;
   const favIds = useFavoriteIds(!!song && (!song?.localUri || offline));
+
+  // El player es desplazable (como Spotify): la primera "página" ocupa la
+  // pantalla y debajo asoma la tarjeta de la letra. La altura real la da el
+  // onLayout del ScrollView; hasta entonces, una aproximación.
+  const [pageH, setPageH] = useState(0);
+  // El gesto de cerrar arrastrando solo debe actuar con el scroll arriba del
+  // todo; si no, robaría el gesto al volver de la tarjeta de letra.
+  const [atTop, setAtTop] = useState(true);
+  const atTopRef = useRef(true);
 
   // Deslizar la carátula: izquierda → siguiente, derecha → anterior. A
   // diferencia de los botones, el swipe siempre cambia de pista y da la vuelta
@@ -164,6 +174,7 @@ export default function PlayerScreen() {
   const transY = useSharedValue(0);
   const closePlayer = () => router.back();
   const dismissPan = Gesture.Pan()
+    .enabled(atTop)
     .activeOffsetY(15)
     .failOffsetX([-25, 25])
     .onUpdate((e) => {
@@ -208,6 +219,20 @@ export default function PlayerScreen() {
           style={StyleSheet.absoluteFill}
         />
         <SafeAreaView style={styles.safe}>
+        <ScrollView
+          style={{ flex: 1 }}
+          onLayout={(e) => setPageH(e.nativeEvent.layout.height)}
+          onScroll={(e) => {
+            const next = e.nativeEvent.contentOffset.y <= 4;
+            if (next !== atTopRef.current) {
+              atTopRef.current = next;
+              setAtTop(next);
+            }
+          }}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+        >
+        <View style={{ height: pageH || SCREEN_H * 0.85 }}>
         <View style={styles.topBar}>
           <CircleButton name="chevron-down" label={t('Close')} onPress={() => router.back()} />
           <Pressable
@@ -379,23 +404,22 @@ export default function PlayerScreen() {
 
           <View style={styles.bottomRow}>
             <View style={styles.bottomSlot}>
-              {!offline && showCastButton ? <CastIconButton /> : null}
+              {showOutputButton ? (
+                <Pressable
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('Devices')}
+                  disabled={offline}
+                  onPress={() => setOutputOpen(true)}
+                >
+                  <MaterialIcons
+                    name="devices"
+                    size={22}
+                    color={remoteDevice ? colors.accent : offline ? colors.textMuted : colors.text}
+                  />
+                </Pressable>
+              ) : null}
             </View>
-            {showOutputButton ? (
-              <Pressable
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel={t('Output')}
-                disabled={offline}
-                onPress={() => setOutputOpen(true)}
-              >
-                <MaterialIcons
-                  name="speaker"
-                  size={22}
-                  color={upnpDevice ? colors.accent : offline ? colors.textMuted : colors.text}
-                />
-              </Pressable>
-            ) : null}
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
@@ -406,6 +430,9 @@ export default function PlayerScreen() {
             </Pressable>
           </View>
         </View>
+        </View>
+        {canLyrics ? <LyricsCard /> : null}
+        </ScrollView>
         </SafeAreaView>
         <OutputSheet visible={outputOpen} onClose={() => setOutputOpen(false)} />
       </Animated.View>
