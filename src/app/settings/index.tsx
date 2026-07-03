@@ -28,11 +28,17 @@ export default function SettingsScreen() {
 
   // Reproducción es todo de servidor (bitrates, autoplay); en offline no pinta
   // nada. "Biblioteca" pasa a ser la música local.
-  const sections = [
-    ...(offline ? [] : [{ key: 'playback', title: 'Quality & playback' }]),
-    { key: 'library', title: offline ? 'Local music' : 'Library' },
-    { key: 'personalization', title: 'Appearance' },
-    { key: 'about', title: 'About' },
+  const sections: { key: string; title: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+    ...(offline
+      ? []
+      : [{ key: 'playback', title: 'Quality & playback', icon: 'musical-notes-outline' as const }]),
+    {
+      key: 'library',
+      title: offline ? 'Local music' : 'Library',
+      icon: offline ? ('phone-portrait-outline' as const) : ('server-outline' as const),
+    },
+    { key: 'personalization', title: 'Appearance', icon: 'color-palette-outline' as const },
+    { key: 'about', title: 'About', icon: 'information-circle-outline' as const },
   ];
 
   return (
@@ -57,6 +63,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => [styles.sectionRow, pressed && { opacity: 0.6 }]}
             onPress={() => router.push(`/settings/${s.key}`)}
           >
+            <Ionicons name={s.icon} size={24} color={colors.text} />
             <Text style={styles.sectionRowTitle}>{t(s.title)}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </Pressable>
@@ -96,6 +103,7 @@ const styles = StyleSheet.create({
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.lg,
     paddingVertical: spacing.lg,
   },
   sectionRowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '600', flex: 1 },

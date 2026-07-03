@@ -1,7 +1,8 @@
 /**
- * Piezas compartidas por la pantalla de Ajustes y sus sub-pantallas, estilo
- * Spotify actual: lista plana sin tarjetas, filas con descripción gris debajo,
- * switch a la derecha y grupos de radios siempre visibles para elegir opción.
+ * Piezas compartidas por la pantalla de Ajustes y sus sub-pantallas: filas
+ * dentro de cajas redondeadas (surface sobre el fondo, más legibles), con la
+ * descripción gris dentro de la fila, switch a la derecha y selectores que
+ * abren un menú flotante compacto.
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
@@ -77,10 +78,16 @@ export function SettingRow({
       {chevron ? <Ionicons name="chevron-forward" size={20} color={colors.textMuted} /> : null}
     </>
   );
-  if (!onPress) return <View style={settingsStyles.row}>{body}</View>;
+  if (!onPress) {
+    return <View style={[settingsStyles.cardBox, settingsStyles.row]}>{body}</View>;
+  }
   return (
     <Pressable
-      style={({ pressed }) => [settingsStyles.row, pressed && { opacity: 0.6 }]}
+      style={({ pressed }) => [
+        settingsStyles.cardBox,
+        settingsStyles.row,
+        pressed && { opacity: 0.6 },
+      ]}
       onPress={onPress}
     >
       {body}
@@ -132,13 +139,17 @@ export function SelectList<T extends string | number | boolean>({
 
   if (!collapsible) {
     return (
-      <View>
-        {options.map((opt) => {
+      <View style={settingsStyles.cardBox}>
+        {options.map((opt, i) => {
           const isActive = opt.value === value;
           return (
             <Pressable
               key={String(opt.value)}
-              style={({ pressed }) => [settingsStyles.row, pressed && { opacity: 0.6 }]}
+              style={({ pressed }) => [
+                settingsStyles.row,
+                i > 0 && settingsStyles.rowBorder,
+                pressed && { opacity: 0.6 },
+              ]}
               onPress={() => {
                 if (!isActive) onChange(opt.value);
               }}
@@ -161,7 +172,11 @@ export function SelectList<T extends string | number | boolean>({
       <Pressable
         ref={rowRef}
         accessibilityRole="button"
-        style={({ pressed }) => [settingsStyles.row, pressed && { opacity: 0.6 }]}
+        style={({ pressed }) => [
+          settingsStyles.cardBox,
+          settingsStyles.row,
+          pressed && { opacity: 0.6 },
+        ]}
         onPress={openMenu}
       >
         <View style={settingsStyles.rowLabelBox}>
@@ -221,9 +236,9 @@ export function SwitchList({
   }[];
 }) {
   return (
-    <View>
-      {options.map((opt) => (
-        <View key={opt.label} style={settingsStyles.row}>
+    <View style={settingsStyles.cardBox}>
+      {options.map((opt, i) => (
+        <View key={opt.label} style={[settingsStyles.row, i > 0 && settingsStyles.rowBorder]}>
           <View style={settingsStyles.rowLabelBox}>
             <Text style={settingsStyles.rowLabel}>{opt.label}</Text>
             {opt.description ? (
@@ -245,7 +260,7 @@ export function SwitchList({
 /** Pareja etiqueta/valor para datos de solo lectura. */
 export function Field({ label, value }: { label: string; value: string }) {
   return (
-    <View style={settingsStyles.field}>
+    <View style={[settingsStyles.cardBox, settingsStyles.field]}>
       <Text style={settingsStyles.fieldLabel}>{label}</Text>
       <Text style={settingsStyles.fieldValue} numberOfLines={1}>
         {value}
@@ -264,7 +279,7 @@ export const settingsStyles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
-  content: { padding: spacing.lg, paddingBottom: SCREEN_BOTTOM_PADDING },
+  content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: SCREEN_BOTTOM_PADDING },
   // Título de grupo estilo Spotify: negrita clara, con aire por encima.
   sectionTitle: {
     color: colors.text,
@@ -278,12 +293,16 @@ export const settingsStyles = StyleSheet.create({
     fontSize: fontSize.xs,
     marginBottom: spacing.xs,
   },
+  // Caja redondeada sobre el fondo (las filas viven dentro, más legibles).
+  cardBox: { backgroundColor: colors.surface, borderRadius: radius.md, overflow: 'hidden' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
+  rowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
   rowLabel: { color: colors.text, fontSize: fontSize.md },
   rowLabelBox: { flex: 1 },
   rowDescription: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
@@ -310,7 +329,7 @@ export const settingsStyles = StyleSheet.create({
     height: MENU_ITEM_H,
   },
   menuItemText: { color: colors.text, fontSize: fontSize.sm, flex: 1 },
-  field: { paddingVertical: spacing.md },
+  field: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
   fieldLabel: { color: colors.textMuted, fontSize: fontSize.xs, marginBottom: 2 },
   fieldValue: { color: colors.text, fontSize: fontSize.md },
   // Botón píldora blanco centrado (el "Cerrar sesión" de Spotify).
