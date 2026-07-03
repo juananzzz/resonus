@@ -5,19 +5,13 @@
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Dialog } from '@/components/Dialog';
-import { ScreenHeader, SettingRow, settingsStyles } from '@/components/SettingsUI';
+import { ScreenHeader, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
-import { useSettings } from '@/store/settings';
-import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing } from '@/theme';
-
-const REPO_URL = 'https://github.com/juananzzz/resonus';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -25,9 +19,6 @@ export default function SettingsScreen() {
   const auth = useAuthStore((s) => s.auth);
   const logout = useAuthStore((s) => s.logout);
   const offline = useAuthStore((s) => s.offline);
-  const resetToDefaults = useSettings((s) => s.resetToDefaults);
-  const toast = useToast((s) => s.show);
-  const [confirmReset, setConfirmReset] = useState(false);
 
   const initial = offline ? 'O' : (auth?.username ?? '?').charAt(0).toUpperCase();
   const name = offline ? t('Local profile') : auth?.username ?? '—';
@@ -41,6 +32,7 @@ export default function SettingsScreen() {
     ...(offline ? [] : [{ key: 'playback', title: 'Quality & playback' }]),
     { key: 'library', title: offline ? 'Local music' : 'Library' },
     { key: 'personalization', title: 'Appearance' },
+    { key: 'about', title: 'About' },
   ];
 
   return (
@@ -70,41 +62,12 @@ export default function SettingsScreen() {
           </Pressable>
         ))}
 
-        <SettingRow
-          icon="arrow-undo-outline"
-          label={t('Restore default settings')}
-          onPress={() => setConfirmReset(true)}
-        />
-
         <Pressable style={settingsStyles.pillButton} onPress={() => logout()}>
           <Text style={settingsStyles.pillButtonText}>
             {offline ? t('Exit offline mode') : t('Sign out')}
           </Text>
         </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.footer, pressed && { opacity: 0.6 }]}
-          hitSlop={8}
-          accessibilityRole="link"
-          onPress={() => Linking.openURL(REPO_URL)}
-        >
-          <Ionicons name="logo-github" size={16} color={colors.textMuted} />
-          <Text style={styles.footerText}>GitHub</Text>
-        </Pressable>
       </ScrollView>
-
-      <Dialog
-        visible={confirmReset}
-        title={t('Restore default settings')}
-        message={t('Your preferences will go back to their defaults. Your language stays.')}
-        confirmLabel={t('Restore')}
-        onCancel={() => setConfirmReset(false)}
-        onConfirm={() => {
-          setConfirmReset(false);
-          resetToDefaults();
-          toast(t('Settings restored'));
-        }}
-      />
     </SafeAreaView>
   );
 }
@@ -136,12 +99,4 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   sectionRowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '600', flex: 1 },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.xl,
-  },
-  footerText: { color: colors.textMuted, fontSize: fontSize.sm },
 });

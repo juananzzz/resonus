@@ -1,7 +1,9 @@
-/** Ajustes › Aspecto: idioma, reproductor, listas e interfaz. */
+/** Ajustes › Aspecto: idioma, reproductor, listas, interfaz y restablecer. */
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, Text } from 'react-native';
 
+import { Dialog } from '@/components/Dialog';
 import {
   SelectList,
   SettingRow,
@@ -10,6 +12,7 @@ import {
   SwitchList,
 } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
+import { useToast } from '@/store/toast';
 import {
   AUDIO_QUALITY_OPTIONS,
   LANGUAGE_NAMES,
@@ -19,6 +22,9 @@ import {
 export default function AppearanceSettings() {
   const router = useRouter();
   const t = useT();
+  const toast = useToast((s) => s.show);
+  const resetToDefaults = useSettings((s) => s.resetToDefaults);
+  const [confirmReset, setConfirmReset] = useState(false);
   const language = useSettings((s) => s.language);
   const showAudioQuality = useSettings((s) => s.showAudioQuality);
   const setShowAudioQuality = useSettings((s) => s.setShowAudioQuality);
@@ -105,7 +111,26 @@ export default function AppearanceSettings() {
             },
           ]}
         />
+
+        <SettingRow
+          icon="arrow-undo-outline"
+          label={t('Restore default settings')}
+          onPress={() => setConfirmReset(true)}
+        />
       </ScrollView>
+
+      <Dialog
+        visible={confirmReset}
+        title={t('Restore default settings')}
+        message={t('Your preferences will go back to their defaults. Your language stays.')}
+        confirmLabel={t('Restore')}
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={() => {
+          setConfirmReset(false);
+          resetToDefaults();
+          toast(t('Settings restored'));
+        }}
+      />
     </SettingsPage>
   );
 }
