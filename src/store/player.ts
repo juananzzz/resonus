@@ -244,8 +244,11 @@ function onTrackChanged(song: Song) {
   if (auth) scrobble(auth, song.id);
   else if (useAuthStore.getState().offline) usePlayCounts.getState().bump(song.id);
   usePlayHistory.getState().record(song);
-  // Calienta la letra ya: así la tarjeta del player aparece al instante.
+  // Calienta la letra ya (y la de la siguiente, para que deslizar en el
+  // player también enseñe su tarjeta al instante).
   prefetchLyrics(song);
+  const { queue, index } = usePlayerStore.getState();
+  if (queue.length > 1) prefetchLyrics(queue[(index + 1) % queue.length]);
   scheduleSync();
   void maybeQueueAutoplay();
 }
