@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   Extrapolation,
   interpolate,
   runOnJS,
@@ -24,6 +25,7 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -76,6 +78,27 @@ function CircleButton({
   );
 }
 
+/**
+ * Posición y atenuado de un panel del carrusel de carátulas (reciclado).
+ *
+ * Los 3 paneles forman una tira infinita: el panel `k` se coloca en el
+ * múltiplo de 3 pantallas más cercano al centro, así siempre queda a ≤1,5
+ * pantallas y el salto de un extremo al otro ocurre fuera de pantalla. Todo se
+ * calcula en el hilo de UI a partir de `offset` (que acumula, nunca se
+ * resetea), de modo que consolidar un swipe no mueve ningún panel visible: el
+ * que era vecino queda centrado y solo cambia el contenido del panel oculto.
+ */
+function usePaneStyle(offset: SharedValue<number>, k: number) {
+  return useAnimatedStyle(() => {
+    const m = k + 3 * Math.round((-offset.value / SCREEN_W - k) / 3);
+    const x = m * SCREEN_W + offset.value;
+    return {
+      transform: [{ translateX: x }],
+      opacity: interpolate(Math.abs(x), [0, SCREEN_W * 0.6], [1, 0.4], Extrapolation.CLAMP),
+    };
+  });
+}
+
 export default function PlayerScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -112,9 +135,17 @@ export default function PlayerScreen() {
   // local por álbum (offline). Ya no se guarda el base64 en cada canción.
   const cover = song ? coverArtUrl(song.coverArt ?? song.albumId, 600) : undefined;
   // Fondo estilo Spotify: degradado del color dominante de la carátula
-  // (desactivable en Ajustes → Aspecto).
+  // (desactivable en Ajustes → Aspecto). El color transiciona suave al cambiar
+  // de canción: se anima un color plano y el degradado hacia el fondo es una
+  // capa fija encima (mismo aspecto que animar el degradado, que no se puede).
   const colorBackground = useSettings((s) => s.playerColorBackground);
   const dominant = useDominantColor(colorBackground ? cover : undefined);
+  const targetBg = colorBackground ? dominant : '#3a4042';
+  const bgColor = useSharedValue(targetBg);
+  useEffect(() => {
+    bgColor.value = withTiming(targetBg, { duration: 600 });
+  }, [targetBg, bgColor]);
+  const bgStyle = useAnimatedStyle(() => ({ backgroundColor: bgColor.value }));
   // Misma query que usa la tarjeta de letra (cacheada): aquí solo para saber
   // si hay letra y dejar la tarjeta asomando bajo la primera página.
   const { data: lyrics } = useLyrics(canLyrics ? (song ?? undefined) : undefined);
@@ -133,6 +164,16 @@ export default function PlayerScreen() {
   // a la lista al llegar al final/inicio.
   const jumpTo = usePlayerStore((s) => s.jumpTo);
   const canSwitch = usePlayerStore((s) => s.queue.length > 1);
+  // Vecinas en la cola (con vuelta), para que el carrusel las enseñe al
+  // arrastrar. Referencias estables: solo re-renderiza si cambia la canción.
+  const prevSong = usePlayerStore((s) =>
+    s.queue.length > 1 ? s.queue[(s.index - 1 + s.queue.length) % s.queue.length] : undefined,
+  );
+  const nextSong = usePlayerStore((s) =>
+    s.queue.length > 1 ? s.queue[(s.index + 1) % s.queue.length] : undefined,
+  );
+  const prevCover = prevSong ? coverArtUrl(prevSong.coverArt ?? prevSong.albumId, 600) : undefined;
+  const nextCover = nextSong ? coverArtUrl(nextSong.coverArt ?? nextSong.albumId, 600) : undefined;
   const goNext = () => {
     const { queue, index } = usePlayerStore.getState();
     if (queue.length > 1) jumpTo(index < queue.length - 1 ? index + 1 : 0);
@@ -142,48 +183,54 @@ export default function PlayerScreen() {
     if (queue.length > 1) jumpTo(index > 0 ? index - 1 : queue.length - 1);
   };
 
-  const swipeX = useSharedValue(0);
+  // Avances netos consumados del carrusel: espejo entero de `-offset/W` en
+  // reposo. Vive en React porque decide qué canción enseña cada panel.
+  const [spins, setSpins] = useState(0);
+  const offset = useSharedValue(0);
+  const dragBase = useSharedValue(0);
+  const commitSwipe = (advance: 1 | -1) => {
+    setSpins((n) => n + advance);
+    (advance === 1 ? goNext : goPrev)();
+  };
   const coverPan = Gesture.Pan()
     .activeOffsetX([-20, 20])
     .failOffsetY([-20, 20])
+    .onStart(() => {
+      dragBase.value = offset.value;
+    })
     .onUpdate((e) => {
-      swipeX.value = e.translationX;
+      // Sin más pistas, resistencia (se nota que no hay a dónde ir). El
+      // arrastre se acota a los paneles vecinos ya cargados: más allá habría
+      // un panel con contenido viejo.
+      const raw = dragBase.value + (canSwitch ? e.translationX : e.translationX / 4);
+      const min = -(spins + 1) * SCREEN_W;
+      const max = -(spins - 1) * SCREEN_W;
+      offset.value = Math.min(max, Math.max(min, raw));
     })
     .onEnd((e) => {
-      const wantNext = e.translationX < -SWIPE_THRESHOLD || e.velocityX < -600;
-      const wantPrev = e.translationX > SWIPE_THRESHOLD || e.velocityX > 600;
-      // Saca la carátula actual por un lado, cambia de pista y mete la nueva
-      // por el lado opuesto: así el cambio de imagen ocurre fuera de pantalla
-      // y no hay flash de la carátula anterior.
-      if (canSwitch && wantNext) {
-        swipeX.value = withTiming(-SCREEN_W, { duration: 180 }, (f) => {
-          if (f) {
-            runOnJS(goNext)();
-            swipeX.value = SCREEN_W;
-            swipeX.value = withTiming(0, { duration: 200 });
-          }
-        });
-      } else if (canSwitch && wantPrev) {
-        swipeX.value = withTiming(SCREEN_W, { duration: 180 }, (f) => {
-          if (f) {
-            runOnJS(goPrev)();
-            swipeX.value = -SCREEN_W;
-            swipeX.value = withTiming(0, { duration: 200 });
-          }
-        });
+      const wantNext = canSwitch && (e.translationX < -SWIPE_THRESHOLD || e.velocityX < -600);
+      const wantPrev = canSwitch && (e.translationX > SWIPE_THRESHOLD || e.velocityX > 600);
+      const advance = wantNext ? 1 : wantPrev ? -1 : 0;
+      const target = -(spins + advance) * SCREEN_W;
+      if (advance !== 0) {
+        // El carrusel termina el recorrido con la vecina centrada; la pista
+        // cambia al acabar. Si React tarda, no se nota: el panel centrado ya
+        // enseña la carátula correcta y el swap ocurre en el panel oculto.
+        offset.value = withTiming(
+          target,
+          { duration: 220, easing: Easing.out(Easing.cubic) },
+          (finished) => {
+            if (finished) runOnJS(commitSwipe)(advance as 1 | -1);
+          },
+        );
       } else {
-        swipeX.value = withSpring(0, { damping: 20, stiffness: 200 });
+        offset.value = withSpring(target, { damping: 20, stiffness: 200 });
       }
     });
-  const coverStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: swipeX.value }],
-    opacity: interpolate(
-      Math.abs(swipeX.value),
-      [0, SCREEN_W * 0.5],
-      [1, 0.3],
-      Extrapolation.CLAMP,
-    ),
-  }));
+  const paneStyles = [usePaneStyle(offset, 0), usePaneStyle(offset, 1), usePaneStyle(offset, 2)];
+  // Qué canción (actual, siguiente o anterior) toca en cada panel según los
+  // avances consumados; misma fórmula de reciclado que la posición en UI.
+  const paneRel = (k: number) => k + 3 * Math.round((spins - k) / 3) - spins;
 
   // Deslizar hacia abajo cierra el reproductor (gesto propio: el modal nativo
   // no lo soporta en Android).
@@ -227,8 +274,9 @@ export default function PlayerScreen() {
   return (
     <GestureDetector gesture={dismissPan}>
       <Animated.View style={[styles.root, rootStyle]}>
+        <Animated.View style={[StyleSheet.absoluteFill, bgStyle]} />
         <LinearGradient
-          colors={[colorBackground ? dominant : '#3a4042', colors.background] as const}
+          colors={[colors.background + '00', colors.background] as const}
           style={StyleSheet.absoluteFill}
         />
         <SafeAreaView style={styles.safe}>
@@ -282,8 +330,21 @@ export default function PlayerScreen() {
 
         <View style={styles.coverWrap}>
           <GestureDetector gesture={coverPan}>
-            <Animated.View style={coverStyle}>
-              <Cover uri={cover} size={COVER} />
+            {/* Carrusel reciclado: la carátula actual centrada y las vecinas a
+                una pantalla, entrando ya al arrastrar. Sin fundido (transition
+                0): el contenido de un panel solo cambia fuera de pantalla y un
+                fundido no pinta nada aquí. */}
+            <Animated.View style={styles.coverRow}>
+              {paneStyles.map((paneStyle, k) => {
+                const rel = paneRel(k);
+                const paneSong = rel === 0 ? song : rel === 1 ? nextSong : prevSong;
+                const paneCover = rel === 0 ? cover : rel === 1 ? nextCover : prevCover;
+                return (
+                  <Animated.View key={k} style={[styles.coverPane, paneStyle]}>
+                    {paneSong ? <Cover uri={paneCover} size={COVER} transition={0} /> : null}
+                  </Animated.View>
+                );
+              })}
             </Animated.View>
           </GestureDetector>
           {showQualityBadge ? (
@@ -494,6 +555,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: spacing.lg,
   },
+  // Los paneles del carrusel son absolutos (usePaneStyle los coloca); la fila
+  // reserva el hueco de la carátula.
+  coverRow: { width: COVER, height: COVER },
+  coverPane: { position: 'absolute', top: 0, left: 0 },
   bottom: {
     flex: 1,
     justifyContent: 'flex-end',

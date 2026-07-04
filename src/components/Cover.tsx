@@ -9,10 +9,12 @@ interface Props {
   uri?: string;
   size: number;
   rounded?: boolean;
+  /** Fundido al cargar/cambiar la imagen (ms). 0 para cambios instantáneos. */
+  transition?: number;
   style?: StyleProp<ViewStyle | ImageStyle>;
 }
 
-export function Cover({ uri, size, rounded, style }: Props) {
+export function Cover({ uri, size, rounded, transition = 200, style }: Props) {
   const borderRadius = rounded ? size / 2 : radius.md;
   if (!uri) {
     return (
@@ -38,7 +40,7 @@ export function Cover({ uri, size, rounded, style }: Props) {
       source={{ uri }}
       style={[{ width: size, height: size, borderRadius }, style as StyleProp<ImageStyle>]}
       contentFit="cover"
-      transition={200}
+      transition={transition}
     />
   );
 }
