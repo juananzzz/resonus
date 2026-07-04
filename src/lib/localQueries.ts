@@ -339,6 +339,7 @@ function toPlaylist(rec: LocalPlaylistRec, songs: Song[]): Playlist {
     comment: rec.comment,
     songCount: songs.length,
     coverArt: rec.coverUri ?? cover?.coverArt ?? cover?.albumId,
+    created: new Date(rec.createdAt).toISOString(),
   };
 }
 

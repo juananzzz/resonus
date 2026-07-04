@@ -5,6 +5,7 @@
  * elegir la acción (misma query que usa la pantalla, así se comparte caché).
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ import { songsLabel, useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { useDownloads } from '@/store/downloads';
 import { useMediaMenu, type MediaMenuItem } from '@/store/mediaMenu';
+import { MAX_PINS, usePins } from '@/store/pins';
 import { usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
@@ -67,6 +69,8 @@ export function MediaMenuSheet() {
   const item = useMediaMenu((s) => s.item);
   const closeNow = useMediaMenu((s) => s.close);
   const { dismiss, backdropStyle, sheetStyle, onSheetLayout } = useBottomSheetAnim(!!item);
+  const pins = usePins((s) => s.pins);
+  const togglePin = usePins((s) => s.toggle);
   const playQueue = usePlayerStore((s) => s.playQueue);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const downloadAlbum = useDownloads((s) => s.downloadAlbum);
@@ -81,6 +85,8 @@ export function MediaMenuSheet() {
   const subtitle = album ? album.artist : songsLabel(playlist!.songCount ?? 0, lang);
   const coverId = album ? (album.coverArt ?? album.id) : (playlist!.coverArt ?? playlist!.id);
   const href = album ? `/album/${album.id}` : `/playlist/${playlist!.id}`;
+  const pinKey = album ? `album:${album.id}` : `playlist:${playlist!.id}`;
+  const pinned = !!pins[pinKey];
 
   /** Cierra, pide las canciones y ejecuta la acción (con toast si falla). */
   async function withSongs(fn: (songs: Song[]) => void) {
@@ -182,6 +188,24 @@ export function MediaMenuSheet() {
             onPress={() => void toggleFavorite()}
           />
         ) : null}
+        {/* Chincheta diagonal (MaterialCommunity), como la de Spotify; la de
+            Ionicons es otra cosa y queda rara. */}
+        <Pressable
+          style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+          onPress={() => {
+            const ok = togglePin(pinKey);
+            close();
+            if (!ok) toast(t('You can pin up to {n} items.', { n: MAX_PINS }));
+          }}
+        >
+          <MaterialCommunityIcons
+            name={pinned ? 'pin' : 'pin-outline'}
+            size={24}
+            color={colors.text}
+            style={styles.pinIcon}
+          />
+          <Text style={styles.actionText}>{pinned ? t('Unpin') : t('Pin to top')}</Text>
+        </Pressable>
       </Animated.View>
     </Modal>
   );
@@ -216,4 +240,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   actionText: { color: colors.text, fontSize: fontSize.md },
+  // La chincheta de MCI viene vertical; girada 45° queda como la de Spotify.
+  pinIcon: { transform: [{ rotate: '45deg' }] },
 });

@@ -33,6 +33,7 @@ import {
 import { prefetchLyrics } from '@/hooks/useLyrics';
 import { deleteItem, getItem, setItem } from '@/lib/storage';
 import { useAuthStore } from './auth';
+import { useLastPlayed } from './lastPlayed';
 import {
   castLoad,
   castPause,
@@ -579,6 +580,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (songs.length === 0) return;
     attachAppState();
     autoplayFetchedFor = null;
+    // Marca el origen como recién escuchado (orden "Recientes" de Biblioteca).
+    if (sourceHref) useLastPlayed.getState().touch(sourceHref);
     set({
       queue: songs,
       index: startIndex,

@@ -99,6 +99,10 @@ export interface Playlist {
   public?: boolean;
   /** Usuario dueño de la lista ("System" en las smartlists de serie de Ampache). */
   owner?: string;
+  /** Fecha de creación (ISO); la mandan Navidrome/Subsonic y el perfil local. */
+  created?: string;
+  /** Última modificación (ISO). */
+  changed?: string;
 }
 
 /** Genera un salt aleatorio en hexadecimal. */

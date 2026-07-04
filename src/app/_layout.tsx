@@ -18,6 +18,8 @@ import { Toast } from '@/components/Toast';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
 import { useDownloads } from '@/store/downloads';
+import { useLastPlayed } from '@/store/lastPlayed';
+import { usePins } from '@/store/pins';
 import { initRemoteIntegration, usePlayerStore } from '@/store/player';
 import { usePlayCounts } from '@/store/playCounts';
 import { usePlayHistory } from '@/store/playHistory';
@@ -45,6 +47,8 @@ export default function RootLayout() {
     usePlayCounts.getState().hydrate();
     usePlayHistory.getState().hydrate();
     useSortPrefs.getState().hydrate();
+    void useLastPlayed.getState().hydrate();
+    void usePins.getState().hydrate();
     void useDownloads.getState().hydrate();
     initRemoteIntegration();
   }, [hydrate, activeProfile]);

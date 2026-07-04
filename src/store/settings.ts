@@ -20,6 +20,9 @@ export const LANGUAGE_NAMES: Record<Language, string> = { es: 'Español', en: 'E
 
 export type AudioQualityMode = 'off' | 'player' | 'everywhere';
 
+/** Orden de la Biblioteca, estilo Spotify. */
+export type LibrarySort = 'recent' | 'added' | 'alpha';
+
 export const AUDIO_QUALITY_OPTIONS: { label: string; value: AudioQualityMode }[] = [
   { label: 'No', value: 'off' },
   { label: 'Player only', value: 'player' },
@@ -51,6 +54,8 @@ interface SettingsState {
   /** Visibilidad de botones opcionales, para quien prefiera una UI mínima. */
   showHistoryButton: boolean;
   showProfileButton: boolean;
+  /** Orden elegido en la Biblioteca (recientes/añadido/alfabético). */
+  librarySort: LibrarySort;
   setMaxBitRate: (value: number) => void;
   setDownloadBitRate: (value: number) => void;
   setLanguage: (language: Language) => void;
@@ -63,6 +68,7 @@ interface SettingsState {
   setPlayerColorBackground: (value: boolean) => void;
   setShowHistoryButton: (value: boolean) => void;
   setShowProfileButton: (value: boolean) => void;
+  setLibrarySort: (value: LibrarySort) => void;
   /** Vuelve a los valores de fábrica (el idioma se conserva). */
   resetToDefaults: () => void;
   hydrate: () => Promise<void>;
@@ -87,6 +93,7 @@ function snapshot(get: () => SettingsState) {
     playerColorBackground: s.playerColorBackground,
     showHistoryButton: s.showHistoryButton,
     showProfileButton: s.showProfileButton,
+    librarySort: s.librarySort,
   };
 }
 
@@ -104,6 +111,7 @@ const DEFAULTS = {
   playerColorBackground: true,
   showHistoryButton: true,
   showProfileButton: true,
+  librarySort: 'recent' as LibrarySort,
 };
 
 export const useSettings = create<SettingsState>((set, get) => ({
@@ -169,6 +177,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
+  setLibrarySort: (librarySort) => {
+    set({ librarySort });
+    persist(snapshot(get));
+  },
+
   resetToDefaults: () => {
     // El idioma se conserva: restablecer no debería cambiarte de idioma.
     set({ ...DEFAULTS, language: get().language });
@@ -192,6 +205,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           playerColorBackground: boolean;
           showHistoryButton: boolean;
           showProfileButton: boolean;
+          librarySort: LibrarySort;
         }>;
         if (typeof parsed.maxBitRate === 'number') {
           set({ maxBitRate: parsed.maxBitRate });
@@ -232,6 +246,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.showProfileButton === 'boolean') {
           set({ showProfileButton: parsed.showProfileButton });
+        }
+        if (parsed.librarySort === 'recent' || parsed.librarySort === 'added' || parsed.librarySort === 'alpha') {
+          set({ librarySort: parsed.librarySort });
         }
       }
     } catch {
