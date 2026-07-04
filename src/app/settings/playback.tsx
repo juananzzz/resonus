@@ -45,7 +45,7 @@ export default function PlaybackSettings() {
             {
               label: t('Find lyrics online'),
               description: t(
-                'When a local song has no lyrics, look them up on LRCLIB (sends the artist and title).',
+                'When a song has no lyrics, look them up on LRCLIB (sends the artist and title).',
               ),
               value: lyricsOnlineFallback,
               onChange: setLyricsOnlineFallback,

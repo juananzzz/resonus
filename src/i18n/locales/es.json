@@ -261,7 +261,7 @@
   "Visible to other users on the server": "Visible para otros usuarios del servidor",
   "We need permission to read your device music.": "Necesitamos permiso para leer la música del dispositivo.",
   "What's new": "Novedades",
-  "When a local song has no lyrics, look them up on LRCLIB (sends the artist and title).": "Si una canción local no tiene letra, se busca en LRCLIB (envía el artista y el título).",
+  "When a song has no lyrics, look them up on LRCLIB (sends the artist and title).": "Si una canción no tiene letra, se busca en LRCLIB (envía el artista y el título).",
   "When the song ends": "Al terminar la canción",
   "Where should we get your music?": "¿De dónde sacamos tu música?",
   "Will pause in {n} min": "Se pausará en {n} min",

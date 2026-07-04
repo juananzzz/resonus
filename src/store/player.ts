@@ -30,6 +30,7 @@ import {
   streamUrl,
   type Song,
 } from '@/api/subsonic';
+import { prefetchLyrics } from '@/hooks/useLyrics';
 import { deleteItem, getItem, setItem } from '@/lib/storage';
 import { useAuthStore } from './auth';
 import {
@@ -243,6 +244,8 @@ function onTrackChanged(song: Song) {
   if (auth) scrobble(auth, song.id);
   else if (useAuthStore.getState().offline) usePlayCounts.getState().bump(song.id);
   usePlayHistory.getState().record(song);
+  // Calienta la letra ya: así la tarjeta del player aparece al instante.
+  prefetchLyrics(song);
   scheduleSync();
   void maybeQueueAutoplay();
 }

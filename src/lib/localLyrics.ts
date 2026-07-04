@@ -48,11 +48,15 @@ export async function getLocalLyrics(song: Song, allowOnline: boolean): Promise<
   }
 
   // 3) LRCLIB, si el usuario lo permite.
-  if (allowOnline) return fetchLrclibCached(song);
+  if (allowOnline) return getOnlineLyrics(song);
   return null;
 }
 
-async function fetchLrclibCached(song: Song): Promise<SongLyrics | null> {
+/**
+ * Letra desde LRCLIB con caché en disco. También sirve de último recurso para
+ * canciones de servidor cuyo servidor no tiene letra.
+ */
+export async function getOnlineLyrics(song: Song): Promise<SongLyrics | null> {
   const file = `${LRCLIB_CACHE_DIR}${hashKey(song.id)}.lrc`;
   const cached = await readTextIfExists(file);
   if (cached) return parseLrc(cached);

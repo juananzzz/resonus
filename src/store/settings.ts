@@ -39,8 +39,9 @@ interface SettingsState {
   /** Al acabar la cola, seguir con canciones parecidas (getSimilarSongs2). */
   autoplaySimilar: boolean;
   /**
-   * Si una canción local no tiene letra (.lrc ni USLT), pedirla a LRCLIB.
-   * Desactivado por defecto: manda artista y título a un servicio externo.
+   * Si una canción no tiene letra (ni el servidor, ni .lrc, ni USLT),
+   * pedirla a LRCLIB. Desactivado por defecto: manda artista y título a un
+   * servicio externo.
    */
   lyricsOnlineFallback: boolean;
   /** Foto circular del artista junto a su nombre en la pantalla de álbum. */
