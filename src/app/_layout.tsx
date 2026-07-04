@@ -72,7 +72,16 @@ export default function RootLayout() {
         ) : (
           <ErrorBoundary>
           <View style={{ flex: 1 }}>
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                // Fundido rápido entre pantallas: en Android la duración de las
+                // transiciones nativas no se puede tocar y los empujes laterales
+                // (slide/ios_from_right) se sentían lentos.
+                animation: 'fade',
+                contentStyle: { backgroundColor: colors.background },
+              }}
+            >
               <Stack.Protected guard={ready}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="album/[id]" />
@@ -99,10 +108,22 @@ export default function RootLayout() {
               <Stack.Protected guard={!auth && !offline}>
                 <Stack.Screen name="login" />
               </Stack.Protected>
-              {/* Modales compartidos por servidor y offline (requieren canción activa). */}
-              <Stack.Screen name="player" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="lyrics" options={{ presentation: 'modal' }} />
+              {/* Modales compartidos por servidor y offline (requieren canción
+                  activa). Suben desde abajo pero con la variante corta
+                  (fade_from_bottom): el slide_from_bottom nativo dura ~350 ms
+                  fijos y abrir el player se sentía lento. */}
+              <Stack.Screen
+                name="player"
+                options={{ presentation: 'modal', animation: 'fade_from_bottom' }}
+              />
+              <Stack.Screen
+                name="queue"
+                options={{ presentation: 'modal', animation: 'fade_from_bottom' }}
+              />
+              <Stack.Screen
+                name="lyrics"
+                options={{ presentation: 'modal', animation: 'fade_from_bottom' }}
+              />
             </Stack>
             {auth || offline ? <GlobalMiniPlayer /> : null}
             {auth || offline ? <SongMenuSheet /> : null}

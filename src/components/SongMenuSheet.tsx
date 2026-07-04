@@ -12,8 +12,10 @@ import {
   Text,
   View,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
 import {
   addToPlaylist,
   coverArtUrl,
@@ -61,7 +63,11 @@ export function SongMenuSheet() {
   const queryClient = useQueryClient();
   const song = useSongMenu((s) => s.song);
   const context = useSongMenu((s) => s.context);
-  const close = useSongMenu((s) => s.close);
+  const closeNow = useSongMenu((s) => s.close);
+  const { dismiss, backdropStyle, sheetStyle, onSheetLayout } = useBottomSheetAnim(!!song);
+  // Cierre animado: la hoja baja y después se desmonta el Modal. Todas las
+  // acciones cierran por aquí.
+  const close = () => dismiss(closeNow);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const playNext = usePlayerStore((s) => s.playNext);
   const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
@@ -136,9 +142,14 @@ export function SongMenuSheet() {
   }
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={close}>
-      <Pressable style={styles.backdrop} onPress={close} />
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}>
+    <Modal transparent animationType="none" visible onRequestClose={close}>
+      <Animated.View style={[styles.backdrop, backdropStyle]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={close} />
+      </Animated.View>
+      <Animated.View
+        style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }, sheetStyle]}
+        onLayout={onSheetLayout}
+      >
         <View style={styles.headerRow}>
           <Cover uri={coverArtUrl( song.coverArt ?? song.albumId, 100)} size={48} />
           <View style={{ flex: 1 }}>
@@ -338,7 +349,7 @@ export function SongMenuSheet() {
             />
           </>
         )}
-      </View>
+      </Animated.View>
 
       <Dialog
         visible={creating}

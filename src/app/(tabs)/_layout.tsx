@@ -19,6 +19,13 @@ export default function TabsLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
+          // Crossfade corto al cambiar de pestaña, en vez del corte seco por
+          // defecto ('shift' se sentía lento).
+          animation: 'fade',
+          transitionSpec: {
+            animation: 'timing',
+            config: { duration: 80 },
+          },
           tabBarActiveTintColor: colors.text,
           tabBarInactiveTintColor: colors.textSecondary,
           sceneStyle: { backgroundColor: colors.background },
