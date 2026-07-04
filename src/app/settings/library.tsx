@@ -7,7 +7,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { rescanLocal } from '@/api/data';
-import { getScanStatus, startScan } from '@/api/subsonic';
+import { getScanStatus, startScan } from '@/api/backend';
 import { Dialog } from '@/components/Dialog';
 import { Field, SettingRow, SettingsPage, settingsStyles } from '@/components/SettingsUI';
 import { songsLabel, useT } from '@/i18n';

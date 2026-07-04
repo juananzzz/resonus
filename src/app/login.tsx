@@ -40,7 +40,7 @@ const SERVERS: {
 }[] = [
   { key: 'navidrome', name: 'Navidrome', logo: require('@/assets/images/servers/navidrome.png'), sub: 'Subsonic server' },
   { key: 'opensubsonic', name: 'OpenSubsonic', logo: require('@/assets/images/servers/opensubsonic.png'), sub: 'Subsonic-compatible' },
-  { key: 'jellyfin', name: 'Jellyfin', logo: require('@/assets/images/servers/jellyfin.png'), sub: 'Not available yet', soon: true },
+  { key: 'jellyfin', name: 'Jellyfin', logo: require('@/assets/images/servers/jellyfin.png'), sub: 'Media server' },
   { key: 'ampache', name: 'Ampache', logo: require('@/assets/images/servers/ampache.png'), sub: 'Subsonic-compatible' },
 ];
 
@@ -129,9 +129,10 @@ export default function LoginScreen() {
   // Flujo para añadir perfil: home → elegir servidor → credenciales.
   const [step, setStep] = useState<'home' | 'server' | 'form'>('home');
 
-  const isJellyfin = server === 'jellyfin';
   const isLocal = server === 'local';
-  const canSubmit = serverUrl.trim() && username.trim() && password && !loading;
+  // Sin exigir contraseña: hay servidores con cuentas sin ella (p. ej. la
+  // demo pública de Jellyfin).
+  const canSubmit = serverUrl.trim() && username.trim() && !loading;
   const visible = profiles.slice(0, MAX_VISIBLE);
   const overflow = profiles.length > MAX_VISIBLE;
 
@@ -164,10 +165,6 @@ export default function LoginScreen() {
   }
 
   async function onSubmit() {
-    if (isJellyfin) {
-      toast(t('Jellyfin is not available yet 🚧'));
-      return;
-    }
     setError(null);
     setLoading(true);
     try {
@@ -371,15 +368,10 @@ export default function LoginScreen() {
                     />
                   </View>
 
-                  {isJellyfin ? (
-                    <Text style={styles.notice}>
-                      {t('Jellyfin support is not available yet. For now use Navidrome or OpenSubsonic.')}
-                    </Text>
-                  ) : null}
                   {error ? <Text style={styles.error}>{error}</Text> : null}
 
                   <Pressable
-                    style={[styles.button, (!canSubmit || isJellyfin) && styles.buttonDisabled]}
+                    style={[styles.button, !canSubmit && styles.buttonDisabled]}
                     disabled={!canSubmit}
                     onPress={onSubmit}
                   >
@@ -554,7 +546,6 @@ const styles = StyleSheet.create({
   localOptTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
   localOptSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
   form: { gap: spacing.md },
-  notice: { color: colors.textSecondary, fontSize: fontSize.sm },
   error: { color: colors.danger, fontSize: fontSize.sm },
   button: {
     backgroundColor: colors.accent,

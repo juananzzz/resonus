@@ -19,7 +19,7 @@ import {
   type Song,
   type SongLyrics,
   type SubsonicAuth,
-} from '@/api/subsonic';
+} from '@/api/backend';
 import { getLocalLyrics, getOnlineLyrics } from '@/lib/localLyrics';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';

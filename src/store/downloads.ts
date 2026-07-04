@@ -29,7 +29,7 @@ import {
   type Song,
   type SongLyrics,
   type SubsonicAuth,
-} from '@/api/subsonic';
+} from '@/api/backend';
 import { tg } from '@/i18n';
 import { hashKey, normKey, registerCover } from '@/lib/localLibrary';
 import { serializeLrc } from '@/lib/lrc';

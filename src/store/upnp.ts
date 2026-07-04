@@ -12,7 +12,7 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { create } from 'zustand';
 
-import { streamUrl, type Song } from '@/api/subsonic';
+import { streamUrl, type Song } from '@/api/backend';
 import { useAuthStore } from './auth';
 import { castEndSession, isCastConnected, type CastEvents } from './cast';
 import { useSettings } from './settings';

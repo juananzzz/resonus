@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getGenres, type Genre } from '@/api/subsonic';
+import { getGenres, type Genre } from '@/api/backend';
 import { EmptyState } from '@/components/EmptyState';
 import { GenreCard } from '@/components/GenreCard';
 import { Message } from '@/components/Message';

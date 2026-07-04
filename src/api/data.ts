@@ -4,7 +4,7 @@
  * si leer del servidor o del catálogo local según el modo (online/offline).
  */
 import { useAuthStore } from '@/store/auth';
-import * as Subsonic from './subsonic';
+import * as Subsonic from './backend';
 import * as Local from '@/lib/localQueries';
 
 function isOffline() { return useAuthStore.getState().offline; }

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getAlbumsByGenre } from '@/api/subsonic';
+import { getAlbumsByGenre } from '@/api/backend';
 import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';

@@ -29,7 +29,7 @@ import {
   scrobble,
   streamUrl,
   type Song,
-} from '@/api/subsonic';
+} from '@/api/backend';
 import { prefetchLyrics } from '@/hooks/useLyrics';
 import { deleteItem, getItem, setItem } from '@/lib/storage';
 import { useAuthStore } from './auth';

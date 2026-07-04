@@ -31,6 +31,13 @@ export interface SubsonicAuth {
    * Subsonic sigue yendo por token + salt (por eso no reutiliza `password`).
    */
   ndPassword?: string;
+  /**
+   * Jellyfin (API propia, ver `jellyfin.ts`): token de sesión, id de usuario
+   * e id de dispositivo. En estos perfiles `token`/`salt` van vacíos.
+   */
+  jfToken?: string;
+  jfUserId?: string;
+  jfDeviceId?: string;
 }
 
 export interface Song {

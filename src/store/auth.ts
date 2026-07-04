@@ -9,7 +9,7 @@
  */
 import { create } from 'zustand';
 
-import { makeAuth, ping, type SubsonicAuth } from '@/api/subsonic';
+import { makeAuth, ping, type SubsonicAuth } from '@/api/backend';
 import { clearLocalCatalog } from '@/lib/localLibrary';
 import { queryClient } from '@/lib/query';
 import { deleteItem, getItem, setItem } from '@/lib/storage';

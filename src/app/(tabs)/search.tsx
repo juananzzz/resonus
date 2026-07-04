@@ -18,7 +18,7 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { coverArtUrl, getPlaylists, search } from '@/api/data';
-import { getGenres } from '@/api/subsonic';
+import { getGenres } from '@/api/backend';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';

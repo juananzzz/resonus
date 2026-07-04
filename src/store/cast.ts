@@ -13,7 +13,7 @@
 import { Platform } from 'react-native';
 import { create } from 'zustand';
 
-import { coverArtUrl, streamUrl, type Song } from '@/api/subsonic';
+import { coverArtUrl, streamUrl, type Song } from '@/api/backend';
 import { useAuthStore } from './auth';
 import { useSettings } from './settings';
 
