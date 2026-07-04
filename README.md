@@ -21,7 +21,7 @@ Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/rele
 
 ## Features
 
-- **Navidrome / OpenSubsonic / Ampache** — multi-profile login
+- **Navidrome / OpenSubsonic / Jellyfin / Ampache** — multi-profile login
 - **Local mode** — play music offline from device or folder
 - **Offline downloads** — save albums, playlists or songs to your device (original quality or transcoded) and play them from the local profile, no connection needed
 - **Browse & search** — home, artists, albums, genres, playlists, favorites
@@ -41,7 +41,7 @@ Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/rele
 ## Roadmap
 
 - [ ] Equalizer & crossfade
-- [ ] Jellyfin support
+- [ ] Scrobbling & listening stats
 - [ ] iOS support
 
 ## Translations
