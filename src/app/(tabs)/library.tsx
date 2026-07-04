@@ -28,6 +28,7 @@ import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { albumsLabel, songsLabel, useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
+import { useMediaMenu } from '@/store/mediaMenu';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
@@ -69,6 +70,7 @@ function PlaylistsTab({ onNew }: { onNew?: () => void }) {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
+  const openMenu = useMediaMenu((s) => s.open);
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['playlists'],
     queryFn: () => getPlaylists(),
@@ -96,7 +98,10 @@ function PlaylistsTab({ onNew }: { onNew?: () => void }) {
       }
       renderItem={({ item }: { item: Playlist }) => (
         <Link href={`/playlist/${item.id}`} asChild>
-          <Pressable style={styles.row}>
+          <Pressable
+            style={styles.row}
+            onLongPress={() => openMenu({ kind: 'playlist', playlist: item })}
+          >
             <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={56} />
             <View style={styles.rowInfo}>
               <Text style={styles.rowTitle} numberOfLines={1}>
@@ -158,6 +163,7 @@ function ArtistsTab() {
 function AlbumsTab() {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
+  const openMenu = useMediaMenu((s) => s.open);
   // Solo álbumes favoritos (lo explorable está en Inicio).
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['starred'],
@@ -178,7 +184,10 @@ function AlbumsTab() {
       }
       renderItem={({ item }) => (
         <Link href={`/album/${item.id}`} asChild>
-          <Pressable style={styles.row}>
+          <Pressable
+            style={styles.row}
+            onLongPress={() => openMenu({ kind: 'album', album: item })}
+          >
             <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={56} />
             <View style={styles.rowInfo}>
               <Text style={styles.rowTitle} numberOfLines={1}>{item.name}</Text>

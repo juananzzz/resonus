@@ -28,6 +28,7 @@ import { TrackRow } from '@/components/TrackRow';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
+import { useMediaMenu } from '@/store/mediaMenu';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useRecentSearches, type RecentItem } from '@/store/recentSearches';
 import { useSettings } from '@/store/settings';
@@ -63,6 +64,7 @@ export default function SearchScreen() {
     enabled: !!auth,
   });
 
+  const openMediaMenu = useMediaMenu((s) => s.open);
   // Playlists: search3 de Subsonic no las devuelve, así que se filtran por
   // nombre en cliente (la lista completa ya está cacheada por otras pantallas).
   const { data: playlists } = useQuery({
@@ -282,7 +284,10 @@ export default function SearchScreen() {
             <Text style={styles.sectionTitle}>{t('Playlists')}</Text>
             {playlistMatches.map((p) => (
               <Link key={p.id} href={`/playlist/${p.id}`} asChild>
-                <Pressable style={styles.recentRow}>
+                <Pressable
+                  style={styles.recentRow}
+                  onLongPress={() => openMediaMenu({ kind: 'playlist', playlist: p })}
+                >
                   <Cover uri={coverArtUrl(p.coverArt ?? p.id, 100)} size={48} />
                   <View style={styles.recentInfo}>
                     <Text style={styles.recentTitle} numberOfLines={1}>

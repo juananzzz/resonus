@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { CarAutoSync } from '@/components/CarAutoSync';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalMiniPlayer } from '@/components/GlobalMiniPlayer';
+import { MediaMenuSheet } from '@/components/MediaMenuSheet';
 import { SongMenuSheet } from '@/components/SongMenuSheet';
 import { Toast } from '@/components/Toast';
 import { queryClient } from '@/lib/query';
@@ -127,6 +128,7 @@ export default function RootLayout() {
             </Stack>
             {auth || offline ? <GlobalMiniPlayer /> : null}
             {auth || offline ? <SongMenuSheet /> : null}
+            {auth || offline ? <MediaMenuSheet /> : null}
             {auth || offline ? <CarAutoSync /> : null}
             <Toast />
           </View>

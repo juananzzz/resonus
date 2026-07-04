@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { coverArtUrl, type Album } from '@/api/data';
+import { useMediaMenu } from '@/store/mediaMenu';
 import { colors, fontSize, spacing } from '@/theme';
 import { Cover } from './Cover';
 
@@ -15,12 +16,17 @@ interface Props {
 
 export function AlbumCard({ album, width = 150, onPress }: Props) {
   const cover = coverArtUrl(album.coverArt ?? album.id, 300);
+  const openMenu = useMediaMenu((s) => s.open);
 
   return (
     <Link href={`/album/${album.id}`} asChild>
       {/* expo-router fusiona el estilo del Link en este hijo; debe ser un
           único objeto, no un array, así que lo aplanamos. */}
-      <Pressable style={StyleSheet.flatten([styles.container, { width }])} onPress={onPress}>
+      <Pressable
+        style={StyleSheet.flatten([styles.container, { width }])}
+        onPress={onPress}
+        onLongPress={() => openMenu({ kind: 'album', album })}
+      >
         <Cover uri={cover} size={width} />
         <Text style={styles.title} numberOfLines={1}>
           {album.name}
