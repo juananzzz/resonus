@@ -142,7 +142,7 @@ async function readTagBuffer(uri: string): Promise<Uint8Array | null> {
 }
 
 /** Lee tags ID3v2; si no hay título, intenta ID3v1 al final (leyendo tamaño ahí). */
-async function readTags(uri: string): Promise<ID3Tags | null> {
+export async function readTags(uri: string): Promise<ID3Tags | null> {
   const buf = await readTagBuffer(uri);
   if (!buf) return null;
   const tags = parseID3(buf);

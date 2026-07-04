@@ -103,7 +103,9 @@ export default function PlayerScreen() {
   const upnpDevice = useUpnp((s) => (s.connected ? s.deviceName : null));
   const remoteDevice = castDevice ?? upnpDevice;
   const [outputOpen, setOutputOpen] = useState(false);
-  const canLyrics = !offline && !song?.url;
+  // Con letra local (.lrc/USLT/LRCLIB) el modo offline también tiene lyrics;
+  // solo la radio (url directa) queda fuera.
+  const canLyrics = !song?.url;
   const favIds = useFavoriteIds(!!song && (!song?.localUri || offline));
 
   // La capa de datos resuelve la carátula: del servidor (online) o del índice

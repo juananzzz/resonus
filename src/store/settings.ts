@@ -38,6 +38,11 @@ interface SettingsState {
   showSongDuration: boolean;
   /** Al acabar la cola, seguir con canciones parecidas (getSimilarSongs2). */
   autoplaySimilar: boolean;
+  /**
+   * Si una canción local no tiene letra (.lrc ni USLT), pedirla a LRCLIB.
+   * Desactivado por defecto: manda artista y título a un servicio externo.
+   */
+  lyricsOnlineFallback: boolean;
   /** Foto circular del artista junto a su nombre en la pantalla de álbum. */
   showArtistPhoto: boolean;
   /** Fondo del reproductor teñido con el color dominante de la carátula. */
@@ -52,6 +57,7 @@ interface SettingsState {
   setShowListArtwork: (value: boolean) => void;
   setShowSongDuration: (value: boolean) => void;
   setAutoplaySimilar: (value: boolean) => void;
+  setLyricsOnlineFallback: (value: boolean) => void;
   setShowArtistPhoto: (value: boolean) => void;
   setPlayerColorBackground: (value: boolean) => void;
   setShowHistoryButton: (value: boolean) => void;
@@ -75,6 +81,7 @@ function snapshot(get: () => SettingsState) {
     showListArtwork: s.showListArtwork,
     showSongDuration: s.showSongDuration,
     autoplaySimilar: s.autoplaySimilar,
+    lyricsOnlineFallback: s.lyricsOnlineFallback,
     showArtistPhoto: s.showArtistPhoto,
     playerColorBackground: s.playerColorBackground,
     showHistoryButton: s.showHistoryButton,
@@ -91,6 +98,7 @@ const DEFAULTS = {
   showListArtwork: true,
   showSongDuration: true,
   autoplaySimilar: true,
+  lyricsOnlineFallback: false,
   showArtistPhoto: true,
   playerColorBackground: true,
   showHistoryButton: true,
@@ -135,6 +143,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
+  setLyricsOnlineFallback: (lyricsOnlineFallback) => {
+    set({ lyricsOnlineFallback });
+    persist(snapshot(get));
+  },
+
   setShowArtistPhoto: (showArtistPhoto) => {
     set({ showArtistPhoto });
     persist(snapshot(get));
@@ -173,6 +186,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           showListArtwork: boolean;
           showSongDuration: boolean;
           autoplaySimilar: boolean;
+          lyricsOnlineFallback: boolean;
           showArtistPhoto: boolean;
           playerColorBackground: boolean;
           showHistoryButton: boolean;
@@ -202,6 +216,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.autoplaySimilar === 'boolean') {
           set({ autoplaySimilar: parsed.autoplaySimilar });
+        }
+        if (typeof parsed.lyricsOnlineFallback === 'boolean') {
+          set({ lyricsOnlineFallback: parsed.lyricsOnlineFallback });
         }
         if (typeof parsed.showArtistPhoto === 'boolean') {
           set({ showArtistPhoto: parsed.showArtistPhoto });

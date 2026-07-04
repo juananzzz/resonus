@@ -42,31 +42,29 @@ function decodeUtf16(bytes: Uint8Array, littleEndian: boolean): string {
   return out;
 }
 
-function decodeText(b: Uint8Array, start: number, end: number): string {
-  if (start >= end) return '';
-  const enc = b[start];
-  const data = b.subarray(start + 1, end);
-  let text = '';
+/** Decodifica los bytes de un frame según su byte de codificación ID3. */
+function decodeWithEncoding(enc: number, data: Uint8Array): string {
   switch (enc) {
     case 0x00:
-      text = decodeLatin1(data);
-      break;
+      return decodeLatin1(data);
     case 0x03:
-      text = utf8Decoder.decode(data);
-      break;
+      return utf8Decoder.decode(data);
     case 0x01: {
       if (data.length < 2) return '';
       // BOM: FF FE = little-endian, FE FF = big-endian.
       const littleEndian = data[0] === 0xff && data[1] === 0xfe;
-      text = decodeUtf16(data.subarray(2), littleEndian);
-      break;
+      return decodeUtf16(data.subarray(2), littleEndian);
     }
     case 0x02:
-      text = decodeUtf16(data, false); // UTF-16BE sin BOM
-      break;
+      return decodeUtf16(data, false); // UTF-16BE sin BOM
     default:
-      text = decodeLatin1(data);
+      return decodeLatin1(data);
   }
+}
+
+function decodeText(b: Uint8Array, start: number, end: number): string {
+  if (start >= end) return '';
+  const text = decodeWithEncoding(b[start], b.subarray(start + 1, end));
   // En ID3v2.4 los frames de texto pueden contener varios valores separados
   // por un byte nulo (p. ej. TPE1 = "6ix9ine\0Anuel AA"). Antes los nulos se
   // borraban y los valores quedaban pegados ("6ix9ineAnuel AA"); ahora nos
@@ -92,6 +90,8 @@ export interface ID3Tags {
   year?: number;
   coverMime?: string;
   coverBase64?: string;
+  /** Letra embebida (frame USLT); puede venir en formato LRC con timestamps. */
+  lyrics?: string;
 }
 
 function parseID3v2(buffer: Uint8Array): ID3Tags {
@@ -148,6 +148,24 @@ function parseID3v2(buffer: Uint8Array): ID3Tags {
         const raw = decodeText(data, 0, data.length);
         const num = parseInt(raw.slice(0, 4), 10);
         if (!isNaN(num)) tags.year = num;
+        break;
+      }
+      case 'USLT': {
+        // <encoding(1)> <idioma(3)> <descriptor terminado en nulo> <letra>.
+        if (data.length < 5) break;
+        const enc = data[0];
+        const wide = enc === 0x01 || enc === 0x02; // UTF-16: nulo de 2 bytes
+        let p = 4;
+        if (wide) {
+          while (p + 1 < data.length && (data[p] !== 0 || data[p + 1] !== 0)) p += 2;
+          p += 2;
+        } else {
+          p = nullTerminatedIndex(data, p, data.length) + 1;
+        }
+        if (p < data.length) {
+          const text = decodeWithEncoding(enc, data.subarray(p)).replace(/\0+$/, '').trim();
+          if (text) tags.lyrics = text;
+        }
         break;
       }
       case 'APIC': {

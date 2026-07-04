@@ -20,15 +20,20 @@ import { create } from 'zustand';
 import {
   coverArtUrl,
   downloadUrl,
+  getLyrics,
+  getLyricsBySongId,
   streamUrl,
   type Album,
   type Artist,
   type Playlist,
   type Song,
+  type SongLyrics,
   type SubsonicAuth,
 } from '@/api/subsonic';
 import { tg } from '@/i18n';
 import { hashKey, normKey, registerCover } from '@/lib/localLibrary';
+import { serializeLrc } from '@/lib/lrc';
+import { siblingLrcUri } from '@/lib/localLyrics';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from './auth';
 import { useSettings } from './settings';
@@ -224,6 +229,31 @@ function albumFromSong(song: Song): Album {
   };
 }
 
+/**
+ * Cachea la letra de una canción recién descargada como `.lrc` junto al
+ * fichero, para que el perfil local la encuentre sin red (fase 2 de letras).
+ * Sin letra (o sin extensión songLyrics en el servidor) no pasa nada.
+ */
+async function cacheLyricsForDownload(auth: SubsonicAuth, song: Song, audioFile: string): Promise<void> {
+  try {
+    let lyrics: SongLyrics | null = null;
+    try {
+      lyrics = await getLyricsBySongId(auth, song.id);
+    } catch {
+      // Servidor sin la extensión songLyrics: probamos el endpoint clásico.
+    }
+    if (!lyrics) {
+      const plain = await getLyrics(auth, song.artist ?? '', song.title);
+      if (plain) lyrics = { synced: false, lines: plain.split('\n').map((value) => ({ value })) };
+    }
+    if (!lyrics) return;
+    const lrcFile = siblingLrcUri(audioFile);
+    if (lrcFile) await FileSystem.writeAsStringAsync(lrcFile, serializeLrc(lyrics));
+  } catch {
+    // La descarga vale igual sin letra.
+  }
+}
+
 async function downloadCover(auth: SubsonicAuth, dir: string, album: Album): Promise<string | undefined> {
   const url = coverArtUrl(auth, album.coverArt ?? album.id, 500);
   if (!url) return undefined;
@@ -308,6 +338,7 @@ export const useDownloads = create<DownloadsState>((set, get) => {
             });
             const res = await task.downloadAsync();
             if (!res || res.status !== 200) throw new Error(`HTTP ${res?.status}`);
+            await cacheLyricsForDownload(auth, song, file);
             // Cada canción se persiste al completarse: si la app muere a mitad
             // de un álbum, lo ya bajado sobrevive al reinicio.
             await commitToCatalog(dir, { songs: [toLocalSong(song, file)] });
@@ -404,6 +435,9 @@ export const useDownloads = create<DownloadsState>((set, get) => {
           for (const s of catalog.songs) {
             if (ids.has(s.id) && s.localUri) {
               await FileSystem.deleteAsync(s.localUri, { idempotent: true }).catch(() => {});
+              // También la letra cacheada junto al fichero, si la hay.
+              const lrc = siblingLrcUri(s.localUri);
+              if (lrc) await FileSystem.deleteAsync(lrc, { idempotent: true }).catch(() => {});
             }
           }
           catalog.songs = catalog.songs.filter((s) => !ids.has(s.id));
