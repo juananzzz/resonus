@@ -866,7 +866,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   moveTrack: async (from, to) => {
-    const { queue, index } = get();
+    const { queue, index, queuedCount } = get();
     if (
       from === to ||
       from < 0 ||
@@ -884,8 +884,20 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (from === index) newIndex = to;
     else if (from < index && to >= index) newIndex = index - 1;
     else if (from > index && to <= index) newIndex = index + 1;
-    // Reordenar a mano disuelve el bloque "en cola" (el usuario toma el control).
-    set({ queue: next, index: newIndex, queuedCount: 0 });
+    // El bloque "en cola" (index+1..index+queuedCount) se mantiene al reordenar
+    // dentro de lo que viene: si una del origen entra en la zona de cola pasa a
+    // estar encolada, y si una encolada sale deja de estarlo (estilo Spotify).
+    // Cualquier movimiento que toque la actual o lo ya reproducido lo disuelve.
+    let newQueuedCount = 0;
+    if (from > index && to > index) {
+      const fromQueued = from - (index + 1) < queuedCount;
+      const toQueued = to - (index + 1) < queuedCount;
+      newQueuedCount = Math.max(
+        0,
+        queuedCount + (!fromQueued && toQueued ? 1 : 0) - (fromQueued && !toQueued ? 1 : 0),
+      );
+    }
+    set({ queue: next, index: newIndex, queuedCount: newQueuedCount });
     scheduleSync();
   },
 

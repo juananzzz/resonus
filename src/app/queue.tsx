@@ -1,4 +1,12 @@
-/** Cola de reproducción: ver, reordenar (arrastrando), quitar y limpiar. */
+/**
+ * Cola de reproducción estilo Spotify, en secciones:
+ *   · Reproduciendo — la canción actual (fija, no se arrastra ni se quita).
+ *   · A continuación — lo añadido a mano (bloque `queuedCount`).
+ *   · Siguiente de: {origen} — el resto de lo que venía sonando.
+ * Solo se muestra lo actual y lo que viene (lo ya reproducido no aparece).
+ * Reordenar arrastrando, quitar y limpiar. Las cabeceras de sección se deducen
+ * de la posición, así que se recolocan solas al reordenar.
+ */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -15,7 +23,7 @@ import { Cover } from '@/components/Cover';
 import { Dialog } from '@/components/Dialog';
 import { EmptyState } from '@/components/EmptyState';
 import { formatTotalDuration } from '@/lib/format';
-import { usePlayerStore } from '@/store/player';
+import { SOURCE_FAVORITES, SOURCE_HISTORY, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
@@ -29,27 +37,54 @@ const queueListPerf = {
   windowSize: listPerf.windowSize,
 };
 
-function QueueRow({ item, i }: { item: Song; i: number }) {
+function SectionHeader({ title, gap }: { title: string; gap?: boolean }) {
+  return <Text style={[styles.sectionHeader, gap && styles.sectionGap]}>{title}</Text>;
+}
+
+/** Canción actual: fija arriba, resaltada, sin controles. */
+function NowPlayingRow({ song }: { song: Song }) {
+  const showListArtwork = useSettings((s) => s.showListArtwork);
+  return (
+    <View style={styles.row}>
+      <View style={styles.main}>
+        {showListArtwork ? (
+          <View style={styles.artwork}>
+            <Cover uri={coverArtUrl(song.coverArt ?? song.albumId, 100)} size={44} />
+          </View>
+        ) : null}
+        <View style={styles.info}>
+          <Text style={[styles.title, styles.current]} numberOfLines={1}>
+            {song.title}
+          </Text>
+          {song.artist ? (
+            <Text style={styles.artist} numberOfLines={1}>
+              {song.artist}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+      <Ionicons name="volume-medium" size={20} color={colors.accent} />
+    </View>
+  );
+}
+
+/** Fila de lo que viene: se puede tocar (saltar), arrastrar y quitar. */
+function UpcomingRow({ item, absIndex }: { item: Song; absIndex: number }) {
   const jumpTo = usePlayerStore((s) => s.jumpTo);
   const removeAt = usePlayerStore((s) => s.removeAt);
-  const isCurrent = usePlayerStore((s) => s.index === i);
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const drag = useReorderableDrag();
 
   return (
     <View style={styles.row}>
-      <Pressable style={styles.main} onPress={() => jumpTo(i)} onLongPress={drag}>
+      <Pressable style={styles.main} onPress={() => jumpTo(absIndex)} onLongPress={drag}>
         {showListArtwork ? (
           <View style={styles.artwork}>
             <Cover uri={coverArtUrl(item.coverArt ?? item.albumId, 100)} size={44} />
           </View>
-        ) : (
-          <View style={styles.leftSlot}>
-            <Text style={[styles.position, isCurrent && styles.current]}>{i + 1}</Text>
-          </View>
-        )}
+        ) : null}
         <View style={styles.info}>
-          <Text style={[styles.title, isCurrent && styles.current]} numberOfLines={1}>
+          <Text style={styles.title} numberOfLines={1}>
             {item.title}
           </Text>
           {item.artist ? (
@@ -61,7 +96,7 @@ function QueueRow({ item, i }: { item: Song; i: number }) {
       </Pressable>
 
       <View style={styles.actions}>
-        <Pressable hitSlop={6} onPress={() => removeAt(i)}>
+        <Pressable hitSlop={6} onPress={() => removeAt(absIndex)}>
           <Ionicons name="close" size={22} color={colors.textSecondary} />
         </Pressable>
         <Pressable hitSlop={6} onPressIn={drag}>
@@ -76,10 +111,33 @@ export default function QueueScreen() {
   const t = useT();
   const router = useRouter();
   const queue = usePlayerStore((s) => s.queue);
+  const index = usePlayerStore((s) => s.index);
+  const queuedCount = usePlayerStore((s) => s.queuedCount);
+  const source = usePlayerStore((s) => s.source);
   const moveTrack = usePlayerStore((s) => s.moveTrack);
   const clearQueue = usePlayerStore((s) => s.clearQueue);
   const [confirmClear, setConfirmClear] = useState(false);
-  const totalSec = queue.reduce((acc, s) => acc + (s.duration ?? 0), 0);
+
+  const current = queue[index] ?? null;
+  const upcoming = queue.slice(index + 1);
+  const totalSec = upcoming.reduce((acc, s) => acc + (s.duration ?? 0), 0);
+
+  // Etiqueta del origen para la sección "Siguiente de:"; los centinelas de
+  // favoritos/historial se traducen (como en el reproductor).
+  const sourceName =
+    source === SOURCE_FAVORITES
+      ? t('Favorites')
+      : source === SOURCE_HISTORY
+        ? t('History')
+        : source;
+  const contextHeader = sourceName ? t('Next from {name}', { name: sourceName }) : null;
+
+  /** Cabecera de sección para la fila `rel` de lo que viene (o null). */
+  const headerFor = (rel: number): string | null => {
+    if (queuedCount > 0 && rel === 0) return t('Next in queue');
+    if (rel === queuedCount && contextHeader) return contextHeader;
+    return null;
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -89,14 +147,13 @@ export default function QueueScreen() {
         </Pressable>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{t('Queue')}</Text>
-          {/* Sin subtítulo para radios (duración desconocida) o una sola canción. */}
-          {queue.length > 1 && totalSec > 0 ? (
+          {upcoming.length > 0 && totalSec > 0 ? (
             <Text style={styles.headerSub}>
-              {t('{n} songs', { n: queue.length })} · {formatTotalDuration(totalSec)}
+              {t('{n} songs', { n: upcoming.length })} · {formatTotalDuration(totalSec)}
             </Text>
           ) : null}
         </View>
-        {queue.length > 1 ? (
+        {upcoming.length > 0 ? (
           <Pressable
             style={styles.headerAction}
             hitSlop={10}
@@ -111,25 +168,40 @@ export default function QueueScreen() {
         )}
       </View>
 
-      <ReorderableList
-        {...queueListPerf}
-        data={queue}
-        keyExtractor={(item, i) => `${item.id}-${i}`}
-        renderItem={({ item, index }) => <QueueRow item={item} i={index} />}
-        onReorder={({ from, to }: ReorderableListReorderEvent) => {
-          moveTrack(from, to);
-        }}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <EmptyState
-              icon="list-outline"
-              title={t('The queue is empty.')}
-              subtitle={t('Play a song or album to start the queue.')}
-            />
-          </View>
-        }
-      />
+      {current ? (
+        <ReorderableList
+          {...queueListPerf}
+          data={upcoming}
+          keyExtractor={(item, i) => `${item.id}-${i}`}
+          ListHeaderComponent={
+            <View>
+              <SectionHeader title={t('Now playing')} />
+              <NowPlayingRow song={current} />
+            </View>
+          }
+          renderItem={({ item, index: rel }) => {
+            const header = headerFor(rel);
+            return (
+              <View style={styles.cell}>
+                {header ? <SectionHeader title={header} gap /> : null}
+                <UpcomingRow item={item} absIndex={index + 1 + rel} />
+              </View>
+            );
+          }}
+          onReorder={({ from, to }: ReorderableListReorderEvent) => {
+            moveTrack(index + 1 + from, index + 1 + to);
+          }}
+          contentContainerStyle={styles.list}
+        />
+      ) : (
+        <View style={styles.emptyWrap}>
+          <EmptyState
+            icon="list-outline"
+            title={t('The queue is empty.')}
+            subtitle={t('Play a song or album to start the queue.')}
+          />
+        </View>
+      )}
 
       <Dialog
         visible={confirmClear}
@@ -162,6 +234,14 @@ const styles = StyleSheet.create({
   headerSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
   list: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
   emptyWrap: { flex: 1, justifyContent: 'center' },
+  sectionHeader: {
+    color: colors.textSecondary,
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
+  },
+  sectionGap: { marginTop: spacing.lg },
+  cell: { backgroundColor: colors.background },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -175,8 +255,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  leftSlot: { width: 24, alignItems: 'center', justifyContent: 'center' },
-  position: { color: colors.textMuted, fontSize: fontSize.sm },
   artwork: { width: 44, height: 44 },
   info: { flex: 1 },
   title: { color: colors.text, fontSize: fontSize.md },
