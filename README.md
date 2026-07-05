@@ -15,6 +15,13 @@
   <a href="https://discord.gg/hpDfszr8r"><img src="https://img.shields.io/badge/discord-join-%235865F2?logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
+## Why Resonus
+
+I built Resonus because I couldn't find an Android player that felt the way I
+wanted. I have my own music on a self-hosted server, and every app I tried was
+either dated, cluttered, or missing the small things that make listening nice.
+So I made the one I wanted to use.
+
 ## Download
 
 Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/releases/latest) page and install it on your Android device.
