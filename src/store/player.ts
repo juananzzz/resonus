@@ -1,14 +1,18 @@
 /**
  * Estado y control de reproducción sobre **expo-audio**.
  *
- * La cola vive en JS (este store). Un único `AudioPlayer` de expo-audio
- * decodifica; al cambiar de pista se hace `replace()` de la fuente. La
- * notificación / pantalla de bloqueo la da el propio expo-audio vía
- * `setActiveForLockScreen`. El avance automático de pista se detecta con el
- * evento `playbackStatusUpdate` (`didJustFinish`).
+ * La cola vive en JS (este store). Decodifican dos `AudioPlayer` alternos: el
+ * "activo" suena y posee la notificación / pantalla de bloqueo
+ * (`setActiveForLockScreen`); el otro queda de reserva para el crossfade (la
+ * pista entrante arranca en él a volumen 0 y pasa a ser el activo). Sin
+ * crossfade solo trabaja uno, con `replace()` de la fuente al cambiar de
+ * pista. El avance automático se detecta con `playbackStatusUpdate`
+ * (`didJustFinish`); si hay crossfade en marcha, el cambio ya ocurrió antes.
  *
  * (Se migró desde react-native-track-player para poder tener UNA sola
- * MediaSession y así soportar Android Auto con el módulo `modules/car-auto`.)
+ * MediaSession y así soportar Android Auto con el módulo `modules/car-auto`.
+ * Android Auto no se ve afectado por el crossfade: usa su propia sesión con
+ * `JsProxyPlayer`, no la del player de expo-audio.)
  */
 import { AppState } from 'react-native';
 import {
@@ -73,21 +77,34 @@ export const SOURCE_HISTORY = '@@history';
 let sleepTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // ── Motor de audio (expo-audio) ─────────────────────────────────────────────
-let audioPlayer: AudioPlayer | null = null;
+const players: (AudioPlayer | null)[] = [null, null];
+let activeIdx = 0;
 let audioModeReady = false;
-let lockActive = false;
+/** Player que registró los controles de bloqueo (dueño de la MediaSession). */
+let lockOwner: AudioPlayer | null = null;
 
-/** Crea (una vez) el AudioPlayer y engancha el listener de estado. */
-function ensurePlayer(): AudioPlayer {
-  if (!audioPlayer) {
-    audioPlayer = createAudioPlayer(null, { updateInterval: 500 });
-    // Los listeners viven durante toda la sesión (el player es un singleton).
-    audioPlayer.addListener('playbackStatusUpdate', onStatus);
-    // Saltar pista desde la notificación / bloqueo → la cola la gestiona JS.
-    audioPlayer.addListener('remotePrevious', () => usePlayerStore.getState().previous());
-    audioPlayer.addListener('remoteNext', () => usePlayerStore.getState().next());
-  }
-  return audioPlayer;
+/** Player activo (el que suena y manda en el estado), si ya existe. */
+function activePlayer(): AudioPlayer | null {
+  return players[activeIdx];
+}
+
+/** Crea (una vez) el AudioPlayer `idx` y engancha sus listeners. */
+function ensurePlayer(idx: number): AudioPlayer {
+  const existing = players[idx];
+  if (existing) return existing;
+  const p = createAudioPlayer(null, { updateInterval: 500 });
+  // Los listeners viven durante toda la sesión (los players son singletons).
+  // Solo el player activo alimenta el estado: los eventos del que se apaga
+  // durante un crossfade (incluido su didJustFinish) se ignoran.
+  p.addListener('playbackStatusUpdate', (status) => {
+    if (activePlayer() === p) onStatus(status);
+  });
+  // Saltar pista desde la notificación / bloqueo → la cola la gestiona JS.
+  // Solo el dueño de la sesión emite estos eventos; no hay dobles saltos.
+  p.addListener('remotePrevious', () => usePlayerStore.getState().previous());
+  p.addListener('remoteNext', () => usePlayerStore.getState().next());
+  players[idx] = p;
+  return p;
 }
 
 /** Configura el modo de audio (foco exclusivo) una sola vez. */
@@ -129,22 +146,35 @@ function metadataFor(song: Song): AudioMetadata {
   };
 }
 
-/** Aplica metadatos al bloqueo (registra el control la primera vez). */
-function applyLockScreen(song: Song) {
-  const p = audioPlayer;
-  if (!p) return;
+/**
+ * Aplica metadatos al bloqueo. Si `p` no es aún el dueño de la sesión, la
+ * registra a su nombre (primera vez, o traspaso al otro player en crossfade:
+ * el servicio nativo mueve la notificación y la MediaSession al nuevo player).
+ */
+function applyLockScreen(p: AudioPlayer, song: Song) {
   const meta = metadataFor(song);
-  if (!lockActive) {
-    lockActive = true;
-    p.setActiveForLockScreen(true, meta, {
-      showSeekForward: false,
-      showSeekBackward: false,
-      showSkipPrevious: true,
-      showSkipNext: true,
-    });
-  } else {
+  if (lockOwner === p) {
     p.updateLockScreenMetadata(meta);
+    return;
   }
+  lockOwner = p;
+  p.setActiveForLockScreen(true, meta, {
+    showSeekForward: false,
+    showSeekBackward: false,
+    showSkipPrevious: true,
+    showSkipNext: true,
+  });
+}
+
+/** Retira los controles de bloqueo (cambio de perfil o salida remota). */
+function clearLockScreen() {
+  if (!lockOwner) return;
+  try {
+    lockOwner.clearLockScreenControls();
+  } catch {
+    // ignore
+  }
+  lockOwner = null;
 }
 
 // ── Salida remota (Chromecast o renderer UPnP/DLNA) ────────────────────────
@@ -214,13 +244,14 @@ function consumeQueuedOnIndexChange(next: number) {
 
 /** Carga la pista en `index` y (opcionalmente) la reproduce. */
 async function loadIndex(index: number, autoplay: boolean) {
+  cutCrossfade();
   consumeQueuedOnIndexChange(index);
   if (remoteKind()) return remoteLoadIndex(index, autoplay);
   const { queue, repeat } = usePlayerStore.getState();
   const song = queue[index];
   if (!song) return;
   await ensureAudioMode();
-  const p = ensurePlayer();
+  const p = ensurePlayer(activeIdx);
   try {
     p.replace(sourceFor(song));
     p.loop = repeat === 'one';
@@ -232,7 +263,7 @@ async function loadIndex(index: number, autoplay: boolean) {
       isBuffering: autoplay,
     });
     if (autoplay) p.play();
-    applyLockScreen(song);
+    applyLockScreen(p, song);
     onTrackChanged(song);
   } catch {
     useToast.getState().show(tg("Couldn't play the song"));
@@ -293,6 +324,118 @@ function nextIndex(manual: boolean): number | null {
   return manual ? null : null;
 }
 
+// ── Crossfade ───────────────────────────────────────────────────────────────
+// Al acercarse el final de la pista, la siguiente arranca en el player de
+// reserva a volumen 0 y ambos volúmenes se cruzan (curva de igual potencia).
+// El entrante pasa a ser el activo desde el primer instante: el estado, la
+// notificación y el scrobble cambian al empezar el fundido, como en Spotify.
+
+let fadeTimer: ReturnType<typeof setInterval> | null = null;
+/** Player saliente mientras hay un fundido en marcha. */
+let fadingOut: AudioPlayer | null = null;
+
+/**
+ * Aborta el fundido en curso, si lo hay: silencia y para el saliente y deja
+ * el activo a volumen normal. Se llama ante cualquier intervención (cambio de
+ * pista manual, seek, pausa, reset, salida remota…) para que el resto del
+ * motor opere como si no hubiera crossfade.
+ */
+function cutCrossfade() {
+  if (fadeTimer) {
+    clearInterval(fadeTimer);
+    fadeTimer = null;
+  }
+  const volume = usePlayerStore.getState().volume;
+  if (fadingOut) {
+    try {
+      fadingOut.pause();
+      fadingOut.volume = volume;
+    } catch {
+      // ignore
+    }
+    fadingOut = null;
+  }
+  const p = activePlayer();
+  if (p) p.volume = volume;
+}
+
+/** Si toca (ajuste activo y quedan ≤ N segundos), arranca el crossfade. */
+function maybeStartCrossfade(status: AudioStatus) {
+  const fadeSec = useSettings.getState().crossfadeSec;
+  if (fadeSec <= 0 || fadingOut || !status.playing) return;
+  const st = usePlayerStore.getState();
+  // Mismos casos que excluye el avance normal, más los que no tienen final
+  // predecible (radio) o donde el fundido no pinta nada (pistas muy cortas).
+  if (st.repeat === 'one' || st.sleepAtSongEnd) return;
+  const current = st.queue[st.index];
+  const duration = st.durationSec;
+  if (!current || current.url || duration < fadeSec + 5) return;
+  const remaining = duration - (status.currentTime ?? 0);
+  if (remaining <= 0 || remaining > fadeSec) return;
+  const ni = nextIndex(false);
+  if (ni == null) return;
+  const next = st.queue[ni];
+  if (!next || next.url) return;
+  startCrossfade(ni, Math.min(fadeSec, remaining));
+}
+
+function startCrossfade(index: number, fadeSec: number) {
+  const song = usePlayerStore.getState().queue[index];
+  if (!song) return;
+  const out = activePlayer();
+  const p = ensurePlayer(1 - activeIdx);
+  try {
+    p.replace(sourceFor(song));
+    p.loop = false;
+    p.volume = 0;
+    p.play();
+  } catch {
+    return; // sin crossfade: el fin de pista normal hará el cambio
+  }
+  consumeQueuedOnIndexChange(index);
+  fadingOut = out;
+  activeIdx = 1 - activeIdx;
+  usePlayerStore.setState({
+    index,
+    positionSec: 0,
+    durationSec: song.duration ?? 0,
+    isPlaying: true,
+  });
+  applyLockScreen(p, song);
+  onTrackChanged(song);
+  runFade(out, p, fadeSec);
+}
+
+/** Cruza los volúmenes durante `fadeSec` y al acabar apaga el saliente. */
+function runFade(out: AudioPlayer | null, incoming: AudioPlayer, fadeSec: number) {
+  if (fadeTimer) clearInterval(fadeTimer);
+  const t0 = Date.now();
+  fadeTimer = setInterval(() => {
+    const x = Math.min(1, (Date.now() - t0) / (fadeSec * 1000));
+    // Curva de igual potencia: la suma de ambos se percibe constante.
+    const volume = usePlayerStore.getState().volume;
+    try {
+      if (out) out.volume = volume * Math.cos((x * Math.PI) / 2);
+      incoming.volume = volume * Math.sin((x * Math.PI) / 2);
+    } catch {
+      // ignore
+    }
+    if (x >= 1) {
+      if (fadeTimer) clearInterval(fadeTimer);
+      fadeTimer = null;
+      if (out) {
+        try {
+          out.pause();
+          out.volume = volume;
+        } catch {
+          // ignore
+        }
+      }
+      if (fadingOut === out) fadingOut = null;
+    }
+  }, 200);
+}
+
 /** Listener de estado de expo-audio: progreso, play/pausa y fin de pista. */
 function onStatus(status: AudioStatus) {
   // Con salida remota (Chromecast/UPnP) el player local está en pausa y sus
@@ -316,6 +459,7 @@ function onStatus(status: AudioStatus) {
     stopPeriodicSync();
     if (prev.isPlaying) scheduleSync(); // acaba de pausar
   }
+  maybeStartCrossfade(status);
   if (status.didJustFinish) {
     if (handleSleepAtSongEnd()) return;
     const ni = nextIndex(false);
@@ -335,7 +479,8 @@ function handleSleepAtSongEnd(): boolean {
   const { sleepAtSongEnd, repeat } = usePlayerStore.getState();
   if (!sleepAtSongEnd) return false;
   usePlayerStore.setState({ sleepAtSongEnd: false, isPlaying: false });
-  audioPlayer?.pause();
+  cutCrossfade();
+  activePlayer()?.pause();
   const ni = nextIndex(false);
   if (ni != null && repeat !== 'one') void loadIndex(ni, false);
   return true;
@@ -438,15 +583,13 @@ export function initRemoteIntegration() {
     onConnected: () => {
       // Transfiere la pista actual al aparato y silencia el player local.
       const { queue, index, positionSec, isPlaying } = usePlayerStore.getState();
+      cutCrossfade();
       try {
-        audioPlayer?.pause();
-        if (lockActive) {
-          audioPlayer?.clearLockScreenControls();
-          lockActive = false;
-        }
+        activePlayer()?.pause();
       } catch {
         // ignore
       }
+      clearLockScreen();
       if (queue[index]) void remoteLoadIndex(index, isPlaying, positionSec);
     },
     onDisconnected: (lastPositionSec) => {
@@ -455,7 +598,7 @@ export function initRemoteIntegration() {
       if (!queue[index]) return;
       void (async () => {
         await loadIndex(index, false);
-        if (lastPositionSec > 0) audioPlayer?.seekTo(lastPositionSec);
+        if (lastPositionSec > 0) activePlayer()?.seekTo(lastPositionSec);
         usePlayerStore.setState({ positionSec: lastPositionSec, isPlaying: false });
       })();
     },
@@ -634,9 +777,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       }
       return;
     }
-    const p = audioPlayer;
+    const p = activePlayer();
     if (!p) return;
     if (get().isPlaying) {
+      // Pausar en mitad de un fundido corta el saliente: al reanudar debe
+      // sonar solo la pista actual, a volumen normal.
+      cutCrossfade();
       p.pause();
       set({ isPlaying: false });
     } else {
@@ -661,16 +807,22 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   seekTo: (sec) => {
+    cutCrossfade();
     if (remoteKind()) remoteSeek(sec);
-    else audioPlayer?.seekTo(sec);
+    else activePlayer()?.seekTo(sec);
     set({ positionSec: sec });
   },
 
   setVolume: (v) => {
     const volume = Math.max(0, Math.min(1, v));
-    if (remoteKind()) remoteSetVolume(volume);
-    else if (audioPlayer) audioPlayer.volume = volume;
     set({ volume });
+    if (remoteKind()) remoteSetVolume(volume);
+    else if (!fadingOut) {
+      // En mitad de un fundido no se pisa la rampa: cada paso ya lee el
+      // volumen del estado y converge solo al nuevo valor.
+      const p = activePlayer();
+      if (p) p.volume = volume;
+    }
   },
 
   jumpTo: (index) => {
@@ -770,14 +922,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const order: RepeatMode[] = ['off', 'all', 'one'];
     const repeat = order[(order.indexOf(get().repeat) + 1) % order.length];
     set({ repeat });
-    if (audioPlayer) audioPlayer.loop = repeat === 'one';
+    const p = activePlayer();
+    if (p) p.loop = repeat === 'one';
   },
 
   setSleepTimer: (minutes) => {
     if (sleepTimeout) clearTimeout(sleepTimeout);
     sleepTimeout = setTimeout(() => {
+      cutCrossfade();
       if (remoteKind()) remotePause();
-      else audioPlayer?.pause();
+      else activePlayer()?.pause();
       sleepTimeout = null;
       set({ isPlaying: false, sleepTimerMinutes: null });
     }, minutes * 60_000);
@@ -825,7 +979,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     });
     // Cargamos la pista (sin reproducir) y dejamos la posición lista.
     await loadIndex(index, false);
-    if (positionSec > 0) audioPlayer?.seekTo(positionSec);
+    if (positionSec > 0) activePlayer()?.seekTo(positionSec);
     usePlayerStore.setState({ positionSec, isPlaying: false });
   },
 
@@ -858,7 +1012,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       sourceHref: null,
     });
     await loadIndex(index, false);
-    if (positionSec > 0) audioPlayer?.seekTo(positionSec);
+    if (positionSec > 0) activePlayer()?.seekTo(positionSec);
     usePlayerStore.setState({ positionSec, isPlaying: false });
   },
 
@@ -881,15 +1035,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     // reanudar en local: la cola va a desaparecer igualmente.
     if (remoteKind() === 'cast') void castStop();
     else if (remoteKind() === 'upnp') void upnpDisconnect(true);
+    cutCrossfade();
     try {
-      audioPlayer?.pause();
-      if (lockActive) {
-        audioPlayer?.clearLockScreenControls();
-        lockActive = false;
-      }
+      activePlayer()?.pause();
     } catch {
       // ignore
     }
+    clearLockScreen();
     set({
       queue: [],
       index: 0,

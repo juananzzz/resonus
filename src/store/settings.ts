@@ -41,6 +41,8 @@ interface SettingsState {
   showSongDuration: boolean;
   /** Al acabar la cola, seguir con canciones parecidas (getSimilarSongs2). */
   autoplaySimilar: boolean;
+  /** Segundos de fundido cruzado entre canciones (0 = desactivado). */
+  crossfadeSec: number;
   /**
    * Si una canción no tiene letra (ni el servidor, ni .lrc, ni USLT),
    * pedirla a LRCLIB. Desactivado por defecto: manda artista y título a un
@@ -63,6 +65,7 @@ interface SettingsState {
   setShowListArtwork: (value: boolean) => void;
   setShowSongDuration: (value: boolean) => void;
   setAutoplaySimilar: (value: boolean) => void;
+  setCrossfadeSec: (value: number) => void;
   setLyricsOnlineFallback: (value: boolean) => void;
   setShowArtistPhoto: (value: boolean) => void;
   setPlayerColorBackground: (value: boolean) => void;
@@ -88,6 +91,7 @@ function snapshot(get: () => SettingsState) {
     showListArtwork: s.showListArtwork,
     showSongDuration: s.showSongDuration,
     autoplaySimilar: s.autoplaySimilar,
+    crossfadeSec: s.crossfadeSec,
     lyricsOnlineFallback: s.lyricsOnlineFallback,
     showArtistPhoto: s.showArtistPhoto,
     playerColorBackground: s.playerColorBackground,
@@ -106,6 +110,7 @@ const DEFAULTS = {
   showListArtwork: true,
   showSongDuration: true,
   autoplaySimilar: true,
+  crossfadeSec: 0,
   lyricsOnlineFallback: false,
   showArtistPhoto: true,
   playerColorBackground: true,
@@ -149,6 +154,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
 
   setAutoplaySimilar: (autoplaySimilar) => {
     set({ autoplaySimilar });
+    persist(snapshot(get));
+  },
+
+  setCrossfadeSec: (crossfadeSec) => {
+    set({ crossfadeSec });
     persist(snapshot(get));
   },
 
@@ -200,6 +210,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           showListArtwork: boolean;
           showSongDuration: boolean;
           autoplaySimilar: boolean;
+          crossfadeSec: number;
           lyricsOnlineFallback: boolean;
           showArtistPhoto: boolean;
           playerColorBackground: boolean;
@@ -231,6 +242,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.autoplaySimilar === 'boolean') {
           set({ autoplaySimilar: parsed.autoplaySimilar });
+        }
+        if (typeof parsed.crossfadeSec === 'number' && parsed.crossfadeSec >= 0) {
+          set({ crossfadeSec: parsed.crossfadeSec });
         }
         if (typeof parsed.lyricsOnlineFallback === 'boolean') {
           set({ lyricsOnlineFallback: parsed.lyricsOnlineFallback });

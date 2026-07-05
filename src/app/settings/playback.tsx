@@ -1,7 +1,7 @@
 /** Ajustes › Calidad y reproducción: bitrate de streaming/descarga y autoplay. */
 import { ScrollView } from 'react-native';
 
-import { SelectList, SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
+import { SelectList, SettingsPage, settingsStyles, SliderRow, SwitchList } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { BITRATE_OPTIONS, useSettings } from '@/store/settings';
 
@@ -13,6 +13,8 @@ export default function PlaybackSettings() {
   const setDownloadBitRate = useSettings((s) => s.setDownloadBitRate);
   const autoplaySimilar = useSettings((s) => s.autoplaySimilar);
   const setAutoplaySimilar = useSettings((s) => s.setAutoplaySimilar);
+  const crossfadeSec = useSettings((s) => s.crossfadeSec);
+  const setCrossfadeSec = useSettings((s) => s.setCrossfadeSec);
   const lyricsOnlineFallback = useSettings((s) => s.lyricsOnlineFallback);
   const setLyricsOnlineFallback = useSettings((s) => s.setLyricsOnlineFallback);
 
@@ -33,6 +35,14 @@ export default function PlaybackSettings() {
           options={bitrateOptions}
           value={downloadBitRate}
           onChange={setDownloadBitRate}
+        />
+        <SliderRow
+          label={t('Crossfade')}
+          description={t('Songs blend into each other when one ends.')}
+          value={crossfadeSec}
+          max={12}
+          formatValue={(v) => (v === 0 ? t('No') : `${v} s`)}
+          onChange={setCrossfadeSec}
         />
         <SwitchList
           options={[

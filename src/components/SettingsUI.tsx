@@ -5,6 +5,7 @@
  * abren un menú flotante compacto.
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Slider from '@react-native-community/slider';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Dimensions, Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
@@ -224,6 +225,61 @@ export function SelectList<T extends string | number | boolean>({
   );
 }
 
+/**
+ * Fila con slider debajo (estilo crossfade de Spotify): etiqueta y valor
+ * actual arriba, barra deslizante debajo. El valor mostrado sigue al dedo
+ * mientras se arrastra; el cambio se aplica al soltar.
+ */
+export function SliderRow({
+  label,
+  description,
+  value,
+  min = 0,
+  max,
+  step = 1,
+  formatValue,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  value: number;
+  min?: number;
+  max: number;
+  step?: number;
+  /** Texto del valor actual (llega ya traducido desde quien lo usa). */
+  formatValue: (value: number) => string;
+  onChange: (value: number) => void;
+}) {
+  const [live, setLive] = useState<number | null>(null);
+  const shown = live ?? value;
+  return (
+    <View style={settingsStyles.cardBox}>
+      <View style={[settingsStyles.row, { paddingBottom: 0 }]}>
+        <View style={settingsStyles.rowLabelBox}>
+          <Text style={settingsStyles.rowLabel}>{label}</Text>
+          {description ? <Text style={settingsStyles.rowDescription}>{description}</Text> : null}
+        </View>
+        <Text style={settingsStyles.rowValue}>{formatValue(shown)}</Text>
+      </View>
+      <Slider
+        style={settingsStyles.slider}
+        minimumValue={min}
+        maximumValue={max}
+        step={step}
+        value={value}
+        onValueChange={setLive}
+        onSlidingComplete={(v) => {
+          setLive(null);
+          onChange(v);
+        }}
+        minimumTrackTintColor={colors.accent}
+        maximumTrackTintColor={colors.border}
+        thumbTintColor={colors.text}
+      />
+    </View>
+  );
+}
+
 /** Grupo de interruptores, uno por fila, con su ayuda dentro de la fila. */
 export function SwitchList({
   options,
@@ -307,6 +363,12 @@ export const settingsStyles = StyleSheet.create({
   rowLabelBox: { flex: 1 },
   rowDescription: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
   rowValue: { color: colors.textSecondary, fontSize: fontSize.sm },
+  slider: {
+    marginHorizontal: spacing.md,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+    height: 32,
+  },
   // Menú flotante anclado a la derecha (estilo dropdown de Android).
   menu: {
     position: 'absolute',
