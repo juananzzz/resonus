@@ -96,6 +96,11 @@ export function SyncedLyricsView({
   let current = -1;
   for (let i = 0; i < lines.length && (lines[i].start ?? 0) <= posMs; i++) current = i;
 
+  // A pantalla completa anclamos la línea activa cerca del centro (y rellenamos
+  // arriba/abajo) para que al empezar la canción la letra arranque centrada y
+  // legible, no pegada al borde superior. En la tarjeta pequeña, más arriba.
+  const anchor = large ? 0.42 : 0.3;
+
   const onMeasure = useCallback((index: number, y: number) => {
     offsets.current[index] = y;
   }, []);
@@ -104,8 +109,8 @@ export function SyncedLyricsView({
     if (current < 0 || viewH === 0 || userScroll.current) return;
     const y = offsets.current[current];
     if (y === undefined) return;
-    scrollRef.current?.scrollTo({ y: Math.max(0, y - viewH * 0.3), animated: true });
-  }, [current, viewH]);
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - viewH * anchor), animated: true });
+  }, [current, viewH, anchor]);
 
   useEffect(
     () => () => {
@@ -131,7 +136,12 @@ export function SyncedLyricsView({
             userScroll.current = false;
           }, 3000);
         }}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          // Relleno para que la primera/última línea puedan quedar en el ancla
+          // (centro) en vez de tope arriba/abajo. Solo a pantalla completa.
+          large && viewH > 0 ? { paddingTop: viewH * anchor, paddingBottom: viewH * (1 - anchor) } : null,
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {lines.map((line, i) => (
