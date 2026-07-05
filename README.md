@@ -34,13 +34,12 @@ Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/rele
 <p align="center">
   <img src="./assets/screenshots/1.png" width="200" />
   <img src="./assets/screenshots/2.png" width="200" />
-  <img src="./assets/screenshots/4.png" width="200" />
   <img src="./assets/screenshots/3.png" width="200" />
+  <img src="./assets/screenshots/4.png" width="200" />
 </p>
 
 ## Roadmap
 
-- [ ] Equalizer
 - [ ] Scrobbling & listening stats
 - [ ] iOS support
 
