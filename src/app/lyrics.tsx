@@ -27,6 +27,8 @@ export default function LyricsScreen() {
   const durationSec = usePlayerStore((s) => s.durationSec);
   const toggle = usePlayerStore((s) => s.toggle);
   const seekTo = usePlayerStore((s) => s.seekTo);
+  const previous = usePlayerStore((s) => s.previous);
+  const next = usePlayerStore((s) => s.next);
   const { data, isLoading } = useLyrics(song ?? undefined);
   const bg = useDominantColor(coverArtUrl(song?.coverArt ?? song?.albumId, 600));
   const duration = durationSec || song?.duration || 0;
@@ -54,7 +56,7 @@ export default function LyricsScreen() {
         {isLoading ? (
           <ActivityIndicator style={{ marginTop: spacing.xxl }} color={colors.text} />
         ) : data?.synced ? (
-          <SyncedLyricsView lines={data.lines} large />
+          <SyncedLyricsView lines={data.lines} large fadeColor={bg} />
         ) : data ? (
           <ScrollView contentContainerStyle={styles.plainContent} showsVerticalScrollIndicator={false}>
             <Text style={[lyricsStyles.line, lyricsStyles.lineLarge]}>
@@ -81,19 +83,37 @@ export default function LyricsScreen() {
           <Text style={styles.time}>{formatDuration(positionSec)}</Text>
           <Text style={styles.time}>{formatDuration(duration)}</Text>
         </View>
-        <Pressable
-          style={styles.playButton}
-          accessibilityRole="button"
-          accessibilityLabel={isPlaying ? t('Pause') : t('Play')}
-          onPress={toggle}
-        >
-          <Ionicons
-            name={isPlaying ? 'pause' : 'play'}
-            size={30}
-            color="#101010"
-            style={!isPlaying && { marginLeft: 3 }}
-          />
-        </Pressable>
+        <View style={styles.buttons}>
+          <Pressable
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={t('Previous')}
+            onPress={previous}
+          >
+            <Ionicons name="play-skip-back" size={32} color={colors.text} />
+          </Pressable>
+          <Pressable
+            style={styles.playButton}
+            accessibilityRole="button"
+            accessibilityLabel={isPlaying ? t('Pause') : t('Play')}
+            onPress={toggle}
+          >
+            <Ionicons
+              name={isPlaying ? 'pause' : 'play'}
+              size={30}
+              color="#101010"
+              style={!isPlaying && { marginLeft: 3 }}
+            />
+          </Pressable>
+          <Pressable
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={t('Next')}
+            onPress={next}
+          >
+            <Ionicons name="play-skip-forward" size={32} color={colors.text} />
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -129,14 +149,19 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   time: { color: 'rgba(255,255,255,0.7)', fontSize: fontSize.xs },
+  buttons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xxl,
+    marginTop: spacing.sm,
+  },
   playButton: {
-    alignSelf: 'center',
     width: 60,
     height: 60,
     borderRadius: 30,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.sm,
   },
 });
