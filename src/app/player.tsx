@@ -38,7 +38,9 @@ import { OutputSheet } from '@/components/OutputSheet';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { useLyrics } from '@/hooks/useLyrics';
+import { artistTargets } from '@/lib/artistNav';
 import { formatDuration } from '@/lib/format';
+import { useArtistPicker } from '@/store/artistPicker';
 import { useAuthStore } from '@/store/auth';
 import { useCast } from '@/store/cast';
 import { currentSong, SOURCE_FAVORITES, SOURCE_HISTORY, usePlayerStore } from '@/store/player';
@@ -118,6 +120,7 @@ export default function PlayerScreen() {
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
   const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
   const openMenu = useSongMenu((s) => s.open);
+  const openArtistPicker = useArtistPicker((s) => s.open);
   const t = useT();
   const showQuality = useSettings((s) => s.showAudioQuality);
   const showQualityBadge = showQuality === 'player' || showQuality === 'everywhere';
@@ -372,21 +375,31 @@ export default function PlayerScreen() {
                   {song.title}
                 </Text>
               )}
-              {song.artistId ? (
-                <Pressable
-                  style={styles.tapText}
-                  hitSlop={6}
-                  onPress={() => router.push(`/artist/${song.artistId}`)}
-                >
-                  <Text style={styles.artist} numberOfLines={1}>
-                    {song.artist ?? t('Unknown')}
-                  </Text>
-                </Pressable>
-              ) : (
-                <Text style={styles.artist} numberOfLines={1}>
-                  {song.artist ?? t('Unknown')}
-                </Text>
-              )}
+              {(() => {
+                const targets = artistTargets(song);
+                if (targets.length === 0) {
+                  return (
+                    <Text style={styles.artist} numberOfLines={1}>
+                      {song.artist ?? t('Unknown')}
+                    </Text>
+                  );
+                }
+                return (
+                  <Pressable
+                    style={styles.tapText}
+                    hitSlop={6}
+                    onPress={() =>
+                      targets.length > 1
+                        ? openArtistPicker(targets)
+                        : router.push(`/artist/${targets[0].id}`)
+                    }
+                  >
+                    <Text style={styles.artist} numberOfLines={1}>
+                      {song.artist ?? t('Unknown')}
+                    </Text>
+                  </Pressable>
+                );
+              })()}
             </View>
             {(isLocal && !offline) ? null : <FavoriteButton id={song.id} starred={favorited} size={26} />}
           </View>

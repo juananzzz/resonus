@@ -216,6 +216,7 @@ function toSong(it: JfItem): Song {
     artist: it.Artists?.length ? it.Artists.join(', ') : it.AlbumArtist,
     albumId: it.AlbumId,
     artistId: it.ArtistItems?.[0]?.Id ?? it.AlbumArtists?.[0]?.Id,
+    artists: (it.ArtistItems ?? it.AlbumArtists)?.map((a) => ({ id: a.Id, name: a.Name ?? '' })),
     // La carátula de una canción suele ser la de su álbum; la propia solo si
     // el fichero trae imagen embebida.
     coverArt:
@@ -241,6 +242,7 @@ function toAlbum(it: JfItem): Album {
     name: it.Name ?? '',
     artist: it.AlbumArtist ?? it.Artists?.join(', '),
     artistId: it.AlbumArtists?.[0]?.Id,
+    artists: it.AlbumArtists?.map((a) => ({ id: a.Id, name: a.Name ?? '' })),
     coverArt: it.ImageTags?.Primary ? it.Id : undefined,
     songCount: it.ChildCount,
     year: it.ProductionYear,

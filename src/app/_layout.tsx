@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { ArtistPickerSheet } from '@/components/ArtistPickerSheet';
 import { CarAutoSync } from '@/components/CarAutoSync';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalMiniPlayer } from '@/components/GlobalMiniPlayer';
@@ -132,6 +133,7 @@ export default function RootLayout() {
             </Stack>
             {auth || offline ? <GlobalMiniPlayer /> : null}
             {auth || offline ? <SongMenuSheet /> : null}
+            {auth || offline ? <ArtistPickerSheet /> : null}
             {auth || offline ? <MediaMenuSheet /> : null}
             {auth || offline ? <CarAutoSync /> : null}
             <Toast />

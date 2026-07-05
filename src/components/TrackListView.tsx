@@ -24,7 +24,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type Song, type StarType } from '@/api/subsonic';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useT } from '@/i18n';
+import { artistTargets } from '@/lib/artistNav';
 import { listPerf } from '@/lib/listPerf';
+import { useArtistPicker } from '@/store/artistPicker';
 import { usePlayerStore } from '@/store/player';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 import { Cover } from './Cover';
@@ -39,6 +41,8 @@ interface Props {
   subtitle?: string;
   /** Si se indica, el subtítulo lleva al artista al pulsarlo. */
   artistId?: string;
+  /** Artistas del álbum; con varios, el subtítulo abre el selector. */
+  artists?: { id: string; name: string }[];
   /** Foto circular del artista junto al subtítulo (estilo Spotify). */
   artistImageUri?: string;
   /** Línea de metadatos (p. ej. "Álbum · 2021 · 12 canciones · 48 min"). */
@@ -84,6 +88,7 @@ export function TrackListView({
   title,
   subtitle,
   artistId,
+  artists,
   artistImageUri,
   meta,
   coverUri,
@@ -111,6 +116,14 @@ export function TrackListView({
   const headerColor = accentColor ?? dominant;
   const shuffle = usePlayerStore((s) => s.shuffle);
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
+  const openArtistPicker = useArtistPicker((s) => s.open);
+  const subtitleTargets = artistTargets({ artistId, artists });
+  const onSubtitlePress =
+    subtitleTargets.length > 1
+      ? () => openArtistPicker(subtitleTargets)
+      : subtitleTargets.length === 1
+        ? () => router.push(`/artist/${subtitleTargets[0].id}`)
+        : undefined;
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -180,12 +193,8 @@ export function TrackListView({
               {title}
             </Text>
             {subtitle ? (
-              artistId ? (
-                <Pressable
-                  hitSlop={6}
-                  style={styles.subtitleRow}
-                  onPress={() => router.push(`/artist/${artistId}`)}
-                >
+              onSubtitlePress ? (
+                <Pressable hitSlop={6} style={styles.subtitleRow} onPress={onSubtitlePress}>
                   {artistImageUri ? (
                     <View style={styles.artistPhoto}>
                       <Cover uri={artistImageUri} size={24} />

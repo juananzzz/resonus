@@ -202,6 +202,8 @@ function toLocalSong(song: Song, fileUri: string): Song {
     localUri: fileUri,
     // Id de artista local (por nombre) para fusionar con los artistas del escaneo.
     artistId: normKey(song.artist || 'Artista desconocido'),
+    // Los ids de servidor no valen offline: re-clavamos cada artista por nombre.
+    artists: song.artists?.map((a) => ({ id: normKey(a.name), name: a.name })),
     coverArt: song.albumId,
     addedAt: Date.now(),
     // El favorito de servidor no aplica al perfil local (usa favoritos locales).
@@ -213,6 +215,7 @@ function toLocalAlbum(album: Album, coverUri?: string): DlAlbum {
   return {
     ...album,
     artistId: normKey(album.artist || 'Artista desconocido'),
+    artists: album.artists?.map((a) => ({ id: normKey(a.name), name: a.name })),
     coverArt: album.id,
     coverUri,
     addedAt: Date.now(),

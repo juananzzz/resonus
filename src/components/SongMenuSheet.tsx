@@ -24,7 +24,9 @@ import {
   removeFromPlaylist,
   star,
 } from '@/api/data';
+import { artistTargets } from '@/lib/artistNav';
 import { normKey } from '@/lib/localLibrary';
+import { useArtistPicker } from '@/store/artistPicker';
 import { useAuthStore } from '@/store/auth';
 import { useDownloads } from '@/store/downloads';
 import { usePlayerStore } from '@/store/player';
@@ -80,6 +82,7 @@ export function SongMenuSheet() {
   const downloaded = useDownloads((s) => !!(song && s.files[song.id]));
   const downloadSong = useDownloads((s) => s.downloadSong);
   const deleteDownloads = useDownloads((s) => s.deleteSongs);
+  const openArtistPicker = useArtistPicker((s) => s.open);
 
   const [mode, setMode] = useState<'actions' | 'playlists' | 'sleep'>('actions');
   const [creating, setCreating] = useState(false);
@@ -268,7 +271,17 @@ export function SongMenuSheet() {
                 icon="person"
                 label={t('Go to artist')}
                 onPress={() => {
-                  const id = song.artistId ?? (song.artist ? normKey(song.artist) : '');
+                  const targets = artistTargets(song);
+                  if (targets.length > 1) {
+                    // Cerramos la hoja y, tras su animación de salida, abrimos el
+                    // selector (evita dos Modals visibles a la vez).
+                    dismiss(() => {
+                      closeNow();
+                      openArtistPicker(targets);
+                    });
+                    return;
+                  }
+                  const id = targets[0]?.id ?? (song.artist ? normKey(song.artist) : '');
                   if (id) go(`/artist/${id}`);
                 }}
               />

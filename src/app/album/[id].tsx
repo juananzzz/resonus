@@ -71,6 +71,7 @@ export default function AlbumScreen() {
         title={data.album.name}
         subtitle={data.album.artist}
         artistId={data.album.artistId}
+        artists={data.album.artists}
         artistImageUri={
           showArtistPhoto && data.album.artistId
             ? coverArtUrl(data.album.artistId, 100)

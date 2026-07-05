@@ -47,6 +47,11 @@ export interface Song {
   artist?: string;
   albumId?: string;
   artistId?: string;
+  /**
+   * Lista de artistas de la canción (extensión OpenSubsonic; Navidrome la
+   * envía). Permite elegir a qué artista ir cuando hay colaboraciones.
+   */
+  artists?: { id: string; name: string }[];
   coverArt?: string;
   duration?: number;
   track?: number;
@@ -79,6 +84,8 @@ export interface Album {
   name: string;
   artist?: string;
   artistId?: string;
+  /** Lista de artistas del álbum (extensión OpenSubsonic; Navidrome la envía). */
+  artists?: { id: string; name: string }[];
   coverArt?: string;
   songCount?: number;
   year?: number;
