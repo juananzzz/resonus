@@ -89,6 +89,10 @@ export function SyncedLyricsView({
   const offsets = useRef<number[]>([]);
   const userScroll = useRef(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // El primer posicionamiento salta directo a la línea que suena (sin animar),
+  // para no hacer un scroll rápido y feo desde arriba al abrir. A partir de ahí
+  // el avance de una línea a la siguiente sí se anima.
+  const didInitialScroll = useRef(false);
   const [viewH, setViewH] = useState(0);
 
   // Pequeño adelanto para que el resalte no llegue tarde al oído.
@@ -109,7 +113,11 @@ export function SyncedLyricsView({
     if (current < 0 || viewH === 0 || userScroll.current) return;
     const y = offsets.current[current];
     if (y === undefined) return;
-    scrollRef.current?.scrollTo({ y: Math.max(0, y - viewH * anchor), animated: true });
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, y - viewH * anchor),
+      animated: didInitialScroll.current,
+    });
+    didInitialScroll.current = true;
   }, [current, viewH, anchor]);
 
   useEffect(
