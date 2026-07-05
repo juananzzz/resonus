@@ -230,6 +230,17 @@ export default function PlayerScreen() {
         offset.value = withSpring(target, { damping: 20, stiffness: 200 });
       }
     });
+  // Tocar la carátula abre la letra (si la hay). Convive con el swipe: el tap
+  // solo gana si no hubo arrastre. `hasLyrics` es un booleano para poder leerlo
+  // desde el hilo de UI del gesto.
+  const hasLyrics = !!lyrics;
+  const openLyrics = () => router.push('/lyrics');
+  const coverTap = Gesture.Tap()
+    .maxDistance(10)
+    .onEnd((_e, success) => {
+      if (success && hasLyrics) runOnJS(openLyrics)();
+    });
+  const coverGesture = Gesture.Race(coverPan, coverTap);
   const paneStyles = [usePaneStyle(offset, 0), usePaneStyle(offset, 1), usePaneStyle(offset, 2)];
   // Qué canción (actual, siguiente o anterior) toca en cada panel según los
   // avances consumados; misma fórmula de reciclado que la posición en UI.
@@ -332,7 +343,7 @@ export default function PlayerScreen() {
         </View>
 
         <View style={styles.coverWrap}>
-          <GestureDetector gesture={coverPan}>
+          <GestureDetector gesture={coverGesture}>
             {/* Carrusel reciclado: la carátula actual centrada y las vecinas a
                 una pantalla, entrando ya al arrastrar. Sin fundido (transition
                 0): el contenido de un panel solo cambia fuera de pantalla y un
