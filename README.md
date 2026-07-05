@@ -40,7 +40,7 @@ Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/rele
 
 ## Roadmap
 
-- [ ] Equalizer & crossfade
+- [ ] Equalizer
 - [ ] Scrobbling & listening stats
 - [ ] iOS support
 
