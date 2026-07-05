@@ -23,6 +23,7 @@ import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import { GenreCard } from '@/components/GenreCard';
+import { GenreGridSkeleton } from '@/components/GenreGridSkeleton';
 import { Message } from '@/components/Message';
 import { TrackRow } from '@/components/TrackRow';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -58,7 +59,7 @@ export default function SearchScreen() {
   });
 
   // Géneros para "Explorar todo" (solo servidor) cuando no hay búsqueda activa.
-  const { data: genres } = useQuery({
+  const { data: genres, isLoading: genresLoading } = useQuery({
     queryKey: ['genres'],
     queryFn: () => getGenres(auth!),
     enabled: !!auth,
@@ -82,6 +83,7 @@ export default function SearchScreen() {
   const isEmpty = query.trim().length === 0;
   const showRecent = focused && isEmpty && recent.length > 0;
   const showBrowse = isEmpty && !showRecent && !!genres && genres.length > 0;
+  const showBrowseSkeleton = isEmpty && !showRecent && !!auth && genresLoading;
 
   /** Subtítulo de un reciente: tipo (+ artista en álbumes/canciones). */
   const recentLabel = (item: RecentItem): string => {
@@ -164,6 +166,11 @@ export default function SearchScreen() {
                 <GenreCard key={g.value} name={g.value} width={GENRE_W} />
               ))}
             </View>
+          </View>
+        ) : showBrowseSkeleton ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('Browse all')}</Text>
+            <GenreGridSkeleton width={GENRE_W} />
           </View>
         ) : null}
 
