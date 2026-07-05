@@ -26,12 +26,11 @@ export default function SettingsScreen() {
     ? t('Music on your device')
     : auth?.serverUrl.replace(/^https?:\/\//, '') ?? '';
 
-  // Reproducción es todo de servidor (bitrates, autoplay); en offline no pinta
-  // nada. "Biblioteca" pasa a ser la música local.
+  // En offline, Reproducción también aparece: la propia pantalla oculta lo
+  // que es de servidor (bitrates, autoplay) y deja lo que aplica en local
+  // (crossfade, letras online). "Biblioteca" pasa a ser la música local.
   const sections: { key: string; title: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    ...(offline
-      ? []
-      : [{ key: 'playback', title: 'Quality & playback', icon: 'musical-notes-outline' as const }]),
+    { key: 'playback', title: 'Quality & playback', icon: 'musical-notes-outline' as const },
     {
       key: 'library',
       title: offline ? 'Local music' : 'Library',

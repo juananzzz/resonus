@@ -1,12 +1,18 @@
-/** Ajustes › Calidad y reproducción: bitrate de streaming/descarga y autoplay. */
+/**
+ * Ajustes › Calidad y reproducción: bitrate de streaming/descarga, crossfade,
+ * autoplay y letras online. En modo offline solo se muestran los ajustes que
+ * aplican en local (crossfade y letras online); el resto es de servidor.
+ */
 import { ScrollView } from 'react-native';
 
 import { SelectList, SettingsPage, settingsStyles, SliderRow, SwitchList } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
+import { useAuthStore } from '@/store/auth';
 import { BITRATE_OPTIONS, useSettings } from '@/store/settings';
 
 export default function PlaybackSettings() {
   const t = useT();
+  const offline = useAuthStore((s) => s.offline);
   const maxBitRate = useSettings((s) => s.maxBitRate);
   const setMaxBitRate = useSettings((s) => s.setMaxBitRate);
   const downloadBitRate = useSettings((s) => s.downloadBitRate);
@@ -23,19 +29,23 @@ export default function PlaybackSettings() {
   return (
     <SettingsPage title={t('Quality & playback')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
-        <SelectList
-          label={t('Streaming quality')}
-          description={t('“Original” uses the highest quality; a lower bitrate saves data.')}
-          options={bitrateOptions}
-          value={maxBitRate}
-          onChange={setMaxBitRate}
-        />
-        <SelectList
-          label={t('Download quality')}
-          options={bitrateOptions}
-          value={downloadBitRate}
-          onChange={setDownloadBitRate}
-        />
+        {offline ? null : (
+          <>
+            <SelectList
+              label={t('Streaming quality')}
+              description={t('“Original” uses the highest quality; a lower bitrate saves data.')}
+              options={bitrateOptions}
+              value={maxBitRate}
+              onChange={setMaxBitRate}
+            />
+            <SelectList
+              label={t('Download quality')}
+              options={bitrateOptions}
+              value={downloadBitRate}
+              onChange={setDownloadBitRate}
+            />
+          </>
+        )}
         <SliderRow
           label={t('Crossfade')}
           description={t('Songs blend into each other when one ends.')}
@@ -46,12 +56,16 @@ export default function PlaybackSettings() {
         />
         <SwitchList
           options={[
-            {
-              label: t('Autoplay'),
-              description: t('Keep playing similar songs when your queue ends.'),
-              value: autoplaySimilar,
-              onChange: setAutoplaySimilar,
-            },
+            ...(offline
+              ? []
+              : [
+                  {
+                    label: t('Autoplay'),
+                    description: t('Keep playing similar songs when your queue ends.'),
+                    value: autoplaySimilar,
+                    onChange: setAutoplaySimilar,
+                  },
+                ]),
             {
               label: t('Find lyrics online'),
               description: t(
