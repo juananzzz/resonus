@@ -28,7 +28,10 @@ import { Cover } from './Cover';
 import { FavoriteButton } from './FavoriteButton';
 
 const SCREEN_W = Dimensions.get('window').width;
-const DISMISS_THRESHOLD = SCREEN_W * 0.35;
+const SCREEN_H = Dimensions.get('window').height;
+// Umbrales de gesto: horizontal para cambiar de pista, vertical para descartar.
+const SWIPE_X = SCREEN_W * 0.25;
+const DISMISS_Y = 80;
 
 export function MiniPlayer() {
   const router = useRouter();
@@ -38,36 +41,61 @@ export function MiniPlayer() {
   const positionSec = usePlayerStore((s) => s.positionSec);
   const durationSec = usePlayerStore((s) => s.durationSec);
   const toggle = usePlayerStore((s) => s.toggle);
+  const next = usePlayerStore((s) => s.next);
+  const previous = usePlayerStore((s) => s.previous);
   const reset = usePlayerStore((s) => s.reset);
   const t = useT();
 
-  // Deslizar el mini-reproductor hacia la derecha lo descarta (para y limpia).
+  // Gestos del mini-reproductor: arrastrar hacia la derecha → siguiente, hacia
+  // la izquierda → anterior, hacia abajo → descartar (para y limpia). El pan se
+  // bloquea al eje dominante para que no vaya en diagonal.
   const translateX = useSharedValue(0);
-  const dismiss = Gesture.Pan()
-    .activeOffsetX(20)
-    .failOffsetY([-12, 12])
+  const translateY = useSharedValue(0);
+  const pan = Gesture.Pan()
+    .minDistance(10)
     .onUpdate((e) => {
-      translateX.value = Math.max(0, e.translationX);
+      if (Math.abs(e.translationX) > Math.abs(e.translationY)) {
+        translateX.value = e.translationX;
+        translateY.value = 0;
+      } else {
+        translateY.value = Math.max(0, e.translationY);
+        translateX.value = 0;
+      }
     })
     .onEnd((e) => {
-      if (e.translationX > DISMISS_THRESHOLD || e.velocityX > 800) {
-        translateX.value = withTiming(SCREEN_W, { duration: 200 }, (finished) => {
+      const horizontal = Math.abs(e.translationX) > Math.abs(e.translationY);
+      if (horizontal) {
+        if (e.translationX > SWIPE_X || e.velocityX > 800) runOnJS(next)();
+        else if (e.translationX < -SWIPE_X || e.velocityX < -800) runOnJS(previous)();
+        translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
+        translateY.value = 0;
+      } else if (e.translationY > DISMISS_Y || e.velocityY > 800) {
+        translateY.value = withTiming(SCREEN_H, { duration: 220 }, (finished) => {
           if (finished) runOnJS(reset)();
         });
       } else {
         translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
+        translateY.value = withSpring(0, { damping: 20, stiffness: 200 });
       }
     });
+  // La tarjeta entera solo se mueve (y desvanece) al descartar hacia abajo.
   const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: interpolate(translateY.value, [0, SCREEN_W * 0.6], [1, 0], Extrapolation.CLAMP),
+  }));
+  // En horizontal la barra se queda fija: solo se desplazan/atenúan los detalles
+  // de la canción, para que se lea como "cambiar de pista", no como descartar.
+  const detailsStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
-    opacity: interpolate(translateX.value, [0, SCREEN_W * 0.6], [1, 0], Extrapolation.CLAMP),
+    opacity: interpolate(Math.abs(translateX.value), [0, SCREEN_W * 0.5], [1, 0.15], Extrapolation.CLAMP),
   }));
 
-  // Tras descartarlo, el desplazamiento queda en el borde; al cambiar de
-  // canción (o volver a sonar algo) lo devolvemos a su sitio.
+  // Al cambiar de canción (o volver a sonar algo) devolvemos la tarjeta a su
+  // sitio por si quedó desplazada de un gesto.
   useEffect(() => {
     translateX.value = 0;
-  }, [song?.id, translateX]);
+    translateY.value = 0;
+  }, [song?.id, translateX, translateY]);
 
   const cover = song ? coverArtUrl(song.coverArt ?? song.albumId, 100) : undefined;
   const bg = useDominantColor(cover);
@@ -81,23 +109,25 @@ export function MiniPlayer() {
   const favorited = !!song.starred || (favIds?.has(song.id) ?? false);
 
   return (
-    <GestureDetector gesture={dismiss}>
+    <GestureDetector gesture={pan}>
       <Animated.View style={cardStyle}>
         <Pressable
           style={[styles.container, { backgroundColor: bg }]}
           onPress={() => router.push('/player')}
         >
-      <Cover uri={cover} size={44} />
-      <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={1}>
-          {song.title}
-        </Text>
-        {song.artist ? (
-          <Text style={styles.artist} numberOfLines={1}>
-            {song.artist}
+      <Animated.View style={[styles.details, detailsStyle]}>
+        <Cover uri={cover} size={44} />
+        <View style={styles.info}>
+          <Text style={styles.title} numberOfLines={1}>
+            {song.title}
           </Text>
-        ) : null}
-      </View>
+          {song.artist ? (
+            <Text style={styles.artist} numberOfLines={1}>
+              {song.artist}
+            </Text>
+          ) : null}
+        </View>
+      </Animated.View>
       {(song.localUri && !offline) ? null : (
         <FavoriteButton id={song.id} starred={favorited} size={24} />
       )}
@@ -151,6 +181,12 @@ const styles = StyleSheet.create({
   },
   progressFill: { height: 2, backgroundColor: colors.text },
   spinner: { width: 28, height: 28 },
+  details: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
   info: {
     flex: 1,
   },
