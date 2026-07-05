@@ -10,10 +10,3 @@ body:
       description: Describe the feature or improvement.
     validations:
       required: true
-  - type: textarea
-    id: why
-    attributes:
-      label: Why?
-      description: What problem does it solve or what would it make easier?
-    validations:
-      required: false
