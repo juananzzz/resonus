@@ -474,6 +474,15 @@ export async function unstar(
   await request(auth, `/Users/${auth.jfUserId}/FavoriteItems/${id}`, {}, { method: 'DELETE' });
 }
 
+/**
+ * Jellyfin no expone la valoración de 1-5 estrellas de Subsonic (solo un
+ * me gusta/no me gusta). El rating bar se oculta para estos perfiles, así que
+ * esto es un no-op y no debería llegar a llamarse.
+ */
+export function setRating(_auth: SubsonicAuth, _id: string, _rating: number): Promise<void> {
+  return Promise.resolve();
+}
+
 // ── Listas de reproducción ──
 
 export async function getPlaylists(auth: SubsonicAuth): Promise<Playlist[]> {

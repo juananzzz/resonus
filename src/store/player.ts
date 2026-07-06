@@ -681,6 +681,8 @@ interface PlayerState {
   jumpTo: (index: number) => void;
   removeAt: (index: number) => void;
   moveTrack: (from: number, to: number) => void;
+  /** Guarda la valoración (1-5; 0 = sin valorar) en las copias de la cola. */
+  rateSong: (id: string, rating: number) => void;
   /** Vacía la cola dejando solo la canción actual (sigue sonando). */
   clearQueue: () => void;
   toggleShuffle: () => void;
@@ -863,6 +865,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (!current) return;
     set({ queue: [current], index: 0, queuedCount: 0, originalQueue: null });
     scheduleSync();
+  },
+
+  rateSong: (id, rating) => {
+    const patch = (list: Song[]) =>
+      list.map((s) => (s.id === id ? { ...s, userRating: rating } : s));
+    const { queue, originalQueue } = get();
+    set({
+      queue: patch(queue),
+      originalQueue: originalQueue ? patch(originalQueue) : null,
+    });
   },
 
   moveTrack: async (from, to) => {

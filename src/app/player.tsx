@@ -33,6 +33,7 @@ import { coverArtUrl } from '@/api/data';
 import { AudioQualityBadge } from '@/components/AudioQualityBadge';
 import { Cover } from '@/components/Cover';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { StarRating } from '@/components/StarRating';
 import { LyricsCard } from '@/components/LyricsCard';
 import { OutputSheet } from '@/components/OutputSheet';
 import { useDominantColor } from '@/hooks/useDominantColor';
@@ -119,11 +120,13 @@ export default function PlayerScreen() {
   const seekTo = usePlayerStore((s) => s.seekTo);
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
   const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
+  const rateSong = usePlayerStore((s) => s.rateSong);
   const openMenu = useSongMenu((s) => s.open);
   const openArtistPicker = useArtistPicker((s) => s.open);
   const t = useT();
   const showQualityBadge = useSettings((s) => s.showAudioQuality);
   const offline = useAuthStore((s) => s.offline);
+  const serverType = useAuthStore((s) => s.auth?.serverType);
   const castDevice = useCast((s) => (s.connected ? s.deviceName : null));
   const upnpDevice = useUpnp((s) => (s.connected ? s.deviceName : null));
   const remoteDevice = castDevice ?? upnpDevice;
@@ -281,6 +284,9 @@ export default function PlayerScreen() {
 
   const isLocal = !!song.localUri;
   const favorited = !!song.starred || (favIds?.has(song.id) ?? false);
+  // Las estrellas (setRating) son cosa de Subsonic: no en Jellyfin, ni offline,
+  // ni en radio (url directa) o pistas locales.
+  const canRate = !offline && serverType !== 'jellyfin' && !song.localUri && !song.url;
   const duration = durationSec || song.duration || 0;
   const repeatActive = repeat !== 'off';
 
@@ -413,6 +419,17 @@ export default function PlayerScreen() {
             </View>
             {(isLocal && !offline) ? null : <FavoriteButton id={song.id} starred={favorited} size={26} />}
           </View>
+
+          {canRate ? (
+            <View style={styles.rating}>
+              <StarRating
+                id={song.id}
+                rating={song.userRating}
+                size={20}
+                onRated={(r) => rateSong(song.id, r)}
+              />
+            </View>
+          ) : null}
 
           <View style={styles.progress}>
             <Slider
@@ -603,6 +620,8 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     marginTop: spacing.xs,
   },
+  // Fila de estrellas bajo el título; se sube un poco para acercarla al meta.
+  rating: { marginTop: -spacing.xs, marginBottom: spacing.md },
   progress: { marginBottom: spacing.md },
   // Compensa el margen interno del slider (~15px, donde centra el pulgar en
   // los extremos): la pista visible va de borde a borde del contenido, como

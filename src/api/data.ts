@@ -78,6 +78,12 @@ export function unstar(id: string, type?: Subsonic.StarType): Promise<void> {
   return Subsonic.unstar(auth(), id, type);
 }
 
+/** Valora una canción (1-5; 0 quita la valoración). Solo online. */
+export function setRating(id: string, rating: number): Promise<void> {
+  if (isOffline()) return Promise.resolve();
+  return Subsonic.setRating(auth(), id, rating);
+}
+
 export function search(query: string): Promise<Subsonic.SearchResult> {
   if (isOffline()) return Local.search(query);
   return Subsonic.search(auth(), query);

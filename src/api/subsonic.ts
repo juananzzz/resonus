@@ -57,6 +57,8 @@ export interface Song {
   track?: number;
   /** Marca de tiempo de cuándo se marcó como favorita; ausente si no lo es. */
   starred?: string;
+  /** Valoración del usuario (1-5); ausente o 0 si no la ha puntuado. */
+  userRating?: number;
   /** URL de streaming directa (usado para radio; evita generar URL Subsonic). */
   url?: string;
   /** Formato del archivo (mp3, flac, aac…). */
@@ -545,6 +547,11 @@ export async function unstar(
   type: StarType = 'song',
 ): Promise<void> {
   await request(auth, 'unstar.view', starParam(id, type));
+}
+
+/** Valora una canción de 1 a 5 estrellas; 0 quita la valoración. */
+export async function setRating(auth: SubsonicAuth, id: string, rating: number): Promise<void> {
+  await request(auth, 'setRating.view', { id, rating: String(rating) });
 }
 
 export interface ScanStatus {

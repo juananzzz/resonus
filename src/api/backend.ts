@@ -83,6 +83,9 @@ export const star = (auth: SubsonicAuth, id: string, type?: StarType) =>
 export const unstar = (auth: SubsonicAuth, id: string, type?: StarType) =>
   api(auth).unstar(auth, id, type);
 
+export const setRating = (auth: SubsonicAuth, id: string, rating: number) =>
+  api(auth).setRating(auth, id, rating);
+
 export const getPlaylists = (auth: SubsonicAuth) => api(auth).getPlaylists(auth);
 
 export const getPlaylist = (auth: SubsonicAuth, id: string) => api(auth).getPlaylist(auth, id);
