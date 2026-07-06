@@ -5,7 +5,6 @@ import { ScrollView, Text } from 'react-native';
 
 import { Dialog } from '@/components/Dialog';
 import {
-  SelectList,
   SettingRow,
   SettingsPage,
   settingsStyles,
@@ -13,11 +12,7 @@ import {
 } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useToast } from '@/store/toast';
-import {
-  AUDIO_QUALITY_OPTIONS,
-  LANGUAGE_NAMES,
-  useSettings,
-} from '@/store/settings';
+import { LANGUAGE_NAMES, useSettings } from '@/store/settings';
 
 export default function AppearanceSettings() {
   const router = useRouter();
@@ -60,6 +55,12 @@ export default function AppearanceSettings() {
               value: playerColorBackground,
               onChange: setPlayerColorBackground,
             },
+            {
+              label: t('Quality label'),
+              description: t('Show format, bitrate and Lossless / Hi-Res in the player.'),
+              value: showAudioQuality,
+              onChange: setShowAudioQuality,
+            },
           ]}
         />
 
@@ -78,14 +79,6 @@ export default function AppearanceSettings() {
               onChange: setShowSongDuration,
             },
           ]}
-        />
-
-        <SelectList
-          label={t('Quality labels')}
-          description={t('Format, bitrate and Lossless / Hi-Res.')}
-          options={AUDIO_QUALITY_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
-          value={showAudioQuality}
-          onChange={setShowAudioQuality}
         />
 
         <Text style={settingsStyles.sectionTitle}>{t('Interface')}</Text>

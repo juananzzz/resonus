@@ -18,7 +18,6 @@ import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { useT } from '@/i18n';
 import { colors, fontSize, spacing } from '@/theme';
-import { AudioQualityBadge } from './AudioQualityBadge';
 import { Cover } from './Cover';
 import { FavoriteButton } from './FavoriteButton';
 
@@ -54,7 +53,6 @@ export function TrackRow({
 }: Props) {
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();
-  const showQuality = useSettings((s) => s.showAudioQuality);
   const showDuration = useSettings((s) => s.showSongDuration);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const toast = useToast((s) => s.show);
@@ -127,7 +125,6 @@ export function TrackRow({
       </View>
 
       {favorited ? <FavoriteButton id={song.id} starred size={20} /> : null}
-      {showQuality === 'everywhere' ? <AudioQualityBadge song={song} /> : null}
       {showDuration ? <Text style={styles.duration}>{formatDuration(song.duration)}</Text> : null}
       {showMenu ? (
         <Pressable

@@ -122,8 +122,7 @@ export default function PlayerScreen() {
   const openMenu = useSongMenu((s) => s.open);
   const openArtistPicker = useArtistPicker((s) => s.open);
   const t = useT();
-  const showQuality = useSettings((s) => s.showAudioQuality);
-  const showQualityBadge = showQuality === 'player' || showQuality === 'everywhere';
+  const showQualityBadge = useSettings((s) => s.showAudioQuality);
   const offline = useAuthStore((s) => s.offline);
   const castDevice = useCast((s) => (s.connected ? s.deviceName : null));
   const upnpDevice = useUpnp((s) => (s.connected ? s.deviceName : null));

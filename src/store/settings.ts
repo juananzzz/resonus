@@ -18,23 +18,16 @@ export type Language = 'es' | 'en';
 /** Nombre de cada idioma en su propio idioma (para los selectores). */
 export const LANGUAGE_NAMES: Record<Language, string> = { es: 'Español', en: 'English' };
 
-export type AudioQualityMode = 'off' | 'player' | 'everywhere';
-
 /** Orden de la Biblioteca, estilo Spotify. */
 export type LibrarySort = 'recent' | 'added' | 'alpha';
-
-export const AUDIO_QUALITY_OPTIONS: { label: string; value: AudioQualityMode }[] = [
-  { label: 'No', value: 'off' },
-  { label: 'Player only', value: 'player' },
-  { label: 'Everywhere', value: 'everywhere' },
-];
 
 interface SettingsState {
   maxBitRate: number;
   /** Calidad de descarga: 0 = fichero original; resto, bitrate transcodificado. */
   downloadBitRate: number;
   language: Language;
-  showAudioQuality: AudioQualityMode;
+  /** Mostrar la etiqueta de formato/bitrate/Hi-Res (solo en el reproductor). */
+  showAudioQuality: boolean;
   /** Mostrar la mini carátula del álbum en las listas (playlists/favoritos). */
   showListArtwork: boolean;
   /** Duración de cada canción en las listas (Spotify no la muestra). */
@@ -61,7 +54,7 @@ interface SettingsState {
   setMaxBitRate: (value: number) => void;
   setDownloadBitRate: (value: number) => void;
   setLanguage: (language: Language) => void;
-  setShowAudioQuality: (mode: AudioQualityMode) => void;
+  setShowAudioQuality: (value: boolean) => void;
   setShowListArtwork: (value: boolean) => void;
   setShowSongDuration: (value: boolean) => void;
   setAutoplaySimilar: (value: boolean) => void;
@@ -106,7 +99,7 @@ const DEFAULTS = {
   maxBitRate: 0,
   downloadBitRate: 0,
   language: 'en' as Language,
-  showAudioQuality: 'off' as AudioQualityMode,
+  showAudioQuality: false,
   showListArtwork: true,
   showSongDuration: true,
   autoplaySimilar: true,
@@ -206,7 +199,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           maxBitRate: number;
           downloadBitRate: number;
           language: Language;
-          showAudioQuality: AudioQualityMode | boolean;
+          showAudioQuality: string | boolean;
           showListArtwork: boolean;
           showSongDuration: boolean;
           autoplaySimilar: boolean;
@@ -227,12 +220,15 @@ export const useSettings = create<SettingsState>((set, get) => ({
         if (parsed.language === 'es' || parsed.language === 'en') {
           set({ language: parsed.language });
         }
-        if (parsed.showAudioQuality === 'off' || parsed.showAudioQuality === 'player' || parsed.showAudioQuality === 'everywhere') {
+        // Antes era un modo ('off'/'player'/'everywhere'); ahora un simple
+        // on/off. Mapeamos los valores viejos: cualquier modo que mostrara la
+        // etiqueta pasa a activado.
+        if (typeof parsed.showAudioQuality === 'boolean') {
           set({ showAudioQuality: parsed.showAudioQuality });
-        } else if (parsed.showAudioQuality === true) {
-          set({ showAudioQuality: 'everywhere' });
-        } else if (parsed.showAudioQuality === false) {
-          set({ showAudioQuality: 'off' });
+        } else if (parsed.showAudioQuality === 'player' || parsed.showAudioQuality === 'everywhere') {
+          set({ showAudioQuality: true });
+        } else if (parsed.showAudioQuality === 'off') {
+          set({ showAudioQuality: false });
         }
         if (typeof parsed.showListArtwork === 'boolean') {
           set({ showListArtwork: parsed.showListArtwork });
