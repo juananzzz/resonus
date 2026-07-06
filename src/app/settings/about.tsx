@@ -15,7 +15,7 @@ export default function AboutSettings() {
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <Field
           label={t('Version')}
-          value={`Resonus v${Constants.expoConfig?.version ?? '?'} (beta)`}
+          value={`Resonus v${Constants.expoConfig?.version ?? '?'}`}
         />
         <SettingRow
           icon="logo-github"
