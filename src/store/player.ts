@@ -39,17 +39,6 @@ import { deleteItem, getItem, setItem } from '@/lib/storage';
 import { useAuthStore } from './auth';
 import { useLastPlayed } from './lastPlayed';
 import {
-  castLoad,
-  castPause,
-  castPlay,
-  castSeek,
-  castSetVolume,
-  castStop,
-  initCast,
-  isCastConnected,
-  type CastEvents,
-} from './cast';
-import {
   initUpnp,
   isUpnpConnected,
   upnpDisconnect,
@@ -58,6 +47,7 @@ import {
   upnpPlay,
   upnpSeek,
   upnpSetVolume,
+  type RemoteEvents,
 } from './upnp';
 import { usePlayCounts } from './playCounts';
 import { usePlayHistory } from './playHistory';
@@ -177,43 +167,34 @@ function clearLockScreen() {
   lockOwner = null;
 }
 
-// ── Salida remota (Chromecast o renderer UPnP/DLNA) ────────────────────────
+// ── Salida remota (renderer UPnP/DLNA) ─────────────────────────────────────
 
-/** Salida remota activa, si la hay. Solo puede haber una a la vez. */
-function remoteKind(): 'cast' | 'upnp' | null {
-  if (isCastConnected()) return 'cast';
-  if (isUpnpConnected()) return 'upnp';
-  return null;
+/** Salida remota activa, si la hay. */
+function remoteKind(): 'upnp' | null {
+  return isUpnpConnected() ? 'upnp' : null;
 }
 
 function remotePlay() {
-  if (remoteKind() === 'upnp') void upnpPlay();
-  else void castPlay();
+  void upnpPlay();
 }
 
 function remotePause() {
-  if (remoteKind() === 'upnp') void upnpPause();
-  else void castPause();
+  void upnpPause();
 }
 
 function remoteSeek(sec: number) {
-  if (remoteKind() === 'upnp') void upnpSeek(sec);
-  else void castSeek(sec);
+  void upnpSeek(sec);
 }
 
 function remoteSetVolume(volume: number) {
-  if (remoteKind() === 'upnp') upnpSetVolume(volume);
-  else castSetVolume(volume);
+  upnpSetVolume(volume);
 }
 
 /** Carga la pista en `index` en la salida remota y sincroniza el estado. */
 async function remoteLoadIndex(index: number, autoplay: boolean, startSec = 0) {
   const song = usePlayerStore.getState().queue[index];
   if (!song) return;
-  const ok =
-    remoteKind() === 'upnp'
-      ? await upnpLoad(song, autoplay, startSec)
-      : await castLoad(song, autoplay, startSec);
+  const ok = await upnpLoad(song, autoplay, startSec);
   if (!ok) {
     useToast.getState().show(tg("This song can't be cast"));
     usePlayerStore.setState({ index, isPlaying: false, isBuffering: false });
@@ -472,7 +453,7 @@ function fadeVolume(p: AudioPlayer, from: number, to: number, onDone?: () => voi
 
 /** Listener de estado de expo-audio: progreso, play/pausa y fin de pista. */
 function onStatus(status: AudioStatus) {
-  // Con salida remota (Chromecast/UPnP) el player local está en pausa y sus
+  // Con salida remota (UPnP/DLNA) el player local está en pausa y sus
   // estados no deben pisar los que llegan del aparato remoto.
   if (remoteKind()) return;
   const prev = usePlayerStore.getState();
@@ -610,12 +591,11 @@ function attachAppState() {
 }
 
 /**
- * Engancha los eventos de las salidas remotas (Chromecast y UPnP) a la cola.
- * Ambas comparten los mismos handlers; ver src/store/cast.ts y upnp.ts.
- * Llamar una vez al arrancar.
+ * Engancha los eventos de la salida remota (UPnP/DLNA) a la cola; ver
+ * src/store/upnp.ts. Llamar una vez al arrancar.
  */
 export function initRemoteIntegration() {
-  const events: CastEvents = {
+  const events: RemoteEvents = {
     onConnected: () => {
       // Transfiere la pista actual al aparato y silencia el player local.
       const { queue, index, positionSec, isPlaying } = usePlayerStore.getState();
@@ -664,15 +644,6 @@ export function initRemoteIntegration() {
       else void loadIndex(ni, true);
     },
   };
-  initCast({
-    ...events,
-    onConnected: () => {
-      // Exclusión mutua: si había un renderer UPnP activo, se suelta en
-      // silencio (la reproducción sigue en el Chromecast recién conectado).
-      if (isUpnpConnected()) void upnpDisconnect(true);
-      events.onConnected();
-    },
-  });
   initUpnp(events);
 }
 
@@ -1119,8 +1090,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
     // Al resetear (cambio de perfil/salir) se corta la salida remota sin
     // reanudar en local: la cola va a desaparecer igualmente.
-    if (remoteKind() === 'cast') void castStop();
-    else if (remoteKind() === 'upnp') void upnpDisconnect(true);
+    if (remoteKind() === 'upnp') void upnpDisconnect(true);
     cutCrossfade();
     try {
       activePlayer()?.pause();

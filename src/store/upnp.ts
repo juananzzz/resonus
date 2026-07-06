@@ -1,21 +1,29 @@
 /**
  * Integración con renderers UPnP/DLNA (módulo nativo modules/upnp-cast).
  *
- * Misma filosofía que cast.ts: la cola vive en el store del player y aquí solo
- * se gestiona la sesión (aparato elegido) y los eventos de vuelta. El módulo
- * nativo sondea el estado del renderer cada segundo; el fin de pista se deduce
- * de un STOPPED cerca del final (UPnP no distingue "terminó" de "lo pararon").
- *
- * Comparte la interfaz CastEvents con cast.ts para que el player enrute a
- * cualquiera de las dos salidas con la misma lógica.
+ * La cola vive en el store del player y aquí solo se gestiona la sesión
+ * (aparato elegido) y los eventos de vuelta. El módulo nativo sondea el estado
+ * del renderer cada segundo; el fin de pista se deduce de un STOPPED cerca del
+ * final (UPnP no distingue "terminó" de "lo pararon").
  */
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { create } from 'zustand';
 
 import { streamUrl, type Song } from '@/api/backend';
 import { useAuthStore } from './auth';
-import { castEndSession, isCastConnected, type CastEvents } from './cast';
 import { useSettings } from './settings';
+
+/** Eventos que el player registra para reaccionar a la salida remota (UPnP). */
+export interface RemoteEvents {
+  /** Sesión iniciada: transferir la pista actual al renderer. */
+  onConnected: () => void;
+  /** Sesión terminada: volver al player local en esta posición. */
+  onDisconnected: (lastPositionSec: number) => void;
+  onProgress: (positionSec: number, durationSec: number) => void;
+  onPlayingChanged: (isPlaying: boolean, isBuffering: boolean) => void;
+  /** La pista terminó de forma natural en el renderer. */
+  onFinished: () => void;
+}
 
 export interface UpnpDevice {
   id: string;
@@ -51,7 +59,7 @@ const native = requireOptionalNativeModule('UpnpCast');
 
 export const upnpAvailable = !!native;
 
-let events: CastEvents | null = null;
+let events: RemoteEvents | null = null;
 let stateSub: { remove: () => void } | undefined;
 let lastPositionSec = 0;
 let lastDurationSec = 0;
@@ -65,7 +73,7 @@ export function isUpnpConnected(): boolean {
 }
 
 /** Registra los eventos del player. Llamar una sola vez (desde el player). */
-export function initUpnp(ev: CastEvents): void {
+export function initUpnp(ev: RemoteEvents): void {
   events = ev;
 }
 
@@ -118,8 +126,6 @@ export async function upnpSearch(): Promise<void> {
 
 export async function upnpConnect(device: UpnpDevice): Promise<boolean> {
   if (!native) return false;
-  // Solo puede haber una salida remota: si hay Chromecast, se termina primero.
-  if (isCastConnected()) await castEndSession();
   const ok = (await native.connect(device.id)) as boolean;
   if (!ok) return false;
   lastPositionSec = 0;

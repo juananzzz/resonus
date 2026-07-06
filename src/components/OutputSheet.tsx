@@ -1,9 +1,7 @@
 /**
- * Selector de salida de audio (estilo Spotify Connect): este teléfono, un
- * renderer UPnP/DLNA de la red o Chromecast. Al abrirse busca renderers
- * (~5 s); la fila de Chromecast abre el selector nativo del SDK de Google, y
- * si su sesión está activa aparece aquí como salida actual (elegir otra cosa
- * la termina).
+ * Selector de salida de audio (estilo Spotify Connect): este teléfono o un
+ * renderer UPnP/DLNA de la red. Al abrirse busca renderers (~5 s); el activo
+ * aparece marcado como salida actual.
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -14,7 +12,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
 import { useT } from '@/i18n';
-import { castAvailable, castDisconnect, castShowDialog, useCast } from '@/store/cast';
 import { useToast } from '@/store/toast';
 import {
   upnpAvailable,
@@ -30,11 +27,10 @@ export function OutputSheet({ visible, onClose }: { visible: boolean; onClose: (
   const insets = useSafeAreaInsets();
   const t = useT();
   const toast = useToast((s) => s.show);
-  const castName = useCast((s) => (s.connected ? s.deviceName : null));
   const upnpId = useUpnp((s) => (s.connected ? s.deviceId : null));
   const devices = useUpnp((s) => s.devices);
   const scanning = useUpnp((s) => s.scanning);
-  const phoneActive = !castName && !upnpId;
+  const phoneActive = !upnpId;
   const { dismiss, backdropStyle, sheetStyle, onSheetLayout } = useBottomSheetAnim(visible);
   // Cierre animado: la hoja baja y después avisa al padre (que oculta el Modal).
   const close = () => dismiss(onClose);
@@ -45,8 +41,7 @@ export function OutputSheet({ visible, onClose }: { visible: boolean; onClose: (
 
   async function pickPhone() {
     close();
-    if (castName) await castDisconnect();
-    else if (upnpId) await upnpDisconnect();
+    if (upnpId) await upnpDisconnect();
   }
 
   async function pickDevice(device: UpnpDevice) {
@@ -107,23 +102,6 @@ export function OutputSheet({ visible, onClose }: { visible: boolean; onClose: (
           active={phoneActive}
           onPress={phoneActive ? undefined : pickPhone}
         />
-
-        {castName ? (
-          <Row
-            icon={<MaterialIcons name="cast-connected" size={22} color={colors.accent} />}
-            label={castName}
-            active
-          />
-        ) : castAvailable() ? (
-          <Row
-            icon={<MaterialIcons name="cast" size={22} color={colors.text} />}
-            label={t('Chromecast')}
-            onPress={() => {
-              close();
-              void castShowDialog();
-            }}
-          />
-        ) : null}
 
         {upnpAvailable
           ? devices.map((d) => {

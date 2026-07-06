@@ -52,7 +52,6 @@
         }
       ],
       "expo-secure-store",
-      "react-native-google-cast",
       "expo-font",
       "expo-image",
       "expo-web-browser",

@@ -43,7 +43,6 @@ import { artistTargets } from '@/lib/artistNav';
 import { formatDuration } from '@/lib/format';
 import { useArtistPicker } from '@/store/artistPicker';
 import { useAuthStore } from '@/store/auth';
-import { useCast } from '@/store/cast';
 import { currentSong, SOURCE_FAVORITES, SOURCE_HISTORY, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useSongMenu } from '@/store/songMenu';
@@ -128,9 +127,7 @@ export default function PlayerScreen() {
   const showRating = useSettings((s) => s.showRating);
   const offline = useAuthStore((s) => s.offline);
   const serverType = useAuthStore((s) => s.auth?.serverType);
-  const castDevice = useCast((s) => (s.connected ? s.deviceName : null));
-  const upnpDevice = useUpnp((s) => (s.connected ? s.deviceName : null));
-  const remoteDevice = castDevice ?? upnpDevice;
+  const remoteDevice = useUpnp((s) => (s.connected ? s.deviceName : null));
   const [outputOpen, setOutputOpen] = useState(false);
   // Con letra local (.lrc/USLT/LRCLIB) el modo offline también tiene lyrics;
   // solo la radio (url directa) queda fuera.
