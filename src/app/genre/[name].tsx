@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getAlbumsByGenre } from '@/api/backend';
 import { AlbumCard } from '@/components/AlbumCard';
+import { AlbumCardsSkeleton } from '@/components/AlbumCardsSkeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
@@ -56,7 +57,7 @@ export default function GenreScreen() {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
+        <AlbumCardsSkeleton width={CARD} count={8} />
       ) : isError ? (
         <Message text={t("Couldn't load albums.")} onRetry={() => refetch()} />
       ) : (

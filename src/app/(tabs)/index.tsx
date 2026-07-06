@@ -25,6 +25,7 @@ import {
   type Album,
 } from '@/api/data';
 import { AlbumCard } from '@/components/AlbumCard';
+import { AlbumCardsSkeleton } from '@/components/AlbumCardsSkeleton';
 import { Cover } from '@/components/Cover';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
@@ -118,7 +119,12 @@ function AlbumSection({
   });
 
   if (isLoading) {
-    return <ActivityIndicator style={styles.rowLoader} color={colors.accent} />;
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <AlbumCardsSkeleton horizontal />
+      </View>
+    );
   }
   if (!data || data.length === 0) return null;
 
@@ -386,7 +392,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   rowContent: { paddingHorizontal: spacing.lg, gap: spacing.md },
-  rowLoader: { marginVertical: spacing.xl },
   scanPanel: {
     alignItems: 'center',
     gap: spacing.sm,

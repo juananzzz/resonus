@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getAlbumList, type AlbumListType } from '@/api/data';
 import { AlbumCard } from '@/components/AlbumCard';
+import { AlbumCardsSkeleton } from '@/components/AlbumCardsSkeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
@@ -88,7 +89,7 @@ export default function BrowseAlbumsScreen() {
       </ScrollView>
 
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
+        <AlbumCardsSkeleton width={CARD} count={8} />
       ) : isError ? (
         <Message text={t("Couldn't load albums.")} onRetry={() => refetch()} />
       ) : (

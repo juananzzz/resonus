@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
@@ -15,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { coverArtUrl, getArtists } from '@/api/data';
+import { ArtistListSkeleton } from '@/components/ArtistListSkeleton';
 import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
@@ -72,7 +72,7 @@ export default function BrowseArtistsScreen() {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
+        <ArtistListSkeleton />
       ) : isError ? (
         <Message text={t("Couldn't load artists.")} onRetry={() => refetch()} />
       ) : (
