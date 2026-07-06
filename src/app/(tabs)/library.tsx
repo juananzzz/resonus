@@ -3,9 +3,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Modal,
   Pressable,
@@ -48,6 +49,16 @@ const SEGMENTS: { key: Segment; label: string }[] = [
   { key: 'albums', label: 'Albums' },
   { key: 'artists', label: 'Artists' },
 ];
+
+// Cuadrícula de la Biblioteca: 3 columnas, mismo hueco que el resto de rejillas.
+const GRID_COLUMNS = 3;
+const GRID_GAP = spacing.sm;
+const GRID_CARD =
+  (Dimensions.get('window').width - spacing.lg * 2 - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
+
+// En cuadrícula, el acceso a Favoritos va como primera tarjeta de la rejilla
+// (en lista es la cabecera). Este id centinela lo marca dentro de los datos.
+const FAVORITES_ID = '__favorites__';
 
 // ── Orden estilo Spotify (Recientes / Añadido recientemente / Alfabético) ──
 
@@ -153,7 +164,7 @@ function useHistoryTimes(): { byAlbum: Map<string, number>; byArtist: Map<string
   }, [entries]);
 }
 
-function FavoritesEntry() {
+function FavoritesEntry({ grid }: { grid?: boolean }) {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
@@ -163,6 +174,17 @@ function FavoritesEntry() {
     enabled: canFetch,
   });
   const count = data?.songs.length ?? 0;
+
+  if (grid) {
+    return (
+      <GridCard
+        href="/favorites"
+        art={<FavoritesArt size={GRID_CARD} />}
+        title={t('Favorites')}
+        subtitle={songsLabel(count, lang)}
+      />
+    );
+  }
 
   return (
     <Link href="/favorites" asChild>
@@ -185,6 +207,7 @@ function PlaylistsTab({ onNew }: { onNew?: () => void }) {
   const times = useLastPlayed((s) => s.times);
   const pins = usePins((s) => s.pins);
   const openMenu = useMediaMenu((s) => s.open);
+  const grid = useSettings((s) => s.libraryLayout) === 'grid';
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['playlists'],
     queryFn: () => getPlaylists(),
@@ -204,16 +227,20 @@ function PlaylistsTab({ onNew }: { onNew?: () => void }) {
     (p) => `playlist:${p.id}`,
     pins,
   );
+  // En cuadrícula, Favoritos entra como primera tarjeta (centinela); en lista
+  // sigue siendo la cabecera a todo el ancho.
+  const listData: Playlist[] = grid ? [{ id: FAVORITES_ID, name: '' }, ...playlists] : playlists;
   return (
     <FlatList
-        {...listPerf}
-      data={playlists}
+      key={grid ? 'grid' : 'list'}
+      {...listPerf}
+      {...gridListProps(grid)}
+      data={listData}
       keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.list}
       refreshControl={
         <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.accent} />
       }
-      ListHeaderComponent={<FavoritesEntry />}
+      ListHeaderComponent={grid ? undefined : <FavoritesEntry />}
       ListEmptyComponent={
         <EmptyState
           icon="list-outline"
@@ -222,27 +249,40 @@ function PlaylistsTab({ onNew }: { onNew?: () => void }) {
           action={onNew ? { label: t('New playlist'), onPress: onNew } : undefined}
         />
       }
-      renderItem={({ item }: { item: Playlist }) => (
-        <Link href={`/playlist/${item.id}`} asChild>
-          <Pressable
-            style={styles.row}
+      renderItem={({ item }: { item: Playlist }) =>
+        item.id === FAVORITES_ID ? (
+          <FavoritesEntry grid />
+        ) : grid ? (
+          <GridCard
+            href={`/playlist/${item.id}`}
+            uri={coverArtUrl(item.coverArt ?? item.id, 300)}
+            title={item.name}
+            subtitle={songsLabel(item.songCount ?? 0, lang)}
+            pinned={!!pins[`playlist:${item.id}`]}
             onLongPress={() => openMenu({ kind: 'playlist', playlist: item })}
-          >
-            <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={56} />
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowTitle} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <View style={styles.rowSubLine}>
-                {pins[`playlist:${item.id}`] ? (
-                  <MaterialCommunityIcons name="pin" size={13} color={colors.accent} style={styles.pinIcon} />
-                ) : null}
-                <Text style={styles.rowSub}>{songsLabel(item.songCount ?? 0, lang)}</Text>
+          />
+        ) : (
+          <Link href={`/playlist/${item.id}`} asChild>
+            <Pressable
+              style={styles.row}
+              onLongPress={() => openMenu({ kind: 'playlist', playlist: item })}
+            >
+              <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={56} />
+              <View style={styles.rowInfo}>
+                <Text style={styles.rowTitle} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <View style={styles.rowSubLine}>
+                  {pins[`playlist:${item.id}`] ? (
+                    <MaterialCommunityIcons name="pin" size={13} color={colors.accent} style={styles.pinIcon} />
+                  ) : null}
+                  <Text style={styles.rowSub}>{songsLabel(item.songCount ?? 0, lang)}</Text>
+                </View>
               </View>
-            </View>
-          </Pressable>
-        </Link>
-      )}
+            </Pressable>
+          </Link>
+        )
+      }
     />
   );
 }
@@ -254,6 +294,7 @@ function ArtistsTab() {
   const sort = useSettings((s) => s.librarySort);
   const times = useLastPlayed((s) => s.times);
   const { byArtist } = useHistoryTimes();
+  const grid = useSettings((s) => s.libraryLayout) === 'grid';
   // Solo artistas favoritos (lo explorable está en Inicio).
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['starred'],
@@ -272,24 +313,35 @@ function ArtistsTab() {
   );
   return (
     <FlatList
-        {...listPerf}
+      key={grid ? 'grid' : 'list'}
+      {...listPerf}
+      {...gridListProps(grid)}
       data={artists}
       keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.list}
       refreshControl={
         <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.accent} />
       }
-      renderItem={({ item }) => (
-        <Link href={`/artist/${item.id}`} asChild>
-          <Pressable style={styles.row}>
-            <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={56} rounded />
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowTitle} numberOfLines={1}>{item.name}</Text>
-              <Text style={[styles.rowSub, styles.rowSubGap]}>{albumsLabel(item.albumCount ?? 0, lang)}</Text>
-            </View>
-          </Pressable>
-        </Link>
-      )}
+      renderItem={({ item }) =>
+        grid ? (
+          <GridCard
+            href={`/artist/${item.id}`}
+            uri={coverArtUrl(item.coverArt ?? item.id, 300)}
+            rounded
+            title={item.name}
+            subtitle={albumsLabel(item.albumCount ?? 0, lang)}
+          />
+        ) : (
+          <Link href={`/artist/${item.id}`} asChild>
+            <Pressable style={styles.row}>
+              <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={56} rounded />
+              <View style={styles.rowInfo}>
+                <Text style={styles.rowTitle} numberOfLines={1}>{item.name}</Text>
+                <Text style={[styles.rowSub, styles.rowSubGap]}>{albumsLabel(item.albumCount ?? 0, lang)}</Text>
+              </View>
+            </Pressable>
+          </Link>
+        )
+      }
       ListEmptyComponent={
         <EmptyState
           icon="people-outline"
@@ -309,6 +361,7 @@ function AlbumsTab() {
   const pins = usePins((s) => s.pins);
   const { byAlbum } = useHistoryTimes();
   const openMenu = useMediaMenu((s) => s.open);
+  const grid = useSettings((s) => s.libraryLayout) === 'grid';
   // Solo álbumes favoritos (lo explorable está en Inicio).
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['starred'],
@@ -331,36 +384,48 @@ function AlbumsTab() {
   );
   return (
     <FlatList
-        {...listPerf}
+      key={grid ? 'grid' : 'list'}
+      {...listPerf}
+      {...gridListProps(grid)}
       data={albums}
       keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.list}
       refreshControl={
         <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.accent} />
       }
-      renderItem={({ item }) => (
-        <Link href={`/album/${item.id}`} asChild>
-          <Pressable
-            style={styles.row}
+      renderItem={({ item }) =>
+        grid ? (
+          <GridCard
+            href={`/album/${item.id}`}
+            uri={coverArtUrl(item.coverArt ?? item.id, 300)}
+            title={item.name}
+            subtitle={item.artist}
+            pinned={!!pins[`album:${item.id}`]}
             onLongPress={() => openMenu({ kind: 'album', album: item })}
-          >
-            <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={56} />
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowTitle} numberOfLines={1}>{item.name}</Text>
-              {item.artist || pins[`album:${item.id}`] ? (
-                <View style={styles.rowSubLine}>
-                  {pins[`album:${item.id}`] ? (
-                    <MaterialCommunityIcons name="pin" size={13} color={colors.accent} style={styles.pinIcon} />
-                  ) : null}
-                  {item.artist ? (
-                    <Text style={styles.rowSub} numberOfLines={1}>{item.artist}</Text>
-                  ) : null}
-                </View>
-              ) : null}
-            </View>
-          </Pressable>
-        </Link>
-      )}
+          />
+        ) : (
+          <Link href={`/album/${item.id}`} asChild>
+            <Pressable
+              style={styles.row}
+              onLongPress={() => openMenu({ kind: 'album', album: item })}
+            >
+              <Cover uri={coverArtUrl(item.coverArt ?? item.id, 100)} size={56} />
+              <View style={styles.rowInfo}>
+                <Text style={styles.rowTitle} numberOfLines={1}>{item.name}</Text>
+                {item.artist || pins[`album:${item.id}`] ? (
+                  <View style={styles.rowSubLine}>
+                    {pins[`album:${item.id}`] ? (
+                      <MaterialCommunityIcons name="pin" size={13} color={colors.accent} style={styles.pinIcon} />
+                    ) : null}
+                    {item.artist ? (
+                      <Text style={styles.rowSub} numberOfLines={1}>{item.artist}</Text>
+                    ) : null}
+                  </View>
+                ) : null}
+              </View>
+            </Pressable>
+          </Link>
+        )
+      }
       ListEmptyComponent={
         <EmptyState
           icon="albums-outline"
@@ -374,6 +439,85 @@ function AlbumsTab() {
 
 function Loader() {
   return <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />;
+}
+
+/** Botón para alternar lista/cuadrícula; muestra el icono del modo actual. */
+function LayoutToggle() {
+  const t = useT();
+  const layout = useSettings((s) => s.libraryLayout);
+  const setLayout = useSettings((s) => s.setLibraryLayout);
+  const grid = layout === 'grid';
+  return (
+    <Pressable
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={grid ? t('List view') : t('Grid view')}
+      onPress={() => setLayout(grid ? 'list' : 'grid')}
+    >
+      <Ionicons name={grid ? 'list' : 'grid-outline'} size={20} color={colors.textSecondary} />
+    </Pressable>
+  );
+}
+
+/** Tarjeta de la cuadrícula (álbum/lista/artista y el acceso a Favoritos). */
+function GridCard({
+  href,
+  uri,
+  art,
+  rounded,
+  title,
+  subtitle,
+  pinned,
+  onLongPress,
+}: {
+  href: string;
+  uri?: string;
+  /** Carátula alternativa (p. ej. el mosaico de Favoritos). */
+  art?: ReactNode;
+  rounded?: boolean;
+  title: string;
+  subtitle?: string;
+  pinned?: boolean;
+  onLongPress?: () => void;
+}) {
+  return (
+    <Link href={href} asChild>
+      <Pressable
+        style={StyleSheet.flatten([styles.card, rounded && styles.cardCentered])}
+        onLongPress={onLongPress}
+      >
+        {art ?? <Cover uri={uri} size={GRID_CARD} rounded={rounded} />}
+        <Text style={[styles.cardTitle, rounded && styles.centerText]} numberOfLines={1}>
+          {title}
+        </Text>
+        {subtitle ? (
+          <View style={styles.cardSubLine}>
+            {pinned ? (
+              <MaterialCommunityIcons name="pin" size={12} color={colors.accent} style={styles.pinIcon} />
+            ) : null}
+            <Text style={styles.cardSub} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          </View>
+        ) : null}
+      </Pressable>
+    </Link>
+  );
+}
+
+/**
+ * Props de FlatList según la disposición. Aparte hay que pasar `key={grid...}`
+ * directo en cada lista para forzar el remonte: FlatList no admite cambiar
+ * `numColumns` en caliente (y `key` no puede ir en un spread).
+ */
+function gridListProps(grid: boolean) {
+  return grid
+    ? {
+        numColumns: GRID_COLUMNS,
+        columnWrapperStyle: { gap: GRID_GAP },
+        contentContainerStyle: styles.gridList,
+      }
+    : { contentContainerStyle: styles.list };
 }
 
 export default function LibraryScreen() {
@@ -442,7 +586,10 @@ export default function LibraryScreen() {
         })}
       </View>
 
-      <SortBar onPress={() => setSortOpen(true)} />
+      <View style={styles.controls}>
+        <SortBar onPress={() => setSortOpen(true)} />
+        <LayoutToggle />
+      </View>
       <SortSheet visible={sortOpen} onClose={() => setSortOpen(false)} />
 
       <View style={{ flex: 1 }}>
@@ -490,6 +637,17 @@ const styles = StyleSheet.create({
     paddingBottom: SCREEN_BOTTOM_PADDING,
     gap: spacing.md,
   },
+  gridList: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: SCREEN_BOTTOM_PADDING,
+    gap: spacing.lg,
+  },
+  card: { width: GRID_CARD, gap: spacing.xs },
+  cardCentered: { alignItems: 'center' },
+  cardTitle: { color: colors.text, fontSize: fontSize.xs, fontWeight: '600', marginTop: spacing.xs },
+  centerText: { textAlign: 'center' },
+  cardSub: { color: colors.textSecondary, fontSize: fontSize.xs },
+  cardSubLine: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   rowInfo: { flex: 1 },
   rowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
@@ -499,14 +657,20 @@ const styles = StyleSheet.create({
   rowSubLine: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   // La chincheta de MCI viene vertical; girada 45° queda como la de Spotify.
   pinIcon: { transform: [{ rotate: '45deg' }] },
+  // Fila de controles: orden a la izquierda ("⇅ Recientes"), alternar
+  // lista/cuadrícula a la derecha.
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+  },
   // Fila de orden estilo Spotify ("⇅ Recientes") y su hoja inferior.
   sortBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
   },
   sortBarText: { color: colors.textSecondary, fontSize: fontSize.xs, fontWeight: '600' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },

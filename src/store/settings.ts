@@ -21,6 +21,9 @@ export const LANGUAGE_NAMES: Record<Language, string> = { es: 'Español', en: 'E
 /** Orden de la Biblioteca, estilo Spotify. */
 export type LibrarySort = 'recent' | 'added' | 'alpha';
 
+/** Disposición de la Biblioteca: lista (filas) o cuadrícula (tarjetas). */
+export type LibraryLayout = 'list' | 'grid';
+
 interface SettingsState {
   maxBitRate: number;
   /** Calidad de descarga: 0 = fichero original; resto, bitrate transcodificado. */
@@ -53,6 +56,8 @@ interface SettingsState {
   showProfileButton: boolean;
   /** Orden elegido en la Biblioteca (recientes/añadido/alfabético). */
   librarySort: LibrarySort;
+  /** Lista o cuadrícula en la Biblioteca. */
+  libraryLayout: LibraryLayout;
   setMaxBitRate: (value: number) => void;
   setDownloadBitRate: (value: number) => void;
   setLanguage: (language: Language) => void;
@@ -68,6 +73,7 @@ interface SettingsState {
   setShowHistoryButton: (value: boolean) => void;
   setShowProfileButton: (value: boolean) => void;
   setLibrarySort: (value: LibrarySort) => void;
+  setLibraryLayout: (value: LibraryLayout) => void;
   /** Vuelve a los valores de fábrica (el idioma se conserva). */
   resetToDefaults: () => void;
   hydrate: () => Promise<void>;
@@ -95,6 +101,7 @@ function snapshot(get: () => SettingsState) {
     showHistoryButton: s.showHistoryButton,
     showProfileButton: s.showProfileButton,
     librarySort: s.librarySort,
+    libraryLayout: s.libraryLayout,
   };
 }
 
@@ -115,6 +122,7 @@ const DEFAULTS = {
   showHistoryButton: true,
   showProfileButton: true,
   librarySort: 'recent' as LibrarySort,
+  libraryLayout: 'list' as LibraryLayout,
 };
 
 export const useSettings = create<SettingsState>((set, get) => ({
@@ -190,6 +198,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
+  setLibraryLayout: (libraryLayout) => {
+    set({ libraryLayout });
+    persist(snapshot(get));
+  },
+
   setLibrarySort: (librarySort) => {
     set({ librarySort });
     persist(snapshot(get));
@@ -221,6 +234,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           showHistoryButton: boolean;
           showProfileButton: boolean;
           librarySort: LibrarySort;
+          libraryLayout: LibraryLayout;
         }>;
         if (typeof parsed.maxBitRate === 'number') {
           set({ maxBitRate: parsed.maxBitRate });
@@ -273,6 +287,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (parsed.librarySort === 'recent' || parsed.librarySort === 'added' || parsed.librarySort === 'alpha') {
           set({ librarySort: parsed.librarySort });
+        }
+        if (parsed.libraryLayout === 'list' || parsed.libraryLayout === 'grid') {
+          set({ libraryLayout: parsed.libraryLayout });
         }
       }
     } catch {
