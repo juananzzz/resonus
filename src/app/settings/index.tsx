@@ -37,6 +37,7 @@ export default function SettingsScreen() {
       icon: offline ? ('phone-portrait-outline' as const) : ('server-outline' as const),
     },
     { key: 'personalization', title: 'Appearance', icon: 'color-palette-outline' as const },
+    { key: 'theme', title: 'Theme', icon: 'contrast-outline' as const },
     { key: 'about', title: 'About', icon: 'information-circle-outline' as const },
   ];
 
