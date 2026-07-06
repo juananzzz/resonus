@@ -77,7 +77,7 @@ export default function BrowseAlbumsScreen() {
           return (
             <Pressable
               key={s.key}
-              style={[styles.chip, active && styles.chipActive]}
+              style={[styles.chip, active && { backgroundColor: colors.accent }]}
               onPress={() => setSort(s.key)}
             >
               <Text style={[styles.chipText, active && styles.chipTextActive]}>

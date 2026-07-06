@@ -102,6 +102,7 @@ function usePaneStyle(offset: SharedValue<number>, k: number) {
 }
 
 export default function PlayerScreen() {
+  useSettings((s) => s.accentColor); // re-render al cambiar el acento
   const router = useRouter();
   const isFocused = useIsFocused();
   const song = usePlayerStore(currentSong);
@@ -523,7 +524,7 @@ export default function PlayerScreen() {
                   color={remoteDevice ? colors.accent : offline ? colors.textMuted : colors.text}
                 />
                 {remoteDevice ? (
-                  <Text style={styles.deviceName} numberOfLines={1}>
+                  <Text style={[styles.deviceName, { color: colors.accent }]} numberOfLines={1}>
                     {remoteDevice}
                   </Text>
                 ) : null}

@@ -197,7 +197,7 @@ export function PlaylistEditSheet({
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.header}>
           <Pressable hitSlop={12} onPress={onCancel}>
-            <Text style={styles.headerAction}>{t('Cancel')}</Text>
+            <Text style={[styles.headerAction, { color: colors.accent }]}>{t('Cancel')}</Text>
           </Pressable>
           <Text style={styles.title}>{t('Edit playlist')}</Text>
           <Pressable
@@ -205,7 +205,7 @@ export function PlaylistEditSheet({
             disabled={!canSave}
             onPress={() => onSave({ name: name.trim(), comment: comment.trim(), public: isPublic })}
           >
-            <Text style={[styles.headerAction, !canSave && styles.disabled]}>{t('Save')}</Text>
+            <Text style={[styles.headerAction, { color: colors.accent }, !canSave && styles.disabled]}>{t('Save')}</Text>
           </Pressable>
         </View>
 

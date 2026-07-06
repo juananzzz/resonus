@@ -78,7 +78,7 @@ export function TrackRow({
     <ReanimatedSwipeable
       ref={swipeRef}
       renderLeftActions={() => (
-        <View style={styles.queueAction}>
+        <View style={[styles.queueAction, { backgroundColor: colors.accent }]}>
           <Ionicons name="list" size={22} color={colors.text} />
         </View>
       )}
@@ -105,7 +105,7 @@ export function TrackRow({
 
       <View style={styles.info}>
         <Text
-          style={[styles.title, isCurrent && styles.current]}
+          style={[styles.title, isCurrent && { color: colors.accent }]}
           numberOfLines={1}
         >
           {song.title}

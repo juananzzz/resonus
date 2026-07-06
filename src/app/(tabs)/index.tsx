@@ -196,7 +196,7 @@ function ScanningPanel() {
       <Text style={styles.scanTitle}>{t('Scanning your music…')}</Text>
       {total > 0 ? (
         <View style={styles.scanBarTrack}>
-          <Animated.View style={[styles.scanBarFill, { width }]} />
+          <Animated.View style={[styles.scanBarFill, { width, backgroundColor: colors.accent }]} />
         </View>
       ) : (
         <ActivityIndicator color={colors.accent} />
@@ -217,6 +217,10 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const showHistoryButton = useSettings((s) => s.showHistoryButton);
   const showProfileButton = useSettings((s) => s.showProfileButton);
+  // El anillo del avatar lee el acento del store (no la constante global), así
+  // se recolorea siempre al cambiarlo o al hidratar; Home es la pantalla
+  // inicial y se pinta antes de aplicarse el acento guardado.
+  const accentColor = useSettings((s) => s.accentColor);
   const initial = offline ? 'O' : (auth?.username ?? '?').charAt(0).toUpperCase();
 
   // Saludo según la hora (estilo Spotify). Tramos a la española: mañana hasta
@@ -281,7 +285,7 @@ export default function HomeScreen() {
               </Pressable>
             </Link>
             {showProfileButton ? (
-              <View style={styles.avatar}>
+              <View style={[styles.avatar, { borderColor: accentColor }]}>
                 <Text style={styles.avatarText}>{initial}</Text>
               </View>
             ) : null}

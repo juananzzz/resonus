@@ -26,6 +26,7 @@ function formatBytes(n: number): string {
 }
 
 export default function LibrarySettings() {
+  useSettings((s) => s.accentColor); // re-render al cambiar el acento
   const t = useT();
   const auth = useAuthStore((s) => s.auth);
   const offline = useAuthStore((s) => s.offline);

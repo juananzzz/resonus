@@ -40,6 +40,7 @@ const WIDTH = Dimensions.get('window').width;
 const HEADER_H = Math.min(WIDTH, 360);
 
 export default function ArtistScreen() {
+  useSettings((s) => s.accentColor); // re-render al cambiar el acento
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -157,7 +158,7 @@ export default function ArtistScreen() {
           </Pressable>
           <View style={{ flex: 1 }} />
           <Pressable
-            style={styles.playButton}
+            style={[styles.playButton, { backgroundColor: colors.accent }]}
             accessibilityRole="button"
             accessibilityLabel={t('Play')}
             onPress={() => top.length > 0 && playQueue(top, 0, data.artist.name, `/artist/${id}`)}

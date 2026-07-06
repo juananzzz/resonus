@@ -231,7 +231,7 @@ export function TrackListView({
                     {download.status === 'active' ? (
                       <>
                         <ActivityIndicator size="small" color={colors.accent} />
-                        <Text style={styles.downloadProgress}>
+                        <Text style={[styles.downloadProgress, { color: colors.accent }]}>
                           {Math.round(download.progress * 100)}%
                         </Text>
                       </>
@@ -284,7 +284,7 @@ export function TrackListView({
                   />
                 </Pressable>
                 <Pressable
-                  style={styles.playButton}
+                  style={[styles.playButton, { backgroundColor: colors.accent }]}
                   accessibilityRole="button"
                   accessibilityLabel={t('Play')}
                   onPress={() => songs.length > 0 && onPlay(0)}

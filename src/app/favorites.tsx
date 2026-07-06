@@ -25,6 +25,7 @@ import { colors } from '@/theme';
 const HEADER_COLOR = '#290693';
 
 export default function FavoritesScreen() {
+  useSettings((s) => s.accentColor); // re-render al cambiar el acento
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const offline = useAuthStore((s) => s.offline);
   const t = useT();

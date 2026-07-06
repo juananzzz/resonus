@@ -20,7 +20,7 @@ export function EmptyState({ icon, title, subtitle, action }: Props) {
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       {action ? (
-        <Pressable style={styles.button} onPress={action.onPress}>
+        <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={action.onPress}>
           <Text style={styles.buttonText}>{action.label}</Text>
         </Pressable>
       ) : null}

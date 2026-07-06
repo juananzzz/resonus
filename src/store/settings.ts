@@ -2,6 +2,20 @@
 import { create } from 'zustand';
 
 import { getItem, setItem } from '@/lib/storage';
+import { applyAccent, DEFAULT_ACCENT } from '@/theme';
+
+// El campo se llama `color` (no `value`) a propósito: Reanimated warnea de más
+// al ver cualquier `.value` dentro de un estilo inline, aunque no sea un shared
+// value. Con `color` se evita ese falso positivo en el picker de Theme.
+/** Colores de acento elegibles (misma paleta viva; verde por defecto). */
+export const ACCENT_OPTIONS: { name: string; color: string }[] = [
+  { name: 'Green', color: DEFAULT_ACCENT },
+  { name: 'Blue', color: '#4E9BF5' },
+  { name: 'Purple', color: '#A66CFF' },
+  { name: 'Pink', color: '#F25D94' },
+  { name: 'Orange', color: '#F58C3C' },
+  { name: 'Teal', color: '#1FC7B6' },
+];
 
 const STORAGE_KEY = 'resonus.settings';
 
@@ -58,6 +72,8 @@ interface SettingsState {
   librarySort: LibrarySort;
   /** Lista o cuadrícula en la Biblioteca. */
   libraryLayout: LibraryLayout;
+  /** Color de acento (hex). */
+  accentColor: string;
   setMaxBitRate: (value: number) => void;
   setDownloadBitRate: (value: number) => void;
   setLanguage: (language: Language) => void;
@@ -74,6 +90,7 @@ interface SettingsState {
   setShowProfileButton: (value: boolean) => void;
   setLibrarySort: (value: LibrarySort) => void;
   setLibraryLayout: (value: LibraryLayout) => void;
+  setAccentColor: (value: string) => void;
   /** Vuelve a los valores de fábrica (el idioma se conserva). */
   resetToDefaults: () => void;
   hydrate: () => Promise<void>;
@@ -102,6 +119,7 @@ function snapshot(get: () => SettingsState) {
     showProfileButton: s.showProfileButton,
     librarySort: s.librarySort,
     libraryLayout: s.libraryLayout,
+    accentColor: s.accentColor,
   };
 }
 
@@ -123,6 +141,7 @@ const DEFAULTS = {
   showProfileButton: true,
   librarySort: 'recent' as LibrarySort,
   libraryLayout: 'list' as LibraryLayout,
+  accentColor: DEFAULT_ACCENT,
 };
 
 export const useSettings = create<SettingsState>((set, get) => ({
@@ -203,6 +222,12 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
+  setAccentColor: (accentColor) => {
+    applyAccent(accentColor);
+    set({ accentColor });
+    persist(snapshot(get));
+  },
+
   setLibrarySort: (librarySort) => {
     set({ librarySort });
     persist(snapshot(get));
@@ -211,6 +236,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
   resetToDefaults: () => {
     // El idioma se conserva: restablecer no debería cambiarte de idioma.
     set({ ...DEFAULTS, language: get().language });
+    applyAccent(DEFAULT_ACCENT);
     persist(snapshot(get));
   },
 
@@ -235,6 +261,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           showProfileButton: boolean;
           librarySort: LibrarySort;
           libraryLayout: LibraryLayout;
+          accentColor: string;
         }>;
         if (typeof parsed.maxBitRate === 'number') {
           set({ maxBitRate: parsed.maxBitRate });
@@ -290,6 +317,10 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (parsed.libraryLayout === 'list' || parsed.libraryLayout === 'grid') {
           set({ libraryLayout: parsed.libraryLayout });
+        }
+        if (typeof parsed.accentColor === 'string' && /^#[0-9a-f]{6}$/i.test(parsed.accentColor)) {
+          set({ accentColor: parsed.accentColor });
+          applyAccent(parsed.accentColor);
         }
       }
     } catch {

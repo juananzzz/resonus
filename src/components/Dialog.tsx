@@ -78,6 +78,7 @@ export function Dialog({
               <Text
                 style={[
                   styles.confirm,
+                  { color: colors.accent },
                   destructive && { color: colors.danger },
                   !canConfirm && { opacity: 0.4 },
                 ]}

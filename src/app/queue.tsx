@@ -53,7 +53,7 @@ function NowPlayingRow({ song }: { song: Song }) {
           </View>
         ) : null}
         <View style={styles.info}>
-          <Text style={[styles.title, styles.current]} numberOfLines={1}>
+          <Text style={[styles.title, { color: colors.accent }]} numberOfLines={1}>
             {song.title}
           </Text>
           {song.artist ? (
@@ -108,6 +108,7 @@ function UpcomingRow({ item, absIndex }: { item: Song; absIndex: number }) {
 }
 
 export default function QueueScreen() {
+  useSettings((s) => s.accentColor); // re-render al cambiar el acento
   const t = useT();
   const router = useRouter();
   const queue = usePlayerStore((s) => s.queue);

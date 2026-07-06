@@ -106,7 +106,7 @@ export function useSongSort(source: Song[], persistKey?: string): SortResult {
             return (
               <Pressable
                 key={d}
-                style={[styles.dirChip, active && styles.dirChipActive]}
+                style={[styles.dirChip, active && { backgroundColor: colors.accent }]}
                 onPress={() => update({ field, dir: d })}
               >
                 <Ionicons

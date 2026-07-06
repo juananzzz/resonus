@@ -38,6 +38,7 @@ import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/them
 const GENRE_W = (Dimensions.get('window').width - spacing.lg * 2 - spacing.sm) / 2;
 
 export default function SearchScreen() {
+  useSettings((s) => s.accentColor); // re-render al cambiar el acento
   const canSearch = useAuthStore((s) => !!s.auth || s.offline);
   const auth = useAuthStore((s) => s.auth);
   const t = useT();

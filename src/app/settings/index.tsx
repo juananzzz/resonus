@@ -11,12 +11,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
+import { useSettings } from '@/store/settings';
 import { colors, fontSize, spacing } from '@/theme';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const t = useT();
   const auth = useAuthStore((s) => s.auth);
+  // El anillo del avatar lee el acento del store para recolorearse al cambiarlo.
+  const accentColor = useSettings((s) => s.accentColor);
   const logout = useAuthStore((s) => s.logout);
   const offline = useAuthStore((s) => s.offline);
 
@@ -46,7 +49,7 @@ export default function SettingsScreen() {
       <ScreenHeader title={t('Settings')} />
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <View style={styles.profileRow}>
-          <View style={styles.avatar}>
+          <View style={[styles.avatar, { borderColor: accentColor }]}>
             <Text style={styles.avatarText}>{initial}</Text>
           </View>
           <View style={settingsStyles.rowLabelBox}>

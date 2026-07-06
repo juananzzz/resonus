@@ -38,6 +38,7 @@ import { useMediaMenu } from '@/store/mediaMenu';
 import { usePins } from '@/store/pins';
 import { usePlayHistory } from '@/store/playHistory';
 import { useSettings, type LibrarySort } from '@/store/settings';
+import { useAccent } from '@/hooks/useAccent';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 import { listPerf } from '@/lib/listPerf';
@@ -522,6 +523,7 @@ function gridListProps(grid: boolean) {
 
 export default function LibraryScreen() {
   const t = useT();
+  const accent = useAccent();
   const auth = useAuthStore((s) => s.auth);
   const offline = useAuthStore((s) => s.offline);
   const queryClient = useQueryClient();
@@ -575,7 +577,7 @@ export default function LibraryScreen() {
           return (
             <Pressable
               key={s.key}
-              style={[styles.segment, active && styles.segmentActive]}
+              style={[styles.segment, active && { backgroundColor: accent }]}
               onPress={() => setSegment(s.key)}
             >
               <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
