@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
+  Dimensions,
   FlatList,
   Pressable,
   StyleSheet,
@@ -17,11 +17,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getGenres, type Genre } from '@/api/backend';
 import { EmptyState } from '@/components/EmptyState';
 import { GenreCard } from '@/components/GenreCard';
+import { GenreGridSkeleton } from '@/components/GenreGridSkeleton';
 import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
 import { listPerf } from '@/lib/listPerf';
+
+// Ancho de cada tarjeta en la rejilla de 2 columnas (mismo que en Buscar), para
+// que el esqueleto de carga coincida exactamente con las tarjetas reales.
+const GENRE_W = (Dimensions.get('window').width - spacing.lg * 2 - spacing.sm) / 2;
 
 export default function GenresScreen() {
   const router = useRouter();
@@ -70,7 +75,9 @@ export default function GenresScreen() {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
+        <View style={styles.skeleton}>
+          <GenreGridSkeleton width={GENRE_W} />
+        </View>
       ) : isError ? (
         <Message text={t("Couldn't load genres.")} onRetry={() => refetch()} />
       ) : (
@@ -121,4 +128,7 @@ const styles = StyleSheet.create({
     paddingBottom: SCREEN_BOTTOM_PADDING,
     gap: spacing.sm,
   },
+  // Mismo margen lateral que la lista para que las tarjetas del esqueleto queden
+  // alineadas con las reales cuando lleguen.
+  skeleton: { paddingHorizontal: spacing.lg },
 });
