@@ -23,6 +23,8 @@ export default function AppearanceSettings() {
   const language = useSettings((s) => s.language);
   const showAudioQuality = useSettings((s) => s.showAudioQuality);
   const setShowAudioQuality = useSettings((s) => s.setShowAudioQuality);
+  const showRating = useSettings((s) => s.showRating);
+  const setShowRating = useSettings((s) => s.setShowRating);
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const setShowListArtwork = useSettings((s) => s.setShowListArtwork);
   const showSongDuration = useSettings((s) => s.showSongDuration);
@@ -60,6 +62,12 @@ export default function AppearanceSettings() {
               description: t('Show format, bitrate and Lossless / Hi-Res in the player.'),
               value: showAudioQuality,
               onChange: setShowAudioQuality,
+            },
+            {
+              label: t('Rating'),
+              description: t('Show a star rating bar to rate the current song.'),
+              value: showRating,
+              onChange: setShowRating,
             },
           ]}
         />

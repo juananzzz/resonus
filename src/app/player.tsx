@@ -125,6 +125,7 @@ export default function PlayerScreen() {
   const openArtistPicker = useArtistPicker((s) => s.open);
   const t = useT();
   const showQualityBadge = useSettings((s) => s.showAudioQuality);
+  const showRating = useSettings((s) => s.showRating);
   const offline = useAuthStore((s) => s.offline);
   const serverType = useAuthStore((s) => s.auth?.serverType);
   const castDevice = useCast((s) => (s.connected ? s.deviceName : null));
@@ -284,9 +285,10 @@ export default function PlayerScreen() {
 
   const isLocal = !!song.localUri;
   const favorited = !!song.starred || (favIds?.has(song.id) ?? false);
-  // Las estrellas (setRating) son cosa de Subsonic: no en Jellyfin, ni offline,
-  // ni en radio (url directa) o pistas locales.
-  const canRate = !offline && serverType !== 'jellyfin' && !song.localUri && !song.url;
+  // Las estrellas (setRating) son cosa de Subsonic: se activan en Ajustes y no
+  // aplican en Jellyfin, offline, radio (url directa) ni pistas locales.
+  const canRate =
+    showRating && !offline && serverType !== 'jellyfin' && !song.localUri && !song.url;
   const duration = durationSec || song.duration || 0;
   const repeatActive = repeat !== 'off';
 

@@ -28,6 +28,8 @@ interface SettingsState {
   language: Language;
   /** Mostrar la etiqueta de formato/bitrate/Hi-Res (solo en el reproductor). */
   showAudioQuality: boolean;
+  /** Barra de estrellas para valorar la canción en el reproductor. */
+  showRating: boolean;
   /** Mostrar la mini carátula del álbum en las listas (playlists/favoritos). */
   showListArtwork: boolean;
   /** Duración de cada canción en las listas (Spotify no la muestra). */
@@ -55,6 +57,7 @@ interface SettingsState {
   setDownloadBitRate: (value: number) => void;
   setLanguage: (language: Language) => void;
   setShowAudioQuality: (value: boolean) => void;
+  setShowRating: (value: boolean) => void;
   setShowListArtwork: (value: boolean) => void;
   setShowSongDuration: (value: boolean) => void;
   setAutoplaySimilar: (value: boolean) => void;
@@ -81,6 +84,7 @@ function snapshot(get: () => SettingsState) {
     downloadBitRate: s.downloadBitRate,
     language: s.language,
     showAudioQuality: s.showAudioQuality,
+    showRating: s.showRating,
     showListArtwork: s.showListArtwork,
     showSongDuration: s.showSongDuration,
     autoplaySimilar: s.autoplaySimilar,
@@ -100,6 +104,7 @@ const DEFAULTS = {
   downloadBitRate: 0,
   language: 'en' as Language,
   showAudioQuality: false,
+  showRating: false,
   showListArtwork: true,
   showSongDuration: true,
   autoplaySimilar: true,
@@ -132,6 +137,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
 
   setShowAudioQuality: (showAudioQuality) => {
     set({ showAudioQuality });
+    persist(snapshot(get));
+  },
+
+  setShowRating: (showRating) => {
+    set({ showRating });
     persist(snapshot(get));
   },
 
@@ -200,6 +210,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           downloadBitRate: number;
           language: Language;
           showAudioQuality: string | boolean;
+          showRating: boolean;
           showListArtwork: boolean;
           showSongDuration: boolean;
           autoplaySimilar: boolean;
@@ -229,6 +240,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
           set({ showAudioQuality: true });
         } else if (parsed.showAudioQuality === 'off') {
           set({ showAudioQuality: false });
+        }
+        if (typeof parsed.showRating === 'boolean') {
+          set({ showRating: parsed.showRating });
         }
         if (typeof parsed.showListArtwork === 'boolean') {
           set({ showListArtwork: parsed.showListArtwork });
