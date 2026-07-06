@@ -345,6 +345,10 @@ function cutCrossfade() {
     clearInterval(fadeTimer);
     fadeTimer = null;
   }
+  if (pauseFadeTimer) {
+    clearInterval(pauseFadeTimer);
+    pauseFadeTimer = null;
+  }
   const volume = usePlayerStore.getState().volume;
   if (fadingOut) {
     try {
@@ -436,6 +440,36 @@ function runFade(out: AudioPlayer | null, incoming: AudioPlayer, fadeSec: number
   }, 200);
 }
 
+// ── Fundido corto al pausar/reanudar (solo controles dentro de la app) ───────
+// Los play/pausa del sistema (notificación, bloqueo, Android Auto, auriculares)
+// van por nativo y se quedan instantáneos, que es lo esperable ahí.
+
+const PAUSE_FADE_MS = 180;
+let pauseFadeTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Rampa lineal del volumen de `p` de `from` a `to` en PAUSE_FADE_MS; al acabar
+ *  llama a `onDone`. Cancela cualquier rampa de pausa/reanudación anterior. */
+function fadeVolume(p: AudioPlayer, from: number, to: number, onDone?: () => void) {
+  if (pauseFadeTimer) {
+    clearInterval(pauseFadeTimer);
+    pauseFadeTimer = null;
+  }
+  const t0 = Date.now();
+  pauseFadeTimer = setInterval(() => {
+    const x = Math.min(1, (Date.now() - t0) / PAUSE_FADE_MS);
+    try {
+      p.volume = from + (to - from) * x;
+    } catch {
+      // ignore
+    }
+    if (x >= 1) {
+      if (pauseFadeTimer) clearInterval(pauseFadeTimer);
+      pauseFadeTimer = null;
+      onDone?.();
+    }
+  }, 25);
+}
+
 /** Listener de estado de expo-audio: progreso, play/pausa y fin de pista. */
 function onStatus(status: AudioStatus) {
   // Con salida remota (Chromecast/UPnP) el player local está en pausa y sus
@@ -450,7 +484,9 @@ function onStatus(status: AudioStatus) {
   usePlayerStore.setState({
     positionSec: status.currentTime ?? 0,
     durationSec: status.duration || prev.durationSec,
-    isPlaying: status.playing,
+    // Durante el fundido de pausa/reanudación el player nativo sigue sonando
+    // unos ms; mantenemos el estado ya fijado para que el botón no parpadee.
+    isPlaying: pauseFadeTimer ? prev.isPlaying : status.playing,
     isBuffering: buffering,
   });
   // Sincronización de la cola con el servidor.
@@ -781,15 +817,41 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
     const p = activePlayer();
     if (!p) return;
+    const vol = get().volume;
     if (get().isPlaying) {
       // Pausar en mitad de un fundido corta el saliente: al reanudar debe
       // sonar solo la pista actual, a volumen normal.
       cutCrossfade();
-      p.pause();
+      // Baja el volumen y pausa al acabar; deja el volumen restaurado para que
+      // un play posterior (incluido el del sistema/bloqueo) suene normal.
       set({ isPlaying: false });
+      fadeVolume(p, vol, 0, () => {
+        try {
+          p.pause();
+          // Reconcilia por si el volumen cambió durante la rampa; así un play
+          // posterior (incluido el del sistema/bloqueo) suena al volumen real.
+          p.volume = get().volume;
+        } catch {
+          // ignore
+        }
+        scheduleSync(); // la sincronización "al pausar" que hace onStatus
+      });
     } else {
+      // Arranca en silencio y sube: fundido de entrada al reanudar.
+      try {
+        p.volume = 0;
+      } catch {
+        // ignore
+      }
       p.play();
       set({ isPlaying: true });
+      fadeVolume(p, 0, vol, () => {
+        try {
+          p.volume = get().volume;
+        } catch {
+          // ignore
+        }
+      });
     }
   },
 
@@ -819,9 +881,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const volume = Math.max(0, Math.min(1, v));
     set({ volume });
     if (remoteKind()) remoteSetVolume(volume);
-    else if (!fadingOut) {
-      // En mitad de un fundido no se pisa la rampa: cada paso ya lee el
-      // volumen del estado y converge solo al nuevo valor.
+    else if (!fadingOut && !pauseFadeTimer) {
+      // En mitad de un fundido (crossfade o pausa/reanudación) no se pisa la
+      // rampa: converge sola y el volumen queda restaurado al terminar.
       const p = activePlayer();
       if (p) p.volume = volume;
     }
