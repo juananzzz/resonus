@@ -8,6 +8,7 @@ import { useSettings, type Language } from '@/store/settings';
 const LANGUAGES: { value: Language; label: string }[] = [
   { value: 'en', label: 'English' },
   { value: 'es', label: 'Español' },
+  { value: 'de', label: 'Deutsch' },
 ];
 
 export default function LanguageSettings() {

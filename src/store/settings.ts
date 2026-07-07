@@ -27,10 +27,10 @@ export const BITRATE_OPTIONS = [
   { label: '128 kbps', value: 128 },
 ] as const;
 
-export type Language = 'es' | 'en';
+export type Language = 'es' | 'en' | 'de';
 
 /** Nombre de cada idioma en su propio idioma (para los selectores). */
-export const LANGUAGE_NAMES: Record<Language, string> = { es: 'Español', en: 'English' };
+export const LANGUAGE_NAMES: Record<Language, string> = { es: 'Español', en: 'English', de: 'Deutsch' };
 
 /** Orden de la Biblioteca, estilo Spotify. */
 export type LibrarySort = 'recent' | 'added' | 'alpha';
@@ -269,7 +269,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
         if (typeof parsed.downloadBitRate === 'number') {
           set({ downloadBitRate: parsed.downloadBitRate });
         }
-        if (parsed.language === 'es' || parsed.language === 'en') {
+        if (parsed.language === 'es' || parsed.language === 'en' || parsed.language === 'de') {
           set({ language: parsed.language });
         }
         // Antes era un modo ('off'/'player'/'everywhere'); ahora un simple
