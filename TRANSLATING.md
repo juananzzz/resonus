@@ -127,14 +127,13 @@ tripped you up and isn't here, tell us.
 | `Subsonic-compatible` | Login: the subtitle under **OpenSubsonic / Ampache** |
 | `Primary` / `Remote` | A server's **primary vs remote address** (profiles with several URLs) |
 | `Server default` | Codec/quality option meaning **"let the server decide"** |
-| `Connect to your music server` | Login subtitle inviting you to connect your self-hosted server |
 | `Offline · your downloads` | Settings subtitle shown in offline mode |
 
 **Playback, audio & equalizer**
 
 | String | Where / what it is |
 | --- | --- |
-| `By track` / `By album` / `By artist` | Volume-normalization (ReplayGain) modes: even out loudness per track / album / artist |
+| `By track` / `By album` | Volume-normalization (ReplayGain) modes: even out loudness per track / album |
 | `Hi-Res` / `Lossless` | Audio-quality labels on the player. Keep the widely-understood terms |
 | `Bands` / `Reset bands` | The equalizer's **frequency sliders** |
 | `Preset` / `Custom` | An **equalizer preset**; "Custom" is the user's own. Not a bitrate |
@@ -148,7 +147,6 @@ tripped you up and isn't here, tell us.
 | `Colored background` | Tint the player with the **cover art color** |
 | `Skip buttons` | The **seek forward / back** buttons setting |
 | `Next` / `Previous` | Player controls: **next / previous track** (accessibility labels) |
-| `Now playing style` | Setting for the **visual style** of the player |
 | `Next in queue` | Queue screen header: the track playing next |
 | `Show cover` | Lyrics screen: button to **go back to the cover art** |
 
