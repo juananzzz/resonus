@@ -463,7 +463,7 @@ export default function PlayerScreen() {
                 if (targets.length === 0) {
                   return (
                     <MarqueeText
-                      text={song.artist ?? t('Unknown')}
+                      text={song.artist ?? t('Unknown artist')}
                       style={styles.artist}
                       enabled={marqueeTitles}
                     />
@@ -480,7 +480,7 @@ export default function PlayerScreen() {
                     }
                   >
                     <MarqueeText
-                      text={song.artist ?? t('Unknown')}
+                      text={song.artist ?? t('Unknown artist')}
                       style={styles.artist}
                       enabled={marqueeTitles}
                     />
