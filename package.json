@@ -52,7 +52,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "i18n:status": "node scripts/i18n-status.mjs"
   },
   "private": true,
   "expo": {

@@ -22,6 +22,8 @@ export default function PlayerSettings() {
   const setShowRating = useSettings((s) => s.setShowRating);
   const showAlbumInfo = useSettings((s) => s.showAlbumInfo);
   const setShowAlbumInfo = useSettings((s) => s.setShowAlbumInfo);
+  const showPlayedInQueue = useSettings((s) => s.showPlayedInQueue);
+  const setShowPlayedInQueue = useSettings((s) => s.setShowPlayedInQueue);
   const playerColorBackground = useSettings((s) => s.playerColorBackground);
   const setPlayerColorBackground = useSettings((s) => s.setPlayerColorBackground);
   const miniPlayerColorBackground = useSettings((s) => s.miniPlayerColorBackground);
@@ -107,6 +109,18 @@ export default function PlayerSettings() {
               description: t("Song and artist names that don't fit scroll across."),
               value: marqueeTitles,
               onChange: setMarqueeTitles,
+            },
+          ]}
+        />
+
+        <Text style={settingsStyles.sectionTitle}>{t('Queue')}</Text>
+        <SwitchList
+          options={[
+            {
+              label: t('Show played tracks'),
+              description: t('Keep already-played tracks in the queue, dimmed. Tap one to go back.'),
+              value: showPlayedInQueue,
+              onChange: setShowPlayedInQueue,
             },
           ]}
         />

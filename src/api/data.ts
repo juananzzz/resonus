@@ -416,9 +416,9 @@ export function getStarred(): Promise<Subsonic.Starred> {
 /** Favoritos desde el espejo (offline de servidor); si aún no hay copia, cae al
  *  comportamiento local de siempre (derivado de las descargas).
  *
- *  Canciones favoritas: todas, con las no descargadas en gris. Álbumes: solo los
- *  que tienen alguna canción descargada (los vacíos no se muestran, para no
- *  recargar). Artistas: todos los favoriteados. */
+ *  Canciones favoritas: todas, con las no descargadas en gris. Álbumes y
+ *  artistas: todos los favoriteados (los álbumes sin descargas se ven igual y
+ *  se abren en gris/vacíos, como el resto del contenido no descargado). */
 async function mirrorStarred(): Promise<Subsonic.Starred> {
   await loadMirror();
   const mirror = useLibraryMirror.getState().data;
@@ -462,11 +462,15 @@ async function mirrorStarred(): Promise<Subsonic.Starred> {
     }
   }
 
-  // Álbumes favoriteados: solo los que tienen alguna canción descargada.
+  // Álbumes favoriteados: TODOS, aunque no tengan canciones descargadas (se
+  // abren en gris como las canciones no descargadas, o vacíos si nunca se
+  // vieron online). Los descargados usan su carátula local (por id); los no
+  // descargados conservan la del servidor, que sirve la caché de expo-image si
+  // se vio online (o se baja si el offline es manual con red).
   const downloadedAlbumIds = new Set(catalog.albums.map((a) => a.id));
-  albums = albums
-    .filter((al) => downloadedAlbumIds.has(al.id))
-    .map((al) => ({ ...al, coverArt: al.id }));
+  albums = albums.map((al) =>
+    downloadedAlbumIds.has(al.id) ? { ...al, coverArt: al.id } : al,
+  );
 
   return { songs: annotate(songs), albums, artists };
 }

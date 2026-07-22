@@ -1,6 +1,7 @@
 /** Ajustes de la app (persistidos): calidad de streaming e idioma. */
 import { create } from 'zustand';
 
+import { LANGUAGE_NAMES, isLanguage, type Language } from '@/i18n/languages';
 import { hashKey } from '@/lib/localLibrary';
 import { getItem, setItem } from '@/lib/storage';
 import { applyAccent, DEFAULT_ACCENT } from '@/theme';
@@ -64,10 +65,10 @@ export type TranscodeFormat = '' | 'mp3' | 'opus' | 'aac';
  *  la de "por defecto" la traduce cada pantalla con `t('Server default')`. */
 export const TRANSCODE_FORMATS: TranscodeFormat[] = ['', 'mp3', 'opus', 'aac'];
 
-export type Language = 'es' | 'en' | 'de' | 'ca';
-
-/** Nombre de cada idioma en su propio idioma (para los selectores). */
-export const LANGUAGE_NAMES: Record<Language, string> = { es: 'Español', en: 'English', de: 'Deutsch', ca: 'Català' };
+// Los idiomas viven en un único sitio (`src/i18n/languages.ts`): añadir uno es
+// una sola fila allí. Se re-exportan aquí para no romper los imports existentes.
+export { LANGUAGE_NAMES, isLanguage };
+export type { Language };
 
 /** Orden de la Biblioteca, estilo Spotify. */
 export type LibrarySort = 'recent' | 'added' | 'alpha';
@@ -351,6 +352,8 @@ interface SettingsState {
   showRating: boolean;
   /** Mostrar álbum y año bajo el título/artista en el reproductor. */
   showAlbumInfo: boolean;
+  /** Mostrar en la cola las pistas ya reproducidas (atenuadas, tocables). */
+  showPlayedInQueue: boolean;
   /** Mostrar la mini carátula del álbum en las listas (playlists/favoritos). */
   showListArtwork: boolean;
   /** Duración de cada canción en las listas (Spotify no la muestra). */
@@ -480,6 +483,7 @@ interface SettingsState {
   setShowAudioQuality: (value: boolean) => void;
   setShowRating: (value: boolean) => void;
   setShowAlbumInfo: (value: boolean) => void;
+  setShowPlayedInQueue: (value: boolean) => void;
   setShowListArtwork: (value: boolean) => void;
   setShowSongDuration: (value: boolean) => void;
   setShowListRating: (value: boolean) => void;
@@ -553,6 +557,7 @@ function snapshot(get: () => SettingsState) {
     showAudioQuality: s.showAudioQuality,
     showRating: s.showRating,
     showAlbumInfo: s.showAlbumInfo,
+    showPlayedInQueue: s.showPlayedInQueue,
     showListArtwork: s.showListArtwork,
     showSongDuration: s.showSongDuration,
     showListRating: s.showListRating,
@@ -614,6 +619,7 @@ const DEFAULTS = {
   showAudioQuality: false,
   showRating: false,
   showAlbumInfo: false,
+  showPlayedInQueue: false,
   showListArtwork: true,
   showSongDuration: false,
   showListRating: false,
@@ -714,6 +720,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
 
   setShowAlbumInfo: (showAlbumInfo) => {
     set({ showAlbumInfo });
+    persist(snapshot(get));
+  },
+
+  setShowPlayedInQueue: (showPlayedInQueue) => {
+    set({ showPlayedInQueue });
     persist(snapshot(get));
   },
 
@@ -1000,6 +1011,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           showAudioQuality: string | boolean;
           showRating: boolean;
           showAlbumInfo: boolean;
+          showPlayedInQueue: boolean;
           showListArtwork: boolean;
           showSongDuration: boolean;
           showListRating: boolean;
@@ -1089,6 +1101,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.showAlbumInfo === 'boolean') {
           set({ showAlbumInfo: parsed.showAlbumInfo });
+        }
+        if (typeof parsed.showPlayedInQueue === 'boolean') {
+          set({ showPlayedInQueue: parsed.showPlayedInQueue });
         }
         if (typeof parsed.showListArtwork === 'boolean') {
           set({ showListArtwork: parsed.showListArtwork });
@@ -1282,7 +1297,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
           }
         }
       }
-      if (lang === 'es' || lang === 'en' || lang === 'de' || lang === 'ca') {
+      if (isLanguage(lang)) {
         set({ language: lang });
       }
     } catch {

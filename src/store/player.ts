@@ -281,26 +281,36 @@ let streamOffsetSec = 0;
 /** Soporte de `transcodeOffset` del servidor activo (null = sin comprobar). */
 let transcodeOffsetSupported: boolean | null = null;
 
-/** ¿Esta canción se está transcodificando (límite de bitrate activo)? */
+/** ¿Esta canción se está transcodificando (el servidor la genera al vuelo)? */
 function isTranscoded(song: Song): boolean {
   // Las descargadas suenan desde disco: seek nativo normal, sin timeOffset.
   if (song.url || song.localUri || downloadedUri(song)) return false;
   const max = effectiveMaxBitRate();
-  return max > 0 && song.bitRate != null && song.bitRate > max;
+  // Sin límite el servidor sirve el fichero original (directo, seek nativo). El
+  // códec forzado solo se envía con `maxBitRate > 0` (ver streamUrl), así que
+  // fuera de ahí no hay transcode.
+  if (max <= 0) return false;
+  // Transcodifica si el original supera el bitrate O si se fuerza un códec de
+  // salida (el servidor reconvierte aunque el bitrate ya cupiera). En ambos
+  // casos el stream pierde el acceso aleatorio y el seek nativo reiniciaría.
+  return useSettings.getState().streamFormat !== '' || (song.bitRate != null && song.bitRate > max);
 }
 
 /** Consulta (una vez por perfil) si el servidor soporta `transcodeOffset`. */
 async function ensureTranscodeOffsetSupport(): Promise<boolean> {
   if (transcodeOffsetSupported != null) return transcodeOffsetSupported;
   const auth = useAuthStore.getState().auth;
-  if (!auth) return (transcodeOffsetSupported = false);
+  if (!auth) return false; // sin sesión aún: no cachear, se re-comprueba
   try {
     const exts = await getOpenSubsonicExtensions(auth);
     transcodeOffsetSupported = exts.includes('transcodeOffset');
+    return transcodeOffsetSupported;
   } catch {
-    transcodeOffsetSupported = false;
+    // Fallo transitorio de red: NO cachear como "no soportado", o un solo hipo
+    // dejaría todos los seeks en modo nativo (reinician) el resto de la sesión.
+    // Se reintenta en el siguiente seek.
+    return false;
   }
-  return transcodeOffsetSupported;
 }
 
 /** URL de carátula para la pantalla de bloqueo (solo servidor por ahora). */
@@ -1715,22 +1725,37 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return;
     }
     const song = currentSong(get());
-    if (song && isTranscoded(song) && transcodeOffsetSupported) {
-      // Sin acceso aleatorio en un stream generado al vuelo: se re-pide al
-      // servidor desde `sec` (timeOffset) y se compensa la posición.
-      const p = activePlayer();
-      if (p) {
-        streamOffsetSec = sec;
-        pendingSeek = { sec, at: Date.now() };
-        try {
-          p.replace(sourceFor(song, sec));
-          p.volume = effectiveVolume(song);
-          if (get().isPlaying) p.play();
-        } catch {
-          // ignore
-        }
-      }
+    if (song && isTranscoded(song)) {
+      // Un stream generado al vuelo no tiene acceso aleatorio: el seek nativo
+      // reinicia. Hay que re-pedirlo con `timeOffset`, pero solo si el servidor
+      // lo soporta. Esa respuesta se calienta de forma asíncrona al cargar la
+      // pista, así que aquí la RESOLVEMOS (no leemos una variable que, con un
+      // seek justo tras cargar, aún estaría sin comprobar y nos mandaría al
+      // seek nativo → reinicio). Fijamos ya la posición y el pendingSeek para
+      // que el slider no rebote mientras se decide.
+      pendingSeek = { sec, at: Date.now() };
       set({ positionSec: sec });
+      void ensureTranscodeOffsetSupport().then((supported) => {
+        // Si mientras se resolvía cambió la pista, no toques el player nuevo.
+        if (currentSong(get()) !== song) return;
+        const p = activePlayer();
+        if (!p) return;
+        pendingSeek = { sec, at: Date.now() }; // refresca la ventana de espera
+        if (supported) {
+          streamOffsetSec = sec;
+          try {
+            p.replace(sourceFor(song, sec));
+            p.volume = effectiveVolume(song);
+            if (get().isPlaying) p.play();
+          } catch {
+            // ignore
+          }
+        } else {
+          // Sin soporte de offset: seek nativo como mejor esfuerzo.
+          p.seekTo(sec);
+        }
+        set({ positionSec: sec });
+      });
       return;
     }
     pendingSeek = { sec, at: Date.now() };

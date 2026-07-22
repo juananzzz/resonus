@@ -544,14 +544,6 @@ export default function HomeScreen() {
                 accessibilityLabel={t('Offline')}
               />
             ) : null}
-            {offline && auth ? (
-              <Ionicons
-                name="cloud-offline-outline"
-                size={22}
-                color={colors.textMuted}
-                accessibilityLabel={t('Offline')}
-              />
-            ) : null}
           </View>
           <View style={styles.headerRight}>
             {showHistoryButton ? (

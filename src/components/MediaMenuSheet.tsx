@@ -17,6 +17,7 @@ import { songsLabel, useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { useDownloads } from '@/store/downloads';
 import { useMediaMenu, type MediaMenuItem } from '@/store/mediaMenu';
+import { usePlaylistPicker } from '@/store/playlistPicker';
 import { MAX_PINS, usePins } from '@/store/pins';
 import { usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
@@ -170,6 +171,11 @@ export function MediaMenuSheet() {
               toast(t('Added to queue'));
             })
           }
+        />
+        <Action
+          icon="add"
+          label={t('Add to a playlist')}
+          onPress={() => withSongs((songs) => usePlaylistPicker.getState().open(songs))}
         />
         {!offline ? (
           <Action

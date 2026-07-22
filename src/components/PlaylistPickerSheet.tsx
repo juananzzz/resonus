@@ -16,6 +16,7 @@ import { type Song } from '@/api/subsonic';
 import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
 import { useT } from '@/i18n';
 import { useAutoDownloads } from '@/store/autoDownloads';
+import { usePlaylistPicker } from '@/store/playlistPicker';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, radius, spacing } from '@/theme';
 import { Cover } from './Cover';
@@ -24,6 +25,14 @@ import { Dialog } from './Dialog';
 /** Alto máximo de la lista de playlists: proporcional a la pantalla para que
  *  no quede compacta en móviles grandes (antes era un fijo de 400). */
 const PLAYLISTS_MAX_H = Math.round(Dimensions.get('window').height * 0.6);
+
+/** Instancia global (montada una vez en el layout raíz): la abre cualquier sitio
+ *  vía `usePlaylistPicker.open(songs)` sin renderizar su propia hoja. */
+export function GlobalPlaylistPicker() {
+  const songs = usePlaylistPicker((s) => s.songs);
+  const close = usePlaylistPicker((s) => s.close);
+  return <PlaylistPickerSheet songs={songs} onClose={close} />;
+}
 
 
 export function PlaylistPickerSheet({

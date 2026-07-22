@@ -51,9 +51,10 @@ export function MiniPlayer() {
   const reset = usePlayerStore((s) => s.reset);
   const t = useT();
 
-  // Gestos del mini-reproductor: arrastrar hacia la derecha → siguiente, hacia
-  // la izquierda → anterior, hacia abajo → descartar (para y limpia). El pan se
-  // bloquea al eje dominante para que no vaya en diagonal.
+  // Gestos del mini-reproductor: arrastrar hacia la izquierda → siguiente, hacia
+  // la derecha → anterior (igual que el carrusel del reproductor), hacia abajo →
+  // descartar (para y limpia). El pan se bloquea al eje dominante para que no
+  // vaya en diagonal.
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const pan = Gesture.Pan()
@@ -70,8 +71,8 @@ export function MiniPlayer() {
     .onEnd((e) => {
       const horizontal = Math.abs(e.translationX) > Math.abs(e.translationY);
       if (horizontal) {
-        if (e.translationX > SWIPE_X || e.velocityX > 800) runOnJS(next)();
-        else if (e.translationX < -SWIPE_X || e.velocityX < -800) runOnJS(previous)();
+        if (e.translationX < -SWIPE_X || e.velocityX < -800) runOnJS(next)();
+        else if (e.translationX > SWIPE_X || e.velocityX > 800) runOnJS(previous)();
         translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
         translateY.value = 0;
       } else if (e.translationY > DISMISS_Y || e.velocityY > 800) {

@@ -376,6 +376,16 @@ export default function PlaylistScreen() {
               <Ionicons name="list" size={24} color={colors.text} />
               <Text style={styles.actionText}>{t('Add to queue')}</Text>
             </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+              onPress={() => {
+                close();
+                if (displaySongs.length > 0) setAddingSongs(displaySongs);
+              }}
+            >
+              <Ionicons name="add" size={24} color={colors.text} />
+              <Text style={styles.actionText}>{t('Add to a playlist')}</Text>
+            </Pressable>
             {canReorder ? (
               <Pressable
                 style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}

@@ -9,7 +9,7 @@
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ReorderableList, {
@@ -22,8 +22,10 @@ import { type Song } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
 import { Dialog } from '@/components/Dialog';
 import { EmptyState } from '@/components/EmptyState';
+import { SheetModal } from '@/components/SheetModal';
 import { formatTotalDuration } from '@/lib/format';
 import { SOURCE_FAVORITES, SOURCE_HISTORY, usePlayerStore } from '@/store/player';
+import { usePlaylistPicker } from '@/store/playlistPicker';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { useT } from '@/i18n';
@@ -67,6 +69,33 @@ function NowPlayingRow({ song }: { song: Song }) {
       </View>
       <Ionicons name="volume-medium" size={20} color={colors.accent} />
     </View>
+  );
+}
+
+/** Fila ya reproducida (ajuste opcional): atenuada, tocar → vuelve a esa pista. */
+function PlayedRow({ item, absIndex }: { item: Song; absIndex: number }) {
+  const jumpTo = usePlayerStore((s) => s.jumpTo);
+  const showListArtwork = useSettings((s) => s.showListArtwork);
+  return (
+    <Pressable style={[styles.row, styles.played]} onPress={() => jumpTo(absIndex)}>
+      <View style={styles.main}>
+        {showListArtwork ? (
+          <View style={styles.artwork}>
+            <Cover uri={coverArtUrl(item.coverArt ?? item.albumId, 100)} size={44} />
+          </View>
+        ) : null}
+        <View style={styles.info}>
+          <Text style={styles.title} numberOfLines={1}>
+            {item.title}
+          </Text>
+          {item.artist ? (
+            <Text style={styles.artist} numberOfLines={1}>
+              {item.artist}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
@@ -134,9 +163,14 @@ export default function QueueScreen() {
   const accent = useSettings((s) => s.accentColor);
   const toast = useToast((s) => s.show);
   const [confirmClear, setConfirmClear] = useState(false);
+  // Menú ⋯ (imperativo: abrir/cerrar no re-renderiza la pantalla).
+  const menuRef = useRef<() => void>(() => {});
 
+  const showPlayed = useSettings((s) => s.showPlayedInQueue);
   const current = queue[index] ?? null;
   const upcoming = queue.slice(index + 1);
+  // Ya reproducidas (ajuste): su índice absoluto es su propia posición 0..index-1.
+  const played = showPlayed ? queue.slice(0, index) : [];
   const totalSec = upcoming.reduce((acc, s) => acc + (s.duration ?? 0), 0);
 
   // Etiqueta del origen para la sección "Siguiente de:"; los centinelas de
@@ -200,6 +234,17 @@ export default function QueueScreen() {
               <Ionicons name="trash-outline" size={22} color={colors.textSecondary} />
             </Pressable>
           ) : null}
+          {queue.length > 0 ? (
+            <Pressable
+              style={styles.headerAction}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t('More options')}
+              onPress={() => menuRef.current()}
+            >
+              <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
+            </Pressable>
+          ) : null}
         </View>
       </View>
 
@@ -210,7 +255,15 @@ export default function QueueScreen() {
           keyExtractor={(item, i) => `${item.id}-${i}`}
           ListHeaderComponent={
             <View>
-              <SectionHeader title={t('Now playing')} />
+              {played.length > 0 ? (
+                <View>
+                  <SectionHeader title={t('Played')} />
+                  {played.map((s, i) => (
+                    <PlayedRow key={`${s.id}-${i}`} item={s} absIndex={i} />
+                  ))}
+                </View>
+              ) : null}
+              <SectionHeader title={t('Now playing')} gap={played.length > 0} />
               <NowPlayingRow song={current} />
             </View>
           }
@@ -251,12 +304,31 @@ export default function QueueScreen() {
           if (undo) toast(t('Queue cleared'), { label: t('Undo'), run: undo });
         }}
       />
+
+      <SheetModal openRef={menuRef}>
+        {(close) => (
+          <Pressable
+            style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+            onPress={() => {
+              close();
+              const q = usePlayerStore.getState().queue;
+              if (q.length > 0) usePlaylistPicker.getState().open(q);
+            }}
+          >
+            <Ionicons name="add" size={24} color={colors.text} />
+            <Text style={styles.actionText}>{t('Add to a playlist')}</Text>
+          </Pressable>
+        )}
+      </SheetModal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+  // Fila del menú ⋯ (mismo aspecto que el de la playlist / menú multimedia).
+  action: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingVertical: spacing.md },
+  actionText: { color: colors.text, fontSize: fontSize.md },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -297,6 +369,8 @@ const styles = StyleSheet.create({
     // Fondo opaco para que la fila arrastrada tape a las demás al pasar.
     backgroundColor: colors.background,
   },
+  // Filas ya reproducidas: atenuadas para leerse como "pasado" sin desaparecer.
+  played: { opacity: 0.55 },
   main: {
     flex: 1,
     flexDirection: 'row',

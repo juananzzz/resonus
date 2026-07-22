@@ -33,6 +33,7 @@ import { Cover } from '@/components/Cover';
 import { Dialog } from '@/components/Dialog';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { Message } from '@/components/Message';
+import { SheetModal } from '@/components/SheetModal';
 import { TrackRow } from '@/components/TrackRow';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useDownloadMessage } from '@/hooks/useDownloadMessage';
@@ -41,6 +42,7 @@ import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { groupDownloadState, useDownloads } from '@/store/downloads';
 import { currentSong, usePlayerStore } from '@/store/player';
+import { usePlaylistPicker } from '@/store/playlistPicker';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING } from '@/theme';
@@ -61,6 +63,8 @@ export default function ArtistScreen() {
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
   const [bioExpanded, setBioExpanded] = useState(false);
   const [songsExpanded, setSongsExpanded] = useState(false);
+  // Menú ⋯ (imperativo: abrir/cerrar no re-renderiza la pantalla).
+  const menuRef = useRef<() => void>(() => {});
   const dominant = useDominantColor(canFetch ? coverArtUrl(id, 400) : undefined);
 
   // ── Descargar la discografía ────────────────────────────────────────────
@@ -196,6 +200,11 @@ export default function ArtistScreen() {
     }
   }
 
+  async function addToPlaylist() {
+    const songs = await gatherSongs();
+    if (songs && songs.length > 0) usePlaylistPicker.getState().open(songs);
+  }
+
   async function startDownload() {
     if (!pending) return;
     await downloadArtist(id, pending, albums);
@@ -287,6 +296,16 @@ export default function ArtistScreen() {
               ) : (
                 <Ionicons name="arrow-down-circle-outline" size={26} color={colors.textSecondary} />
               )}
+            </Pressable>
+          ) : null}
+          {albums.length > 0 ? (
+            <Pressable
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t('More options')}
+              onPress={() => menuRef.current()}
+            >
+              <Ionicons name="ellipsis-horizontal" size={26} color={colors.text} />
             </Pressable>
           ) : null}
           <View style={{ flex: 1 }} />
@@ -454,6 +473,21 @@ export default function ArtistScreen() {
           cancelDownload(`artist:${id}`);
         }}
       />
+
+      <SheetModal openRef={menuRef}>
+        {(close) => (
+          <Pressable
+            style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+            onPress={() => {
+              close();
+              void addToPlaylist();
+            }}
+          >
+            <Ionicons name="add" size={24} color={colors.text} />
+            <Text style={styles.actionText}>{t('Add to a playlist')}</Text>
+          </Pressable>
+        )}
+      </SheetModal>
     </View>
   );
 }
@@ -461,6 +495,9 @@ export default function ArtistScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, justifyContent: 'center' },
+  // Fila del menú ⋯ (mismo aspecto que el de la playlist / menú multimedia).
+  action: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingVertical: spacing.md },
+  actionText: { color: colors.text, fontSize: fontSize.md },
   headerWrap: { width: WIDTH, height: HEADER_H, justifyContent: 'flex-end' },
   headerImg: { ...StyleSheet.absoluteFillObject, width: WIDTH, height: HEADER_H },
   name: {

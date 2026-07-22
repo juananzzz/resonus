@@ -48,7 +48,8 @@ Get the latest APK from the [Releases](https://github.com/juananzzz/resonus/rele
 ## Translations
 
 Available in **English, Spanish, German, and Catalan**. More languages are
-welcome via pull request.
+welcome via pull request — see [TRANSLATING.md](./TRANSLATING.md) for how to add
+one, plus context for the trickier strings.
 
 ## Community
 

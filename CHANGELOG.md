@@ -9,6 +9,48 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-07-22
+
+### Added
+
+- Add a whole album, artist, playlist or the current queue to a playlist, from
+  its ⋯ menu.
+- Auto-download playlists: mark a playlist and the songs you add to it download
+  automatically.
+- Choose the streaming and download codec separately — Opus, AAC, MP3 or the
+  server default — with a new 160 kbps option.
+- Optional album and release year line under the title on the player (off by
+  default).
+- Multi-disc albums now show disc separators with their titles.
+- Optional plain-text password authentication, for Subsonic servers that don't
+  support token auth.
+- Option to hide unavailable (not downloaded) songs in offline mode.
+
+### Changed
+
+- UPnP/DLNA casting now advances the queue, shows lock-screen controls and
+  responds to the volume keys.
+- All server playlists are cached for offline, not just the downloaded ones.
+- Swapped the positions of the star rating and the audio-quality label on the
+  player.
+- The offline cloud icon was removed from the Home header.
+- Contributing a translation is now much easier: languages live in a single
+  place, with a contributor guide and a status helper for translators.
+
+### Fixed
+
+- Seeking a transcoded stream no longer restarts the track when you seek right
+  after it loads, and it recovers safely if the server support check hiccups.
+- The mini player's swipe direction now matches the full player: swipe left for
+  the next track, right for the previous.
+- The "Show rating" toggle now appears in the player settings in offline mode,
+  where ratings already work.
+- Favorited albums now appear in offline mode even when none of their songs are
+  downloaded.
+- Slow, laggy scrolling in long playlists.
+- The mini player no longer covers the last row in tab lists.
+- Track preloading now warms the original source instead of the transcode.
+
 ## [0.5.0] - 2026-07-20
 
 ### Added
@@ -206,6 +248,8 @@ Releases before 0.2.1 are only listed on the
   is enabled.
 - The keyboard no longer covers the search bar on the add-to-favorites screen.
 - Centered the sort chip labels on the Albums screen.
+
+[0.5.1]: https://github.com/juananzzz/resonus/releases/tag/v0.5.1
 
 [0.5.0]: https://github.com/juananzzz/resonus/releases/tag/v0.5.0
 
