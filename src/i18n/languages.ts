@@ -14,6 +14,7 @@
 import ca from './locales/ca.json';
 import de from './locales/de.json';
 import es from './locales/es.json';
+import ru from './locales/ru.json';
 
 type Dict = Record<string, string>;
 type LangDef = { code: string; name: string; dict?: Dict };
@@ -23,6 +24,7 @@ export const LANGUAGES = [
   { code: 'es', name: 'Español', dict: es },
   { code: 'de', name: 'Deutsch', dict: de },
   { code: 'ca', name: 'Català', dict: ca },
+  { code: 'ru', name: 'Русский', dict: ru },
 ] as const satisfies readonly LangDef[];
 
 export type Language = (typeof LANGUAGES)[number]['code'];
