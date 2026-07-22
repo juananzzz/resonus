@@ -47,8 +47,8 @@ export function useT(): TFunction {
  * (uno/resto), 3 para idiomas como el ruso (one/few/many).
  */
 const PLURALS: Record<string, Partial<Record<Language, string[]>>> = {
-  song: { es: ['canción', 'canciones'], en: ['song', 'songs'], de: ['Titel', 'Titel'], ca: ['cançó', 'cançons'] },
-  album: { es: ['álbum', 'álbumes'], en: ['album', 'albums'], de: ['Album', 'Alben'], ca: ['àlbum', 'àlbums'] },
+  song: { es: ['canción', 'canciones'], en: ['song', 'songs'], de: ['Titel', 'Titel'], ca: ['cançó', 'cançons'], ru: ['композиция', 'композиции', 'композиций'] },
+  album: { es: ['álbum', 'álbumes'], en: ['album', 'albums'], de: ['Album', 'Alben'], ca: ['àlbum', 'àlbums'], ru: ['альбом', 'альбома', 'альбомов'] },
 };
 
 /**
@@ -56,16 +56,18 @@ const PLURALS: Record<string, Partial<Record<Language, string[]>>> = {
  * Los idiomas que no estén aquí usan la binaria (uno / resto), correcta para
  * en/es/ca/de. Para añadir uno con más formas se registra su función aquí y se
  * dan sus formas en PLURALS.
- *
- * Ruso (cuando se añada 'ru'): 3 formas [one, few, many] y esta regla CLDR:
- *   const ru = (n: number) => {
- *     const d = n % 10, c = n % 100;
- *     if (d === 1 && c !== 11) return 0;                 // one:  1, 21, 31…
- *     if (d >= 2 && d <= 4 && (c < 12 || c > 14)) return 1; // few: 2–4, 22–24…
- *     return 2;                                          // many: 0, 5–20, 25…
- *   };
  */
-const PLURAL_RULE: Partial<Record<Language, (n: number) => number>> = {};
+const PLURAL_RULE: Partial<Record<Language, (n: number) => number>> = {
+  // Ruso (CLDR): 3 formas [one, few, many]. one 1,21,31… · few 2–4,22–24… ·
+  // many 0,5–20,25… (los 11–14 caen en many por las excepciones).
+  ru: (n) => {
+    const d = n % 10;
+    const c = n % 100;
+    if (d === 1 && c !== 11) return 0;
+    if (d >= 2 && d <= 4 && (c < 12 || c > 14)) return 1;
+    return 2;
+  },
+};
 
 function pluralIndex(lang: Language, n: number): number {
   const rule = PLURAL_RULE[lang];
