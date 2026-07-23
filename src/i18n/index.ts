@@ -49,8 +49,8 @@ export function useT(): TFunction {
  * languages like Russian (one/few/many).
  */
 const PLURALS: Record<string, Partial<Record<Language, string[]>>> = {
-  song: { es: ['canción', 'canciones'], en: ['song', 'songs'], de: ['Titel', 'Titel'], ca: ['cançó', 'cançons'], ru: ['композиция', 'композиции', 'композиций'] },
-  album: { es: ['álbum', 'álbumes'], en: ['album', 'albums'], de: ['Album', 'Alben'], ca: ['àlbum', 'àlbums'], ru: ['альбом', 'альбома', 'альбомов'] },
+  song: { es: ['canción', 'canciones'], en: ['song', 'songs'], de: ['Titel', 'Titel'], ca: ['cançó', 'cançons'], ru: ['композиция', 'композиции', 'композиций'], it: ['canzone', 'canzoni'] },
+  album: { es: ['álbum', 'álbumes'], en: ['album', 'albums'], de: ['Album', 'Alben'], ca: ['àlbum', 'àlbums'], ru: ['альбом', 'альбома', 'альбомов'], it: ['album', 'album']  },
 };
 
 /**
