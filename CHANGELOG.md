@@ -9,6 +9,57 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+## [0.5.6] - 2026-07-27
+
+Mostly a performance release. On large libraries the app was doing a great deal
+of work nobody asked for, and the bigger the library the worse it got.
+
+### Added
+
+- Delete the downloads of your favourites from their ⋯ menu, as albums,
+  playlists and discographies already allowed.
+- Settings › Downloads shows what the offline copy of your library takes up,
+  next to what the downloads themselves take.
+
+### Changed
+
+- The ⋯ menus of playlists, favourites, the queue and artists, and the sort
+  sheet, now slide in and out and close by dragging them down, with the same
+  grabber the song menu has.
+- The song ⋯ menu opens showing one more action before you have to scroll.
+- The offline copy of your library no longer grows without end. It keeps your
+  playlists, your favourites and whatever has downloads, and it is tidied up
+  when the app starts.
+
+### Fixed
+
+- Downloading no longer drags the whole app down. Each finished song was
+  recounting every album by walking every song, which on a large library is
+  millions of comparisons per song, on the thread that answers your taps.
+- Deleting downloads did the same twice over, and asked every screen in the app
+  to reload before it had actually deleted anything.
+- The app no longer downloads the full contents of every playlist you own on
+  every start. It was tens of MB before the first screen had finished loading.
+- Android Auto's browse list is no longer built within a second of opening the
+  app, fetching the songs of every album on your shelves and every favourite,
+  whether or not a car is ever plugged in.
+- Storage used no longer measures every downloaded file one at a time, which
+  froze the app while it counted and did not even stop when you left the screen.
+- The Library no longer sorts its lists again on every redraw and every letter
+  typed into its search box.
+- Cover art is kept in memory once decoded, instead of being decoded again
+  every time it scrolls back into view.
+- The full screen player no longer repaints itself twice a second while music
+  is playing.
+- With more than one library active, shelves ask for what they show instead of
+  five times as much, and "Random albums" now takes each library's size into
+  account rather than giving them equal turns.
+- A large install could open showing placeholders that never resolved, and the
+  switch to offline mode could be missing from Settings while the downloads
+  were still being read.
+- Lyrics are asked for once per song rather than twice, and the next song's are
+  no longer requested at the exact moment a track changes.
+
 ## [0.5.5] - 2026-07-26
 
 ### Added
