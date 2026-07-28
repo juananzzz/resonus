@@ -61,7 +61,7 @@ index 72a6e9e990bdc9bab549536981fc2e08eeb4837e..2e60864d82e7e733ceb1cf15b73aaaca
          runOnMain {
            ref.setActiveForLockScreen(active, metadata, options)
 diff --git a/android/src/main/java/expo/modules/audio/AudioPlayer.kt b/android/src/main/java/expo/modules/audio/AudioPlayer.kt
-index f7c43641fc12b627c70759fb49bbe65e746c4c1d..f01071628a1e316782818592d7b44b9c799b1ddc 100644
+index f7c43641fc12b627c70759fb49bbe65e746c4c1d..3919105 100644
 --- a/android/src/main/java/expo/modules/audio/AudioPlayer.kt
 +++ b/android/src/main/java/expo/modules/audio/AudioPlayer.kt
 @@ -7,6 +7,7 @@ import android.media.audiofx.Visualizer
@@ -82,8 +82,15 @@ index f7c43641fc12b627c70759fb49bbe65e746c4c1d..f01071628a1e316782818592d7b44b9c
  private const val SEEK_JUMP_INTERVAL_MS: Long = 10_000
  
  @UnstableApi
-@@ -50,6 +54,19 @@ class AudioPlayer(
-   ExoPlayer.Builder(context)
+@@ -47,9 +51,25 @@ class AudioPlayer(
+   private val updateInterval: Double,
+   bufferDurationMs: Long = 0
+ ) : SharedRef<ExoPlayer>(
+-  ExoPlayer.Builder(context)
++  ExoPlayer.Builder(
++    context,
++    BitPerfectRenderersFactory(context)
++  )
      .setLooper(context.mainLooper)
      .setAudioAttributes(AudioAttributes.DEFAULT, false)
 +    // Pause when the audio output becomes noisy (wired headphones unplugged or a
@@ -102,7 +109,7 @@ index f7c43641fc12b627c70759fb49bbe65e746c4c1d..f01071628a1e316782818592d7b44b9c
      .setSeekForwardIncrementMs(SEEK_JUMP_INTERVAL_MS)
      .setSeekBackIncrementMs(SEEK_JUMP_INTERVAL_MS)
      .apply {
-@@ -114,6 +131,42 @@ class AudioPlayer(
+@@ -114,6 +134,42 @@ class AudioPlayer(
      startUpdating()
    }
  
@@ -145,7 +152,7 @@ index f7c43641fc12b627c70759fb49bbe65e746c4c1d..f01071628a1e316782818592d7b44b9c
    fun setActiveForLockScreen(active: Boolean, metadata: Metadata? = null, options: AudioLockScreenOptions? = null) {
      if (active) {
        this.metadata = metadata
-@@ -222,6 +275,13 @@ class AudioPlayer(
+@@ -222,6 +278,13 @@ class AudioPlayer(
        }
  
        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -471,3 +478,285 @@ index 93b69010ae4cef81c18761ca4fedca8b4089f16f..334fe5561b4ed16e1b093d9764aa94f4
  };
  export declare class AudioRecorder extends SharedObject<RecordingEvents> {
      /**
+diff --git a/android/src/main/java/expo/modules/audio/BitPerfectRenderersFactory.java b/android/src/main/java/expo/modules/audio/BitPerfectRenderersFactory.java
+new file mode 100644
+index 0000000..7c17be1
+--- /dev/null
++++ b/android/src/main/java/expo/modules/audio/BitPerfectRenderersFactory.java
+@@ -0,0 +1,276 @@
++package expo.modules.audio;
++
++import android.content.Context;
++import android.media.AudioManager;
++import android.media.AudioTrack;
++import androidx.annotation.Nullable;
++import androidx.media3.common.C;
++import androidx.media3.common.Format;
++import androidx.media3.common.MimeTypes;
++import androidx.media3.common.util.UnstableApi;
++import androidx.media3.common.util.Util;
++import androidx.media3.exoplayer.DefaultRenderersFactory;
++import androidx.media3.exoplayer.audio.AudioSink;
++import androidx.media3.exoplayer.audio.DefaultAudioSink;
++import androidx.media3.exoplayer.audio.DefaultAudioTrackProvider;
++import androidx.media3.exoplayer.audio.ForwardingAudioSink;
++import java.nio.ByteBuffer;
++
++/**
++ * Media3 output path for unaltered Original-quality PCM.
++ *
++ * <p>Two Media3 defaults need changing for this:
++ *
++ * <ul>
++ *   <li>Compressed decoders otherwise emit 16-bit PCM, truncating 24-bit files.
++ *   <li>Every new PCM AudioTrack gets a 20 ms software volume ramp that changes source samples.
++ * </ul>
++ *
++ * <p>Float output represents every 24-bit integer sample exactly on Android 10. The small
++ * preserver below snapshots only the first 20 ms before Media3 applies its click-prevention ramp
++ * and restores those bytes in AudioTrack. It is deliberately enabled only when input and output
++ * PCM formats are identical and no encoder-delay trimming is needed; otherwise normal Media3
++ * behavior is retained rather than risking a shifted stream.
++ */
++@UnstableApi
++public final class BitPerfectRenderersFactory extends DefaultRenderersFactory {
++  private final OriginalPcmPreserver originalPcm = new OriginalPcmPreserver();
++
++  public BitPerfectRenderersFactory(Context context) {
++    super(context);
++  }
++
++  @Override
++  protected AudioSink buildAudioSink(
++      Context context, boolean enableFloatOutput, boolean enableAudioTrackPlaybackParams) {
++    AudioSink sink =
++        new DefaultAudioSink.Builder(context)
++            .setEnableFloatOutput(true)
++            .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
++            .setAudioTrackProvider(new RestoringAudioTrackProvider(originalPcm))
++            .build();
++    return new PreservingAudioSink(sink, originalPcm);
++  }
++
++  private static final class PreservingAudioSink extends ForwardingAudioSink {
++    private final OriginalPcmPreserver originalPcm;
++
++    PreservingAudioSink(AudioSink sink, OriginalPcmPreserver originalPcm) {
++      super(sink);
++      this.originalPcm = originalPcm;
++    }
++
++    @Override
++    public void configure(
++        Format inputFormat, int specifiedBufferSize, @Nullable int[] outputChannels)
++        throws AudioSink.ConfigurationException {
++      originalPcm.setInputFormat(inputFormat);
++      super.configure(inputFormat, specifiedBufferSize, outputChannels);
++    }
++
++    @Override
++    public boolean handleBuffer(
++        ByteBuffer buffer, long presentationTimeUs, int encodedAccessUnitCount)
++        throws AudioSink.InitializationException, AudioSink.WriteException {
++      originalPcm.offer(buffer);
++      try {
++        return super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount);
++      } finally {
++        originalPcm.clearOffer();
++      }
++    }
++  }
++
++  private static final class RestoringAudioTrackProvider
++      implements DefaultAudioSink.AudioTrackProvider {
++    private final OriginalPcmPreserver originalPcm;
++    private final DefaultAudioTrackProvider defaultProvider = new DefaultAudioTrackProvider();
++
++    RestoringAudioTrackProvider(OriginalPcmPreserver originalPcm) {
++      this.originalPcm = originalPcm;
++    }
++
++    @Override
++    public AudioTrack getAudioTrack(
++        AudioSink.AudioTrackConfig config,
++        androidx.media3.common.AudioAttributes attributes,
++        int audioSessionId,
++        @Nullable Context context) {
++      // Encoded offload is already bitstream-direct and needs AudioTrack.Builder's
++      // offload flag; it never goes through Media3's PCM ramp.
++      if (config.offload) {
++        return defaultProvider.getAudioTrack(config, attributes, audioSessionId, context);
++      }
++      originalPcm.beginAudioTrack(config);
++      return new RestoringAudioTrack(config, attributes, audioSessionId, originalPcm);
++    }
++  }
++
++  private static final class RestoringAudioTrack extends AudioTrack {
++    private final OriginalPcmPreserver originalPcm;
++
++    RestoringAudioTrack(
++        AudioSink.AudioTrackConfig config,
++        androidx.media3.common.AudioAttributes attributes,
++        int audioSessionId,
++        OriginalPcmPreserver originalPcm) {
++      super(
++          platformAttributes(config, attributes),
++          Util.getAudioFormat(config.sampleRate, config.channelConfig, config.encoding),
++          config.bufferSize,
++          AudioTrack.MODE_STREAM,
++          audioSessionId == C.AUDIO_SESSION_ID_UNSET
++              ? AudioManager.AUDIO_SESSION_ID_GENERATE
++              : audioSessionId);
++      this.originalPcm = originalPcm;
++    }
++
++    @Override
++    public int write(ByteBuffer audioData, int sizeInBytes, int writeMode) {
++      int start = audioData.position();
++      originalPcm.restore(audioData, start, sizeInBytes);
++      int written = super.write(audioData, sizeInBytes, writeMode);
++      originalPcm.commit(written);
++      return written;
++    }
++
++    @Override
++    public int write(ByteBuffer audioData, int sizeInBytes, int writeMode, long timestamp) {
++      int start = audioData.position();
++      originalPcm.restore(audioData, start, sizeInBytes);
++      int written = super.write(audioData, sizeInBytes, writeMode, timestamp);
++      originalPcm.commit(written);
++      return written;
++    }
++
++    private static android.media.AudioAttributes platformAttributes(
++        AudioSink.AudioTrackConfig config, androidx.media3.common.AudioAttributes attributes) {
++      if (!config.tunneling) {
++        return attributes.getAudioAttributesV21().audioAttributes;
++      }
++      return new android.media.AudioAttributes.Builder()
++          .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MOVIE)
++          .setFlags(android.media.AudioAttributes.FLAG_HW_AV_SYNC)
++          .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
++          .build();
++    }
++  }
++
++  private static final class OriginalPcmPreserver {
++    private static final long MEDIA3_RAMP_DURATION_US = 20_000;
++
++    @Nullable private Format inputFormat;
++    @Nullable private ByteBuffer currentOfferBuffer;
++    private int currentOfferPosition;
++    private boolean currentOfferEligible;
++    @Nullable private ByteBuffer lastAppendedBuffer;
++    private int lastAppendedPosition = -1;
++    @Nullable private byte[] original;
++    private int originalBytes;
++    private int targetBytes;
++    private int committedBytes;
++    private boolean active;
++
++    synchronized void setInputFormat(Format inputFormat) {
++      this.inputFormat = inputFormat;
++    }
++
++    synchronized void offer(ByteBuffer buffer) {
++      currentOfferBuffer = buffer;
++      currentOfferPosition = buffer.position();
++      currentOfferEligible = false;
++      Format format = inputFormat;
++      if (format == null
++          || !MimeTypes.AUDIO_RAW.equals(format.sampleMimeType)
++          || format.encoderDelay != 0
++          || !Util.isEncodingLinearPcm(format.pcmEncoding)) {
++        return;
++      }
++      currentOfferEligible = true;
++      if (active
++          && originalBytes < targetBytes
++          && (lastAppendedBuffer != buffer || lastAppendedPosition != buffer.position())) {
++        appendUpToTarget(buffer, buffer.position());
++        lastAppendedBuffer = buffer;
++        lastAppendedPosition = buffer.position();
++      }
++    }
++
++    synchronized void clearOffer() {
++      currentOfferBuffer = null;
++      currentOfferEligible = false;
++    }
++
++    synchronized void beginAudioTrack(AudioSink.AudioTrackConfig config) {
++      Format format = inputFormat;
++      original = null;
++      originalBytes = 0;
++      committedBytes = 0;
++      active = false;
++      lastAppendedBuffer = null;
++      lastAppendedPosition = -1;
++      if (format == null
++          || !currentOfferEligible
++          || currentOfferBuffer == null
++          || format.pcmEncoding != config.encoding
++          || format.sampleRate != config.sampleRate
++          || format.channelCount != Integer.bitCount(config.channelConfig)) {
++        targetBytes = 0;
++        return;
++      }
++      int frameSize = Util.getPcmFrameSize(config.encoding, format.channelCount);
++      int frames =
++          (int) Util.durationUsToSampleCount(MEDIA3_RAMP_DURATION_US, config.sampleRate);
++      targetBytes = frames * frameSize;
++      original = new byte[targetBytes];
++      appendUpToTarget(currentOfferBuffer, currentOfferPosition);
++      active = true;
++      lastAppendedBuffer = currentOfferBuffer;
++      lastAppendedPosition = currentOfferPosition;
++    }
++
++    synchronized void restore(ByteBuffer buffer, int start, int requestedBytes) {
++      if (!active || committedBytes >= targetBytes) {
++        return;
++      }
++      byte[] source = original;
++      if (source == null) {
++        return;
++      }
++      int available =
++          Math.min(
++              requestedBytes,
++              Math.min(targetBytes - committedBytes, originalBytes - committedBytes));
++      for (int index = 0; index < available; index++) {
++        buffer.put(start + index, source[committedBytes + index]);
++      }
++    }
++
++    synchronized void commit(int writtenBytes) {
++      if (writtenBytes > 0 && active) {
++        committedBytes = Math.min(targetBytes, committedBytes + writtenBytes);
++        if (committedBytes >= targetBytes) {
++          active = false;
++          original = null;
++          originalBytes = 0;
++        }
++      }
++    }
++
++    private void appendUpToTarget(ByteBuffer source, int position) {
++      byte[] destination = original;
++      if (destination == null) {
++        return;
++      }
++      int count =
++          Math.min(Math.max(0, source.limit() - position), targetBytes - originalBytes);
++      if (count > 0) {
++        ByteBuffer duplicate = source.duplicate();
++        duplicate.position(position);
++        duplicate.limit(position + count);
++        duplicate.get(destination, originalBytes, count);
++        originalBytes += count;
++      }
++    }
++  }
++}

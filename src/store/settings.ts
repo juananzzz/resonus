@@ -416,14 +416,10 @@ interface SettingsState {
   crossfadeSec: number;
   /**
    * Join one track to the next with no silence: the next one is queued in the
-   * player itself, which buffers it in advance. Crossfade, when set, takes over
-   * the change and this steps aside.
-   *
-   * OFF and with no way to turn it on while it is being fixed: its row in
-   * Settings is gone and the saved value is not read back, so an install that
-   * already had it on doesn't keep it. Everything else is left in place; when
-   * it works, the default goes back to true, the restore below comes back, and
-   * so does the row.
+   * player itself, which buffers it in advance. On by default (nobody asks for
+   * the gap), but it can be turned off, since it means fetching the next track
+   * while the current one plays. Crossfade, when set, takes over the change and
+   * this steps aside.
    */
   gapless: boolean;
   /**
@@ -740,7 +736,7 @@ const DEFAULTS = {
   showListRating: false,
   autoplaySimilar: true,
   crossfadeSec: 0,
-  gapless: false,
+  gapless: true,
   preloadUpcoming: false,
   autoOfflineSwitch: true,
   hideUnavailableOffline: false,
@@ -1311,6 +1307,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
         }
         if (typeof parsed.crossfadeSec === 'number' && parsed.crossfadeSec >= 0) {
           set({ crossfadeSec: parsed.crossfadeSec });
+        }
+        if (typeof parsed.gapless === 'boolean') {
+          set({ gapless: parsed.gapless });
         }
         if (typeof parsed.preloadUpcoming === 'boolean') {
           set({ preloadUpcoming: parsed.preloadUpcoming });

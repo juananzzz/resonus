@@ -33,6 +33,8 @@ export default function PlaybackSettings() {
   const setAutoplaySimilar = useSettings((s) => s.setAutoplaySimilar);
   const crossfadeSec = useSettings((s) => s.crossfadeSec);
   const setCrossfadeSec = useSettings((s) => s.setCrossfadeSec);
+  const gapless = useSettings((s) => s.gapless);
+  const setGapless = useSettings((s) => s.setGapless);
   const preloadUpcoming = useSettings((s) => s.preloadUpcoming);
   const setPreloadUpcoming = useSettings((s) => s.setPreloadUpcoming);
   const replayGain = useSettings((s) => s.replayGain);
@@ -92,6 +94,18 @@ export default function PlaybackSettings() {
         <Text style={[settingsStyles.sectionTitle, offline && { marginTop: 0 }]}>
           {t('Sound')}
         </Text>
+        {/* Above crossfade, and saying so: the two decide the same moment, and
+            with crossfade set it's the one that runs. */}
+        <SwitchList
+          options={[
+            {
+              label: t('Gapless playback'),
+              description: t('No silence between songs: the next one is prepared while the current one plays. Crossfade, if set, takes over.'),
+              value: gapless,
+              onChange: setGapless,
+            },
+          ]}
+        />
         <SliderRow
           label={t('Crossfade')}
           description={t('Songs blend into each other when one ends.')}

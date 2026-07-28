@@ -603,6 +603,12 @@ async function loadIndex(index: number, autoplay: boolean) {
     if (autoplay) p.play();
     applyLockScreen(p, song);
     onTrackChanged(song);
+    // `playQueue` installs the queue before this player/source exists, so the
+    // store subscription's first attempt to enqueue the following track has
+    // nothing to act on. Queue it again now that `replace()` has installed the
+    // current media item. Without this, the first album transition still falls
+    // back to didJustFinish → replace(), leaving an audible gap.
+    scheduleNextSource();
     // Warms up the "does it support timeOffset?" answer so the first seek
     // on a transcoded stream already has the answer cached. For ANY server
     // stream: the transcode may be the server's decision, and we only find
