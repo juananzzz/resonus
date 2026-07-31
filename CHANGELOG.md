@@ -52,6 +52,11 @@ Releases before 0.2.1 are only listed on the
   Settings › Downloads the two have also swapped places, quality first and the
   codec under it, which is the order they already had for streaming. Raised by
   @ztx-lyghters and @CraftoHohenvels.
+- Two strings that could not be translated properly. The row that creates a
+  local profile said "Local", an adjective with no noun behind it, and now says
+  "Local profile", the name that profile carries on every other screen; and
+  "Original", the quality option, was written into the app in English and never
+  reached the translators. Reported by @ztx-lyghters.
 
 ### Fixed
 

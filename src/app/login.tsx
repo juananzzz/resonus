@@ -295,7 +295,10 @@ export default function LoginScreen() {
                     <Ionicons name="phone-portrait-outline" size={26} color={colors.accent} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.srvName}>{t('Local')}</Text>
+                    {/* The same name the profile gets once it exists (the row
+                        above, and Settings): "Local" on its own is an adjective
+                        with no noun, which not every language can render. */}
+                    <Text style={styles.srvName}>{t('Local profile')}</Text>
                     <Text style={styles.srvSub}>{t('Music on your device')}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />

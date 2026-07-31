@@ -44,7 +44,12 @@ export default function PlaybackSettings() {
   const setBatteryWarning = useSettings((s) => s.setBatteryWarning);
   const setKeepScreenAwake = useSettings((s) => s.setKeepScreenAwake);
 
-  const bitrateOptions = BITRATE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }));
+  // Only "Original" is a word; the rest are a number and a unit that read the
+  // same in every language.
+  const bitrateOptions = BITRATE_OPTIONS.map((opt) => ({
+    value: opt.value,
+    label: opt.value === 0 ? t('Original') : opt.label,
+  }));
   const codecOptions = TRANSCODE_FORMATS.map((v) => ({
     value: v,
     label: v === '' ? t('Server default') : v.toUpperCase(),

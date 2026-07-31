@@ -477,6 +477,7 @@
   "This device does not offer an equalizer.": "Aquest dispositiu no ofereix equalitzador.",
   "Tune the sound band by band.": "Ajusta el so banda a banda.",
   "{songs} will be saved to this device.": "{songs} es guardaran en aquest dispositiu.",
+  "Original": "Original",
   "“Original” uses the highest quality; a lower bitrate saves data.": "«Original» utilitza la màxima qualitat; un bitrate més baix estalvia dades.",
   "“{name}” will no longer be available offline.": "«{name}» ja no estarà disponible fora de línia.",
   "Nothing to shuffle yet": "Encara no hi ha res per barrejar",

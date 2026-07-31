@@ -484,6 +484,7 @@
   "This device does not offer an equalizer.": "This device does not offer an equalizer.",
   "Tune the sound band by band.": "Tune the sound band by band.",
   "{songs} will be saved to this device.": "{songs} will be saved to this device.",
+  "Original": "Original",
   "“Original” uses the highest quality; a lower bitrate saves data.": "“Original” uses the highest quality; a lower bitrate saves data.",
   "“{name}” will no longer be available offline.": "“{name}” will no longer be available offline.",
   "Nothing to shuffle yet": "Nothing to shuffle yet",

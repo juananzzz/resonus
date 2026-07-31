@@ -128,7 +128,11 @@ export default function DownloadsSettings() {
             <SelectList
               label={t('Download quality')}
               description={t('Applies to new downloads only.')}
-              options={BITRATE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+              // Only "Original" is a word; the rest are a number and a unit.
+              options={BITRATE_OPTIONS.map((opt) => ({
+                value: opt.value,
+                label: opt.value === 0 ? t('Original') : opt.label,
+              }))}
               value={downloadBitRate}
               onChange={setDownloadBitRate}
             />

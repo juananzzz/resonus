@@ -50,7 +50,13 @@ function ratingShownKey(): string {
   return `${STORAGE_KEY}.ratingShown.${hashKey(profileScopeId())}`;
 }
 
-/** 0 = original quality (no transcoding); the rest is bitrate in kbps. */
+/**
+ * 0 = original quality (no transcoding); the rest is bitrate in kbps.
+ *
+ * `Original` is the only label that is a word rather than a number, so it is
+ * the only one that needs translating; it stays in English here because that is
+ * the translation key, and the screens run it through `t()`.
+ */
 export const BITRATE_OPTIONS = [
   { label: 'Original', value: 0 },
   { label: '320 kbps', value: 320 },
