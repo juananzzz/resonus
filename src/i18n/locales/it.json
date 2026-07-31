@@ -95,7 +95,6 @@
   "Download over Wi-Fi only": "Scarica solo tramite Wi-Fi",
   "Download quality": "Qualità download",
   "Download codec": "Codec download",
-  "Streaming codec": "Codec streaming",
   "Server default": "Predefinito server",
   "Download removed": "Download rimosso",
   "Downloading": "Download in corso",
@@ -525,5 +524,18 @@
   "Choose which actions show in a song’s ⋯ menu.": "Scegli quali azioni mostrare nel menu ⋯ di una canzone.",
   "The mix won’t grow any further": "Il mix non si svilupperà oltre",
   "“Good morning”, “Good evening”… at the top of Home.": "“Buongiorno”, “Buonasera”… in cima alla Home.",
-  "Show the album name and release year next to the artist.": "Mostra il nome dell'album e l'anno di pubblicazione accanto all'artista."
+  "Show the album name and release year next to the artist.": "Mostra il nome dell'album e l'anno di pubblicazione accanto all'artista.",
+  "Library metadata copy": "Copia dei metadati della libreria",
+  "Simultaneous downloads": "Download simultanei",
+  "Songs fetched at the same time. Fewer is gentler on the server, network and your phone.": "Brani recuperati contemporaneamente. Meno è più delicato sul server, sulla rete e sul telefono.",
+  "Streaming codec (Wi-Fi)": "Codec di streaming (Wi-Fi)",
+  "Streaming codec (mobile data)": "Codec di streaming (dati mobili)",
+  "Codec to transcode to. Your server must support it.": "Codec per la transcodifica. Il tuo server deve supportarlo.",
+  "Not used: at “Original” quality nothing is transcoded.": "Non utilizzato: alla qualità “Originale” nulla viene transcodificato.",
+  "Not used": "Non utilizzato",
+  "View image": "Visualizza l'immagine",
+  "Find a station": "Trova una stazione",
+  "Its downloads and its offline copy of the library will be deleted from this device.": "I suoi download e la sua copia offline della libreria saranno eliminati da questo dispositivo.",
+  "Remove profile?": "Vuoi rimuovere il profilo?",
+  "The music on your device is not touched.": "La musica sul tuo dispositivo non viene toccata."
 }
