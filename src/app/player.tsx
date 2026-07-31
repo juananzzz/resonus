@@ -244,11 +244,13 @@ export default function PlayerScreen() {
 
   // The player is scrollable (like Spotify): the first "page" fills the
   // screen and the lyrics card peeks below. The real height comes from the
-  // ScrollView's onLayout; until then, approximate it from the safe-area insets
-  // (the ScrollView fills the screen minus the status/nav bars). A close-enough
-  // first guess keeps the controls from dropping into place once measured.
+  // ScrollView's onLayout; until then, approximate it from the safe-area insets.
+  // Only the top one: the ScrollView runs to the bottom edge of the screen so
+  // the lyrics card does too, and it is the controls that keep clear of the
+  // navigation bar (see `styles.bottom` below). A close-enough first guess keeps
+  // the controls from dropping into place once measured.
   const insets = useSafeAreaInsets();
-  const approxPageH = SCREEN_H - insets.top - insets.bottom;
+  const approxPageH = SCREEN_H - insets.top;
   const [pageH, setPageH] = useState(0);
   /**
    * Height left over for the cover once everything else has taken its share.
@@ -639,7 +641,11 @@ export default function PlayerScreen() {
           ) : null}
         </View>
 
-        <View style={styles.bottom}>
+        {/* The safe area is kept here rather than on the SafeAreaView: the
+            scroll has to reach the bottom edge for the lyrics card, and it is
+            this block, the last thing on the first page, that must not end up
+            under the navigation bar. */}
+        <View style={[styles.bottom, { paddingBottom: insets.bottom + spacing.md }]}>
           <View style={styles.meta}>
             <View style={{ flex: 1 }}>
               {song.albumId ? (
@@ -943,7 +949,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   // Natural height (no `flex: 1`): the slack goes to `coverWrap`, which is what
-  // gives it up when the options don't fit.
+  // gives it up when the options don't fit. `paddingBottom` is overridden at
+  // the call site to add the safe area on top of it.
   bottom: {
     paddingBottom: spacing.md,
     paddingHorizontal: spacing.xl,
