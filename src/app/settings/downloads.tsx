@@ -137,7 +137,7 @@ export default function DownloadsSettings() {
               description={
                 downloadBitRate > 0
                   ? t('Codec to transcode to. Your server must support it.')
-                  : t('Not used: at “Original” quality nothing is transcoded.')
+                  : t('Codec to transcode to. At “Original” quality nothing is transcoded.')
               }
               options={TRANSCODE_FORMATS.map((v) => ({
                 value: v,

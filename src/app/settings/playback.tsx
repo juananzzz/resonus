@@ -74,7 +74,7 @@ export default function PlaybackSettings() {
               description={
                 maxBitRate > 0
                   ? t('Codec to transcode to. Your server must support it.')
-                  : t('Not used: at “Original” quality nothing is transcoded.')
+                  : t('Codec to transcode to. At “Original” quality nothing is transcoded.')
               }
               options={codecOptions}
               value={streamFormat}
@@ -88,13 +88,11 @@ export default function PlaybackSettings() {
               value={maxBitRateCellular}
               onChange={setMaxBitRateCellular}
             />
+            {/* No description here on purpose: it would be the same paragraph
+                as the Wi-Fi codec's, twice in the same section. The one above
+                explains the pair. */}
             <SelectList
               label={t('Streaming codec (mobile data)')}
-              description={
-                maxBitRateCellular > 0
-                  ? undefined
-                  : t('Not used: at “Original” quality nothing is transcoded.')
-              }
               options={codecOptions}
               value={streamFormatCellular}
               onChange={setStreamFormatCellular}

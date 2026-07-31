@@ -241,22 +241,31 @@ export function SelectList<T extends string | number | boolean>({
         style={({ pressed }) => [
           settingsStyles.cardBox,
           settingsStyles.row,
+          // Dimming the whole row, not recolouring the label: the muted colour
+          // is the description's own, so label and description came out the
+          // same and the row lost the hierarchy the others keep.
+          disabled && { opacity: 0.5 },
           pressed && !disabled && { opacity: 0.6 },
         ]}
         onPress={openMenu}
       >
         <View style={settingsStyles.rowLabelBox}>
-          <Text style={[settingsStyles.rowLabel, disabled && { color: colors.textMuted }]}>
-            {label ?? active?.label}
-          </Text>
+          <Text style={settingsStyles.rowLabel}>{label ?? active?.label}</Text>
           {description ? <Text style={settingsStyles.rowDescription}>{description}</Text> : null}
         </View>
         {label ? (
-          <Text style={[settingsStyles.rowValue, disabled && { color: colors.textMuted }]}>
+          <Text style={settingsStyles.rowValue}>
             {disabled ? (disabledLabel ?? active?.label) : active?.label}
           </Text>
         ) : null}
-        <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
+        {/* No arrow on a row that cannot open, but its width stays: otherwise
+            the value would sit flush to the edge and break the column the rows
+            above and below line up in. */}
+        {disabled ? (
+          <View style={{ width: 18 }} />
+        ) : (
+          <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
+        )}
       </Pressable>
 
       {/* `statusBarTranslucent` makes the Modal full-screen, which is the space

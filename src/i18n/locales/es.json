@@ -135,7 +135,7 @@
   "Streaming codec (mobile data)": "Códec de streaming (datos móviles)",
   "Server default": "El del servidor",
   "Codec to transcode to. Your server must support it.": "Códec al que transcodificar. Tu servidor debe admitirlo.",
-  "Not used: at “Original” quality nothing is transcoded.": "No se usa: con calidad «Original» no se transcodifica nada.",
+  "Codec to transcode to. At “Original” quality nothing is transcoded.": "Códec al que transcodificar. Con calidad «Original» no se transcodifica nada.",
   "Not used": "No se usa",
   "Download removed": "Descarga eliminada",
   "Download “{name}”?": "¿Descargar «{name}»?",

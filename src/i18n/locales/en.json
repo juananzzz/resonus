@@ -135,7 +135,7 @@
   "Streaming codec (mobile data)": "Streaming codec (mobile data)",
   "Server default": "Server default",
   "Codec to transcode to. Your server must support it.": "Codec to transcode to. Your server must support it.",
-  "Not used: at “Original” quality nothing is transcoded.": "Not used: at “Original” quality nothing is transcoded.",
+  "Codec to transcode to. At “Original” quality nothing is transcoded.": "Codec to transcode to. At “Original” quality nothing is transcoded.",
   "Not used": "Not used",
   "Download removed": "Download removed",
   "Download “{name}”?": "Download “{name}”?",
