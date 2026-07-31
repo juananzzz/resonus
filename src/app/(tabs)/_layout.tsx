@@ -91,7 +91,13 @@ export default function TabsLayout() {
           options={{
             title: t('Home'),
             tabBarIcon: ({ focused, color, size }) => (
-              <Ionicons name={focused ? 'home' : 'home-outline'} color={color} size={size} />
+              <AnimatedTabIcon
+                focused={focused}
+                name="home"
+                outlineName="home-outline"
+                color={color}
+                size={size}
+              />
             ),
           }}
         />
@@ -100,7 +106,13 @@ export default function TabsLayout() {
           options={{
             title: t('Search'),
             tabBarIcon: ({ focused, color, size }) => (
-              <Ionicons name={focused ? 'search' : 'search-outline'} color={color} size={size} />
+              <AnimatedTabIcon
+                focused={focused}
+                name="search"
+                outlineName="search-outline"
+                color={color}
+                size={size}
+              />
             ),
           }}
         />
@@ -109,7 +121,13 @@ export default function TabsLayout() {
           options={{
             title: t('Library'),
             tabBarIcon: ({ focused, color, size }) => (
-              <Ionicons name={focused ? 'library' : 'library-outline'} color={color} size={size} />
+              <AnimatedTabIcon
+                focused={focused}
+                name="library"
+                outlineName="library-outline"
+                color={color}
+                size={size}
+              />
             ),
           }}
         />
