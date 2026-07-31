@@ -2,7 +2,7 @@
   "expo": {
     "name": "Resonus",
     "slug": "resonus",
-    "version": "0.6.0",
+    "version": "0.6.1-beta",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "resonus",
