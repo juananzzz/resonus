@@ -496,9 +496,10 @@ export default function PlayerScreen() {
           colors={[colors.background + '00', colors.background] as const}
           style={StyleSheet.absoluteFill}
         />
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
         <ScrollView
           style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, spacing.md) }}
           onLayout={(e) => {
             const h = e.nativeEvent.layout.height;
             setPageH(h);
