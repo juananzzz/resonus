@@ -7,8 +7,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Slider from '@react-native-community/slider';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COVER, songCoverUrl } from '@/api/data';
 import { lyricsStyles, SyncedLyricsView } from '@/components/LyricsCard';
@@ -36,6 +37,9 @@ export default function LyricsScreen() {
   const seekTo = usePlayerStore((s) => s.seekTo);
   const previous = usePlayerStore((s) => s.previous);
   const next = usePlayerStore((s) => s.next);
+  const dragging = useRef(false);
+  const dragValue = useRef(positionSec);
+  const [, forceUpdate] = useState(0);
   const { data, isLoading } = useLyrics(song ?? undefined);
   const background = useSettings((s) => s.lyricsBackground);
   const cover = song ? songCoverUrl(song, COVER.card) : undefined;
@@ -48,6 +52,8 @@ export default function LyricsScreen() {
   // The scrim already keeps the text readable, so the fade just goes away.
   const fadeColor = background === 'cover' ? undefined : bg;
   const duration = durationSec || song?.duration || 0;
+  const insets = useSafeAreaInsets();
+  const topPad = insets.top > 0 ? insets.top : 12;
 
   return (
     <View style={[styles.root, { backgroundColor: bg }]}>
@@ -68,7 +74,7 @@ export default function LyricsScreen() {
           <View style={styles.coverScrim} />
         </>
       ) : null}
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <View style={[styles.safe, { paddingTop: topPad, paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
         <Pressable hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Close')} onPress={() => router.back()}>
           <Ionicons name="close" size={26} color={colors.text} />
@@ -106,11 +112,14 @@ export default function LyricsScreen() {
 
       <View style={styles.controls}>
         <Slider
-          style={styles.slider}
+          style={[styles.slider, { height: 24, marginHorizontal: 0 }]}
+          thumbSize={12}
           minimumValue={0}
           maximumValue={duration}
-          value={positionSec}
-          onSlidingComplete={seekTo}
+          value={dragging.current ? dragValue.current : positionSec}
+          onSlidingStart={() => { dragging.current = true; }}
+          onValueChange={(v) => { dragValue.current = v; }}
+          onSlidingComplete={(v) => { dragging.current = false; forceUpdate((n) => n + 1); seekTo(v); }}
           minimumTrackTintColor={colors.text}
           maximumTrackTintColor={colors.mediaTrack}
           thumbTintColor={colors.text}
@@ -151,7 +160,7 @@ export default function LyricsScreen() {
           </Pressable>
         </View>
       </View>
-      </SafeAreaView>
+    </View>
     </View>
   );
 }

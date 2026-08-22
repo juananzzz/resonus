@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Only the folder the download writes to (`Paths.cache/updates`), never the
-     whole cache: this provider is readable by whoever we hand a URI to. -->
-<paths>
-  <cache-path name="updates" path="updates/" />
-</paths>

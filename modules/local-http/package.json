@@ -1,7 +1,0 @@
-{
-  "name": "local-http",
-  "version": "0.0.1",
-  "description": "Serves the phone's own music files to renderers on the network (local Expo module)",
-  "main": "index.ts",
-  "private": true
-}

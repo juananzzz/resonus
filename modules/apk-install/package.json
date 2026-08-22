@@ -1,7 +1,0 @@
-{
-  "name": "apk-install",
-  "version": "0.0.1",
-  "description": "Handing a downloaded APK to Android's installer, for Resonus's in-app update (local Expo module)",
-  "main": "index.ts",
-  "private": true
-}

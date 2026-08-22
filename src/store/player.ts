@@ -529,7 +529,17 @@ function seekActive(sec: number) {
   if (AppState.currentState !== 'active') bump('seek · away');
   if (!song || !needsOffsetSeek(song)) {
     bump(activePlayer() ? 'seek · native' : 'seek · no player');
-    activePlayer()?.seekTo(sec);
+    const p = activePlayer();
+    if (p) {
+      void p.seekTo(sec).then(() => {
+        // Native seek completed: clear pendingSeek so onStatus picks up the
+        // real currentTime from the player instead of the held value.
+        if (pendingSeek?.sec === sec) {
+          pendingSeek = null;
+          usePlayerStore.setState({ positionSec: sec });
+        }
+      });
+    }
     return;
   }
   // A stream generated on the fly has no random access: native seek
@@ -1602,7 +1612,7 @@ function nextIndex(_manual: boolean): number | null {
 // Advancing on `didJustFinish` fetches the next track only once the previous
 // one has ended, and that connection is the gap (#8). Instead it is queued
 // inside the native player (`setNextSource`, in patches/expo-audio.patch),
-// which buffers it and joins them itself; the jump arrives as
+// which buffers it and joins them themselves; the jump arrives as
 // `trackTransition` and JS only follows.
 //
 // The join is as tight as the format allows: with no transcoding, or
@@ -2442,12 +2452,15 @@ function onStatus(status: AudioStatus) {
   // the real position is the offset plus its time.
   let positionSec = streamOffsetSec + (status.currentTime ?? 0);
   if (pendingSeek) {
-    if (Math.abs(positionSec - pendingSeek.sec) < 1 || Date.now() - pendingSeek.at > 2000) {
+    if (Math.abs(positionSec - pendingSeek.sec) < 1 || Date.now() - pendingSeek.at > 5000) {
       pendingSeek = null; // the player reached the target (or we gave up)
     } else {
       positionSec = pendingSeek.sec;
     }
   }
+  const state = usePlayerStore.getState();
+  const maxPos = state.durationSec > 0 ? state.durationSec : Infinity;
+  positionSec = Math.max(0, Math.min(positionSec, maxPos));
   usePlayerStore.setState({
     positionSec,
     // With offset active the native reports the duration of the remaining segment,

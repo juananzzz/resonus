@@ -1,7 +1,0 @@
-{
-  "name": "audio-eq",
-  "version": "0.0.1",
-  "description": "Equalizer (android.media.audiofx) bridge for Resonus (local Expo module)",
-  "main": "index.ts",
-  "private": true
-}

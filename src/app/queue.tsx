@@ -16,7 +16,7 @@ import ReorderableList, {
   useReorderableDrag,
   type ReorderableListReorderEvent,
 } from 'react-native-reorderable-list';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COVER, songCoverUrl } from '@/api/data';
 import { type Song } from '@/api/subsonic';
@@ -155,6 +155,8 @@ export default function QueueScreen() {
   const [confirmClear, setConfirmClear] = useState(false);
   // ⋯ menu (imperative: opening/closing doesn't re-render the screen).
   const menuRef = useRef<() => void>(() => {});
+  const insets = useSafeAreaInsets();
+  const topPad = insets.top > 0 ? insets.top : 12;
 
   const showPrevious = useSettings((s) => s.showPlayedInQueue);
   const current = queue[index] ?? null;
@@ -237,11 +239,11 @@ export default function QueueScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable hitSlop={12} onPress={() => router.back()}>
-          <Ionicons name="chevron-down" size={28} color={colors.text} />
-        </Pressable>
+    <View style={[styles.safe, { paddingTop: topPad, paddingBottom: insets.bottom }]}>
+    <View style={styles.header}>
+      <Pressable hitSlop={12} onPress={() => router.back()}>
+        <Ionicons name="chevron-down" size={28} color={colors.text} />
+      </Pressable>
         <View style={styles.headerCenter} pointerEvents="none">
           <Text style={styles.headerTitle}>{t('Queue')}</Text>
           {upcoming.length > 0 && totalSec > 0 ? (
@@ -361,7 +363,7 @@ export default function QueueScreen() {
           </Pressable>
         )}
       </SheetModal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -393,7 +395,7 @@ const styles = themed((colors) => ({
   headerAction: { width: 28, alignItems: 'center' },
   headerTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
   headerSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
-  list: { flexGrow: 1, paddingBottom: spacing.xl },
+  list: { flexGrow: 1, paddingBottom: spacing.sm },
   emptyWrap: { flex: 1, justifyContent: 'center' },
   sectionHeader: {
     color: colors.textSecondary,

@@ -1,7 +1,0 @@
-{
-  "name": "battery-opt",
-  "version": "0.0.1",
-  "description": "Battery optimization state and settings shortcut for Resonus (local Expo module)",
-  "main": "index.ts",
-  "private": true
-}

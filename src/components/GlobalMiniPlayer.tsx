@@ -43,7 +43,7 @@ export function GlobalMiniPlayer() {
 
   return (
     <Animated.View
-      style={{ position: 'absolute', left: 0, right: 0, bottom: lastBottom.current, opacity }}
+      style={{ position: 'absolute', left: 0, right: 0, bottom: lastBottom.current, opacity, width: '100%' }}
       pointerEvents={visible ? 'box-none' : 'none'}
     >
       <MiniPlayer />

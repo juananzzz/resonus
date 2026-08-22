@@ -102,17 +102,20 @@ export function MiniPlayer() {
         translateY.value = withSpring(0, { damping: 20, stiffness: 200 });
       }
     });
-  // The entire card only moves (and fades) when dismissed downward.
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-    opacity: interpolate(translateY.value, [0, screenW * 0.6], [1, 0], Extrapolation.CLAMP),
-  }));
-  // On horizontal swipe the bar stays fixed: only the song details slide/fade,
-  // to read as "changing track", not as dismissing.
-  const detailsStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-    opacity: interpolate(Math.abs(translateX.value), [0, screenW * 0.5], [1, 0.15], Extrapolation.CLAMP),
-  }));
+   // The entire card only moves (and fades) when dismissed downward.
+   const cardStyle = useAnimatedStyle(() => ({
+     transform: [{ translateY: translateY.value }],
+     opacity: interpolate(translateY.value, [0, screenW * 0.6], [1, 0], Extrapolation.CLAMP),
+     width: '100%',
+     overflow: 'hidden',
+   }));
+   // On horizontal swipe the bar stays fixed: only the song details slide/fade,
+   // to read as "changing track", not as dismissing.
+   const detailsStyle = useAnimatedStyle(() => ({
+     transform: [{ translateX: translateX.value }],
+     opacity: interpolate(Math.abs(translateX.value), [0, screenW * 0.5], [1, 0.15], Extrapolation.CLAMP),
+     flexShrink: 1,
+   }));
 
   // When the song changes (or playback resumes) we return the card to its place
   // in case it was offset from a previous gesture.

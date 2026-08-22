@@ -12,10 +12,18 @@
  * using it go on writing over it in the ordinary text colour.
  */
 import { useEffect, useState } from 'react';
-import { getColors } from 'react-native-image-colors';
 
 import { CACHED_COVER, COVER } from '@/api/data';
 import { colors as theme, useThemeMode, type ThemeMode } from '@/theme';
+
+// Dynamic import to avoid native module crash in Expo Go on iOS.
+// react-native-image-colors requires native code not bundled in Expo Go.
+let getColorsFn: typeof import('react-native-image-colors').getColors | null = null;
+try {
+  getColorsFn = require('react-native-image-colors').getColors;
+} catch {
+  getColorsFn = null;
+}
 
 function hexToRgb(hex: string): [number, number, number] | null {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
@@ -128,10 +136,14 @@ export function useDominantColor(uri?: string): string {
       setColor(theme.surfaceHighlight);
       return;
     }
+    if (!getColorsFn) {
+      setColor(theme.surfaceHighlight);
+      return;
+    }
     const src = paletteUri(uri);
     // Keyed by the small URL: two screens showing the same cover at different
     // sizes now share one cached palette.
-    getColors(src, { fallback: theme.surfaceHighlight, cache: true, key: src })
+    getColorsFn(src, { fallback: theme.surfaceHighlight, cache: true, key: src })
       .then((res) => {
         if (!active) return;
         let c: string = theme.surfaceHighlight;

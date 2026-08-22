@@ -1,7 +1,0 @@
-{
-  "name": "cast-media",
-  "version": "0.0.1",
-  "description": "Media session + lock-screen controls while casting (local Expo module)",
-  "main": "index.ts",
-  "private": true
-}

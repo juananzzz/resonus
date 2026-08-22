@@ -98,7 +98,7 @@ let lastLayout: {
   starsH: number;
 } | null = null;
 // How much of the lyrics card peeks below the first page (invites swipe).
-const LYRICS_PEEK = 56;
+const LYRICS_PEEK = 58;
 /**
  * Crossfade between one blurred backdrop and the next. Long on purpose: the
  * background changing is not an event, it is the room's light following the
@@ -171,14 +171,20 @@ function PlayerProgress({
   onSeek: (sec: number) => void;
 }) {
   const positionSec = usePlayerStore((s) => s.positionSec);
+  const dragging = useRef(false);
+  const dragValue = useRef(positionSec);
+  const [, forceUpdate] = useState(0);
   return (
     <View style={styles.progress}>
       <Slider
-        style={styles.slider}
+        style={[styles.slider, { height: 24, marginHorizontal: 0 }]}
+        thumbSize={12}
         minimumValue={0}
         maximumValue={duration}
-        value={positionSec}
-        onSlidingComplete={onSeek}
+        value={dragging.current ? dragValue.current : positionSec}
+        onSlidingStart={() => { dragging.current = true; }}
+        onValueChange={(v) => { dragValue.current = v; }}
+        onSlidingComplete={(v) => { dragging.current = false; forceUpdate((n) => n + 1); onSeek(v); }}
         minimumTrackTintColor={colors.text}
         maximumTrackTintColor={colors.mediaTrack}
         thumbTintColor={colors.text}

@@ -337,11 +337,17 @@ export default function RootLayout() {
               />
               <Stack.Screen
                 name="queue"
-                options={{ presentation: 'modal', animation: 'fade_from_bottom' }}
+                options={{
+                  presentation: 'fullScreenModal',
+                  animation: 'fade',
+                }}
               />
               <Stack.Screen
                 name="lyrics"
-                options={{ presentation: 'modal', animation: 'fade_from_bottom' }}
+                options={{
+                  presentation: 'fullScreenModal',
+                  animation: 'fade',
+                }}
               />
             </Stack>
             {auth || offline ? <AppStartupTab /> : null}

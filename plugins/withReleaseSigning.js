@@ -46,7 +46,10 @@ function applyReleaseSigning(gradle) {
   return out;
 }
 
-module.exports = function withReleaseSigning(config) {
+module.exports = function withReleaseSigning(config, options) {
+  if (options?.android === false || (config.platforms && !config.platforms.includes('android'))) {
+    return config;
+  }
   return withAppBuildGradle(config, (cfg) => {
     if (cfg.modResults.language !== 'groovy') {
       throw new Error('withReleaseSigning solo soporta build.gradle en Groovy');
