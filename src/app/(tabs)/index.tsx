@@ -533,6 +533,7 @@ const EXPLORE: Record<ExploreChipKey, { href?: string; icon: keyof typeof Ionico
   genres: { href: '/genres', icon: 'pricetags-outline', label: 'Genres' },
   radio: { href: '/radio', icon: 'radio-outline', label: 'Radio' },
   history: { href: '/history', icon: 'time-outline', label: 'Recently played' },
+  audiobooks: { href: '/audiobooks', icon: 'book-outline', label: 'Audiobooks' },
 };
 
 // Locally there is shuffle, albums, artists and songs (radio and genres are

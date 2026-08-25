@@ -26,6 +26,7 @@ import { useOfflineQueue, type PlayOp, type QueuePlaylist } from '@/store/offlin
 import { usePlayHistory } from '@/store/playHistory';
 import { isManualOffline } from './netGate';
 import { getLocalLyrics, getOnlineLyrics } from '@/lib/localLyrics';
+import { isAudiobookGenre } from '@/store/albumProgress';
 import { useSettings, type LyricsSource } from '@/store/settings';
 import * as Navidrome from './navidrome';
 import * as Subsonic from './backend';
@@ -339,6 +340,39 @@ export function rescanLocal(): Promise<void> {
 /** Server genres (global; the API doesn't filter genres by library). */
 export function getGenres(): Promise<Subsonic.Genre[]> {
   return Subsonic.getGenres(auth());
+}
+
+/** How many albums are asked for per audiobook genre. */
+const AUDIOBOOK_PAGE = 200;
+
+/**
+ * Every album in the library that reads as an audiobook, for the Home chip.
+ *
+ * Asked for by genre, because that is the only question a Subsonic server can
+ * answer: `getAlbumList2` filters by genre and by nothing else useful here.
+ * So the library's own genre list is fetched first and intersected with the
+ * ones that mean spoken word, which costs one small request and means a
+ * library with no such genre asks for nothing at all and shows no chip.
+ *
+ * What this cannot reach is a record whose `RELEASETYPE` says audiobook while
+ * its genre says Fiction. The album screen knows that one, since it has the
+ * album in its hands; finding them all would mean pulling every album in the
+ * library down to look, which is not worth a chip.
+ */
+export async function getAudiobookAlbums(): Promise<Subsonic.Album[]> {
+  const genres = await getGenres();
+  const names = genres.filter((g) => isAudiobookGenre(g.value)).map((g) => g.value);
+  if (names.length === 0) return [];
+  const pages = await Promise.all(
+    names.map((name) => getAlbumsByGenre(name, AUDIOBOOK_PAGE, 0).catch(() => [])),
+  );
+  // One record can carry two of these genres ("Hörbuch" and "Hörspiel"), and
+  // it is one book either way.
+  const byId = new Map<string, Subsonic.Album>();
+  for (const album of pages.flat()) {
+    if (!byId.has(album.id)) byId.set(album.id, album);
+  }
+  return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /**
