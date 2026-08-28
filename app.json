@@ -10,7 +10,7 @@
     "ios": {
       "bundleIdentifier": "com.juananzzz.resonus",
       "supportsTablet": true,
-      "icon": "./assets/images/ios-icon.png",
+      "icon": "./assets/images/resonus-ios.icon",
       "infoPlist": {
         "UIBackgroundModes": [
           "audio"

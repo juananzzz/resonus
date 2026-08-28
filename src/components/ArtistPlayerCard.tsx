@@ -93,7 +93,7 @@ const styles = themed((colors) => ({
     // is what sits under a photo that runs to the edges, and the blurred
     // backdrop behind the player is what makes it read as a card at all.
     backgroundColor: colors.background,
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     marginTop: spacing.lg,
     // The player has no global horizontal padding (because of the slider), so
     // the card supplies its own margin — the same one as the lyrics card.

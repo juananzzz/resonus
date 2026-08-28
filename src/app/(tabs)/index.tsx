@@ -952,7 +952,7 @@ const styles = themed((colors) => ({
     alignItems: 'center',
     gap: spacing.sm,
     backgroundColor: colors.surfaceHighlight,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     overflow: 'hidden',
     paddingRight: spacing.sm,
   },

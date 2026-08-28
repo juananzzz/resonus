@@ -392,7 +392,7 @@ const CARD_BODY_H = 280;
 
 const styles = themed((colors) => ({
   card: {
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     marginTop: spacing.lg,
     // The player no longer has global horizontal padding (because of the
     // slider): the card supplies its own margin.
@@ -402,7 +402,7 @@ const styles = themed((colors) => ({
   title: { color: colors.text, fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.sm },
   body: { height: CARD_BODY_H, overflow: 'hidden' },
   // Lyrics in place of the cover: box exactly the size of the cover.
-  coverBox: { borderRadius: radius.xl, overflow: 'hidden', padding: spacing.lg },
+  coverBox: { borderRadius: radius.lg, overflow: 'hidden', padding: spacing.lg },
   coverBody: { flex: 1, overflow: 'hidden' },
   wrap: { flex: 1 },
   // Right margin so the active line (which grows 8% from the left) doesn't get

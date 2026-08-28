@@ -138,7 +138,7 @@ const styles = themed((colors) => ({
     right: spacing.xl,
     flexDirection: 'row',
     backgroundColor: colors.snackbar,
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
   },

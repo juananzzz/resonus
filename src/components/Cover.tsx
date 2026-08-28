@@ -344,7 +344,14 @@ export function Cover({
   // One corner for every cover, whatever its size. Letting it climb with the
   // picture was tried and reverted: at the top of the scale the corner eats
   // into the artwork, and a sleeve is somebody else's rectangle to crop.
-  const borderRadius = rounded ? radius.pill : radius.md;
+  // Small covers (≤56 px) sit inside the mini-player container whose own
+  // radius is radius.md with spacing.sm padding; radius.sm (6) nests
+  // visually without looking square or eating into the art.
+  const borderRadius = rounded
+    ? radius.pill
+    : size <= 56
+      ? radius.sm
+      : radius.md;
   if (!shown || failed) {
     return (
       <View
