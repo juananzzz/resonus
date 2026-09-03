@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 697 of them.
+Every string the app can show, under the screen it shows up on. 698 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -417,7 +417,6 @@ you are actually typing into, which is easier than reading it here.
 | `PLAYING FROM` | Small label above the cover, followed by the name of the album, playlist or mix it is playing from, or by `Queue` while the song is one that was added to the queue by hand. Written in capitals by the design, so it can be capitals in your language too, or not, whichever reads right |
 | `Previous` | Player control: the previous track (accessibility label) |
 | `Queue` | The list of songs waiting to play. Not a playlist |
-| `Radio` | Internet radio stations. Most languages keep the word |
 | `Remove from the group` | The − beside `Add to the group`, and the same in reverse: it takes that room out of the group so it stops playing along. Read out by the screen reader, never shown, and Sonos only |
 | `Repeat` | Start again at the end |
 | `Search again` |  |
@@ -518,7 +517,6 @@ you are actually typing into, which is easier than reading it here.
 | `No radio stations` | Empty state heading |
 | `Password` | The password field, on the login screen and wherever the server asks again |
 | `Pin to top` | Keep this at the top of its list, above everything else. `Unpin` undoes it |
-| `Radio` | Internet radio stations. Most languages keep the word |
 | `Remove “{name}” from your server?` | Dialog title: stations live on the server, so this deletes it for everybody |
 | `Remove cover` | Screen reader label for the small x on a chosen picture |
 | `Save` | The confirm button of an edit sheet. A verb |
@@ -539,7 +537,6 @@ you are actually typing into, which is easier than reading it here.
 | `Artists` | A heading over a list of them, never a count |
 | `Clear all` | Throw away the whole list: the history, the queue, or what you searched for |
 | `Couldn't reach the server. Check your connection.` | Error on Home when the server does not answer at all |
-| `Radio` | Internet radio stations. Most languages keep the word |
 | `Recent searches` | What was searched for before, kept on the phone |
 | `Song` | In search results, the little word under a result saying what kind of thing it is |
 | `What do you want to listen to?` | The placeholder in the search box, worded as a question |
@@ -939,6 +936,7 @@ you are actually typing into, which is easier than reading it here.
 | `Keep the Favorites tile first.` | The line under “Pin favorites”, explaining it |
 | `Pin favorites` | Pin favourites to the quick grid |
 | `Quick grid` | The grid of shortcut tiles on Home |
+| `Radio stations` |  |
 | `Recent albums` | A source the quick grid can draw its tiles from |
 | `Show quick grid` | Whether the grid of shortcut tiles shows on Home |
 | `Size` | The size of the quick grid tiles |
@@ -1066,6 +1064,7 @@ you are actually typing into, which is easier than reading it here.
 | `Playing next` | The toast that says `Play next` worked. Not the same string, and not a heading |
 | `Playlist name` | The name field when making or renaming a playlist |
 | `Playlists` | A section on Home and in the library, and a folder in the car |
+| `Radio` | Internet radio stations. Most languages keep the word |
 | `Rate {n} stars` | Read out by the screen reader for each star. `{n}` is which star it is |
 | `Recently added` | A sort order, and a section: newest first (in Favorites, last favorited first) |
 | `Remove` | Take something out of a list. Deleting for good is `Delete` |

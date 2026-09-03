@@ -94,21 +94,57 @@ interface JfItem {
   ParentIndexNumber?: number;
   ProductionYear?: number;
   ChildCount?: number;
-  /** Both only present when `ItemCounts` is among the requested fields. */
+  /** Present only when `ItemCounts` is among the requested fields. */
   AlbumCount?: number;
   SongCount?: number;
   DateCreated?: string;
   DateLastMediaAdded?: string;
+  ParentId?: string;
+  ParentIds?: string[];
   Genres?: string[];
   ImageTags?: { Primary?: string };
   AlbumPrimaryImageTag?: string;
   UserData?: { IsFavorite?: boolean; LastPlayedDate?: string; PlayCount?: number };
   /** Normalization gain in dB (server LUFS analysis, 10.9+). */
   NormalizationGain?: number;
+  /**
+   * Live-TV playback sources, present when a channel is opened as playback
+   * (`AutoOpenLiveStream`). Each is how the server wants this client to take it.
+   * Only used for Live-TV; the rest of the library never carries them.
+   */
   MediaSources?: {
+    /** This source's id, which the transcoded URL carries back to the player. */
+    Id?: string;
+    /**
+     * The URL of the source itself: a stored device stream, or an external one
+     * (HLS on the cloud). A direct-play source, which nothing here rewrites.
+     */
+    Path?: string;
+    /**
+     * The URL the server built for the client's playback. This is the URL to
+     * play when it exists: it carries the stream id, the session and the codecs,
+     * which is why a client guesses nothing about them and takes it whole.
+     */
+    TranscodingUrl?: string;
+    /** An infinite (radio-style) stream: a live feed that never ends. */
+    IsInfiniteStream?: boolean;
+    /** True if the server wants a live stream opened for this source. */
+    RequiresOpening?: boolean;
+    /** True if the server wants it closed once done. */
+    RequiresClosing?: boolean;
     Container?: string;
-    Bitrate?: number;
+    LiveStreamId?: string;
     MediaStreams?: { Type?: string; BitDepth?: number; SampleRate?: number }[];
+    /** The server built this stream: prefer it over a direct source. */
+    SupportsTranscoding?: boolean;
+    /** Can the client play the source as-is, without the server rewriting it? */
+    SupportsDirectPlay?: boolean;
+    /** Can the client stream the source's data, whether or not the client can play it? */
+    SupportsDirectStream?: boolean;
+    /** The server built a transcode: this is a transcoded stream, prefer it. */
+    SupportsTranscode?: boolean;
+    /** The bitrate in kbps for the transcode, when the server gives one. */
+    Bitrate?: number;
   }[];
 }
 
@@ -124,6 +160,12 @@ interface JfPlaybackInfo {
   CanSeek?: boolean;
   PlayMethod?: 'Transcode' | 'DirectStream' | 'DirectPlay';
   PlaySessionId?: string;
+  /**
+   * The source the client receives from opening the stream. Present when
+   * `AutoOpenLiveStream` opens a live stream, and each item is one the server
+   * tells the client to stream.
+   */
+  MediaSources?: JfItem['MediaSources'];
 }
 
 /** Per track/session bookkeeping for Jellyfin playback state events. */
@@ -1066,9 +1108,28 @@ export async function getPlayQueue(_auth: SubsonicAuth): Promise<SavedQueue | nu
   return null;
 }
 
-/** Jellyfin has no internet radio stations. */
-export async function getRadioStations(_auth: SubsonicAuth): Promise<RadioStation[]> {
-  return [];
+/**
+ * Jellyfin's radio: its Live-TV channels. Every channel is listed — the player
+ * turns a channel into an audio stream per station later, so for now the
+ * station is display-only and carries no stream URL yet.
+ */
+export async function getRadioStations(auth: SubsonicAuth): Promise<RadioStation[]> {
+  // `Limit` high enough for every channel: the server default (100) would cut
+  // the list and hide the rest.
+  const res = await request<JfChannels>(auth, '/LiveTv/Channels', { limit: 10_000 });
+  return (res?.Items ?? []).map((c): RadioStation => ({
+    id: c.Id,
+    name: c.Name ?? '',
+    streamUrl: '',
+    coverArt: c.ImageTags?.Primary ? c.Id : undefined,
+  }));
+}
+
+/**
+ * A channel list: the feed the radio tab shows, before any of it is playable.
+ */
+interface JfChannels {
+  Items?: JfItem[];
 }
 
 /** Jellyfin does not support managing radio stations. */

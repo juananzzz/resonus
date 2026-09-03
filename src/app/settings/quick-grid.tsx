@@ -25,6 +25,8 @@ export default function QuickGridSettings() {
   const setWithAlbums = useSettings((s) => s.setQuickGridAlbums);
   const withPlaylists = useSettings((s) => s.quickGridPlaylists);
   const setWithPlaylists = useSettings((s) => s.setQuickGridPlaylists);
+  const withRadio = useSettings((s) => s.quickGridRadio);
+  const setWithRadio = useSettings((s) => s.setQuickGridRadio);
   const size = useSettings((s) => s.quickGridSize);
   const setSize = useSettings((s) => s.setQuickGridSize);
 
@@ -49,6 +51,15 @@ export default function QuickGridSettings() {
       label: t('Playlists'),
       value: withPlaylists,
       onChange: setWithPlaylists,
+    },
+    // Server-side only: the stations live on the server and there is no
+    // offline mirror for them, so without a connection the grid has none.
+    // That is why the switch carries no description: there is nothing to
+    // explain.
+    {
+      label: t('Radio stations'),
+      value: withRadio,
+      onChange: setWithRadio,
     },
   ];
 

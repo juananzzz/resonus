@@ -28,6 +28,7 @@ import {
   type RadioStation,
 } from '@/api/backend';
 import { COVER, coverArtUrl } from '@/api/data';
+import { playRadio } from '@/lib/playRadio';
 import { uploadCoverImage } from '@/api/navidrome';
 import { Cover } from '@/components/Cover';
 import { Dialog } from '@/components/Dialog';
@@ -67,7 +68,6 @@ export function RadioBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
   const insets = useSafeAreaInsets();
   const auth = useAuthStore((s) => s.auth);
   const offline = useAuthStore((s) => s.offline);
-  const playQueue = usePlayerStore((s) => s.playQueue);
   const playingId = usePlayerStore((s) => currentSong(s)?.id);
   const toast = useToast((s) => s.show);
 
@@ -234,22 +234,7 @@ export function RadioBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
             return (
               <Pressable
                 style={styles.row}
-                onPress={() =>
-                  playQueue(
-                    [
-                      {
-                        id: item.id,
-                        title: item.name,
-                        url: item.streamUrl,
-                        artist: t('Radio'),
-                        coverArt: item.coverArt,
-                      },
-                    ],
-                    0,
-                    item.name,
-                    '/radio',
-                  )
-                }
+                onPress={() => void playRadio(item)}
                 onLongPress={() => setMenu(item)}
               >
                 <Cover
