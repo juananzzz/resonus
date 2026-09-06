@@ -184,7 +184,6 @@ you are actually typing into, which is easier than reading it here.
 | `A-Z` | Sort option: the order of a list |
 | `Find an album` | The search box's placeholder on that screen |
 | `Library` | The settings section, and a folder in the car |
-| `New releases` | Home shelf and album sort: albums by the year they came out, newest first. Not "Recently added", which is when the server got hold of them |
 | `No albums yet` | Empty state heading |
 | `Nothing played yet` | Empty state: this phone has not played anything yet |
 | `Your library looks empty.` | Empty state: the server answered, and had nothing |
@@ -691,7 +690,6 @@ you are actually typing into, which is easier than reading it here.
 | --- | --- |
 | `Home sections` | Reorder which sections appear on Home |
 | `Most played albums` | A section of Home: the records played most |
-| `New releases` | Home shelf and album sort: albums by the year they came out, newest first. Not "Recently added", which is when the server got hold of them |
 | `Random albums` | A section of Home: albums picked at random, to happen upon something |
 
 ## Settings › Language
