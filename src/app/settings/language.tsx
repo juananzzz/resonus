@@ -34,14 +34,13 @@ export default function LanguageSettings() {
           collapsible={false}
         />
 
-        <Text style={settingsStyles.sectionTitle}>Translations</Text>
+        <Text style={settingsStyles.sectionTitle}>{t('Translations')}</Text>
         <Text style={settingsStyles.sectionDescription}>
-          Don&apos;t see your language, or want to improve an existing one? You can help by
-          contributing a translation on GitHub. Pull requests are welcome.
+          {t("Don't see your language, or want to improve an existing one? You can help by contributing a translation on GitHub. Pull requests are welcome.")}
         </Text>
         <SettingRow
           icon="globe-outline"
-          label="Help translate"
+          label={t('Help translate')}
           onPress={() => Linking.openURL(TRANSLATIONS_URL)}
         />
       </ScrollView>
