@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getRadioStations } from '@/api/backend';
 import {
   coverArtUrl,
   getAlbumList,
@@ -58,6 +59,7 @@ import { listPerf } from '@/lib/listPerf';
 import { haptic } from '@/lib/haptics';
 import { bump } from '@/lib/perfLog';
 import { playShuffle } from '@/lib/playShuffle';
+import { playRadio } from '@/lib/playRadio';
 
 /**
  * How wide a quick tile wants to be, in dp.
@@ -90,29 +92,44 @@ function QuickTile({
   cover,
   favorites,
   width,
+  onPlay,
+  placeholderIcon,
 }: {
-  href: string;
+  href?: string;
   name: string;
   cover?: string;
   favorites?: boolean;
   width: number;
+  /**
+   * Tiles that play instead of navigating (radio stations): there is no
+   * station screen to land on, the player IS the radio, so the tile starts
+   * the stream right off of it.
+   */
+  onPlay?: () => void;
+  /** Radio tile: the cover falls back to the radio glyph, not the record. */
+  placeholderIcon?: boolean;
 }) {
-  return (
-    <Link href={href} asChild>
-      {/* Flattened, not an array: expo-router hands the style straight to the
-          child it clones and refuses a list. */}
-      <Pressable style={StyleSheet.flatten([styles.tile, { width }])}>
-        {favorites ? (
-          <FavoritesArt size={52} />
-        ) : (
-          <Cover uri={cover} size={52} />
-        )}
-        <Text style={styles.tileText} numberOfLines={2}>
-          {name}
-        </Text>
-      </Pressable>
-    </Link>
+  const pressable = (
+    /* Flattened, not an array: expo-router hands the style straight to the
+       child it clones and refuses a list. */
+    <Pressable
+      style={StyleSheet.flatten([styles.tile, { width }])}
+      // The Link only wraps tiles that navigate; playing tiles press
+      // straight off of it, no router involved.
+      onPress={onPlay}
+      accessibilityRole={onPlay ? 'button' : undefined}
+    >
+      {favorites ? (
+        <FavoritesArt size={52} />
+      ) : (
+        <Cover uri={cover} size={52} placeholderIcon={placeholderIcon ? 'radio' : undefined} />
+      )}
+      <Text style={styles.tileText} numberOfLines={2}>
+        {name}
+      </Text>
+    </Pressable>
   );
+  return onPlay || !href ? pressable : <Link href={href} asChild>{pressable}</Link>;
 }
 
 function QuickGrid() {
@@ -124,6 +141,7 @@ function QuickGrid() {
   const tile = (width - spacing.lg * 2 - spacing.sm * (columns - 1)) / columns;
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const offline = useAuthStore((s) => s.offline);
+  const auth = useAuthStore((s) => s.auth);
   const times = useLastPlayed((s) => s.times);
   const names = useLastPlayed((s) => s.names);
   const t = useT();
@@ -133,6 +151,7 @@ function QuickGrid() {
   const withFavorites = useSettings((s) => s.quickGridFavorites);
   const withAlbums = useSettings((s) => s.quickGridAlbums);
   const withPlaylists = useSettings((s) => s.quickGridPlaylists);
+  const withRadio = useSettings((s) => s.quickGridRadio);
   const size = useSettings((s) => s.quickGridSize);
   const { data: playlists } = useQuery({
     queryKey: ['playlists'],
@@ -144,6 +163,14 @@ function QuickGrid() {
     queryFn: () => getAlbumList(offline ? 'newest' : 'recent'),
     enabled: canFetch && withAlbums,
   });
+  // Server-side only (no offline mirror), like the radio section in Explore.
+  // Same query key as the radio screen: one list, shared and invalidated
+  // together.
+  const { data: stations } = useQuery({
+    queryKey: ['radioStations'],
+    queryFn: () => getRadioStations(auth!),
+    enabled: !!auth && !offline && withRadio,
+  });
 
   // Spotify-style dynamic grid: mixes playlists and recent albums sorted by
   // last play (same store as "Recents" in the Library). What you just listened
@@ -154,7 +181,15 @@ function QuickGrid() {
   // distributed among active sources sorted by last play.
   const dynamicCount = Math.max(0, size - (withFavorites ? 1 : 0));
   const tiles = useMemo(() => {
-    type Item = { key: string; href: string; name: string; cover?: string; ts: number };
+    type Item = {
+      key: string;
+      /** Absent for tiles that play (radio stations): they start the stream. */
+      href?: string;
+      name: string;
+      cover?: string;
+      ts: number;
+      play?: () => void;
+    };
     const pl: Item[] = withPlaylists
       ? (playlists ?? []).map((p) => {
           const href = `/playlist/${p.id}`;
@@ -179,6 +214,19 @@ function QuickGrid() {
           };
         })
       : [];
+    // No "newest station" from the server, so what ranks the tiles is the
+    // last play per station (the player's sourceHref is /radio/<id>): what you
+    // just switched to rises within the group, and the tap starts the station
+    // right off the tile.
+    const st: Item[] = withRadio
+      ? (stations ?? []).map((s): Item => ({
+          key: s.id,
+          name: s.name,
+          cover: coverArtUrl(s.coverArt, COVER.thumb),
+          ts: times[`/radio/${s.id}`] ?? 0,
+          play: () => void playRadio(s),
+        }))
+      : [];
     // What was played and neither list mentions. The order here has always
     // been what YOU listened to, but what could be sorted was whatever the
     // server had handed over: its "recent" albums are the ones it has a play
@@ -194,14 +242,20 @@ function QuickGrid() {
         const [, kind, id] = href.split('/');
         const name = names[href];
         if (!name || !id) return null;
+        // Stations are the radio source's tiles, not a recent in their own
+        // right: their id is not a cover id, and drawing them here as well
+        // would put the same station on the grid twice.
+        if (kind === 'radio') return null;
         if (kind === 'album' ? !withAlbums : kind === 'playlist' ? !withPlaylists : true) {
           return null;
         }
         return { key: href, href, name, cover: coverArtUrl(id, COVER.thumb), ts };
       })
       .filter((it): it is Item => it !== null);
-    return [...al, ...pl, ...played].sort((x, y) => y.ts - x.ts).slice(0, dynamicCount);
-  }, [playlists, albums, times, names, withPlaylists, withAlbums, dynamicCount]);
+    return [...al, ...pl, ...st, ...played]
+      .sort((x, y) => y.ts - x.ts)
+      .slice(0, dynamicCount);
+  }, [playlists, albums, stations, times, names, withPlaylists, withAlbums, withRadio, dynamicCount]);
 
   // Without active sources there's nothing to show (the master toggle still
   // decides if the block mounts; this covers "all off" from here).
@@ -213,7 +267,15 @@ function QuickGrid() {
         <QuickTile href="/favorites" name={t('Favorites')} favorites width={tile} />
       ) : null}
       {tiles.map((it) => (
-        <QuickTile key={it.key} href={it.href} name={it.name} cover={it.cover} width={tile} />
+        <QuickTile
+          key={it.key}
+          href={it.href}
+          name={it.name}
+          cover={it.cover}
+          width={tile}
+          onPlay={it.play}
+          placeholderIcon={!!it.play}
+        />
       ))}
     </View>
   );

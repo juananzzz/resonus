@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COVER, coverArtUrl, getPlaylists, search } from '@/api/data';
 import { getGenres, getRadioStations } from '@/api/backend';
+import { playRadio } from '@/lib/playRadio';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
@@ -183,7 +184,7 @@ export default function SearchScreen() {
   const { data: stations } = useQuery({
     queryKey: ['radioStations'],
     queryFn: () => getRadioStations(auth!),
-    enabled: !!auth && !offline && auth.serverType !== 'jellyfin' && debouncedQuery.length > 1,
+    enabled: !!auth && !offline && debouncedQuery.length > 1,
   });
   const stationMatches =
     debouncedQuery.length > 1
@@ -452,22 +453,7 @@ export default function SearchScreen() {
               <Pressable
                 key={r.id}
                 style={styles.recentRow}
-                onPress={() =>
-                  playQueue(
-                    [
-                      {
-                        id: r.id,
-                        title: r.name,
-                        url: r.streamUrl,
-                        artist: t('Radio'),
-                        coverArt: r.coverArt,
-                      },
-                    ],
-                    0,
-                    r.name,
-                    '/radio',
-                  )
-                }
+                onPress={() => void playRadio(r)}
               >
                 <Cover
                   uri={coverArtUrl(r.coverArt, COVER.thumb)}

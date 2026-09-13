@@ -102,15 +102,16 @@ export default function ExploreScreen() {
    * section that is not here is not greyed out — with no server coming back
    * there is nothing to grey out for (see `useLocalProfile`).
    */
-  const subsonic = !!auth && auth.serverType !== 'jellyfin';
+  // Jellyfin's radio is resolved here (its Live-TV channels), so it is the
+  // same section on every account the one has, not one a server-only account gets.
   const available = (key: Section): boolean => {
     switch (key) {
       case 'genres':
         return !!auth && !offline;
       case 'radio':
-        return subsonic && !offline;
+        return !!auth && !offline;
       case 'folders':
-        return subsonic && !offline && showFolderBrowser;
+        return !!auth && auth.serverType !== 'jellyfin' && !offline && showFolderBrowser;
       case 'playlists':
         // Jellyfin answers for them too, and offline the mirror does; it is
         // the one server-side section the local profile has nothing for.
