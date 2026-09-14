@@ -294,6 +294,19 @@ export default function PlaybackSettings() {
           onPress={() => router.push('/settings/scrobbling')}
         />
 
+        {/* Its own screen too, and next to Scrobbling rather than under a
+            heading of its own: a switch, a choice and something to delete is a
+            section, and a library with no books in it had to scroll past all
+            three of them. Under Playback rather than Scrobbling, where this
+            arrived: nothing there is reported to anybody, it is a position kept
+            on the phone, and the rules for when a listen counts have nothing to
+            say about it. */}
+        <SettingRow
+          label={t('Audiobooks')}
+          description={t('Remembering where you left a book.')}
+          chevron
+          onPress={() => router.push('/settings/audiobooks')}
+        />
       </ScrollView>
     </SettingsPage>
   );

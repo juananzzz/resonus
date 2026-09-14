@@ -18,7 +18,13 @@ import { TrackListView } from '@/components/TrackListView';
 import { useDownloadMessage } from '@/hooks/useDownloadMessage';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { songsLabel, useT } from '@/i18n';
-import { formatTotalDuration } from '@/lib/format';
+import { formatDuration, formatTotalDuration } from '@/lib/format';
+import {
+  isAudiobookAlbum,
+  isAudiobookSong,
+  useAlbumProgress,
+  useAlbumProgressByAlbum,
+} from '@/store/albumProgress';
 import { useAuthStore } from '@/store/auth';
 import { groupDownloadState, useDownloads } from '@/store/downloads';
 import { useMediaMenu } from '@/store/mediaMenu';
@@ -126,6 +132,7 @@ export default function AlbumScreen() {
   useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const auth = useAuthStore((s) => s.auth);
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const offline = useAuthStore((s) => s.offline);
   const t = useT();
@@ -133,6 +140,8 @@ export default function AlbumScreen() {
   const showArtistPhoto = useSettings((s) => s.showArtistPhoto);
   const showDiscHeaders = useSettings((s) => s.showDiscHeaders);
   const showGenreChips = useSettings((s) => s.showGenreChips);
+  const saveAudiobookProgress = useSettings((s) => s.saveAudiobookProgress);
+  const audiobookContinueRewindSec = useSettings((s) => s.audiobookContinueRewindSec);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
   const openMediaMenu = useMediaMenu((s) => s.open);
@@ -189,6 +198,7 @@ export default function AlbumScreen() {
   const cancelDownload = useDownloads((s) => s.cancelDownload);
   const deleteSongs = useDownloads((s) => s.deleteSongs);
   const downloadSongs = useDownloads((s) => s.downloadSongs);
+  const progressByAlbum = useAlbumProgressByAlbum(auth, offline);
   // Stable between progress ticks (only changes with status): if its identity
   // changed on every % update, the Pressable would lose its touch and you'd
   // have to press multiple times.
@@ -216,18 +226,80 @@ export default function AlbumScreen() {
     ? `℗ ${data.album.year ? `${data.album.year} ` : ''}${labels.join(' · ')}`
     : null;
 
-  const playAlbum = async (startIndex: number, opts?: { shuffled?: boolean }) => {
+  // The album's own release type decides, and its songs only get a say where
+  // nobody tagged the record, where they have to agree unanimously: one track
+  // with a spoken-word genre does not turn an album into an audiobook.
+  const audiobook =
+    saveAudiobookProgress &&
+    (isAudiobookAlbum(data.album) ||
+      (data.songs.length > 0 && data.songs.every((s) => isAudiobookSong(s))));
+  const albumProgress = audiobook ? progressByAlbum[data.album.id] : undefined;
+  const resumeIndex = albumProgress ? data.songs.findIndex((s) => s.id === albumProgress.trackId) : -1;
+  // Back through the book by however long the setting says, chapters and all.
+  // It used to stop at the start of the track, which was right while the most
+  // it could walk was thirty seconds and is wrong now that it can be an hour:
+  // a book split into ten-minute chapters would have quietly rewound ten
+  // minutes and left somebody who fell asleep with the timer on to find their
+  // own way back. A chapter of unknown length stops the walk, since stepping
+  // over one nobody has a duration for would land anywhere.
+  const continueStart = (() => {
+    if (resumeIndex < 0 || !albumProgress) return null;
+    let index = resumeIndex;
+    let positionSec = Math.round(albumProgress.positionSec) - audiobookContinueRewindSec;
+    while (positionSec < 0 && index > 0) {
+      const previous = data.songs[index - 1].duration;
+      if (!previous) break;
+      index -= 1;
+      positionSec += Math.round(previous);
+    }
+    return { index, positionSec: Math.max(0, positionSec) };
+  })();
+  const continueFeatureVisible = audiobook && continueStart != null;
+
+  const playAlbum = async (
+    startIndex: number,
+    startPositionSec = 0,
+    opts?: { shuffled?: boolean },
+    rememberStartProgress = false,
+  ) => {
     try {
-      await playQueue(data.songs, startIndex, data.album.name, `/album/${id}`, opts);
+      const ok = await playQueue(data.songs, startIndex, data.album.name, `/album/${id}`, opts);
+      if (!ok) return;
+      if (rememberStartProgress) {
+        const song = data.songs[startIndex];
+        if (song) {
+          useAlbumProgress
+            .getState()
+            .remember(auth, offline, data.album.id, song.id, startPositionSec);
+        }
+      }
+      if (startPositionSec > 0) usePlayerStore.getState().seekTo(startPositionSec);
     } catch {
       // playQueue already shows a failure toast when it can; keep the UI alive.
     }
   };
 
+  function runContinue(start: { index: number; positionSec: number } | null) {
+    if (!start) {
+      toast(t('No saved audiobook progress yet.'));
+      return;
+    }
+    void playAlbum(start.index, start.positionSec, undefined, true);
+  }
+
   function openAlbumMenu() {
     if (!data) return;
     openMediaMenu({ kind: 'album', album: data.album });
   }
+
+  // "Chapter 12 · 1:04:20": where the row is about to drop you, said before
+  // you press it rather than after. The chapter it names is the one the rewind
+  // lands in, which with an hour of it is not always the one you stopped in.
+  const resumeSong = continueStart ? data.songs[continueStart.index] : undefined;
+  const resumeDetail =
+    resumeSong && continueStart
+      ? [resumeSong.title, formatDuration(continueStart.positionSec)].filter(Boolean).join(' · ')
+      : undefined;
 
   // What the server says about the album first (OpenSubsonic sends the full
   // list); otherwise gathered from its songs, which is where the tags actually
@@ -244,7 +316,7 @@ export default function AlbumScreen() {
     data.songs.some((s) => s.explicitStatus === 'explicit');
 
   const totalSec = data.songs.reduce((acc, s) => acc + (s.duration ?? 0), 0);
-  const metaParts = [t('Album')];
+  const metaParts = [t(audiobook ? 'Audiobook' : 'Album')];
   if (data.album.year) metaParts.push(String(data.album.year));
   metaParts.push(songsLabel(data.songs.length, lang));
   if (totalSec > 0) metaParts.push(formatTotalDuration(totalSec));
@@ -279,6 +351,15 @@ export default function AlbumScreen() {
           starred: favAlbumIds ? favAlbumIds.has(data.album.id) : !!data.album.starred,
         }}
         download={!offline ? { ...download, onPress: onDownloadPress } : undefined}
+        resumeAction={
+          continueFeatureVisible
+            ? {
+                label: t('Continue playing'),
+                detail: resumeDetail,
+                onPress: () => runContinue(continueStart),
+              }
+            : undefined
+        }
         footer={
           data.album.artistId || labelText ? (
             <>
@@ -313,7 +394,7 @@ export default function AlbumScreen() {
               }
             : undefined,
         }}
-        onPlay={(start, opts) => playAlbum(start, opts)}
+        onPlay={(start, opts) => playAlbum(start, 0, opts)}
       />
       <PlaylistPickerSheet songs={addingSongs} onClose={() => setAddingSongs(null)} />
       <CoverViewer

@@ -42,6 +42,7 @@ const LABEL: Record<HomeChipKey, string> = {
   genres: 'Genres',
   radio: 'Radio',
   history: 'Recently played',
+  audiobooks: 'Audiobooks',
 };
 
 function ChipRow({ chip, disabled }: { chip: HomeChip; disabled?: boolean }) {
