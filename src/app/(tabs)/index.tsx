@@ -28,6 +28,7 @@ import {
   type Playlist,
   type Song,
 } from '@/api/data';
+import { listRecentEpisodes, type RecentEpisode } from '@/api/podcasts';
 import { AlbumCard } from '@/components/AlbumCard';
 import { AlbumCardsSkeleton } from '@/components/AlbumCardsSkeleton';
 import { ArtistCard } from '@/components/ArtistCard';
@@ -37,6 +38,7 @@ import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { PlaylistCard } from '@/components/PlaylistCard';
+import { PodcastEpisodeCard } from '@/components/PodcastEpisodeCard';
 import { TrackRow } from '@/components/TrackRow';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { columnsFor, useScreenSize } from '@/hooks/useScreenSize';
@@ -463,6 +465,51 @@ function PlaylistsSection({ title }: { title: string }) {
   );
 }
 
+/**
+ * The newest episodes of every subscription, newest first.
+ *
+ * Local, so unlike most of the rows above it this one needs no server: the
+ * subscriptions and their episodes are in this profile's own database, and only
+ * a feed refresh needs the network. It draws nothing at all without a
+ * subscription instead of an empty row, which is what lets it be on by default
+ * without costing a user who has never heard an episode a row of their Home.
+ */
+function PodcastEpisodesSection({ title }: { title: string }) {
+  const card = useShelfCard();
+  const { data, isLoading } = useQuery({
+    // Its own key, and the two podcast screens invalidate it when a feed is
+    // read or a show is subscribed or dropped: a shelf that kept the episodes
+    // of a show you just unsubscribed from would be worse than no shelf.
+    queryKey: ['podcastRecentEpisodes'],
+    queryFn: () => listRecentEpisodes(),
+  });
+
+  if (isLoading) {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <AlbumCardsSkeleton horizontal />
+      </View>
+    );
+  }
+  if (!data || data.length === 0) return null;
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <FlatList
+        {...listPerf}
+        horizontal
+        data={data}
+        keyExtractor={(item: RecentEpisode) => item.episode.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.rowContent}
+        renderItem={({ item }) => <PodcastEpisodeCard item={item} width={card} />}
+      />
+    </View>
+  );
+}
+
 /** Pick one (Fisher-Yates); for the "random" sections. */
 function shuffled<T>(arr: T[]): T[] {
   const a = arr.slice();
@@ -600,6 +647,9 @@ const CHIPS: Record<HomeChipKey, { href?: string; icon: keyof typeof Icon.glyphM
   artists: { href: '/browse/artists', icon: 'people-outline', label: 'Artists' },
   songs: { href: '/browse/songs', icon: 'musical-notes-outline', label: 'Songs' },
   genres: { href: '/genres', icon: 'pricetags-outline', label: 'Genres' },
+  // A headset, the way a radio is a radio: both are things you listen to rather
+  // than look at, and the chip is the way in without leaving Home.
+  podcasts: { href: '/podcasts', icon: 'headset-outline', label: 'Podcasts' },
   radio: { href: '/radio', icon: 'radio-outline', label: 'Radio' },
   history: { href: '/history', icon: 'time-outline', label: 'History' },
 };
@@ -612,6 +662,11 @@ const OFFLINE_KEYS = new Set<HomeChipKey>([
   'albums',
   'artists',
   'songs',
+  // The subscriptions are the phone's own, in its own database, for the same
+  // reason the history is: the list is already there with no connection, and
+  // hiding it offline hid the one part of podcasts that still works (only a
+  // feed refresh needs the network).
+  'podcasts',
   // The history is this phone's own: what was played on it, written down as it
   // played. It needs nobody, so hiding it offline hid a screen that worked.
   'history',
@@ -730,10 +785,13 @@ function ScanningPanel() {
 }
 
 /** Title (i18n key) and list type for the sections that use AlbumSection.
- *  «discover», «randomArtists», «mostPlayedSongs» and «randomSongs» are drawn
- *  by components of their own. */
+ *  «discover», «randomArtists», «mostPlayedSongs», «randomSongs» and
+ *  «podcasts» are drawn by components of their own. */
 const HOME_ALBUM_CONFIG: Record<
-  Exclude<HomeSectionKey, 'randomArtists' | 'discover' | 'playlists' | 'mostPlayedSongs' | 'randomSongs'>,
+  Exclude<
+    HomeSectionKey,
+    'randomArtists' | 'discover' | 'playlists' | 'mostPlayedSongs' | 'randomSongs' | 'podcasts'
+  >,
   { title: string; type: 'newest' | 'recent' | 'frequent' | 'random' | 'byYear' }
 > = {
   recentlyAdded: { title: 'Recently added', type: 'newest' },
@@ -968,6 +1026,12 @@ export default function HomeScreen() {
               }
               if (s.key === 'playlists') {
                 return <PlaylistsSection key={s.key} title={t('Playlists')} />;
+              }
+              // Not gated on the server, the one section here that isn't: the
+              // episodes are already in the phone, and it hides itself anyway
+              // while there are none.
+              if (s.key === 'podcasts') {
+                return <PodcastEpisodesSection key={s.key} title={t('Recent episodes')} />;
               }
               if (s.key === 'mostPlayedSongs') {
                 return <MostPlayedSongsSection key={s.key} title={t('Most played songs')} />;

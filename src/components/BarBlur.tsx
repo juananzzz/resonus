@@ -1,6 +1,6 @@
 /**
- * The blur behind the navigation bar and the mini player (a switch each, in
- * Settings › Appearance and Settings › Player).
+ * The blur behind the navigation bar and the mini player ("Blur behind the
+ * bars", Settings › Appearance).
  *
  * On Android a BlurView can only blur what sits inside a `BlurTargetView`, and
  * never itself: the root layout wraps the Stack in one (`BarBlurTarget`) and
@@ -23,9 +23,9 @@ export const canBlurBars =
 
 const target = createRef<View | null>();
 
-/** Whether a bar is see-through, blurring what scrolls under it. */
-export function useBarBlur(bar: 'tabs' | 'miniPlayer'): boolean {
-  return useSettings((s) => (bar === 'tabs' ? s.blurBars : s.blurMiniPlayer)) && canBlurBars;
+/** Whether the bars are see-through, blurring what scrolls under them. */
+export function useBarBlur(): boolean {
+  return useSettings((s) => s.blurBars) && canBlurBars;
 }
 
 

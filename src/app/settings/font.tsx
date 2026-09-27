@@ -4,7 +4,7 @@ import * as Font from 'expo-font';
 import { useState } from 'react';
 import { Alert, ScrollView } from 'react-native';
 
-import { SettingRow, SelectList, SettingsGroup, SettingsPage, settingsStyles } from '@/components/SettingsUI';
+import { SettingRow, SelectList, SettingsPage, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { importCustomFont, removeCustomFontFiles } from '@/lib/customFont';
 import { APP_FONT_LABELS, type AppFont, useSettings } from '@/store/settings';
@@ -64,26 +64,24 @@ export default function FontSettings() {
     <SettingsPage title={t('Font')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <SelectList options={options} value={appFont} onChange={setAppFont} collapsible={false} />
-        <SettingsGroup>
+        <SettingRow
+          label={APP_FONT_LABELS.custom}
+          description={
+            customActive
+              ? customFontUri?.split('/').pop() ?? t('Loaded')
+              : t('Load a .ttf or .otf file')
+          }
+          icon="color-filter-outline"
+          right={customActive ? t('Active') : undefined}
+          onPress={pickFont}
+        />
+        {appFont === 'custom' && customFontFamily ? (
           <SettingRow
-            label={APP_FONT_LABELS.custom}
-            description={
-              customActive
-                ? customFontUri?.split('/').pop() ?? t('Loaded')
-                : t('Load a .ttf or .otf file')
-            }
-            icon="color-filter-outline"
-            right={customActive ? t('Active') : undefined}
-            onPress={pickFont}
+            label={t('Remove custom font')}
+            destructive
+            onPress={removeCustomFont}
           />
-          {appFont === 'custom' && customFontFamily ? (
-            <SettingRow
-              label={t('Remove custom font')}
-              destructive
-              onPress={removeCustomFont}
-            />
-          ) : null}
-        </SettingsGroup>
+        ) : null}
       </ScrollView>
     </SettingsPage>
   );

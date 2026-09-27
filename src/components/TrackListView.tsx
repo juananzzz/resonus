@@ -414,7 +414,6 @@ export function TrackListView({
   // Down past the title and the buttons, so the header is the cover's colour
   // and not only the space around the cover.
   const gradientH = insets.top + TOPBAR_H + cover + 280;
-  const band = searchable ? SEARCH_H * 4 : 0;
   const coverOpacity = scrollY.interpolate({
     inputRange: [0, collapse * 0.7],
     outputRange: [1, 0],
@@ -475,8 +474,7 @@ export function TrackListView({
           style={[
             styles.gradientWrap,
             {
-              top: -band,
-              height: gradientH + band,
+              height: gradientH,
               // Moves down with the revealed search bar, which pushes the header
               // down without moving the scroll offset. On its own view, because
               // this is a height animated from JS and the scroll below is not:
@@ -494,15 +492,14 @@ export function TrackListView({
             ]}
           >
             {/* Color band above the gradient: when the search bar is revealed,
-                content shifts down SEARCH_H px and this fills the gap at the top.
-                Inside the view's own bounds: hanging above them, Android left
-                the gap grey. */}
-            {band > 0 ? (
-              <View style={[styles.gradientAbove, { height: band, backgroundColor: headerColor }]} />
+                content shifts down SEARCH_H px and this fills the gap at the top. */}
+            {searchable ? (
+              <View style={[styles.gradientAbove, { backgroundColor: headerColor }]} />
             ) : null}
             <LinearGradient
-              {...easedFade(headerColor, colors.background)}
-              style={[StyleSheet.absoluteFill, { top: band }]}
+              colors={[headerColor, headerColor, colors.background]}
+              locations={[0, 0.35, 1]}
+              style={StyleSheet.absoluteFill}
             />
           </Animated.View>
         </Animated.View>
@@ -769,6 +766,7 @@ export function TrackListView({
                     name="play"
                     size={28}
                     color={colors.onAccent}
+                    style={{ marginLeft: 3 }}
                   />
                 </Pressable>
               </View>
@@ -946,9 +944,10 @@ const styles = themed((colors) => ({
   },
   gradientAbove: {
     position: 'absolute',
-    top: 0,
+    top: -SEARCH_H * 4,
     left: 0,
     right: 0,
+    height: SEARCH_H * 4,
   },
   searchClip: {
     overflow: 'hidden',
@@ -1175,38 +1174,3 @@ const styles = themed((colors) => ({
     fontWeight: '500',
   },
 }));
-
-/**
- * The header's fade from the cover colour into the page, eased rather than
- * straight: a straight blend has a visible corner where it starts and a line
- * where it lands. Smoothstep eases in and out of both, over several stops since
- * the gradient itself only blends in straight lines between them.
- */
-function easedFade(from: string, to: string): { colors: [string, string, ...string[]]; locations: [number, number, ...number[]] } {
-  const a = hexChannels(from);
-  const b = hexChannels(to);
-  if (!a || !b) return { colors: [from, from, to], locations: [0, 0.35, 1] };
-  const START = 0.25;
-  const STEPS = 8;
-  const colors: string[] = [from];
-  const locations: number[] = [0];
-  for (let i = 0; i <= STEPS; i++) {
-    const u = i / STEPS;
-    const k = u * u * (3 - 2 * u);
-    colors.push(
-      `rgb(${a.map((c, j) => Math.round(c + (b[j] - c) * k)).join(', ')})`,
-    );
-    locations.push(START + (1 - START) * u);
-  }
-  return {
-    colors: colors as [string, string, ...string[]],
-    locations: locations as [number, number, ...number[]],
-  };
-}
-
-function hexChannels(hex: string): [number, number, number] | null {
-  const m = /^#([0-9a-f]{6})$/i.exec(hex);
-  if (!m) return null;
-  const n = parseInt(m[1], 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}

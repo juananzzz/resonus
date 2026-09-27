@@ -1,7 +1,7 @@
 /** Album and song search on the server. */
 import Icon from '@/components/Icon';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useFocusEffect, useNavigation } from 'expo-router';
+import { Link, useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -29,6 +29,7 @@ import { songsLabel, useT } from '@/i18n';
 import { haptic } from '@/lib/haptics';
 import { onTabReselect, takeSearchFocus } from '@/lib/tabOrigin';
 import { bump } from '@/lib/perfLog';
+import { openRoute, parseResonusLink } from '@/lib/resonusLink';
 import { useAuthStore } from '@/store/auth';
 import { useMediaMenu } from '@/store/mediaMenu';
 import { currentSong, usePlayerStore } from '@/store/player';
@@ -108,6 +109,7 @@ export default function SearchScreen() {
     addListener: (event: 'tabPress' | 'blur', callback: () => void) => () => void;
     isFocused: () => boolean;
   }>();
+  const router = useRouter();
   const accent = useAccent();
   const inputRef = useRef<TextInput>(null);
   useEffect(() => {
@@ -241,7 +243,17 @@ export default function SearchScreen() {
           autoCapitalize="none"
           autoCorrect={false}
           value={query}
-          onChangeText={setQuery}
+          onChangeText={(text) => {
+            // A Resonus link pasted in, for when the app it came in didn't
+            // make it tappable (#176).
+            const link = parseResonusLink(text);
+            if (link) {
+              setQuery('');
+              router.push(openRoute(link));
+              return;
+            }
+            setQuery(text);
+          }}
           returnKeyType="search"
         />
         {query.length > 0 ? (

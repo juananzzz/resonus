@@ -23,6 +23,7 @@ import { exportManyToFolder, totalBytes } from '@/lib/exportSong';
 import { formatBytes } from '@/lib/format';
 import { pickFolder } from '@/lib/localLibrary';
 import { queryClient } from '@/lib/query';
+import { canShareResonusLink, shareResonusLink } from '@/lib/shareLink';
 import { useArtistPicker } from '@/store/artistPicker';
 import { useAuthStore } from '@/store/auth';
 import { anyDownloads, useDownloads } from '@/store/downloads';
@@ -319,6 +320,24 @@ export function MediaMenuSheet() {
                     closeNow();
                     useSharePicker.getState().open({ id: album ? album.id : playlist!.id, name });
                   });
+                }}
+              />
+            ) : null}
+            {/* For another Resonus user on the same server (#176). A private
+                playlist would open for nobody else, and one made offline has
+                no id on the server yet. */}
+            {canShareResonusLink() &&
+            (album || (playlist!.public !== false && !playlist!.id.startsWith('tmp_'))) ? (
+              <Action
+                icon="link-outline"
+                label={t('Share Resonus link')}
+                onPress={() => {
+                  close();
+                  void shareResonusLink(
+                    album
+                      ? { kind: 'album', id: album.id, name, artist: album.artist }
+                      : { kind: 'playlist', id: playlist!.id, name },
+                  );
                 }}
               />
             ) : null}

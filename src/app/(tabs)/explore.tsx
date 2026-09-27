@@ -40,6 +40,7 @@ import { ArtistsBrowser } from '@/app/browse/artists';
 import { SongsBrowser } from '@/app/browse/songs';
 import { GenresBrowser } from '@/app/genres';
 import { RadioBrowser } from '@/app/radio';
+import { PodcastsBrowser } from '@/app/podcasts';
 import { FoldersBrowser } from '@/components/FoldersBrowser';
 import { PlaylistsBrowser } from '@/components/PlaylistsBrowser';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
@@ -60,6 +61,7 @@ const LABEL: Record<Section, string> = {
   songs: 'Songs',
   genres: 'Genres',
   radio: 'Radio',
+  podcasts: 'Podcasts',
   folders: 'Folders',
 };
 
@@ -161,17 +163,19 @@ export default function ExploreScreen() {
   const headerButton =
     current === 'radio'
       ? { icon: 'add' as const, label: t('Add station'), size: 28, color: colors.text }
-      : current === 'playlists' ||
-          current === 'albums' ||
-          current === 'artists' ||
-          current === 'songs'
-        ? {
-            icon: layouts[current] === 'grid' ? ('grid-outline' as const) : ('list' as const),
-            label: t('View'),
-            size: 22,
-            color: colors.textSecondary,
-          }
-        : null;
+      : current === 'podcasts'
+        ? { icon: 'add' as const, label: t('Add podcast'), size: 28, color: colors.text }
+        : current === 'playlists' ||
+            current === 'albums' ||
+            current === 'artists' ||
+            current === 'songs'
+          ? {
+              icon: layouts[current] === 'grid' ? ('grid-outline' as const) : ('list' as const),
+              label: t('View'),
+              size: 22,
+              color: colors.textSecondary,
+            }
+          : null;
 
   // The inset is read here rather than left to a `SafeAreaView`: that one pads
   // itself once its native view has been measured, and a tab is only mounted
@@ -265,6 +269,8 @@ export default function ExploreScreen() {
           <GenresBrowser embedded searchOpen={searchOpen} />
         ) : current === 'radio' ? (
           <RadioBrowser embedded actionRef={sectionAction} searchOpen={searchOpen} />
+        ) : current === 'podcasts' ? (
+          <PodcastsBrowser embedded actionRef={sectionAction} searchOpen={searchOpen} />
         ) : (
           <FoldersBrowser />
         )}

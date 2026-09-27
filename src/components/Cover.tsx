@@ -12,8 +12,6 @@ interface Props {
   uri?: string;
   size: number;
   rounded?: boolean;
-  /** A corner of its own instead of the usual one (the player's setting). */
-  corner?: number;
   /** Fade when loading/switching the image (ms). 0 for instant changes. */
   transition?: number;
   /** Placeholder icon when no image (e.g. radio). */
@@ -297,7 +295,6 @@ export function Cover({
   uri,
   size,
   rounded,
-  corner,
   transition = 200,
   placeholderIcon = 'musical-notes',
   contentFit = 'cover',
@@ -350,9 +347,7 @@ export function Cover({
   // Small covers (≤56 px) sit inside the mini-player container whose own
   // radius is radius.md with spacing.sm padding; radius.sm (6) nests
   // visually without looking square or eating into the art.
-  const borderRadius = corner !== undefined
-    ? corner
-    : rounded
+  const borderRadius = rounded
     ? radius.pill
     : size <= 56
       ? radius.sm

@@ -15,12 +15,10 @@
  */
 import Slider from '@react-native-community/slider';
 import { useState } from 'react';
-import { Platform, Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { useT } from '@/i18n';
 import { formatDuration } from '@/lib/format';
 import { usePlayerStore } from '@/store/player';
-import { useSettings } from '@/store/settings';
 import { colors, fontSize, themed, useTheme } from '@/theme';
 
 export function SeekBar({
@@ -39,17 +37,12 @@ export function SeekBar({
   // Its own subscription to the theme: the screens around it have one, but a
   // component that reads a colour is the one that has to be told to paint again.
   useTheme();
-  const t = useT();
   const positionSec = usePlayerStore((s) => s.positionSec);
   const seekTo = usePlayerStore((s) => s.seekTo);
   // Null while nobody is touching it, which is when the song is in charge.
   const [held, setHeld] = useState<number | null>(null);
   const shown = held ?? positionSec;
   const timeStyle = [styles.time, timeColor ? { color: timeColor } : null];
-  // Tapping the right-hand time switches it between the length and what is
-  // left, and the choice is kept.
-  const remaining = useSettings((s) => s.showRemainingTime);
-  const setRemaining = useSettings((s) => s.setShowRemainingTime);
 
   return (
     <View style={style}>
@@ -75,17 +68,7 @@ export function SeekBar({
       />
       <View style={styles.times}>
         <Text style={timeStyle}>{formatDuration(shown)}</Text>
-        <Pressable
-          // Not upward: that is the end of the bar, which has to seek.
-          hitSlop={{ top: 0, bottom: 12, left: 12, right: 12 }}
-          accessibilityRole="button"
-          accessibilityLabel={remaining ? t('Show total time') : t('Show remaining time')}
-          onPress={() => setRemaining(!remaining)}
-        >
-          <Text style={timeStyle}>
-            {remaining ? `-${formatDuration(Math.max(0, duration - shown))}` : formatDuration(duration)}
-          </Text>
-        </Pressable>
+        <Text style={timeStyle}>{formatDuration(duration)}</Text>
       </View>
     </View>
   );

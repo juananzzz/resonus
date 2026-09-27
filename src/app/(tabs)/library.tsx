@@ -30,6 +30,7 @@ import {
   type Playlist,
   COVER,
 } from '@/api/data';
+import { listChannels } from '@/api/podcasts';
 import { AlbumRow } from '@/components/AlbumRow';
 import { ArtistRow } from '@/components/ArtistRow';
 import { Cover } from '@/components/Cover';
@@ -39,8 +40,9 @@ import { EmptyState } from '@/components/EmptyState';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
+import { PodcastArt } from '@/components/PodcastArt';
 import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
-import { albumsLabel, songsLabel, useT } from '@/i18n';
+import { albumsLabel, episodesLabel, songsLabel, useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { useLastPlayed } from '@/store/lastPlayed';
 import { useMediaMenu } from '@/store/mediaMenu';
@@ -133,6 +135,10 @@ function useGridMetrics(): { columns: number; card: number } {
 // In grid mode, the Favorites access goes as the first card of the grid
 // (in list it's the header). This sentinel id marks it within the data.
 const FAVORITES_ID = '__favorites__';
+// And the Podcasts access right after it, the same way: a subscription is as
+// much yours as a star is, and it is a thing you keep rather than something the
+// server has.
+const PODCASTS_ID = '__podcasts__';
 
 /** "⇅ Recent" row under the segments; opens the sort sheet. */
 function SortBar({ onPress }: { onPress: () => void }) {
@@ -248,6 +254,55 @@ function FavoritesEntry({ grid }: { grid?: boolean }) {
   );
 }
 
+function PodcastsEntry({ grid }: { grid?: boolean }) {
+  const t = useT();
+  const lang = useSettings((s) => s.language);
+  // No `enabled` gate, unlike the rows above: the subscriptions are the phone's
+  // own, so this answers with or without a server and offline included.
+  const { data } = useQuery({
+    queryKey: ['podcastChannels'],
+    queryFn: () => listChannels(),
+  });
+  // Episodes across every show rather than shows: it is the episodes that are
+  // stored on the phone, so that is the number that says whether the row is
+  // worth opening.
+  const count = (data ?? []).reduce((n, c) => n + (c.episodeCount ?? 0), 0);
+  const { card } = useGridMetrics();
+
+  if (grid) {
+    return (
+      <GridCard
+        href="/podcasts"
+        art={<PodcastArt size={card} />}
+        title={t('Podcasts')}
+        subtitle={episodesLabel(count, lang)}
+      />
+    );
+  }
+
+  return (
+    <Link href="/podcasts" asChild>
+      <Pressable style={styles.row}>
+        <PodcastArt size={56} />
+        <View style={styles.rowInfo}>
+          <Text style={styles.rowTitle}>{t('Podcasts')}</Text>
+          <Text style={[styles.rowSub, styles.rowSubGap]}>{episodesLabel(count, lang)}</Text>
+        </View>
+      </Pressable>
+    </Link>
+  );
+}
+
+/** The two fixed rows above the list, in order. */
+function LibraryEntries() {
+  return (
+    <>
+      <FavoritesEntry />
+      <PodcastsEntry />
+    </>
+  );
+}
+
 function PlaylistsTab({
   onNew,
   query,
@@ -302,9 +357,11 @@ function PlaylistsTab({
   );
   if (isLoading) return <Loader />;
   if (isError) return <Message text={t("Couldn't load playlists.")} onRetry={() => refetch()} />;
-  // In grid, Favorites goes in as the first card (sentinel); in list it
-  // remains the full-width header.
-  const listData: Playlist[] = grid ? [{ id: FAVORITES_ID, name: '' }, ...playlists] : playlists;
+  // In grid, Favorites and Podcasts go in as the first cards (sentinels); in
+  // list they remain the full-width headers.
+  const listData: Playlist[] = grid
+    ? [{ id: FAVORITES_ID, name: '' }, { id: PODCASTS_ID, name: '' }, ...playlists]
+    : playlists;
   return (
     <FlatList
       key={grid ? `grid-${columns}` : 'list'}
@@ -317,7 +374,7 @@ function PlaylistsTab({
       refreshControl={
         <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.accent} />
       }
-      ListHeaderComponent={grid ? undefined : <FavoritesEntry />}
+      ListHeaderComponent={grid ? undefined : <LibraryEntries />}
       ListEmptyComponent={
         query ? (
           <NoResults query={query} />
@@ -333,6 +390,8 @@ function PlaylistsTab({
       renderItem={({ item }: { item: Playlist }) =>
         item.id === FAVORITES_ID ? (
           <FavoritesEntry grid />
+        ) : item.id === PODCASTS_ID ? (
+          <PodcastsEntry grid />
         ) : grid ? (
           <GridCard
             href={`/playlist/${item.id}`}
@@ -655,10 +714,15 @@ function AllTab({ query, onNew }: { query: string; onNew?: () => void }) {
   if (lists.isError && starred.isError) {
     return <Message text={t("Couldn't load your library.")} onRetry={refresh} />;
   }
-  // In grid, Favorites goes in as the first card (sentinel); in list it stays
-  // the full-width header. The same arrangement the playlists have.
+  // In grid, Favorites and Podcasts go in as the first cards (sentinels); in
+  // list they stay the full-width headers. The same arrangement the playlists
+  // have.
   const data: LibItem[] = grid
-    ? [{ kind: 'playlist', id: FAVORITES_ID, name: '', href: '', recent: 0, added: 0 }, ...items]
+    ? [
+        { kind: 'playlist', id: FAVORITES_ID, name: '', href: '', recent: 0, added: 0 },
+        { kind: 'playlist', id: PODCASTS_ID, name: '', href: '', recent: 0, added: 0 },
+        ...items,
+      ]
     : items;
   return (
     <FlatList
@@ -675,7 +739,7 @@ function AllTab({ query, onNew }: { query: string; onNew?: () => void }) {
           tintColor={colors.accent}
         />
       }
-      ListHeaderComponent={grid ? undefined : <FavoritesEntry />}
+      ListHeaderComponent={grid ? undefined : <LibraryEntries />}
       ListEmptyComponent={
         query ? (
           <NoResults query={query} />
@@ -691,6 +755,8 @@ function AllTab({ query, onNew }: { query: string; onNew?: () => void }) {
       renderItem={({ item }: { item: LibItem }) =>
         item.id === FAVORITES_ID ? (
           <FavoritesEntry grid />
+        ) : item.id === PODCASTS_ID ? (
+          <PodcastsEntry grid />
         ) : grid ? (
           <GridCard
             href={item.href}

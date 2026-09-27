@@ -60,6 +60,7 @@ const PLURALS: Record<string, Partial<Record<Language, string[]>>> = {
   album: { es: ['álbum', 'álbumes'], en: ['album', 'albums'], de: ['Album', 'Alben'], ca: ['àlbum', 'àlbums'], ru: ['альбом', 'альбома', 'альбомов'], it: ['album', 'album'], uk: ['альбом', 'альбоми', 'альбомів'], pl: ['album', 'albumy', 'albumów'], sv: ['album', 'album'] },
   playlist: { es: ['lista', 'listas'], en: ['playlist', 'playlists'], de: ['Playlist', 'Playlists'], ca: ['llista', 'llistes'], ru: ['плейлист', 'плейлиста', 'плейлистов'], it: ['playlist', 'playlist'], uk: ['плейлист', 'плейлисти', 'плейлистів'], pl: ['playlista', 'playlisty', 'playlist'], sv: ['spellista', 'spellistor'] },
   artist: { es: ['artista', 'artistas'], en: ['artist', 'artists'], ca: ['artista', 'artistes'], uk: ['виконавець', 'виконавці', 'виконавців'], pl: ['artysta', 'artyści', 'artystów'], sv: ['artist', 'artister'] },
+  episode: { es: ['episodio', 'episodios'], en: ['episode', 'episodes'], de: ['Episode', 'Episoden'], ca: ['episodi', 'episodis'], ru: ['эпизод', 'эпизода', 'эпизодов'], it: ['episodio', 'episodi'], uk: ['епізод', 'епізоди', 'епізодів'], pl: ['odcinek', 'odcinki', 'odcinków'], sv: ['avsnitt', 'avsnitt'] },
 };
 
 /**
@@ -126,4 +127,9 @@ export function playlistsLabel(n: number, lang: Language): string {
 /** "N artist/artists" (or equivalent) per language. */
 export function artistsLabel(n: number, lang: Language): string {
   return countLabel('artist', n, lang);
+}
+
+/** "N episode/episodes" (or equivalent) per language. */
+export function episodesLabel(n: number, lang: Language): string {
+  return countLabel('episode', n, lang);
 }

@@ -6,8 +6,11 @@
  * binding the service). Those routes don't exist and would show "Unmatched
  * Route", so the notification tap is routed to the player.
  *
- * A launcher shortcut (`resonus://shortcut/<action>`) goes through `/shortcut`.
+ * A Resonus link (`resonus://album/<id>?server=<host>`, #176) goes through
+ * `/open` first, which finds the profile on that server before opening it, and
+ * a launcher shortcut (`resonus://shortcut/<action>`) through `/shortcut`.
  */
+import { openRoute, parseResonusLink } from '@/lib/resonusLink';
 
 export function redirectSystemPath({ path }: { path: string; initial: boolean }): string {
   try {
@@ -17,6 +20,8 @@ export function redirectSystemPath({ path }: { path: string; initial: boolean })
     // A launcher shortcut (see `lib/homeWidget`).
     const shortcut = path.match(/shortcut\/([a-z-]+)/);
     if (shortcut) return `/shortcut?action=${shortcut[1]}`;
+    const link = parseResonusLink(path);
+    if (link) return openRoute(link);
     return path;
   } catch {
     return '/';

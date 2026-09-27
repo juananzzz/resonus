@@ -109,6 +109,14 @@ export interface Song {
   userRating?: number;
   /** Direct streaming URL (used for radio; avoids generating Subsonic URL). */
   url?: string;
+  /**
+   * That `url` is a finished recording rather than a live stream, so this can be
+   * played at another speed. A station arrives in real time and stalls if asked
+   * to hurry, but a podcast episode is a file behind an HTTP address: it has a
+   * duration and it buffers. Set by `episodeToSong`; absent for radio, which is
+   * the one case that must stay at 1×.
+   */
+  vod?: boolean;
   /** Song genre (sent by Subsonic and Jellyfin). Used by radio so it doesn't
    *  die when similar artist tracks run out. */
   genre?: string;
@@ -1879,4 +1887,61 @@ export async function hasShareRole(auth: SubsonicAuth): Promise<boolean> {
     if ((e as { network?: boolean })?.network) throw e;
     return false;
   }
+}
+
+/**
+ * A podcast, the way this app has one.
+ *
+ * The Subsonic API defines a podcast channel too, and nothing here is
+ * particular to feeds: the difference is only in where a row comes from. It
+ * lives in this file, with `Song` and `Album`, because this is where the
+ * shapes the rest of the app knows by name are written down, not because
+ * something fetches it — see `api/podcasts.ts` for why the server is not
+ * asked.
+ */
+export interface PodcastChannel {
+  /** `hash(feed url)`. Stable, and never a server id: see `api/podcasts.ts`. */
+  id: string;
+  title: string;
+  description?: string;
+  author?: string;
+  imageUrl?: string;
+  /** The channel's own web page, not the feed file. */
+  siteUrl?: string;
+  /** The feed this was read from. Absent for a channel read another way. */
+  feedUrl?: string;
+  /** How many episodes are stored, which the list screen shows. */
+  episodeCount?: number;
+  /** When the newest stored episode was published. */
+  lastPublishedAt?: number;
+  /** When this channel was last read, which is the list's "updated" column. */
+  refreshedAt?: number;
+  /**
+   * Why the last read failed, when it did. Kept on the channel rather than
+   * thrown, because a feed that stopped resolving must not take the other
+   * subscriptions' screens down with it, and because "this one is stale" is
+   * something the channel list has to be able to say.
+   */
+  error?: string;
+}
+
+/** One episode of a podcast. */
+export interface PodcastEpisode {
+  /** Namespaced by its channel, so two feeds cannot collide on a `guid`. */
+  id: string;
+  channelId: string;
+  title: string;
+  description?: string;
+  /** Publication date, in ms since the epoch. */
+  publishedAt?: number;
+  /** Seconds. */
+  duration?: number;
+  /**
+   * Where the audio is, and the reason the player needed no new code: it is
+   * handed to the engine as a `Song.url` stream like any other.
+   */
+  url?: string;
+  mimeType?: string;
+  size?: number;
+  imageUrl?: string;
 }

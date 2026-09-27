@@ -57,6 +57,7 @@ export const REGULAR: Record<string, number> = {
   "image": 58058,
   "info": 58062,
   "key": 58070,
+  "link": 58082,
   "list": 58096,
   "list-bullets": 58098,
   "lock-simple": 58120,

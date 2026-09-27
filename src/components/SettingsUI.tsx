@@ -6,7 +6,7 @@
  */
 import Icon from '@/components/Icon';
 import Slider from '@react-native-community/slider';
-import { Children, createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -70,37 +70,6 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
   );
 }
 
-/** Inside a `SettingsGroup`, a row leaves the box to the group. */
-const GroupContext = createContext(false);
-
-/** The box a row draws around itself, unless a group already draws one. */
-function useCardBox() {
-  return useContext(GroupContext) ? null : settingsStyles.cardBox;
-}
-
-/**
- * One card for the rows of a section, with a hairline between them, instead
- * of a box per row: a section of five settings read as five things floating
- * apart. What is inside keeps working on its own too; it just stops drawing
- * its own box.
- */
-export function SettingsGroup({ children }: { children: React.ReactNode }) {
-  const rows = Children.toArray(children);
-  if (rows.length === 0) return null;
-  return (
-    <GroupContext.Provider value>
-      <View style={settingsStyles.cardBox}>
-        {rows.map((row, i) => (
-          <View key={i}>
-            {i > 0 ? <View style={settingsStyles.groupDivider} /> : null}
-            {row}
-          </View>
-        ))}
-      </View>
-    </GroupContext.Provider>
-  );
-}
-
 /**
  * Flat settings row: white label, gray description below, and whatever goes
  * on the right (chevron with `onPress`, `right` text, or both).
@@ -128,7 +97,6 @@ export function SettingRow({
   destructive?: boolean;
   onPress?: () => void;
 }) {
-  const box = useCardBox();
   const body = (
     <>
       {icon ? (
@@ -145,12 +113,12 @@ export function SettingRow({
     </>
   );
   if (!onPress) {
-    return <View style={[box, settingsStyles.row]}>{body}</View>;
+    return <View style={[settingsStyles.cardBox, settingsStyles.row]}>{body}</View>;
   }
   return (
     <Pressable
       style={({ pressed }) => [
-        box,
+        settingsStyles.cardBox,
         settingsStyles.row,
         pressed && { opacity: 0.6 },
       ]}
@@ -197,7 +165,6 @@ export function SelectList<T extends string | number | boolean>({
   disabledLabel?: string;
 }) {
   const accent = useAccent();
-  const box = useCardBox();
   const frame = useSafeAreaFrame();
   const insets = useSafeAreaInsets();
   // The row's position on screen (measured on open) and the menu's natural
@@ -244,7 +211,7 @@ export function SelectList<T extends string | number | boolean>({
 
   if (!collapsible) {
     return (
-      <View style={box}>
+      <View style={settingsStyles.cardBox}>
         {options.map((opt, i) => {
           const isActive = opt.value === value;
           return (
@@ -282,7 +249,7 @@ export function SelectList<T extends string | number | boolean>({
         accessibilityState={{ disabled }}
         disabled={disabled}
         style={({ pressed }) => [
-          box,
+          settingsStyles.cardBox,
           settingsStyles.row,
           // Dimming the whole row, not recolouring the label: the muted colour
           // is the description's own, so label and description came out the
@@ -412,13 +379,12 @@ export function SliderRow({
   onChange: (value: number) => void;
 }) {
   const accent = useAccent();
-  const box = useCardBox();
   const [live, setLive] = useState<number | null>(null);
   const [tuning, setTuning] = useState(false);
   const shown = live ?? value;
 
   return (
-    <View style={[box, disabled && { opacity: 0.5 }]}>
+    <View style={[settingsStyles.cardBox, disabled && { opacity: 0.5 }]}>
       <View style={[settingsStyles.row, { paddingBottom: 0 }]}>
         <View style={settingsStyles.rowLabelBox}>
           <Text style={settingsStyles.rowLabel}>{label}</Text>
@@ -653,9 +619,8 @@ export function SwitchList({
   }[];
 }) {
   const accent = useAccent();
-  const box = useCardBox();
   return (
-    <View style={box}>
+    <View style={settingsStyles.cardBox}>
       {options.map((opt, i) => (
         // The whole row and not the switch alone. A switch is a small thing to
         // hit with a thumb, and it sits at the far edge of the screen, which on
@@ -722,9 +687,8 @@ export function TextRow({
 }) {
   const accent = useAccent();
   const near = value.length >= maxLength - 3;
-  const box = useCardBox();
   return (
-    <View style={[box, settingsStyles.textRow]}>
+    <View style={[settingsStyles.cardBox, settingsStyles.textRow]}>
       <View style={settingsStyles.textRowTop}>
         <View style={settingsStyles.rowLabelBox}>
           <Text style={settingsStyles.rowLabel}>{label}</Text>
@@ -751,9 +715,8 @@ export function TextRow({
 }
 
 export function Field({ label, value }: { label: string; value: string }) {
-  const box = useCardBox();
   return (
-    <View style={[box, settingsStyles.field]}>
+    <View style={[settingsStyles.cardBox, settingsStyles.field]}>
       <Text style={settingsStyles.fieldLabel}>{label}</Text>
       <Text style={settingsStyles.fieldValue} numberOfLines={1}>
         {value}
@@ -775,16 +738,14 @@ export const settingsStyles = themed((colors) => ({
   content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: SCREEN_BOTTOM_PADDING },
   /** Where the settings themselves live, centred once there is room to spare. */
   pane: { flex: 1, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' },
-  // Small and grey, over the card it names: at the size of the screen's own
-  // title it competed with it, and a screen of sections read as a screen of
-  // headings. Same as the labels on the Theme screen.
+  // Spotify-style group title: bold, light, with air above.
   sectionTitle: {
-    color: colors.textSecondary,
-    fontSize: fontSize.sm,
+    color: colors.text,
+    fontSize: fontSize.lg,
+    letterSpacing: tracking.heading,
     fontWeight: '500',
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
     marginBottom: spacing.xs,
-    marginLeft: spacing.xs,
   },
   sectionDescription: {
     color: colors.textMuted,
@@ -795,15 +756,9 @@ export const settingsStyles = themed((colors) => ({
   // one set (streaming, once per network). Quieter than `sectionTitle` and with
   // less air above it, so it reads as belonging to the title above rather than
   // competing with it.
-  // Between the rows of a `SettingsGroup`, inset like `rowBorder`.
-  groupDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.highlight,
-    marginLeft: spacing.lg,
-  },
   groupTitle: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    fontSize: fontSize.sm,
     fontWeight: '500',
     marginTop: spacing.md,
     marginBottom: spacing.xs,

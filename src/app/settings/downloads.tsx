@@ -15,7 +15,6 @@ import { Dialog } from '@/components/Dialog';
 import {
   SelectList,
   SettingRow,
-  SettingsGroup,
   SettingsPage,
   settingsStyles,
   SwitchList,
@@ -161,101 +160,99 @@ export default function DownloadsSettings() {
         {/* Quality first and the codec under it, as in Quality & playback:
             at "Original" the original file is downloaded and the codec has
             nothing to do, so it reads as a pair and is greyed out (#72). */}
-        <SettingsGroup>
-          <SelectList
-            label={t('Download quality')}
-            description={t('Applies to new downloads only.')}
-            // Only "Original" is a word; the rest are a number and a unit.
-            options={BITRATE_OPTIONS.map((opt) => ({
-              value: opt.value,
-              label: opt.value === 0 ? t('Original') : opt.label,
-            }))}
-            value={downloadBitRate}
-            onChange={setDownloadBitRate}
-            disabled={offline}
-          />
-          <SelectList
-            label={t('Download codec')}
-            description={
-              downloadBitRate > 0
-                ? t('Your server must support it.')
-                : t('At “Original” quality nothing is transcoded.')
-            }
-            options={TRANSCODE_FORMATS.map((v) => ({
-              value: v,
-              label: v === '' ? t('Server default') : v.toUpperCase(),
-            }))}
-            value={downloadFormat}
-            onChange={setDownloadFormat}
-            disabled={offline || downloadBitRate === 0}
-            disabledLabel={downloadBitRate === 0 ? t('Not used') : undefined}
-          />
-          <SwitchList
-            options={[
-              {
-                label: t('Transcode lossless files only'),
-                description: t(
-                  'MP3, AAC, Opus and other lossy files are downloaded as they are. Only files like FLAC are transcoded.',
-                ),
-                value: downloadLosslessOnly,
-                onChange: setDownloadLosslessOnly,
-                disabled: offline || downloadBitRate === 0,
-              },
-            ]}
-          />
-          <SelectList
-            label={t('Simultaneous downloads')}
-            options={DOWNLOAD_CONCURRENCY_OPTIONS.map((n) => ({ value: n, label: String(n) }))}
-            value={downloadConcurrency}
-            onChange={setDownloadConcurrency}
-            disabled={offline}
-          />
-          <SwitchList
-            options={[
-              {
-                label: t('Download over Wi-Fi only'),
-                value: downloadWifiOnly,
-                onChange: setDownloadWifiOnly,
-                disabled: offline,
-              },
-            ]}
-          />
-        </SettingsGroup>
+        <SelectList
+          label={t('Download quality')}
+          description={t('Applies to new downloads only.')}
+          // Only "Original" is a word; the rest are a number and a unit.
+          options={BITRATE_OPTIONS.map((opt) => ({
+            value: opt.value,
+            label: opt.value === 0 ? t('Original') : opt.label,
+          }))}
+          value={downloadBitRate}
+          onChange={setDownloadBitRate}
+          disabled={offline}
+        />
+        <SelectList
+          label={t('Download codec')}
+          description={
+            downloadBitRate > 0
+              ? t('Codec to transcode to. Your server must support it.')
+              : t('Codec to transcode to. At “Original” quality nothing is transcoded.')
+          }
+          options={TRANSCODE_FORMATS.map((v) => ({
+            value: v,
+            label: v === '' ? t('Server default') : v.toUpperCase(),
+          }))}
+          value={downloadFormat}
+          onChange={setDownloadFormat}
+          disabled={offline || downloadBitRate === 0}
+          disabledLabel={downloadBitRate === 0 ? t('Not used') : undefined}
+        />
+        <SwitchList
+          options={[
+            {
+              label: t('Transcode lossless files only'),
+              description: t(
+                'MP3, AAC, Opus and other lossy files are downloaded as they are. Only files like FLAC are transcoded.',
+              ),
+              value: downloadLosslessOnly,
+              onChange: setDownloadLosslessOnly,
+              disabled: offline || downloadBitRate === 0,
+            },
+          ]}
+        />
+        <SelectList
+          label={t('Simultaneous downloads')}
+          description={t('Songs fetched at the same time. Fewer is gentler on the server, network and your phone.')}
+          options={DOWNLOAD_CONCURRENCY_OPTIONS.map((n) => ({ value: n, label: String(n) }))}
+          value={downloadConcurrency}
+          onChange={setDownloadConcurrency}
+          disabled={offline}
+        />
+        <SwitchList
+          options={[
+            {
+              label: t('Download over Wi-Fi only'),
+              description: t('Block downloads on mobile data.'),
+              value: downloadWifiOnly,
+              onChange: setDownloadWifiOnly,
+              disabled: offline,
+            },
+          ]}
+        />
         <Text style={settingsStyles.sectionTitle}>{t('Song cache')}</Text>
-        <SettingsGroup>
-          <SwitchList
-            options={[
-              {
-                label: t('Cache songs you play'),
-                description: t(
-                  'Songs you stream are kept on this phone and play from it next time, with or without a connection. The next song in the queue is fetched ahead, so it is not streamed at all. When the cache is full, the songs played longest ago make room.',
-                ),
-                value: songCache,
-                onChange: setSongCache,
-              },
-            ]}
+        <SwitchList
+          options={[
+            {
+              label: t('Cache songs you play'),
+              description: t(
+                'Songs you stream are kept on this phone and play from it next time, with or without a connection. The next song in the queue is fetched ahead, so it is not streamed at all. When the cache is full, the songs played longest ago make room.',
+              ),
+              value: songCache,
+              onChange: setSongCache,
+            },
+          ]}
+        />
+        <SelectList
+          label={t('Cache size')}
+          options={SONG_CACHE_LIMITS_GB.map((gb) => ({ value: gb, label: `${gb} GB` }))}
+          value={songCacheLimitGb}
+          onChange={(gb) => {
+            setSongCacheLimitGb(gb);
+            void useSongCache.getState().trim();
+          }}
+          disabled={!songCache}
+        />
+        {/* Also with the cache off, while it still holds something: that is
+            where it is emptied. */}
+        {songCache || cacheCount > 0 ? (
+          <SettingRow
+            label={t('Cached songs')}
+            right={`${formatBytes(cacheUsed)} · ${songsLabel(cacheCount, lang)}`}
+            chevron
+            onPress={() => router.push('/settings/cache')}
           />
-          <SelectList
-            label={t('Cache size')}
-            options={SONG_CACHE_LIMITS_GB.map((gb) => ({ value: gb, label: `${gb} GB` }))}
-            value={songCacheLimitGb}
-            onChange={(gb) => {
-              setSongCacheLimitGb(gb);
-              void useSongCache.getState().trim();
-            }}
-            disabled={!songCache}
-          />
-          {/* Also with the cache off, while it still holds something: that is
-              where it is emptied. */}
-          {songCache || cacheCount > 0 ? (
-            <SettingRow
-              label={t('Cached songs')}
-              right={`${formatBytes(cacheUsed)} · ${songsLabel(cacheCount, lang)}`}
-              chevron
-              onPress={() => router.push('/settings/cache')}
-            />
-          ) : null}
-        </SettingsGroup>
+        ) : null}
         <Text style={settingsStyles.sectionTitle}>{t('Offline')}</Text>
         <SwitchList
           options={[

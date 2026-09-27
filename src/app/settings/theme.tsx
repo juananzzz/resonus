@@ -2,13 +2,17 @@
  * Settings › Theme: the appearance (dark, light, or the phone's own) and the
  * accent colour of whichever one is on screen — each keeps its own. All of it
  * applies the moment it is chosen.
+ *
+ * The light one carries "(experimental)" in its own label rather than a warning
+ * off to one side. It is a whole second palette across every screen in the app,
+ * and the odds are that somewhere a corner of it still wants adjusting: the word
+ * belongs where the choice is made, so nobody picks it and then wonders whether
+ * what they are looking at is on purpose.
  */
-import { ColorPickerDialog } from '@/components/ColorPickerDialog';
 import Icon from '@/components/Icon';
-import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { SelectList, SettingsGroup, SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
+import { SelectList, SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { ACCENT_OPTIONS, useSettings } from '@/store/settings';
 import {
@@ -19,15 +23,8 @@ import {
   themed,
   type BackgroundTint,
   type ThemePreference,
-  useTheme,
   useThemeMode,
 } from '@/theme';
-
-/** The hours a scheduled theme can change at. */
-const HOURS = Array.from({ length: 24 }, (_, h) => ({
-  value: h,
-  label: `${String(h).padStart(2, '0')}:00`,
-}));
 
 /** In the order they are offered, the default first. */
 const TINTS: { key: BackgroundTint; name: string }[] = [
@@ -110,52 +107,6 @@ function Swatches({ value, onPick }: { value: string; onPick: (hex: string) => v
   );
 }
 
-/** Black or white, whichever reads on `hex`. */
-function tickOn(hex: string): string {
-  const n = parseInt(hex.slice(1), 16);
-  const y = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
-  return y > 140 ? '#000' : '#FFF';
-}
-
-/** The user's own colour, and the way into making or changing it. */
-function CustomSwatch({
-  color,
-  active,
-  onPick,
-  onEdit,
-}: {
-  color: string;
-  active: boolean;
-  onPick: () => void;
-  onEdit: () => void;
-}) {
-  const t = useT();
-  const colors = useTheme();
-  return (
-    <View style={styles.swatches}>
-      {color ? (
-        <Pressable
-          onPress={onPick}
-          accessibilityRole="button"
-          accessibilityLabel={t('Custom color')}
-          accessibilityState={{ selected: active }}
-          style={[styles.swatch, { backgroundColor: color }, active && styles.swatchActive]}
-        >
-          {active ? <Icon name="checkmark" size={24} color={tickOn(color)} /> : null}
-        </Pressable>
-      ) : null}
-      <Pressable
-        onPress={onEdit}
-        accessibilityRole="button"
-        accessibilityLabel={color ? t('Edit custom color') : t('Create custom color')}
-        style={[styles.swatch, styles.tintSwatch, { backgroundColor: colors.surfaceHighlight }]}
-      >
-        <Icon name={color ? 'create-outline' : 'add'} size={24} color={colors.text} />
-      </Pressable>
-    </View>
-  );
-}
-
 export default function ThemeSettings() {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else. The
@@ -167,18 +118,10 @@ export default function ThemeSettings() {
   const setAccentColor = useSettings((s) => s.setAccentColor);
   const themeMode = useSettings((s) => s.themeMode);
   const setThemeMode = useSettings((s) => s.setThemeMode);
-  const themeLightFrom = useSettings((s) => s.themeLightFrom);
-  const setThemeLightFrom = useSettings((s) => s.setThemeLightFrom);
-  const themeDarkFrom = useSettings((s) => s.themeDarkFrom);
-  const setThemeDarkFrom = useSettings((s) => s.setThemeDarkFrom);
   const pureBlack = useSettings((s) => s.pureBlack);
   const setPureBlack = useSettings((s) => s.setPureBlack);
   const backgroundTint = useSettings((s) => s.backgroundTint);
   const setBackgroundTint = useSettings((s) => s.setBackgroundTint);
-  const customAccentColor = useSettings((s) => s.customAccentColor);
-  const setCustomAccentColor = useSettings((s) => s.setCustomAccentColor);
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const accent = mode === 'light' ? accentColorLight : accentColor;
 
   return (
     <SettingsPage title={t('Theme')}>
@@ -193,30 +136,10 @@ export default function ThemeSettings() {
           onChange={setThemeMode}
           options={[
             { value: 'system', label: t('System') },
-            { value: 'dark', label: t('Dark') },
-            { value: 'light', label: t('Light') },
-            { value: 'schedule', label: t('Scheduled') },
+            { value: 'dark', label: t('Dark (default)') },
+            { value: 'light', label: t('Light (experimental)') },
           ]}
         />
-        {themeMode === 'schedule' ? (
-          <>
-            <View style={styles.gap} />
-            <SettingsGroup>
-              <SelectList<number>
-                label={t('Light from')}
-                options={HOURS}
-                value={themeLightFrom}
-                onChange={setThemeLightFrom}
-              />
-              <SelectList<number>
-                label={t('Dark from')}
-                options={HOURS}
-                value={themeDarkFrom}
-                onChange={setThemeDarkFrom}
-              />
-            </SettingsGroup>
-          </>
-        ) : null}
         {/* A variant of dark rather than a fourth mode, so following the
             system still works with it. */}
         <View style={styles.gap} />
@@ -224,6 +147,7 @@ export default function ThemeSettings() {
           options={[
             {
               label: t('Pure black'),
+              description: t('A black background instead of dark grey whenever the app is dark. Made for OLED screens.'),
               value: pureBlack,
               onChange: setPureBlack,
             },
@@ -233,6 +157,7 @@ export default function ThemeSettings() {
         {/* Still pickable with pure black, for when it is turned off; dimmed
             so it is clear it is not what is on screen. */}
         <Text style={[styles.label, styles.secondLabel]}>{t('Background')}</Text>
+        <Text style={styles.hint}>{t('The shade of the greys, dark or light. Pure black keeps its own.')}</Text>
         <TintSwatches
           value={backgroundTint}
           onPick={setBackgroundTint}
@@ -245,26 +170,10 @@ export default function ThemeSettings() {
             there rather than repainting it with the other's. Nothing has to say
             so on screen — the ticked swatch is already the answer. */}
         <Text style={[styles.label, styles.secondLabel]}>{t('Accent color')}</Text>
-        <Text style={styles.subLabel}>{t('Palette')}</Text>
-        <Swatches value={accent} onPick={(hex) => setAccentColor(hex, mode)} />
-        <Text style={[styles.subLabel, styles.secondSubLabel]}>{t('Custom::color')}</Text>
-        <CustomSwatch
-          color={customAccentColor}
-          active={!!customAccentColor && customAccentColor.toLowerCase() === accent.toLowerCase()}
-          onPick={() => setAccentColor(customAccentColor, mode)}
-          onEdit={() => setPickerOpen(true)}
+        <Swatches
+          value={mode === 'light' ? accentColorLight : accentColor}
+          onPick={(hex) => setAccentColor(hex, mode)}
         />
-        {pickerOpen ? (
-          <ColorPickerDialog
-            initialColor={customAccentColor || accent}
-            onCancel={() => setPickerOpen(false)}
-            onSave={(hex) => {
-              setPickerOpen(false);
-              setCustomAccentColor(hex);
-              setAccentColor(hex, mode);
-            }}
-          />
-        ) : null}
       </ScrollView>
     </SettingsPage>
   );
@@ -278,8 +187,6 @@ const styles = themed((colors) => ({
     marginBottom: spacing.md,
   },
   secondLabel: { marginTop: spacing.xl },
-  subLabel: { color: colors.textMuted, fontSize: fontSize.xs, marginBottom: spacing.sm },
-  secondSubLabel: { marginTop: spacing.lg },
   gap: { height: spacing.md },
   swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg },
   swatch: {
@@ -292,4 +199,5 @@ const styles = themed((colors) => ({
   swatchActive: { borderWidth: 3, borderColor: colors.text },
   tintSwatch: { borderWidth: 1, borderColor: colors.textMuted },
   dimmed: { opacity: 0.4 },
+  hint: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: -spacing.sm, marginBottom: spacing.md },
 }));

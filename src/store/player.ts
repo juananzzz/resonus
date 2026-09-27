@@ -1942,7 +1942,14 @@ export const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] as const;
  * either way and comes back with the next track that has a file behind it.
  */
 function speedFor(song: Song | null | undefined): number {
-  if (!song || song.url) return 1;
+  if (!song) return 1;
+  // A station arrives in real time: asking for it faster only drains the buffer
+  // it is being fed and it stalls, so it always plays at 1. An episode is the
+  // other kind of URL — a finished file behind it (`vod`) — so it hurries with
+  // everything else, which is the point of a speed control on a talk. The
+  // choice is kept either way and comes back with the next track that has a
+  // file behind it.
+  if (song.url && !song.vod) return 1;
   return usePlayerStore.getState().speed;
 }
 

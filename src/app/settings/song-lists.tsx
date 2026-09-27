@@ -42,6 +42,7 @@ export default function SongListsSettings() {
           options={[
             {
               label: t('Show artwork'),
+              description: t('Show the album artwork next to each song in playlists and favorites.'),
               value: showListArtwork,
               onChange: setShowListArtwork,
             },
@@ -52,6 +53,7 @@ export default function SongListsSettings() {
             },
             {
               label: t('Show rating'),
+              description: t("Show each song's star rating in lists."),
               value: showListRating,
               onChange: setShowListRating,
             },
@@ -65,21 +67,25 @@ export default function SongListsSettings() {
             },
             {
               label: t('Show description'),
+              description: t('Show playlist and album descriptions under their names.'),
               value: showPlaylistDescription,
               onChange: setShowPlaylistDescription,
             },
             {
               label: t('Show artist photo'),
+              description: t('Show a round artist photo next to the name on album screens.'),
               value: showArtistPhoto,
               onChange: setShowArtistPhoto,
             },
             {
               label: t('Show disc titles'),
+              description: t('Separate discs with a header on multi-disc albums.'),
               value: showDiscHeaders,
               onChange: setShowDiscHeaders,
             },
             {
               label: t('Show genres'),
+              description: t("Show the album's genres as chips; tap one to browse it."),
               value: showGenreChips,
               onChange: setShowGenreChips,
             },

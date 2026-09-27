@@ -20,7 +20,7 @@
  *    the language.
  */
 import { useSyncExternalStore } from 'react';
-import { Appearance, AppState } from 'react-native';
+import { Appearance } from 'react-native';
 import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 
 /** Default accent (Spotify green). */
@@ -35,13 +35,13 @@ export function isThemeMode(value: unknown): value is ThemeMode {
 
 /**
  * What the setting holds, which is not the same question as which appearance is
- * on screen: `system` is a standing instruction to keep asking Android,
- * `schedule` one to keep looking at the clock, and the other two are answers.
+ * on screen: `system` is a standing instruction to keep asking Android, and the
+ * other two are answers.
  */
-export type ThemePreference = ThemeMode | 'system' | 'schedule';
+export type ThemePreference = ThemeMode | 'system';
 
 export function isThemePreference(value: unknown): value is ThemePreference {
-  return value === 'system' || value === 'schedule' || isThemeMode(value);
+  return value === 'system' || isThemeMode(value);
 }
 
 /**
@@ -479,22 +479,6 @@ function darken(hex: string, amount = 0.14): string {
   return toHex(ch[0] * (1 - amount), ch[1] * (1 - amount), ch[2] * (1 - amount));
 }
 
-/**
- * `hex` at zero opacity, for the clear end of a gradient. Not 'transparent':
- * that is transparent black, and Android blends through it, so a fade to
- * white passes through a grey band on the way.
- */
-export function transparentOf(hex: string): string {
-  return /^#[0-9a-f]{6}$/i.test(hex) ? `${hex}00` : 'transparent';
-}
-
-/** Mixes a hex color toward white. */
-function lighten(hex: string, amount: number): string {
-  const ch = channels(hex);
-  if (!ch) return hex;
-  return toHex(...(ch.map((c) => c + (255 - c) * amount) as [number, number, number]));
-}
-
 /** WCAG relative luminance. */
 function luminance(hex: string): number {
   const ch = channels(hex);
@@ -514,22 +498,17 @@ function contrast(a: string, b: string): number {
 }
 
 /**
- * Darkens `hex` in small steps until it reads against `bg`, or gives up; on a
- * dark `bg`, lightens it instead.
+ * Darkens `hex` in small steps until it reads against `bg`, or gives up.
  *
  * Every accent in the picker is a vivid colour chosen to sit on near-black; on
  * white the same green is 2.6:1, which is a colour you can see but not a colour
  * you can read. Rather than keeping a second hand-picked palette for the light
  * theme (twelve more values to maintain, and nothing to stop them drifting),
- * the light accent is derived from the one the user chose. The palette already
- * clears 4.5:1 on every dark background, so on dark only a custom colour moves.
+ * the light accent is derived from the one the user chose.
  */
 function readableOn(hex: string, bg: string, ratio = 4.5): string {
-  const onDark = luminance(bg) < 0.2;
   let out = hex;
-  for (let i = 0; i < 12 && contrast(out, bg) < ratio; i++) {
-    out = onDark ? lighten(out, 0.1) : darken(out, 0.1);
-  }
+  for (let i = 0; i < 12 && contrast(out, bg) < ratio; i++) out = darken(out, 0.1);
   return out;
 }
 
@@ -589,10 +568,9 @@ function rebuild(): void {
       : { ...DARK, ...BACKGROUND_TINTS[tint].dark };
   const picked = light ? lightAccent : darkAccent;
   // On white the accent has to be dark enough to read as text; on near-black
-  // a palette colour is already fine as picked, and a dark custom one is
-  // lifted. `onAccent` follows from that: black on the vivid accent, white on
-  // the darkened one.
-  const accent = readableOn(picked, light ? LIGHT.background : base.background);
+  // it is already fine as picked. `onAccent` follows from that: black on the
+  // vivid accent, white on the darkened one.
+  const accent = light ? readableOn(picked, LIGHT.background) : picked;
   Object.assign(colors, base, {
     accent,
     accentPressed: darken(accent),
@@ -640,68 +618,19 @@ function systemMode(): ThemeMode {
   return Appearance.getColorScheme() === 'light' ? 'light' : 'dark';
 }
 
-// The `schedule` preference: light from one hour, dark from another.
-let lightFrom = 7;
-let darkFrom = 21;
-let scheduleTimer: ReturnType<typeof setTimeout> | null = null;
-let scheduleWatch: { remove: () => void } | null = null;
-
-function scheduledMode(now: Date): ThemeMode {
-  if (lightFrom === darkFrom) return 'dark';
-  const h = now.getHours() + now.getMinutes() / 60;
-  const light = lightFrom < darkFrom ? h >= lightFrom && h < darkFrom : h >= lightFrom || h < darkFrom;
-  return light ? 'light' : 'dark';
-}
-
-/** Milliseconds from `now` to the next of the two hours. */
-function untilNextSwitch(now: Date): number {
-  let best = Infinity;
-  for (const hour of [lightFrom, darkFrom]) {
-    const at = new Date(now);
-    at.setHours(hour, 0, 0, 0);
-    if (at.getTime() <= now.getTime()) at.setDate(at.getDate() + 1);
-    best = Math.min(best, at.getTime() - now.getTime());
-  }
-  return best;
-}
-
-/** Puts the scheduled appearance on screen and waits for the next change. A
- *  timer does not run while the app is in the background, so coming back to
- *  the foreground checks the clock again as well. */
-function followSchedule(): void {
-  if (scheduleTimer) clearTimeout(scheduleTimer);
-  const now = new Date();
-  const next = scheduledMode(now);
-  if (next !== currentMode) applyThemeMode(next);
-  // A second late, so the timer never lands just before the hour.
-  scheduleTimer = setTimeout(followSchedule, untilNextSwitch(now) + 1000);
-}
-
-function stopWatching(): void {
-  systemWatch?.remove();
-  systemWatch = null;
-  scheduleWatch?.remove();
-  scheduleWatch = null;
-  if (scheduleTimer) clearTimeout(scheduleTimer);
-  scheduleTimer = null;
-}
-
-let currentPref: ThemePreference = 'dark';
-
 /**
- * Picks the appearance and, on `system` or `schedule`, keeps picking it: the
- * listener is what makes the app follow a device switching to night without
- * being reopened, and the timer what makes it follow the clock.
+ * Picks the appearance and, on `system`, keeps picking it: the listener is what
+ * makes the app follow a device switching to night without being reopened.
  *
  * Android only tells anyone what it is set to when the app declares
  * `userInterfaceStyle: "automatic"` (app.json). Pinned to `dark`, the launcher
  * calls `setDefaultNightMode(MODE_NIGHT_YES)` and from then on the system
- * answers dark forever, so on a build older than that one `system` is a third
- * way of choosing dark.
+ * answers dark forever, so on a build older than that one this setting is a
+ * third way of choosing dark.
  */
 export function applyThemePreference(pref: ThemePreference): void {
-  currentPref = pref;
-  stopWatching();
+  systemWatch?.remove();
+  systemWatch = null;
   if (pref === 'system') {
     systemWatch = Appearance.addChangeListener(() => {
       // Only on a real change: every rebuild hands out new style objects, and
@@ -709,22 +638,8 @@ export function applyThemePreference(pref: ThemePreference): void {
       const next = systemMode();
       if (next !== currentMode) applyThemeMode(next);
     });
-    applyThemeMode(systemMode());
-  } else if (pref === 'schedule') {
-    scheduleWatch = AppState.addEventListener('change', (state) => {
-      if (state === 'active') followSchedule();
-    });
-    followSchedule();
-  } else {
-    applyThemeMode(pref);
   }
-}
-
-/** The two hours of the `schedule` preference (0–23). */
-export function applyThemeSchedule(light: number, dark: number): void {
-  lightFrom = light;
-  darkFrom = dark;
-  if (currentPref === 'schedule') followSchedule();
+  applyThemeMode(pref === 'system' ? systemMode() : pref);
 }
 
 // ---------------------------------------------------------------------------

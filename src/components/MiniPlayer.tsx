@@ -188,12 +188,10 @@ export function MiniPlayer() {
     : undefined;
   const dominant = useDominantColor(miniColor ? colorSource : undefined);
   const bg = miniColor ? dominant : colors.surfaceHighlight;
-  const blur = useBarBlur('miniPlayer');
-  const buttons = useSettings((s) => s.miniPlayerButtons);
-  const showProgress = useSettings((s) => s.miniPlayerProgress);
+  const blur = useBarBlur();
   // Not "unless the file is on the phone": see the player screen, which had the
   // same test in the same two places and the same hole under it.
-  const favIds = useFavoriteIds(!!song && buttons === 'favorite');
+  const favIds = useFavoriteIds(!!song);
 
   if (!song) return null;
 
@@ -230,20 +228,7 @@ export function MiniPlayer() {
           ) : null}
         </View>
       </Animated.View>
-      {buttons === 'favorite' ? <FavoriteButton id={song.id} starred={favorited} size={24} /> : null}
-      {buttons === 'previousNext' ? (
-        <Pressable
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel={t('Previous')}
-          onPress={(e) => {
-            e.stopPropagation();
-            previous();
-          }}
-        >
-          <Icon name="play-skip-back" size={24} color={colors.text} />
-        </Pressable>
-      ) : null}
+      <FavoriteButton id={song.id} starred={favorited} size={24} />
       <Pressable
         hitSlop={12}
         accessibilityRole="button"
@@ -275,21 +260,8 @@ export function MiniPlayer() {
           />
         )}
       </Pressable>
-      {buttons === 'next' || buttons === 'previousNext' ? (
-        <Pressable
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel={t('Next')}
-          onPress={(e) => {
-            e.stopPropagation();
-            next();
-          }}
-        >
-          <Icon name="play-skip-forward" size={24} color={colors.text} />
-        </Pressable>
-      ) : null}
 
-          {showProgress ? <MiniProgress song={song} /> : null}
+          <MiniProgress song={song} />
         </Pressable>
         </View>
       </Animated.View>

@@ -59,6 +59,7 @@ export default function QuickGridSettings() {
           options={[
             {
               label: t('Show quick grid'),
+              description: t('The shortcut cards at the top of Home.'),
               value: showQuickGrid,
               onChange: setShowQuickGrid,
             },

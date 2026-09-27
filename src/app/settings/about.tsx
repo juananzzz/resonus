@@ -6,7 +6,7 @@ import { useRef, useState } from 'react';
 import { Linking, Pressable, ScrollView } from 'react-native';
 
 import { Dialog } from '@/components/Dialog';
-import { Field, SettingRow, SettingsGroup, SettingsPage, SwitchList, settingsStyles } from '@/components/SettingsUI';
+import { Field, SettingRow, SettingsPage, SwitchList, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
@@ -73,75 +73,71 @@ export default function AboutSettings() {
   return (
     <SettingsPage title={t('About::app')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
-        <SettingsGroup>
-          <Pressable
-            onPress={() => {
-              taps.current += 1;
-              if (taps.current < 5) return;
-              taps.current = 0;
-              router.push('/settings/diagnostics');
-            }}
-          >
-            <Field label={t('Version')} value={`Resonus v${version ?? '?'}`} />
-          </Pressable>
-          <SettingRow
-            icon="sparkles-outline"
-            label={t("What's new")}
-            onPress={() => Linking.openURL(`${REPO_URL}/releases`)}
-          />
-        </SettingsGroup>
+        <Pressable
+          onPress={() => {
+            taps.current += 1;
+            if (taps.current < 5) return;
+            taps.current = 0;
+            router.push('/settings/diagnostics');
+          }}
+        >
+          <Field label={t('Version')} value={`Resonus v${version ?? '?'}`} />
+        </Pressable>
+        <SettingRow
+          icon="sparkles-outline"
+          label={t("What's new")}
+          onPress={() => Linking.openURL(`${REPO_URL}/releases`)}
+        />
         {/* Everything from here to Ko-fi leaves the app. */}
         {/* Above the bug report because half of what arrives there is a
             question, and this is where the answer already is. */}
-        <SettingsGroup>
-          <SettingRow
-            icon="help-circle-outline"
-            label={t('FAQ')}
-            onPress={() => Linking.openURL(FAQ_URL)}
-          />
-          <SettingRow
-            icon="logo-github"
-            label="GitHub"
-            description="juananzzz/resonus"
-            onPress={() => Linking.openURL(REPO_URL)}
-          />
-          <SettingRow
-            icon="bug-outline"
-            label={t('Report a bug')}
-            onPress={() => Linking.openURL(bugReportUrl(version))}
-          />
-          <SettingRow
-            icon="logo-discord"
-            label="Discord"
-            onPress={() => Linking.openURL(DISCORD_URL)}
-          />
-          {/* Last of the links and never in the way: the app asks for nothing to
-              work, and this is the one place where it is fair to mention that
-              somebody is paying for the time it takes. */}
-          <SettingRow
-            icon="cafe-outline"
-            label={t('Support Resonus')}
-            onPress={() => Linking.openURL(KOFI_URL)}
-          />
-          {/* Asking now sits against the switch that asks by itself: same
-              question, one of them answered on the spot and the other left
-              standing. Nothing between them, so the switch reads as the
-              automatic version of the button above it. */}
-          <SettingRow
-            icon={checking ? 'hourglass-outline' : 'cloud-download-outline'}
-            label={t('Check for updates')}
-            onPress={() => {
-              if (checking) return;
-              void check(true).then(({ ok, release }) => {
-                // An update opens the prompt and speaks for itself. The other two
-                // answers have nowhere else to appear, and they are different
-                // answers: "nothing newer" is not "could not look".
-                if (!ok) toast(t("Couldn't check for updates"));
-                else if (!release) toast(t("You're on the latest version"));
-              });
-            }}
-          />
-        </SettingsGroup>
+        <SettingRow
+          icon="help-circle-outline"
+          label={t('FAQ')}
+          onPress={() => Linking.openURL(FAQ_URL)}
+        />
+        <SettingRow
+          icon="logo-github"
+          label="GitHub"
+          description="juananzzz/resonus"
+          onPress={() => Linking.openURL(REPO_URL)}
+        />
+        <SettingRow
+          icon="bug-outline"
+          label={t('Report a bug')}
+          onPress={() => Linking.openURL(bugReportUrl(version))}
+        />
+        <SettingRow
+          icon="logo-discord"
+          label="Discord"
+          onPress={() => Linking.openURL(DISCORD_URL)}
+        />
+        {/* Last of the links and never in the way: the app asks for nothing to
+            work, and this is the one place where it is fair to mention that
+            somebody is paying for the time it takes. */}
+        <SettingRow
+          icon="cafe-outline"
+          label={t('Support Resonus')}
+          onPress={() => Linking.openURL(KOFI_URL)}
+        />
+        {/* Asking now sits against the switch that asks by itself: same
+            question, one of them answered on the spot and the other left
+            standing. Nothing between them, so the switch reads as the
+            automatic version of the button above it. */}
+        <SettingRow
+          icon={checking ? 'hourglass-outline' : 'cloud-download-outline'}
+          label={t('Check for updates')}
+          onPress={() => {
+            if (checking) return;
+            void check(true).then(({ ok, release }) => {
+              // An update opens the prompt and speaks for itself. The other two
+              // answers have nowhere else to appear, and they are different
+              // answers: "nothing newer" is not "could not look".
+              if (!ok) toast(t("Couldn't check for updates"));
+              else if (!release) toast(t("You're on the latest version"));
+            });
+          }}
+        />
         {/* Measuring is out in the open, unlike the screen it feeds: it is
             turned on when somebody is being walked through a slowdown, and it
             has to be as easy to turn back off. No description, for the same

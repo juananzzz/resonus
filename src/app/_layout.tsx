@@ -6,7 +6,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Font from 'expo-font';
 import { Stack } from 'expo-router';
-import { NavigationBar } from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useState } from 'react';
@@ -281,11 +280,16 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <QueryClientProvider client={queryClient}>
-        {/* The clock and the battery at the top, and the gesture pill or the
-            buttons at the bottom, are painted by the system over our
-            background: dark on the light theme, light on the dark one. */}
+        {/* The clock and the battery, which are painted by the system over our
+            background: dark icons on the light theme, light on the dark one.
+
+            The navigation bar at the other end is not ours to colour. It is
+            transparent (styles.xml) and the app draws behind it, but the
+            colour of the gesture pill comes from `windowLightNavigationBar`,
+            which is a build-time flag — so under the light theme it stays
+            white on white. Fixing it means adding `expo-navigation-bar` and a
+            new build, which is why it is waiting for one. */}
         <StatusBar style={themeMode() === 'light' ? 'dark' : 'light'} />
-        <NavigationBar style={themeMode() === 'light' ? 'dark' : 'light'} />
         {hydrating ? (
           <View
             style={{

@@ -46,6 +46,7 @@ import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { useT } from '@/i18n';
 import { splitArtistAlbums } from '@/lib/artistAlbums';
 import { groupArtistAlbums, RELEASE_GROUP_TITLE } from '@/lib/releaseGroups';
+import { canShareResonusLink, shareResonusLink } from '@/lib/shareLink';
 import { listPerf } from '@/lib/listPerf';
 import { useAuthStore } from '@/store/auth';
 import { anyDownloads, groupDownloadState, useDownloads } from '@/store/downloads';
@@ -53,7 +54,7 @@ import { currentSong, usePlayerStore } from '@/store/player';
 import { usePlaylistPicker } from '@/store/playlistPicker';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
-import { colors, fontSize, radius, spacing, themed, useTheme, tracking, transparentOf } from '@/theme';
+import { colors, fontSize, radius, spacing, themed, useTheme, tracking } from '@/theme';
 import { BackChevron } from '@/components/BackChevron';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useScreenSize } from '@/hooks/useScreenSize';
@@ -416,7 +417,7 @@ export default function ArtistScreen() {
               without this they take the tap and it never reaches the image. */}
           <LinearGradient
             pointerEvents="none"
-            colors={[transparentOf(colors.background), transparentOf(colors.background), colors.background] as const}
+            colors={['transparent', 'transparent', colors.background] as const}
             style={StyleSheet.absoluteFill}
           />
           <Animated.Text
@@ -516,6 +517,7 @@ export default function ArtistScreen() {
                 size={28}
                 color={colors.onAccent}
                 // Optical centring only for the play triangle; pause is symmetric.
+                style={showPause ? undefined : { marginLeft: 2 }}
               />
             )}
           </Pressable>
@@ -763,6 +765,18 @@ export default function ArtistScreen() {
                 <Icon name="add" size={24} color={colors.text} />
                 <Text style={styles.actionText}>{t('Add to a playlist')}</Text>
               </Pressable>
+              {canShareResonusLink() ? (
+                <Pressable
+                  style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+                  onPress={() => {
+                    close();
+                    void shareResonusLink({ kind: 'artist', id, name: data.artist.name });
+                  }}
+                >
+                  <Icon name="link-outline" size={24} color={colors.text} />
+                  <Text style={styles.actionText}>{t('Share Resonus link')}</Text>
+                </Pressable>
+              ) : null}
               {canRate ? (
                 <Pressable
                   style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}

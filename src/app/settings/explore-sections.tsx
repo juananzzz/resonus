@@ -45,6 +45,7 @@ const LABEL: Record<ExploreSectionKey, string> = {
   songs: 'Songs',
   genres: 'Genres',
   radio: 'Radio',
+  podcasts: 'Podcasts',
   folders: 'Folders',
 };
 

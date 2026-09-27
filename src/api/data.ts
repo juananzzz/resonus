@@ -159,7 +159,7 @@ async function currentPlaylistSongIds(id: string): Promise<string[]> {
   return (d?.songs ?? []).map((s) => s.id);
 }
 
-export type { Album, AlbumListType, Artist, ArtistInfo, FolderContents, FolderEntry, MusicFolder, Playlist, RadioStation, SearchResult, Song, StarType, Starred, SubsonicAuth } from './subsonic';
+export type { Album, AlbumListType, Artist, ArtistInfo, FolderContents, FolderEntry, MusicFolder, Playlist, PodcastChannel, PodcastEpisode, RadioStation, SearchResult, Song, StarType, Starred, SubsonicAuth } from './subsonic';
 export { COVER, normalizeUrl } from './subsonic';
 
 /**
@@ -171,9 +171,24 @@ export const CACHED_COVER = 'cached-cover:';
 
 
 
+/**
+ * Cover art that is already an address, rather than an id to ask a server for.
+ *
+ * A podcast's artwork lives on whoever publishes the show, and no server the
+ * user is signed in to knows anything about it, so there is no id: the value
+ * is the URL and is handed straight back. The same goes offline, and for the
+ * opposite reason to the branch below — there is no server to ask there either,
+ * so nothing is being fetched on somebody's behalf, and the image cache will
+ * have the picture from the last time the podcast was opened.
+ */
+function isRemoteArt(id: string): boolean {
+  return /^https?:\/\//i.test(id);
+}
+
 export function coverArtUrl(id: string | undefined, _size?: number): string | undefined {
   // Empty is an item the server says has no artwork (see `lib/absentCovers`).
   if (!id) return undefined;
+  if (isRemoteArt(id)) return id;
   // If the album art is downloaded (album/artist on disk), use it even
   // when in server mode: it works offline and doesn't use data, just
   // like audio plays from the downloaded file.

@@ -15,7 +15,6 @@ import {
   applyPureBlack,
   BACKGROUND_TINTS,
   applyThemePreference,
-  applyThemeSchedule,
   DEFAULT_ACCENT,
   isThemePreference,
   type BackgroundTint,
@@ -254,7 +253,7 @@ export function clampReplayGainPreamp(db: number): number {
  * default font (Roboto / San Francisco). `custom` loads a user-picked font
  * file at runtime.
  */
-export type AppFont = 'system' | 'condensed' | 'serif' | 'monospace' | 'casual' | 'custom';
+export type AppFont = 'system' | 'condensed' | 'serif' | 'monospace' | 'casual' | 'typewriter' | 'custom';
 
 /**
  * Backdrop for the player and the lyrics screen: flat dark, tinted with the
@@ -327,14 +326,6 @@ export type CoverDoubleTapAction = CoverTapAction;
  */
 export type LyricsSource = 'local' | 'online' | 'off';
 
-/** Type size on the full-screen lyrics. */
-export type LyricsSize = 'small' | 'normal' | 'large';
-export type LyricsAlign = 'left' | 'center';
-/** What sits next to play on the mini player. */
-export type MiniPlayerButtons = 'favorite' | 'next' | 'previousNext' | 'none';
-/** The corners of the cover art in the player. */
-export type CoverCorners = 'square' | 'rounded' | 'round';
-
 /**
  * When a song that is downloaded plays from the file instead of the server.
  *
@@ -370,6 +361,7 @@ export type HomeSectionKey =
   | 'randomSongs'
   | 'discover'
   | 'playlists'
+  | 'podcasts'
   | 'randomAlbums'
   | 'randomArtists';
 
@@ -388,6 +380,7 @@ const HOME_SECTION_KEYS: HomeSectionKey[] = [
   'randomSongs',
   'discover',
   'playlists',
+  'podcasts',
   'randomAlbums',
   'randomArtists',
 ];
@@ -409,6 +402,10 @@ const HOME_SECTION_KEYS: HomeSectionKey[] = [
 export const DEFAULT_HOME_SECTIONS: HomeSection[] = [
   { key: 'discover', enabled: true },
   { key: 'playlists', enabled: true },
+  // With the other list rather than down with the random ones: it is what you
+  // subscribed to, not something to discover. It draws nothing without a
+  // subscription, so it costs nobody a row (Home's own `if (!data.length)`).
+  { key: 'podcasts', enabled: true },
   { key: 'recentlyAdded', enabled: true },
   { key: 'newReleases', enabled: true },
   { key: 'recentlyPlayed', enabled: true },
@@ -467,7 +464,7 @@ function normalizeHomeSections(raw: unknown): HomeSection[] {
 }
 
 /** One of the chips in the row at the top of Home. `genres` and `radio`
- *  are server-only. */
+ *  are server-only; `podcasts` is the phone's own and works with no server. */
 export type HomeChipKey =
   | 'shuffle'
   | 'favorites'
@@ -475,6 +472,7 @@ export type HomeChipKey =
   | 'artists'
   | 'songs'
   | 'genres'
+  | 'podcasts'
   | 'radio'
   | 'history';
 
@@ -491,6 +489,7 @@ const HOME_CHIP_KEYS: HomeChipKey[] = [
   'artists',
   'songs',
   'genres',
+  'podcasts',
   'radio',
   'history',
 ];
@@ -504,6 +503,7 @@ export const DEFAULT_HOME_CHIPS: HomeChip[] = [
   { key: 'artists', enabled: true },
   { key: 'songs', enabled: true },
   { key: 'genres', enabled: true },
+  { key: 'podcasts', enabled: true },
   { key: 'radio', enabled: true },
 ];
 
@@ -516,6 +516,7 @@ export type ExploreSectionKey =
   | 'songs'
   | 'genres'
   | 'radio'
+  | 'podcasts'
   | 'folders';
 
 /** A section with its state, the shape the Home chips already have (order is
@@ -532,6 +533,7 @@ const EXPLORE_SECTION_KEYS: ExploreSectionKey[] = [
   'songs',
   'genres',
   'radio',
+  'podcasts',
   'folders',
 ];
 
@@ -726,6 +728,7 @@ export const APP_FONT_LABELS: Record<AppFont, string> = {
   serif: 'Serif',
   monospace: 'Monospace',
   casual: 'Casual',
+  typewriter: 'Typewriter',
   custom: 'Custom',
 };
 
@@ -743,6 +746,7 @@ export const APP_FONT_FAMILY: Record<Exclude<AppFont, 'custom'>, string | undefi
     serif: 'Georgia',
     monospace: 'Menlo',
     casual: 'Futura',
+    typewriter: 'American Typewriter',
   },
   default: {
     system: undefined,
@@ -750,6 +754,8 @@ export const APP_FONT_FAMILY: Record<Exclude<AppFont, 'custom'>, string | undefi
     serif: 'serif',
     monospace: 'monospace',
     casual: 'casual',
+    // Cutive Mono (AOSP serif-monospace family): typewriter style.
+    typewriter: 'serif-monospace',
   },
 });
 
@@ -786,8 +792,6 @@ type CustomSetter =
   | 'setGridColumns'
   | 'setAccentColor'
   | 'setThemeMode'
-  | 'setThemeLightFrom'
-  | 'setThemeDarkFrom'
   | 'setPureBlack'
   | 'setBackgroundTint';
 
@@ -847,10 +851,8 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   showPlaylistDescription: boolean;
   /** Keep the navigation bar on every screen, not only on the tabs. */
   alwaysShowTabs: boolean;
-  /** Blur what scrolls under the navigation bar. */
+  /** Blur what scrolls under the navigation bar and the mini player. */
   blurBars: boolean;
-  /** Blur what scrolls under the mini player. */
-  blurMiniPlayer: boolean;
   /** Song duration in lists (Spotify doesn't show it). */
   showSongDuration: boolean;
   /** Rating stars per song in lists. */
@@ -934,15 +936,6 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
    * disabled. Defaults to 'local' (local first, LRCLIB as fallback).
    */
   lyricsSource: LyricsSource;
-  lyricsSize: LyricsSize;
-  lyricsAlign: LyricsAlign;
-  /** The names under the icons of the navigation bar. */
-  showTabLabels: boolean;
-  miniPlayerButtons: MiniPlayerButtons;
-  miniPlayerProgress: boolean;
-  /** The time right of the seek bar counts down what is left, not the length. */
-  showRemainingTime: boolean;
-  coverCorners: CoverCorners;
   /** When a downloaded song plays from disk instead of being streamed. */
   preferDownloads: PreferDownloads;
   /** Circular artist photo next to the name on the album screen. */
@@ -1111,14 +1104,8 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   /** The same under the light one, which is a separate choice: a colour picked
    *  for near-black is not always the one wanted on white. */
   accentColorLight: string;
-  /** The user's own colour (hex), kept apart so picking one from the palette
-   *  does not lose it; '' until one is made. */
-  customAccentColor: string;
   /** Dark (the app's own look), light, or whichever one the device is in. */
   themeMode: ThemePreference;
-  /** With `themeMode` 'schedule': the hour (0–23) light starts, and dark. */
-  themeLightFrom: number;
-  themeDarkFrom: number;
   /** True black instead of dark grey in the dark appearance (OLED). */
   pureBlack: boolean;
   /** The hue in the dark appearance's greys. */
@@ -1146,8 +1133,6 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   setGridColumns: (key: GridSizeKey, value: number) => void;
   setAccentColor: (value: string, appearance: ThemeMode) => void;
   setThemeMode: (value: ThemePreference) => void;
-  setThemeLightFrom: (hour: number) => void;
-  setThemeDarkFrom: (hour: number) => void;
   setPureBlack: (value: boolean) => void;
   setBackgroundTint: (value: BackgroundTint) => void;
   setCustomFont: (fontFamily: string | null, uri: string | null) => void;
@@ -1207,7 +1192,6 @@ const DEFAULTS = {
   showPlaylistDescription: true,
   alwaysShowTabs: true,
   blurBars: true,
-  blurMiniPlayer: true,
   showSongDuration: false,
   showListRating: false,
   // On: it only ever draws where a file says so, which in most libraries is
@@ -1234,13 +1218,6 @@ const DEFAULTS = {
   lyricsBackground: 'cover' as ScreenBackground,
   lyricsCardBackground: 'color' as CardBackground,
   lyricsSource: 'local' as LyricsSource,
-  lyricsSize: 'normal' as LyricsSize,
-  lyricsAlign: 'left' as LyricsAlign,
-  showTabLabels: true,
-  miniPlayerButtons: 'favorite' as MiniPlayerButtons,
-  miniPlayerProgress: true,
-  showRemainingTime: false,
-  coverCorners: 'rounded' as CoverCorners,
   preferDownloads: 'always' as PreferDownloads,
   showArtistPhoto: true,
   showDiscHeaders: true,
@@ -1328,11 +1305,8 @@ const DEFAULTS = {
   syncQueueFromServer: true,
   accentColor: DEFAULT_ACCENT,
   accentColorLight: DEFAULT_ACCENT,
-  customAccentColor: '',
   // Dark: the appearance the app was designed in. Light is opt-in.
   themeMode: 'dark' as ThemePreference,
-  themeLightFrom: 7,
-  themeDarkFrom: 21,
   pureBlack: false,
   backgroundTint: 'blue' as BackgroundTint,
   appFont: 'system' as AppFont,
@@ -1468,18 +1442,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
-  setThemeLightFrom: (themeLightFrom) => {
-    set({ themeLightFrom });
-    applyThemeSchedule(themeLightFrom, get().themeDarkFrom);
-    persist(snapshot(get));
-  },
-
-  setThemeDarkFrom: (themeDarkFrom) => {
-    set({ themeDarkFrom });
-    applyThemeSchedule(get().themeLightFrom, themeDarkFrom);
-    persist(snapshot(get));
-  },
-
   setPureBlack: (pureBlack) => {
     applyPureBlack(pureBlack);
     set({ pureBlack });
@@ -1501,7 +1463,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
     // Language is preserved: resetting shouldn't change your language.
     set({ ...DEFAULTS, language: get().language });
     applyAccents(DEFAULT_ACCENT, DEFAULT_ACCENT);
-    applyThemeSchedule(DEFAULTS.themeLightFrom, DEFAULTS.themeDarkFrom);
     applyThemePreference(DEFAULTS.themeMode);
     applyPureBlack(DEFAULTS.pureBlack);
     applyBackgroundTint(DEFAULTS.backgroundTint);
@@ -1534,7 +1495,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
       // re-applies them if present); the font is reactive and doesn't need it.
       set({ ...DEFAULTS, language: get().language });
       applyAccents(DEFAULT_ACCENT, DEFAULT_ACCENT);
-      applyThemeSchedule(DEFAULTS.themeLightFrom, DEFAULTS.themeDarkFrom);
       applyThemePreference(DEFAULTS.themeMode);
       applyPureBlack(DEFAULTS.pureBlack);
     applyBackgroundTint(DEFAULTS.backgroundTint);
@@ -1571,10 +1531,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
           if (typeof DEFAULTS[key] === 'boolean' && typeof value === 'boolean') flags[key] = value;
         }
         set(flags as Partial<SettingsState>);
-        // One switch used to blur both bars.
-        if (typeof parsed.blurMiniPlayer !== 'boolean' && typeof parsed.blurBars === 'boolean') {
-          set({ blurMiniPlayer: parsed.blurBars });
-        }
         if (typeof parsed.maxBitRate === 'number') {
           set({ maxBitRate: parsed.maxBitRate });
         }
@@ -1667,20 +1623,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
         } else if (typeof parsed.lyricsOnlineFallback === 'boolean') {
           // Migrate the old boolean: on = local first with online fallback, off = no online.
           set({ lyricsSource: parsed.lyricsOnlineFallback ? 'local' : 'off' });
-        }
-        const oneOf = <T extends string>(v: unknown, all: readonly T[]): v is T =>
-          all.includes(v as T);
-        if (oneOf(parsed.lyricsSize, ['small', 'normal', 'large'] as const)) {
-          set({ lyricsSize: parsed.lyricsSize });
-        }
-        if (oneOf(parsed.lyricsAlign, ['left', 'center'] as const)) {
-          set({ lyricsAlign: parsed.lyricsAlign });
-        }
-        if (oneOf(parsed.miniPlayerButtons, ['favorite', 'next', 'previousNext', 'none'] as const)) {
-          set({ miniPlayerButtons: parsed.miniPlayerButtons });
-        }
-        if (oneOf(parsed.coverCorners, ['square', 'rounded', 'round'] as const)) {
-          set({ coverCorners: parsed.coverCorners });
         }
         if (
           parsed.preferDownloads === 'always' ||
@@ -1863,16 +1805,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
           set({ accentColor: dark, accentColorLight: light });
           applyAccents(dark, light);
         }
-        if (isHexColor(parsed.customAccentColor)) {
-          set({ customAccentColor: parsed.customAccentColor });
-        }
-        {
-          const hour = (v: unknown) => (Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 23 ? (v as number) : null);
-          const light = hour(parsed.themeLightFrom) ?? DEFAULTS.themeLightFrom;
-          const dark = hour(parsed.themeDarkFrom) ?? DEFAULTS.themeDarkFrom;
-          set({ themeLightFrom: light, themeDarkFrom: dark });
-          applyThemeSchedule(light, dark);
-        }
         if (isThemePreference(parsed.themeMode)) {
           set({ themeMode: parsed.themeMode });
           applyThemePreference(parsed.themeMode);
@@ -1925,7 +1857,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
       if (!applied && scope.accept(token, key)) {
         set({ ...DEFAULTS, language: get().language });
         applyAccents(DEFAULT_ACCENT, DEFAULT_ACCENT);
-        applyThemeSchedule(DEFAULTS.themeLightFrom, DEFAULTS.themeDarkFrom);
         applyThemePreference(DEFAULTS.themeMode);
       }
     } finally {

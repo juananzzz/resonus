@@ -27,6 +27,8 @@
     "Crossfade": "One song fading into the next",
     "Downloads": "Songs saved on the phone, to play with no connection",
     "Offline mode": "The app working with no server: downloads only",
+    "Share Resonus link": "A link that opens this album, artist or playlist in another person's Resonus, for someone with an account on the same server. Not the public web link that Share makes",
+    "Check out {name} by {artist} on {server}": "The line sent above a Resonus link. {server} is the server's address, like music.example.com",
     "Shuffle favorites": "Shortcut on the app's launcher icon (long press). Short: launchers cut long labels",
     "Continue listening": "Shortcut on the app's launcher icon (long press): resumes the last queue. Short: launchers cut long labels",
     "Left on {player}": "Same card, when that app is no longer playing but its queue is the last one saved: where the person left off. {player} is the app's name",
@@ -81,7 +83,7 @@
     "Bands": "The equalizer's frequency sliders",
     "Reset bands": "Put the equalizer's frequency sliders back to flat",
     "Preset": "An equalizer preset. Not a bitrate",
-    "Custom": "Settings › Equalizer, the first option of the preset list: none of the presets below it, the bands left wherever you dragged them. Also `Custom::color`, the heading over your own accent colour in Settings › Theme (add it to your file if the word needs another form for a colour)",
+    "Custom": "Settings › Equalizer, the first option of the preset list: none of the presets below it, the bands left wherever you dragged them. The only place this word is used",
     "Off": "A setting value meaning disabled (crossfade, normalization…)",
 
     // ── Player, output & queue ───────────────────────────────────────────────
@@ -128,7 +130,7 @@
     "Keep at least one folder": "Refusing to remove the last folder of a local profile, which would leave it with no music",
     "That folder is already there": "The folder just picked is already in the local profile's list",
     "New releases": "Home shelf and album sort: albums by the year they came out, newest first. Not \"Recently added\", which is when the server got hold of them",
-    "System": "Two places: a theme setting (use whichever appearance the phone itself is set to, light or dark), and `System::section`, the heading in Settings › Quality & playback over Keep screen on and the battery warning. Add `System::section` to your file if one word cannot do both",
+    "System": "Theme setting: use whichever appearance the phone itself is set to, light or dark",
     "Pin favorites": "Pin favourites to the quick grid",
 
     // ── Actions & verbs (easy to translate as the wrong part of speech) ──────
@@ -539,8 +541,8 @@
     "Accent color": "The colour the app uses for buttons, links and anything it wants you to notice",
     "Theme": "The screen where the appearance and the accent colour are chosen, and the name of the row that opens it",
     "Mode": "Heading over the two appearances on the Theme screen. Not a playback mode and not a profile: dark or light. It is called this and not \"Appearance\" because Appearance is the settings screen one level up",
-    "Dark": "The appearance the app has always had, and what it uses unless the other is chosen.",
-    "Light": "The light appearance, in Settings › Theme",
+    "Dark (default)": "The appearance the app has always had, and what it uses unless the other is chosen. The word in brackets is the same one as `Default`",
+    "Light (experimental)": "The light appearance. The word in brackets is a warning that it is new and may still have rough edges",
     "Navigation": "Section header: how you move around the app",
     "Navigation bar": "Settings screen: which tabs are on the bar at the bottom, and in what order",
     "Always shown": "Said where a switch would be, on the Home tab, which cannot be taken off the bar",
@@ -605,6 +607,7 @@
     "Pre-amp": "A gain in decibels applied on top of normalization, for when everything ends up too quiet",
     "Autoplay": "When the queue runs out, keep playing with similar songs instead of stopping",
     "Scrobbling": "Reporting a song as played, to the user's own server and from there to Last.fm or ListenBrainz. The title of its own screen and the row that opens it. The word comes from Last.fm and most languages keep it; use whatever those services call it in yours if they do",
+    "When a song counts as played.": "Under the `Scrobbling` row, saying what the screen it opens is about",
     "How far into a song it counts as played. Whichever of the two comes first.": "At the top of the `Scrobbling` screen, over the two rows below it",
     "Part of the song": "How much of a song must have played before it counts, as a percentage. One of the two scrobble rules, and it can be `Off`",
     "Time played": "How long a song must have played before it counts, as a time. The other scrobble rule, and it can be `Off` too. Whichever of the two comes first is the one that counts",
@@ -709,6 +712,7 @@
 
     // ── Other ────────────────────────────────────────────────────────────────
     "Show description": "A setting: whether playlist and album descriptions are drawn under their names on their screens",
+    "Show playlist and album descriptions under their names.": "The line under `Show description`, covering descriptions written for playlists and albums",
     "Playlist covers": "One line of the storage breakdown in Settings › Downloads: how much room the playlist cover images take. It is a size, not a setting",
     "Free": "Free disk space in the storage bar (Other / Downloads / Free). Not \"free of charge\"",
     "Other": "Two places, and the same word does for both: in that storage bar, the space used by things other than downloads; and on an artist's page, the last shelf of the discography, holding the records that fit none of the kinds above it",
@@ -723,35 +727,29 @@
     "Update": "The button that installs a newer version of Resonus. A verb, not a noun: `Update it`, not `An update`",
     "Check for updates": "Ask GitHub now whether a newer Resonus is out",
     "You're on the latest version": "Answer when that check finds nothing newer",
-    "Installing updates needs permission": "Shown when the user came back from Android's «install unknown apps» screen without granting it"
+    "Installing updates needs permission": "Shown when the user came back from Android's «install unknown apps» screen without granting it",
+
+    // ── Custom font ────────────────────────────────────────────────────────
+    "Couldn't load the font": "Toast when the chosen file could not be loaded as a font",
+    "Make sure the file is a valid .ttf or .otf font.": "Line under that toast, explaining what might be wrong",
+    "Loaded": "Toast after a custom font was loaded successfully",
+    "Load a .ttf or .otf file": "Button on the font picker screen to import a custom font file",
+    "Active": "Label showing which custom font is currently applied",
+    "Remove custom font": "Button to remove the custom font and fall back to the system one",
+
+    // ── Home sections ──────────────────────────────────────────────────────
+    "Random songs": "A section of Home: songs picked at random from the library",
+
+    // ── Podcasts ───────────────────────────────────────────────────────────
+    "Podcasts": "Shows you subscribe to on this phone, played from the address the publisher gives. Not something the music server stores",
+    "Episodes": "One episode of a podcast, as listed on the show's screen",
+    "Subscribe": "Button that adds a podcast to your list. Not to an event or a newsletter",
+    "Unsubscribe": "Removes a podcast and its episodes from this phone",
+    "Play latest": "Button on a podcast's screen: starts the newest episode. It does not resume where you left off",
+    "No audio available": "An episode listed with nothing to play, because the feed gave no file for it",
+    "Open website": "Opens the podcast's own web page in the browser, not the feed file",
+    "Untitled episode": "An episode the feed gave no name to"
   },
-
-  // ── Custom font ────────────────────────────────────────────────────────
-  "Couldn't load the font": "Toast when the chosen file could not be loaded as a font",
-  "Make sure the file is a valid .ttf or .otf font.": "Line under that toast, explaining what might be wrong",
-  "Loaded": "Toast after a custom font was loaded successfully",
-  "Load a .ttf or .otf file": "Button on the font picker screen to import a custom font file",
-  "Active": "Label showing which custom font is currently applied",
-  "Remove custom font": "Button to remove the custom font and fall back to the system one",
-
-  // ── Personalization (Settings › Player, Song lists, Theme) ──────────────
-  "Favorite": "One of the choices for the button next to play on the mini player: the heart. Not a verb",
-  "None": "One of the choices for the buttons next to play on the mini player: no button at all",
-  "Corners": "The corners of the cover art in the player, whose choices are Square, Rounded and More rounded",
-  "Square": "Corners of the cover art: sharp, not rounded at all",
-  "Rounded": "Corners of the cover art: slightly rounded, the usual look",
-  "More rounded": "Corners of the cover art: rounder than the usual",
-  "Small": "A lyrics size",
-  "Normal": "A lyrics size, the default one",
-  "Large": "A lyrics size",
-  "Left": "Lyrics alignment: lines start at the left edge",
-  "Centered": "Lyrics alignment: each line centred",
-  "Scheduled": "A theme mode: light from one hour of the day, dark from another",
-  "Light from": "With the scheduled theme, the hour light starts. Followed by a time such as 07:00",
-  "Dark from": "With the scheduled theme, the hour dark starts. Followed by a time such as 21:00",
-
-  // ── Home sections ──────────────────────────────────────────────────────
-  "Random songs": "A section of Home: songs picked at random from the library",
 
   // Strings that are meant to stay in English, and are not counted as missing.
   //
