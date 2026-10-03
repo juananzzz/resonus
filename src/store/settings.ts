@@ -327,8 +327,21 @@ export type CoverDoubleTapAction = CoverTapAction;
  */
 export type LyricsSource = 'local' | 'online' | 'off';
 
-/** Type size on the full-screen lyrics. */
-export type LyricsSize = 'small' | 'normal' | 'large';
+/** Adjustable type size shared by every lyrics surface. */
+export type LyricsSize = number;
+export const LYRICS_SIZE_MIN = 20;
+export const LYRICS_SIZE_DEFAULT = 28;
+export const LYRICS_SIZE_MAX = 40;
+
+/** Keep imported settings and programmatic callers inside the slider's range. */
+export function clampLyricsSize(value: number): LyricsSize {
+  if (!Number.isFinite(value)) return LYRICS_SIZE_DEFAULT;
+  return Math.min(LYRICS_SIZE_MAX, Math.max(LYRICS_SIZE_MIN, Math.round(value)));
+}
+
+/** Font weights Android and iOS can both synthesize consistently. */
+export const LYRICS_WEIGHTS = ['300', '400', '500', '600', '700'] as const;
+export type LyricsWeight = (typeof LYRICS_WEIGHTS)[number];
 export type LyricsAlign = 'left' | 'center';
 /** What sits next to play on the mini player. */
 export type MiniPlayerButtons = 'favorite' | 'next' | 'previousNext' | 'none';
@@ -771,6 +784,7 @@ type PersistedKey = keyof Persisted;
  *  anything and checks. */
 type Reshaped =
   | 'showAudioQuality'
+  | 'lyricsSize'
   | 'homeSections'
   | 'homeChips'
   | 'exploreSections'
@@ -790,6 +804,7 @@ type AutoSetters = {
 /** The generated setters that a hand-written one replaces with another shape. */
 type CustomSetter =
   | 'setDiagnostics'
+  | 'setLyricsSize'
   | 'setHideUnavailableOffline'
   | 'setReplayGainPreampDb'
   | 'setCustomGreeting'
@@ -945,7 +960,11 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
    */
   lyricsSource: LyricsSource;
   lyricsSize: LyricsSize;
+  /** Thickness of lyric glyphs, from light (300) to bold (700). */
+  lyricsWeight: LyricsWeight;
   lyricsAlign: LyricsAlign;
+  /** Progressively blur synchronized lyric rows away from the current line. */
+  blurInactiveLyrics: boolean;
   /** The names under the icons of the navigation bar. */
   showTabLabels: boolean;
   miniPlayerButtons: MiniPlayerButtons;
@@ -1129,6 +1148,7 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   customFontUri: string | null;
   setLanguage: (language: Language) => void;
   setDiagnostics: (value: boolean) => void;
+  setLyricsSize: (value: number) => void;
   resetScrobbleRules: () => void;
   setHideUnavailableOffline: (value: boolean) => void;
   setReplayGainPreampDb: (value: number) => void;
@@ -1234,8 +1254,11 @@ const DEFAULTS = {
   lyricsBackground: 'cover' as ScreenBackground,
   lyricsCardBackground: 'color' as CardBackground,
   lyricsSource: 'local' as LyricsSource,
-  lyricsSize: 'normal' as LyricsSize,
+  lyricsSize: LYRICS_SIZE_DEFAULT as LyricsSize,
+  lyricsWeight: '500' as LyricsWeight,
   lyricsAlign: 'left' as LyricsAlign,
+  // Opt-in, matching Primuse: it changes the reading treatment substantially.
+  blurInactiveLyrics: false,
   showTabLabels: true,
   miniPlayerButtons: 'favorite' as MiniPlayerButtons,
   miniPlayerProgress: true,
@@ -1389,6 +1412,7 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
     showSpeedButton?: boolean;
     lyricsColorBackground?: boolean;
     lyricsOnlineFallback?: boolean;
+    lyricsSize?: unknown;
     playerColorBackground?: boolean;
     swipeToQueue?: boolean;
     showExploreChips?: boolean;
@@ -1503,8 +1527,14 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
   }
   const oneOf = <T extends string>(v: unknown, all: readonly T[]): v is T =>
     all.includes(v as T);
-  if (oneOf(parsed.lyricsSize, ['small', 'normal', 'large'] as const)) {
-    set({ lyricsSize: parsed.lyricsSize });
+  if (typeof parsed.lyricsSize === 'number') {
+    set({ lyricsSize: clampLyricsSize(parsed.lyricsSize) });
+  } else if (oneOf(parsed.lyricsSize, ['small', 'normal', 'large'] as const)) {
+    // Before the continuous control these were the three full-screen sizes.
+    set({ lyricsSize: { small: 22, normal: 28, large: 34 }[parsed.lyricsSize] });
+  }
+  if (oneOf(parsed.lyricsWeight, LYRICS_WEIGHTS)) {
+    set({ lyricsWeight: parsed.lyricsWeight });
   }
   if (oneOf(parsed.lyricsAlign, ['left', 'center'] as const)) {
     set({ lyricsAlign: parsed.lyricsAlign });
@@ -1742,6 +1772,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
   setDiagnostics: (diagnostics) => {
     set({ diagnostics });
     setPerfEnabled(diagnostics);
+    persist(snapshot(get));
+  },
+
+  setLyricsSize: (lyricsSize) => {
+    set({ lyricsSize: clampLyricsSize(lyricsSize) });
     persist(snapshot(get));
   },
 

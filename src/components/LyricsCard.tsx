@@ -8,31 +8,36 @@
 import Icon from '@/components/Icon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View, type TextStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
-  ReduceMotion,
   scrollTo,
   useAnimatedReaction,
   useAnimatedRef,
   useAnimatedStyle,
   useScrollViewOffset,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { COVER, songCoverUrl } from '@/api/data';
 import { useCoverRadius } from '@/components/Cover';
+import { KaraokeWords } from '@/components/KaraokeWords';
 import { type LyricLine, type LyricWord } from '@/api/subsonic';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useLyrics } from '@/hooks/useLyrics';
 import { useT } from '@/i18n';
+import { lyricBlurRadius, WORD_SWEEP_LEAD_MS } from '@/lib/lyricMotion';
 import { pushOnce } from '@/lib/pushOnce';
 import { currentSong, usePlayerStore } from '@/store/player';
-import { type LyricsSize, useSettings } from '@/store/settings';
+import {
+  LYRICS_SIZE_DEFAULT,
+  type LyricsSize,
+  type LyricsWeight,
+  useSettings,
+} from '@/store/settings';
 import { colors, fontSize, radius, spacing, themed, useTheme } from '@/theme';
 import { motion } from '@/theme/motion';
 
@@ -132,7 +137,7 @@ export function CoverLyrics({ size, onClose }: { size: number; onClose: () => vo
 
 /**
  * Reusable karaoke list (card and full screen): the current line lights up
- * and grows a little (spring), the rest are dimmed. Auto-scroll keeps the
+ * and grows a little, the rest are dimmed. Auto-scroll keeps the
  * focus above; manual scroll pauses it for a few seconds. Tapping a line
  * seeks to that point in the song.
  */
@@ -164,6 +169,7 @@ export function SyncedLyricsView({
   const userScroll = useRef(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [viewH, setViewH] = useState(0);
+  const [browsing, setBrowsing] = useState(false);
   /**
    * Bumped when the line being aimed at finally reports where it is.
    *
@@ -180,8 +186,10 @@ export function SyncedLyricsView({
   /** What `onMeasure` needs to know without being rebuilt on every line. */
   const currentRef = useRef(-1);
 
-  // Small advance so the highlight doesn't lag behind the ear.
-  const posMs = positionSec * 1000 + 300;
+  // Word timing is already precise, so it only gets Primuse's small pre-roll.
+  // Hand-tapped line LRC keeps a little more compensation for human reaction.
+  const wordTimed = lines.some((line) => line.words && line.words.length > 0);
+  const posMs = positionSec * 1000 + (wordTimed ? WORD_SWEEP_LEAD_MS : 250);
   let current = -1;
   for (let i = 0; i < lines.length && (lines[i].start ?? 0) <= posMs; i++) current = i;
   currentRef.current = current;
@@ -191,13 +199,22 @@ export function SyncedLyricsView({
   // readable, not stuck to the top edge. On the small card, higher up.
   const anchor = large ? 0.42 : 0.3;
   const size = useSettings((s) => s.lyricsSize);
+  const weight = useSettings((s) => s.lyricsWeight);
   const centered = useSettings((s) => s.lyricsAlign) === 'center';
+  const blurInactiveLyrics = useSettings((s) => s.blurInactiveLyrics);
+  const blurEnabled = Platform.OS === 'android' && blurInactiveLyrics && !browsing;
 
   const onMeasure = useCallback((index: number, y: number, h: number) => {
+    const previous = offsets.current[index];
     offsets.current[index] = { y, h };
-    // Only the line being waited for, and only until it has been reached: one
-    // render, not one per line.
-    if (index === currentRef.current && placedFor.current !== index) setPlaced((n) => n + 1);
+    // The active row speaks once when it first appears, then again only if a
+    // typography change actually moved or resized it. That recentres a line
+    // immediately after the listener changes the font size without turning
+    // every ordinary layout pass into another render.
+    const changed = previous === undefined || previous.y !== y || previous.h !== h;
+    if (index === currentRef.current && (placedFor.current !== index || changed)) {
+      setPlaced((n) => n + 1);
+    }
   }, []);
 
   // Each targetY change pushes the scroll from the UI thread.
@@ -215,6 +232,7 @@ export function SyncedLyricsView({
     (sec: number) => {
       if (resumeTimer.current) clearTimeout(resumeTimer.current);
       userScroll.current = false;
+      setBrowsing(false);
       seekTo(sec);
     },
     [seekTo],
@@ -281,12 +299,14 @@ export function SyncedLyricsView({
         onLayout={(e) => setViewH(e.nativeEvent.layout.height)}
         onScrollBeginDrag={() => {
           userScroll.current = true;
+          setBrowsing(true);
           cancelAnimation(targetY);
           if (resumeTimer.current) clearTimeout(resumeTimer.current);
         }}
         onScrollEndDrag={() => {
           resumeTimer.current = setTimeout(() => {
             userScroll.current = false;
+            setBrowsing(false);
           }, 3000);
         }}
         contentContainerStyle={[
@@ -306,9 +326,10 @@ export function SyncedLyricsView({
             words={line.words}
             active={i === current}
             past={current >= 0 && i < current}
-            next={i === current + 1}
+            blurRadius={lyricBlurRadius(i, current, blurEnabled)}
             large={large}
             size={size}
+            weight={weight}
             centered={centered}
             onMeasure={onMeasure}
           />
@@ -333,16 +354,17 @@ export function SyncedLyricsView({
   );
 }
 
-/** A lyric line with animated focus (spring on activation). */
+/** A lyric line with animated focus. */
 const LyricRow = memo(({
   index,
   text,
   words,
   active,
   past,
-  next,
+  blurRadius,
   large,
   size,
+  weight,
   centered,
   onMeasure,
 }: {
@@ -352,135 +374,131 @@ const LyricRow = memo(({
   active: boolean;
   /** Lines before the current one: same colour as active, slightly dimmer. */
   past: boolean;
-  next: boolean;
+  /** Primuse-style depth blur; zero keeps the row's filter layer disabled. */
+  blurRadius: number;
   large?: boolean;
   size: LyricsSize;
+  weight: LyricsWeight;
   centered: boolean;
   onMeasure: (index: number, y: number, h: number) => void;
 }) => {
   // Memoized, so the screen repainting is not enough to bring this one along.
   useTheme();
-  // Only the active line grows (spring) and is visible at 100%. Past lines are
-  // nearly as bright; the next one is semi-dimmed; everything else is faint.
+  // Primuse's line takeover coordinates scale and opacity with auto-scroll.
+  // Blur takes a gentler path because Android's filter is visually stronger
+  // and a fast change reads as the completed line suddenly losing focus.
   const focus = useSharedValue(active ? 1 : 0);
-  const dim = useSharedValue(past ? 0.85 : active ? 1 : next ? 0.55 : 0.3);
-  // reduceMotion Never: the transition between lines (karaoke) is the essence
-  // of the screen; without this, devices with "reduce motion" skip it.
+  const dim = useSharedValue(active ? 1 : past ? 0.36 : 0.46);
+  const blur = useSharedValue(blurRadius);
   useEffect(() => {
-    focus.value = withSpring(active ? 1 : 0, {
-      damping: 20,
-      stiffness: 180,
-      mass: 0.5,
-      reduceMotion: ReduceMotion.Never,
+    focus.value = withTiming(active ? 1 : 0, {
+      duration: motion.duration.scroll,
+      easing: motion.easing.move,
+      reduceMotion: motion.reduceMotion.essential,
     });
   }, [active, focus]);
   useEffect(() => {
-    dim.value = withTiming(past ? 0.85 : active ? 1 : next ? 0.55 : 0.3, {
-      duration: motion.duration.enter,
+    dim.value = withTiming(active ? 1 : past ? 0.36 : 0.46, {
+      duration: motion.duration.scroll,
+      easing: motion.easing.move,
       reduceMotion: motion.reduceMotion.essential,
     });
-  }, [active, past, next, dim]);
+  }, [active, past, dim]);
+  useEffect(() => {
+    blur.value = withTiming(blurRadius, {
+      duration: motion.duration.depth,
+      easing: motion.easing.depth,
+      reduceMotion: motion.reduceMotion.essential,
+    });
+  }, [blur, blurRadius]);
   // The growth (8%) is compensated by the right margin of `content` so the
   // active line, scaling from the left, doesn't overflow the edge.
-  const anim = useAnimatedStyle(() => ({
-    opacity: dim.value,
-    transform: [{ scale: 1 + focus.value * 0.08 }],
-  }));
+  const anim = useAnimatedStyle(() => {
+    const radius = blur.value;
+    return {
+      opacity: dim.value,
+      transform: [{ scale: 1 + focus.value * 0.08 }],
+      // RN's Android filter clips descendants. Omitting it entirely at zero
+      // keeps the active word bounce free to rise outside its glyph box.
+      filter: radius > 0.01 ? [{ blur: radius }] : undefined,
+    };
+  });
+  const lineStyle = lyricsLineStyle(large, size, weight, centered);
+  const flattened = StyleSheet.flatten(lineStyle) as TextStyle;
+  const wordTextStyle: TextStyle = {
+    fontFamily: flattened.fontFamily,
+    fontSize: flattened.fontSize,
+    fontStyle: flattened.fontStyle,
+    fontWeight: flattened.fontWeight,
+    letterSpacing: flattened.letterSpacing,
+    lineHeight: flattened.lineHeight,
+  };
+  const paddingVertical = typeof flattened.paddingVertical === 'number'
+    ? flattened.paddingVertical
+    : 0;
+
   return (
     <View
       onLayout={(e) => onMeasure(index, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}
     >
-      <Animated.Text style={[lyricsLineStyle(large, size, centered), centered ? styles.centerOrigin : styles.leftOrigin, anim]}>
-        {active && words ? <SungWords words={words} /> : text}
-      </Animated.Text>
+      <Animated.View style={[centered ? styles.centerOrigin : styles.leftOrigin, anim]}>
+        {words && words.length > 0 ? (
+          <KaraokeWords
+            words={words}
+            active={active}
+            centered={centered}
+            textStyle={wordTextStyle}
+            activeColor={colors.text}
+            inactiveColor={`${colors.text}6B`}
+            paddingVertical={paddingVertical}
+          />
+        ) : (
+          <Text style={lineStyle}>{text}</Text>
+        )}
+      </Animated.View>
     </View>
   );
 });
 LyricRow.displayName = 'LyricRow';
 
-/** Ahead of the ear, like the line's own 300 ms, but less: a word is short. */
-const WORD_LEAD_MS = 100;
-
-/**
- * The position in milliseconds, moving on between the player's own updates.
- *
- * Those come every half second, which is fine for a line and too coarse for a
- * word: a quick one lit up late or not at all. So between updates this runs
- * on by itself while playing, never more than a second past the last real one
- * in case they stop coming.
- */
-function useSungPositionMs(): number {
-  const [ms, setMs] = useState(() => usePlayerStore.getState().positionSec * 1000);
-  useEffect(() => {
-    let anchor = { sec: usePlayerStore.getState().positionSec, at: Date.now() };
-    const unsubscribe = usePlayerStore.subscribe((s, prev) => {
-      if (s.positionSec !== prev.positionSec) anchor = { sec: s.positionSec, at: Date.now() };
-    });
-    const timer = setInterval(() => {
-      const { isPlaying, speed } = usePlayerStore.getState();
-      const ahead = isPlaying ? Math.min((Date.now() - anchor.at) * (speed || 1), 1000) : 0;
-      setMs(anchor.sec * 1000 + ahead + WORD_LEAD_MS);
-    }, 50);
-    return () => {
-      unsubscribe();
-      clearInterval(timer);
-    };
-  }, []);
-  return ms;
-}
-
-/**
- * The line being sung, word by word (#165): what has been sung is lit and the
- * rest waits, dimmer. Only the active line ticks.
- */
-function SungWords({ words }: { words: LyricWord[] }) {
-  const posMs = useSungPositionMs();
-  const waiting = { color: `${colors.text}66` };
-  return (
-    <>
-      {words.map((w, i) => (
-        <Text key={i} style={w.start <= posMs ? null : waiting}>
-          {w.value}
-        </Text>
-      ))}
-    </>
-  );
-}
-
 /** Typography shared by the card and the full screen. */
 export const lyricsStyles = themed((colors) => ({
   line: {
     color: colors.text,
-    fontSize: 20,
-    lineHeight: 30,
-    fontWeight: '500',
     paddingVertical: spacing.xs,
   },
-  lineLarge: { fontSize: 28, lineHeight: 40, paddingVertical: spacing.sm },
-  lineLargeSmall: { fontSize: 22, lineHeight: 32, paddingVertical: spacing.sm },
-  lineLargeLarge: { fontSize: 34, lineHeight: 48, paddingVertical: spacing.sm },
+  lineLarge: { paddingVertical: spacing.sm },
   centered: { textAlign: 'center' },
 }));
 
 /**
- * The line style with the reader's settings on it: the size only on the full
- * screen (`large`), the alignment everywhere lyrics are shown.
+ * The line style with the reader's size, weight and alignment on every lyrics
+ * surface. Compact cards scale the chosen full-screen size proportionally.
  */
 export function useLyricsLineStyle(large?: boolean) {
   const size = useSettings((s) => s.lyricsSize);
+  const weight = useSettings((s) => s.lyricsWeight);
   const centered = useSettings((s) => s.lyricsAlign) === 'center';
-  return lyricsLineStyle(large, size, centered);
+  return lyricsLineStyle(large, size, weight, centered);
 }
 
-function lyricsLineStyle(large: boolean | undefined, size: LyricsSize, centered: boolean) {
+function lyricsLineStyle(
+  large: boolean | undefined,
+  size: LyricsSize,
+  weight: LyricsWeight,
+  centered: boolean,
+) {
+  // The setting is expressed in full-screen points. Compact surfaces retain
+  // the old 20:28 ratio, so the default is visually unchanged while every
+  // other size still follows the listener's choice.
+  const textSize = large
+    ? size
+    : Math.max(16, Math.round((size * 20) / LYRICS_SIZE_DEFAULT));
+  const lineHeight = Math.round(textSize * (large ? 10 / 7 : 1.5));
   return [
     lyricsStyles.line,
-    large &&
-      (size === 'small'
-        ? lyricsStyles.lineLargeSmall
-        : size === 'large'
-          ? lyricsStyles.lineLargeLarge
-          : lyricsStyles.lineLarge),
+    large && lyricsStyles.lineLarge,
+    { fontSize: textSize, lineHeight, fontWeight: weight },
     centered && lyricsStyles.centered,
   ];
 }

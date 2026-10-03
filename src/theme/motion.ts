@@ -34,10 +34,12 @@ export const motion = {
     move: 220,
     /** A line of lyrics walking up to its place, which is further than it
      *  looks and reads as a jump if it is hurried. */
-    scroll: 450,
+    scroll: 540,
     /** A colour settling in behind everything else, slow enough that nobody
      *  catches it changing. */
     tint: 600,
+    /** Lyrics moving gently between sharp and out-of-focus depth planes. */
+    depth: 720,
     /** One breath of a placeholder, or one rise of the bars on a playing row. */
     pulse: 700,
     /**
@@ -58,6 +60,8 @@ export const motion = {
     exit: Easing.in(Easing.cubic),
     /** Crossing the screen, which is an arrival to whoever is watching. */
     move: Easing.out(Easing.cubic),
+    /** Depth needs a soft departure as well as a soft arrival. */
+    depth: Easing.inOut(Easing.quad),
     /** Something that never arrives, so it may not slow down at either end. */
     loop: Easing.inOut(Easing.quad),
   },
