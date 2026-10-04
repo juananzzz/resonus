@@ -13,11 +13,12 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { CACHED_COVER, COVER, coverArtUrl, getArtistInfo } from '@/api/data';
+import { CACHED_COVER, COVER, getArtistInfo } from '@/api/data';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { fontSize, radius, spacing, themed, tracking } from '@/theme';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 
 /** Lines of biography shown before it is expanded. */
 const BIO_LINES = 3;
@@ -26,6 +27,7 @@ const BIO_LINES = 3;
 const BIO_TOGGLE_AT = 220;
 
 export function ArtistPlayerCard() {
+  const { coverArtUrl } = useCoverUrls();
   const t = useT();
   const router = useRouter();
   const song = usePlayerStore(currentSong);

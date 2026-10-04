@@ -140,7 +140,7 @@ export function SongsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
   });
   const card = cardWidth(columns);
   // What this server can actually order by; the first one is what it opens on.
-  const sorts = canFetch ? songListSorts() : [];
+  const sorts = canFetch ? songListSorts(offline) : [];
   /**
    * Arrived at from a Home shelf, this says which one. Only the value it opens
    * on: each visit is its own screen, so there is nothing to keep in step. An

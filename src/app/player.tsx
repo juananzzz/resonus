@@ -29,7 +29,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { CACHED_COVER, COVER, songCoverUrl, star, unstar, type Song } from '@/api/data';
+import { CACHED_COVER, COVER, star, unstar, type Song } from '@/api/data';
 import { ArtistPlayerCard } from '@/components/ArtistPlayerCard';
 import { AudioQualityBadge } from '@/components/AudioQualityBadge';
 import { SeekBar } from '@/components/SeekBar';
@@ -41,6 +41,7 @@ import { MarqueeText } from '@/components/MarqueeText';
 import { OutputSheet } from '@/components/OutputSheet';
 import { SpeedSheet } from '@/components/SpeedSheet';
 import { StarRating } from '@/components/StarRating';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useAnimatedCover } from '@/hooks/useAnimatedCover';
 import { toneOf, useDominantColor } from '@/hooks/useDominantColor';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
@@ -223,6 +224,7 @@ function usePaneStyle(offset: SharedValue<number>, k: number, step: SharedValue<
 }
 
 export default function PlayerScreen() {
+  const { songCoverUrl } = useCoverUrls();
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();

@@ -303,10 +303,11 @@ export default function RootLayout() {
         ) : (
           <ErrorBoundary>
           {/* Keyed on what everything reads from module state while drawing:
-              the colours, the font patched into JSX, and offline mode (which
-              cover URL, which source). The React Compiler keeps whatever it
-              memoized, so a change of any of them draws the app again. */}
-          <View key={`${themeVersion}:${appFont}:${offline}`} style={{ flex: 1 }}>
+              the colours and the font patched into JSX. The React Compiler
+              keeps whatever it memoized, so a change of either draws the app
+              again. Offline mode is not here: it can flip on its own, and what
+              depends on it says so (`useCoverUrls`). */}
+          <View key={`${themeVersion}:${appFont}`} style={{ flex: 1 }}>
             <BarBlurTarget>
             <Stack
               screenOptions={{

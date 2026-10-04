@@ -7,9 +7,10 @@ import { Link } from 'expo-router';
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { COVER, coverArtUrl, type Artist } from '@/api/data';
+import { COVER, type Artist } from '@/api/data';
 import { fontSize, spacing, themed, useTheme } from '@/theme';
 import { bump } from '@/lib/perfLog';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { Cover } from './Cover';
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export const ArtistCard = memo(function ArtistCard({ artist, width = 150 }: Props) {
+  const { coverArtUrl } = useCoverUrls();
   bump('render · ArtistCard');
   // Memoised, so it has to ask for a repaint on a theme change itself.
   useTheme();

@@ -10,11 +10,12 @@ import Icon from '@/components/Icon';
 import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { COVER, songCoverUrl, type Song } from '@/api/data';
+import { COVER, type Song } from '@/api/data';
 import { useAuthStore } from '@/store/auth';
 import { useDownloads } from '@/store/downloads';
 import { colors, fontSize, radius, spacing, themed, useTheme } from '@/theme';
 import { bump } from '@/lib/perfLog';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { Cover, useCoverRadius } from './Cover';
 import { ExplicitBadge, useExplicitBadge } from './ExplicitBadge';
 
@@ -42,6 +43,7 @@ export const SongCard = memo(function SongCard({
   onPressIn,
   onLongPress,
 }: Props) {
+  const { songCoverUrl } = useCoverUrls();
   bump('render · SongCard');
   // Worked out here rather than read off the song: see the same note in
   // `TrackRow`. A list the server answered before the connection went away

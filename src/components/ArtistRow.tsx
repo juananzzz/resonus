@@ -7,7 +7,8 @@ import { Link } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import { COVER, coverArtUrl, type Artist } from '@/api/data';
+import { COVER, type Artist } from '@/api/data';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { usePressFeedback } from '@/hooks/usePressFeedback';
 import { albumsLabel } from '@/i18n';
 import { useSettings } from '@/store/settings';
@@ -16,6 +17,7 @@ import { bump } from '@/lib/perfLog';
 import { Cover } from './Cover';
 
 export function ArtistRow({ artist }: { artist: Artist }) {
+  const { coverArtUrl } = useCoverUrls();
   bump('render · ArtistRow');
   const lang = useSettings((s) => s.language);
   const press = usePressFeedback();

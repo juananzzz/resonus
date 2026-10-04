@@ -7,18 +7,7 @@ import { ActivityIndicator, AppState, Pressable, StyleSheet, Text, View } from '
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import { useShallow } from 'zustand/react/shallow';
 
-import {
-  coverArtUrl,
-  songCoverUrl,
-  deletePlaylist,
-  getPlaylist,
-  removeFromPlaylist,
-  reorderPlaylist,
-  updatePlaylist,
-  addToPlaylist,
-  getSimilarSongs,
-  COVER,
-} from '@/api/data';
+import { deletePlaylist, getPlaylist, removeFromPlaylist, reorderPlaylist, updatePlaylist, addToPlaylist, getSimilarSongs, COVER } from '@/api/data';
 import { streamUrl } from '@/api/backend';
 import { type Song } from '@/api/subsonic';
 import { CoverViewer } from '@/components/CoverViewer';
@@ -33,6 +22,7 @@ import { PlaylistReorder } from '@/components/PlaylistReorder';
 import { SheetModal } from '@/components/SheetModal';
 import { TrackListSkeleton } from '@/components/TrackListSkeleton';
 import { TrackListView } from '@/components/TrackListView';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useCanShare } from '@/hooks/useCanShare';
 import { useDownloadMessage } from '@/hooks/useDownloadMessage';
 import { usePlaylistStars } from '@/hooks/usePlaylistStars';
@@ -93,6 +83,7 @@ function SuggestedTracks({
   playlistName: string;
   onAdded: () => void;
 }) {
+  const { songCoverUrl } = useCoverUrls();
   const t = useT();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -339,6 +330,7 @@ const suggestedStyles = themed((colors) => ({
 }));
 
 export default function PlaylistScreen() {
+  const { coverArtUrl } = useCoverUrls();
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();

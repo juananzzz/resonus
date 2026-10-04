@@ -21,18 +21,11 @@ import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-ha
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  coverArtUrl,
-  createPlaylist,
-  getPlaylists,
-  getStarred,
-  type Album,
-  type Playlist,
-  COVER,
-} from '@/api/data';
+import { createPlaylist, getPlaylists, getStarred, type Album, type Playlist, COVER } from '@/api/data';
 import { AlbumRow } from '@/components/AlbumRow';
 import { ArtistRow } from '@/components/ArtistRow';
 import { Cover } from '@/components/Cover';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useHistoryTimes } from '@/hooks/useHistoryTimes';
 import { Dialog } from '@/components/Dialog';
 import { EmptyState } from '@/components/EmptyState';
@@ -258,6 +251,7 @@ function PlaylistsTab({
   /** Set by the second row of chips; without it, all of them. */
   owner?: Owner | null;
 }) {
+  const { coverArtUrl } = useCoverUrls();
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const username = useAuthStore((s) => s.auth?.username);
   const t = useT();
@@ -369,6 +363,7 @@ function PlaylistsTab({
 }
 
 function ArtistsTab({ query }: { query: string }) {
+  const { coverArtUrl } = useCoverUrls();
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const lang = useSettings((s) => s.language);
@@ -452,6 +447,7 @@ function NoResults({ query }: { query: string }) {
 }
 
 function AlbumsTab({ query }: { query: string }) {
+  const { coverArtUrl } = useCoverUrls();
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const sort = useSettings((s) => s.librarySort);
@@ -564,6 +560,7 @@ interface LibItem {
  * its name, because in one list a record and a playlist are the same square.
  */
 function AllTab({ query, onNew }: { query: string; onNew?: () => void }) {
+  const { coverArtUrl } = useCoverUrls();
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const t = useT();
   const sort = useSettings((s) => s.librarySort);

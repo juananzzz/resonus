@@ -12,7 +12,8 @@ import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-ha
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { COVER, coverArtUrl, getAlbum, getPlaylist, star, unstar, type Song } from '@/api/data';
+import { COVER, getAlbum, getPlaylist, star, unstar, type Song } from '@/api/data';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useAlbumDownloads } from '@/hooks/useAlbumDownloads';
 import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
 import { useCanShare } from '@/hooks/useCanShare';
@@ -74,6 +75,7 @@ async function fetchSongs(item: MediaMenuItem): Promise<Song[]> {
 }
 
 export function MediaMenuSheet() {
+  const { coverArtUrl } = useCoverUrls();
   const insets = useSafeAreaInsets();
   const t = useT();
   const lang = useSettings((s) => s.language);

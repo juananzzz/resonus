@@ -10,7 +10,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { COVER, coverArtUrl, getFolderIndexes, getMusicDirectory, type Song } from '@/api/data';
+import { COVER, getFolderIndexes, getMusicDirectory, type Song } from '@/api/data';
 import { Cover } from '@/components/Cover';
 import { Message } from '@/components/Message';
 import { TrackRow } from '@/components/TrackRow';
@@ -21,6 +21,7 @@ import { currentSong, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING, themed, useTheme, tracking } from '@/theme';
 import { BackChevron } from '@/components/BackChevron';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useListPadding } from '@/hooks/useScreenSize';
 
@@ -29,6 +30,7 @@ type Row =
   | { kind: 'song'; song: Song; index: number };
 
 export default function FolderBrowseScreen() {
+  const { coverArtUrl } = useCoverUrls();
   const bottomPad = useScreenBottomPadding();
   // Rows stop growing at a reading measure and centre themselves (#131).
   const listPad = useListPadding(spacing.lg);

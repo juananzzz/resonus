@@ -9,7 +9,8 @@ import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-ha
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { COVER, coverArtUrl } from '@/api/data';
+import { COVER } from '@/api/data';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
 import { useT } from '@/i18n';
 import { useArtistPicker } from '@/store/artistPicker';
@@ -17,6 +18,7 @@ import { fontSize, radius, SHEET_MAX_WIDTH, spacing, themed, tracking } from '@/
 import { Cover } from './Cover';
 
 export function ArtistPickerSheet() {
+  const { coverArtUrl } = useCoverUrls();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const t = useT();

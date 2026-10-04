@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 
-import { COVER, coverArtUrl, getAlbum } from '@/api/data';
+import { COVER, getAlbum } from '@/api/data';
 import { type Album, type Song } from '@/api/subsonic';
 import { BackButton } from '@/components/BackButton';
 import { CoverViewer } from '@/components/CoverViewer';
@@ -15,6 +15,7 @@ import { MoreFromArtist } from '@/components/MoreFromArtist';
 import { PlaylistPickerSheet } from '@/components/PlaylistPickerSheet';
 import { TrackListSkeleton } from '@/components/TrackListSkeleton';
 import { TrackListView } from '@/components/TrackListView';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useDownloadMessage } from '@/hooks/useDownloadMessage';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { songsLabel, useT } from '@/i18n';
@@ -121,6 +122,7 @@ function albumGenres(album: Album, songs: Song[]): string[] {
 }
 
 export default function AlbumScreen() {
+  const { coverArtUrl } = useCoverUrls();
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();

@@ -16,7 +16,7 @@ import {
 import { ScrollView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { COVER, coverArtUrl, getPlaylists, search } from '@/api/data';
+import { COVER, getPlaylists, search } from '@/api/data';
 import { getRadioStations } from '@/api/backend';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
@@ -24,6 +24,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { TrackRow } from '@/components/TrackRow';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useDebounce } from '@/hooks/useDebounce';
 import { songsLabel, useT } from '@/i18n';
 import { haptic } from '@/lib/haptics';
@@ -60,6 +61,7 @@ const FILTERS: { key: SearchFilter; label: string }[] = [
 ];
 
 export default function SearchScreen() {
+  const { coverArtUrl } = useCoverUrls();
   // Counted, to answer whether a tab you have visited keeps working
   // afterwards: they stay mounted once opened, and freezing them is
   // supposed to stop them rendering while they are not on screen. If this

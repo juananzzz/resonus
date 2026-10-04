@@ -3,8 +3,9 @@ import { Link } from 'expo-router';
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { COVER, coverArtUrl } from '@/api/data';
+import { COVER } from '@/api/data';
 import { Cover } from '@/components/Cover';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useGenreArt } from '@/hooks/useGenreArt';
 import { albumsLabel } from '@/i18n';
 import { useSettings } from '@/store/settings';
@@ -109,6 +110,7 @@ export const GenreCard = memo(function GenreCard({
   albumCount?: number;
   width?: number;
 }) {
+  const { coverArtUrl } = useCoverUrls();
   bump('render · GenreCard');
   // Not for the card's own colour, which no longer follows the appearance, but
   // for the grey behind a cover that has not arrived: on Search the grid is

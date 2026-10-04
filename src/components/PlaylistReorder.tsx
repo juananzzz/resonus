@@ -12,13 +12,14 @@ import ReorderableList, {
 } from 'react-native-reorderable-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { COVER, songCoverUrl } from '@/api/data';
+import { COVER } from '@/api/data';
 import { type Song } from '@/api/subsonic';
 import { useT } from '@/i18n';
 import { listPerf } from '@/lib/listPerf';
 import { haptic } from '@/lib/haptics';
 import { useSettings } from '@/store/settings';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING, themed, useTheme } from '@/theme';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { Cover } from './Cover';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 
@@ -30,6 +31,7 @@ const perf = {
 };
 
 function ReorderRow({ song }: { song: Song }) {
+  const { songCoverUrl } = useCoverUrls();
   const drag = useReorderableDrag();
   const showListArtwork = useSettings((s) => s.showListArtwork);
   return (

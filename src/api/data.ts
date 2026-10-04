@@ -244,8 +244,8 @@ export function songCoverUrl(
  * The rule is the player's own: a radio, a track from the phone's library or a
  * downloaded file. Online it marks nothing, since everything can be streamed.
  */
-export function markUnplayableOffline(songs: Song[]): Song[] {
-  if (!isOffline()) return songs;
+export function markUnplayableOffline(songs: Song[], offline = isOffline()): Song[] {
+  if (!offline) return songs;
   const files = useDownloads.getState().files;
   return songs.map((s) => {
     const uri = s.localUri ?? files[s.id] ?? cachedUri(s.id);
@@ -413,8 +413,9 @@ const ND_ALBUM_SORT: Record<AlbumListSort, Navidrome.NdAlbumSort> = {
   random: 'random',
 };
 
-export function genreAlbumSorts(): AlbumListSort[] {
-  if (isOffline()) return [];
+/** `offline` passed in from a component so the React Compiler sees it change. */
+export function genreAlbumSorts(offline = isOffline()): AlbumListSort[] {
+  if (offline) return [];
   const a = auth();
   if (!canListNative(a)) return [];
   // No "default" here. On a server that can sort, the order it would have
@@ -653,9 +654,9 @@ function subsonicSongList(
  * own order stands where A-Z would be, being the only listing that really
  * covers everything.
  */
-export function songListSorts(): Subsonic.SongListSort[] {
+export function songListSorts(offline = isOffline()): Subsonic.SongListSort[] {
   const full: Subsonic.SongListSort[] = ['recent', 'frequent', 'added', 'alpha', 'random'];
-  if (isOffline()) return full;
+  if (offline) return full;
   const a = auth();
   if (a.serverType === 'jellyfin' || canListNative(a)) return full;
   return ['recent', 'frequent', 'added', 'server', 'random'];
@@ -723,8 +724,8 @@ export function genreAlbumDir(sort: AlbumListSort): Subsonic.SortDirection {
   return sort === 'added' || sort === 'year' || sort === 'frequent' ? 'desc' : 'asc';
 }
 
-export function genreSongSorts(): Subsonic.SongListSort[] {
-  if (isOffline()) return [];
+export function genreSongSorts(offline = isOffline()): Subsonic.SongListSort[] {
+  if (offline) return [];
   const a = auth();
   if (a.serverType !== 'jellyfin' && !canListNative(a)) return [];
   return ['server', 'frequent', 'alpha', 'added', 'recent', 'random'];

@@ -7,18 +7,20 @@ import { useEffect, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { COVER, markUnplayableOffline, songCoverUrl } from '@/api/data';
+import { COVER, markUnplayableOffline } from '@/api/data';
 import { BackChevron } from '@/components/BackChevron';
 import { Cover } from '@/components/Cover';
 import { Dialog } from '@/components/Dialog';
 import { EmptyState } from '@/components/EmptyState';
 import Icon from '@/components/Icon';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useListPadding } from '@/hooks/useScreenSize';
 import { songsLabel, useT } from '@/i18n';
 import { formatBytes } from '@/lib/format';
 import { listPerf } from '@/lib/listPerf';
 import type { CachedSong } from '@/lib/songCacheDb';
+import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { cacheBytes, useSongCache } from '@/store/songCache';
@@ -40,6 +42,7 @@ function shortDate(at: number, lang: string): string {
 }
 
 export default function CachedSongsScreen() {
+  const { songCoverUrl } = useCoverUrls();
   useTheme();
   const t = useT();
   const toast = useToast((s) => s.show);
@@ -49,6 +52,7 @@ export default function CachedSongsScreen() {
   const bottomPad = useScreenBottomPadding();
   const listPad = useListPadding(spacing.lg);
   const entries = useSongCache((s) => s.entries);
+  const offline = useAuthStore((s) => s.offline);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
   const [rows, setRows] = useState<CachedSong[] | null>(null);
@@ -70,7 +74,7 @@ export default function CachedSongsScreen() {
   }, [entries]);
 
   const list = (rows ?? []).filter((r) => entries[r.id]);
-  const songs = markUnplayableOffline(list.map((r) => r.song));
+  const songs = markUnplayableOffline(list.map((r) => r.song), offline);
   const used = cacheBytes(entries);
 
   return (

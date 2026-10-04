@@ -13,12 +13,13 @@ import {
 } from 'react-native';
 
 import { getChannel, listEpisodes, episodeToSong, refreshChannel, type PodcastEpisode } from '@/api/podcasts';
-import { COVER, coverArtUrl } from '@/api/data';
+import { COVER } from '@/api/data';
 import { BackButton } from '@/components/BackButton';
 import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import Icon from '@/components/Icon';
 import { Message } from '@/components/Message';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useT } from '@/i18n';
 import { formatDuration } from '@/lib/format';
@@ -41,6 +42,7 @@ function dayLabel(at: number, lang: string): string {
 }
 
 export default function PodcastScreen() {
+  const { coverArtUrl } = useCoverUrls();
   useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useT();

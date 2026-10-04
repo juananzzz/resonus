@@ -29,13 +29,14 @@ import {
   View,
 } from 'react-native';
 
-import { COVER, coverArtUrl, getPlaylists, type Playlist } from '@/api/data';
+import { COVER, getPlaylists, type Playlist } from '@/api/data';
 import { BrowseToolbar } from '@/components/BrowseToolbar';
 import { useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
 import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { PlaylistCard } from '@/components/PlaylistCard';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useGridColumns } from '@/hooks/useGridColumns';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useListPadding } from '@/hooks/useScreenSize';
@@ -62,6 +63,7 @@ const SORTS: { key: LibrarySort; label: string }[] = (
 ).map((key) => ({ key, label: SORT_LABELS[key] }));
 
 export function PlaylistsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) {
+  const { coverArtUrl } = useCoverUrls();
   const t = useT();
   const lang = useSettings((s) => s.language);
   const listPad = useListPadding(spacing.lg);

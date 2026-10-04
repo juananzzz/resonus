@@ -26,7 +26,7 @@ import {
   unsubscribe,
   type PodcastChannel,
 } from '@/api/podcasts';
-import { COVER, coverArtUrl } from '@/api/data';
+import { COVER } from '@/api/data';
 import { BackChevron } from '@/components/BackChevron';
 import { BrowseFrame, useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
 import { Cover } from '@/components/Cover';
@@ -35,6 +35,7 @@ import { EmptyState } from '@/components/EmptyState';
 import Icon from '@/components/Icon';
 import { Message } from '@/components/Message';
 import { PodcastAddSheet } from '@/components/PodcastAddSheet';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useListPadding } from '@/hooks/useScreenSize';
 import { episodesLabel, useT } from '@/i18n';
@@ -74,6 +75,7 @@ function channelSubtitle(
 }
 
 export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) {
+  const { coverArtUrl } = useCoverUrls();
   useTheme();
   const router = useRouter();
   const bottomPad = useScreenBottomPadding();

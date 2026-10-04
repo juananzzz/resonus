@@ -9,8 +9,9 @@ import ReanimatedSwipeable, {
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 
-import { COVER, songCoverUrl, star } from '@/api/data';
+import { COVER, star } from '@/api/data';
 import { type Song } from '@/api/subsonic';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { formatDuration } from '@/lib/format';
 import { applyStarChange, resyncFavorites, unstarWithUndo } from '@/lib/favoritesCache';
@@ -120,6 +121,7 @@ function TrackRowBase({
   onPress,
   onPressIn,
 }: Props) {
+  const { songCoverUrl } = useCoverUrls();
   bump('render · TrackRow');
   const openMenu = useSongMenu((s) => s.open);
   const t = useT();

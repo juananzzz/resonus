@@ -26,7 +26,7 @@ import {
   updateRadioStation,
   type RadioStation,
 } from '@/api/backend';
-import { COVER, coverArtUrl } from '@/api/data';
+import { COVER } from '@/api/data';
 import { uploadCoverImage } from '@/api/navidrome';
 import { Cover } from '@/components/Cover';
 import { Dialog } from '@/components/Dialog';
@@ -42,6 +42,7 @@ import { useToast } from '@/store/toast';
 import { colors, fontSize, radius, SCREEN_BOTTOM_PADDING, SHEET_MAX_WIDTH, spacing, themed, useTheme, tracking } from '@/theme';
 import { BackChevron } from '@/components/BackChevron';
 import { BrowseFrame, useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useListPadding } from '@/hooks/useScreenSize';
 import { listPerf } from '@/lib/listPerf';
@@ -56,6 +57,7 @@ export default function RadioScreen() {
 }
 
 export function RadioBrowser({ embedded, actionRef, searchOpen }: BrowserProps) {
+  const { coverArtUrl } = useCoverUrls();
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();

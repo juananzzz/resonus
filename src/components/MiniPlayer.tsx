@@ -16,7 +16,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { COVER, songCoverUrl, type Song } from '@/api/data';
+import { COVER, type Song } from '@/api/data';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { useT } from '@/i18n';
@@ -64,6 +65,7 @@ function MiniProgress({ song }: { song: Song }) {
 }
 
 export function MiniPlayer() {
+  const { songCoverUrl } = useCoverUrls();
   const { width: screenW, height: screenH, wide } = useScreenSize();
   const song = usePlayerStore(currentSong);
   // A radio saying what it plays says it here too: down here there is only room

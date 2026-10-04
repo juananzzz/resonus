@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { TrackRow } from '@/components/TrackRow';
 import { useT } from '@/i18n';
 import { listPerf } from '@/lib/listPerf';
+import { useAuthStore } from '@/store/auth';
 import { currentSong, SOURCE_HISTORY, usePlayerStore } from '@/store/player';
 import { markUnplayableOffline } from '@/api/data';
 import { usePlayHistory, type HistoryEntry } from '@/store/playHistory';
@@ -59,6 +60,7 @@ export default function HistoryScreen() {
   const lang = useSettings((s) => s.language);
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const entries = usePlayHistory((s) => s.entries);
+  const offline = useAuthStore((s) => s.offline);
   const clear = usePlayHistory((s) => s.clear);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
@@ -69,7 +71,7 @@ export default function HistoryScreen() {
   // when tapped, the way every other list does. Not filtered out: a history is
   // a record of what was played, and a record with holes in it is worse than
   // one that greys what it cannot reach right now.
-  const songs = markUnplayableOffline(entries.map((e) => e.song));
+  const songs = markUnplayableOffline(entries.map((e) => e.song), offline);
   const marked = entries.map((e, i) => ({ ...e, song: songs[i] }));
 
   // Entries already come from most recent to oldest.

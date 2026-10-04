@@ -10,7 +10,8 @@ import { Pressable, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import Icon from '@/components/Icon';
-import { COVER, coverArtUrl, type Album } from '@/api/data';
+import { COVER, type Album } from '@/api/data';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { usePressFeedback } from '@/hooks/usePressFeedback';
 import { haptic } from '@/lib/haptics';
 import { useMediaMenu } from '@/store/mediaMenu';
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export function AlbumRow({ album, pinned }: Props) {
+  const { coverArtUrl } = useCoverUrls();
   bump('render · AlbumRow');
   const openMenu = useMediaMenu((s) => s.open);
   // Subscribed, not read straight off `colors`: without it the pin would keep

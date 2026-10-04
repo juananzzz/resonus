@@ -17,7 +17,8 @@ import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-ha
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { COVER, songCoverUrl } from '@/api/data';
+import { COVER } from '@/api/data';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
 import { useT } from '@/i18n';
 import { artistTargets } from '@/lib/artistNav';
@@ -72,6 +73,7 @@ function ChipRow({ label, chips }: { label: string; chips: Chip[] }) {
 }
 
 export function SongInfoSheet() {
+  const { songCoverUrl } = useCoverUrls();
   const song = useSongInfo((s) => s.song);
   const closeNow = useSongInfo((s) => s.close);
   const t = useT();

@@ -25,7 +25,7 @@ import ReorderableList, {
 } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { COVER, songCoverUrl } from '@/api/data';
+import { COVER } from '@/api/data';
 import { type Song } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
 import { PlayingBars } from '@/components/PlayingBars';
@@ -33,6 +33,7 @@ import { Dialog } from '@/components/Dialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ExplicitBadge, useExplicitBadge } from '@/components/ExplicitBadge';
 import { SheetModal } from '@/components/SheetModal';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useListPadding } from '@/hooks/useScreenSize';
 import { songsLabel, useT } from '@/i18n';
 import { formatTotalDuration } from '@/lib/format';
@@ -93,6 +94,7 @@ const QueueRow = memo(function QueueRow({
   absIndex: number;
   state: 'previous' | 'current' | 'upcoming';
 }) {
+  const { songCoverUrl } = useCoverUrls();
   const jumpTo = usePlayerStore((s) => s.jumpTo);
   const removeAt = usePlayerStore((s) => s.removeAt);
   const showListArtwork = useSettings((s) => s.showListArtwork);

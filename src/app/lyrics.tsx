@@ -9,9 +9,10 @@ import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { COVER, songCoverUrl } from '@/api/data';
+import { COVER } from '@/api/data';
 import { SyncedLyricsView, useLyricsLineStyle } from '@/components/LyricsCard';
 import { SeekBar } from '@/components/SeekBar';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useLyrics } from '@/hooks/useLyrics';
 import { useT } from '@/i18n';
@@ -21,6 +22,7 @@ import { colors, fontSize, radius, spacing, themed, useTheme } from '@/theme';
 import { centredPadding, useScreenSize } from '@/hooks/useScreenSize';
 
 export default function LyricsScreen() {
+  const { songCoverUrl } = useCoverUrls();
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();

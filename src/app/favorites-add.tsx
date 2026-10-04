@@ -19,16 +19,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  songCoverUrl,
-  getMostPlayedSongs,
-  getSimilarSongs,
-  getStarred,
-  search,
-  star,
-  unstar,
-  COVER,
-} from '@/api/data';
+import { getMostPlayedSongs, getSimilarSongs, getStarred, search, star, unstar, COVER } from '@/api/data';
 import { type Song } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
 import { useT } from '@/i18n';
@@ -37,6 +28,7 @@ import { useAuthStore } from '@/store/auth';
 import { usePlayHistory } from '@/store/playHistory';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, radius, spacing, themed, useTheme } from '@/theme';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 
 type Tab = 'most' | 'recent' | 'suggested';
 
@@ -258,6 +250,7 @@ function AddRow({
   added: boolean;
   onToggle: () => void;
 }) {
+  const { songCoverUrl } = useCoverUrls();
   const t = useT();
   return (
     <View style={styles.row}>

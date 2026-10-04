@@ -16,7 +16,8 @@ import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-ha
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { addToPlaylist, COVER, coverArtUrl, createPlaylist, getPlaylist, getPlaylists } from '@/api/data';
+import { addToPlaylist, COVER, createPlaylist, getPlaylist, getPlaylists } from '@/api/data';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useScreenSize } from '@/hooks/useScreenSize';
 import { type Song } from '@/api/subsonic';
 import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
@@ -56,6 +57,7 @@ export function PlaylistPickerSheet({
   excludeId?: string;
   onClose: () => void;
 }) {
+  const { coverArtUrl } = useCoverUrls();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useScreenSize();
   const queryClient = useQueryClient();

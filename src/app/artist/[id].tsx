@@ -19,15 +19,7 @@ import {
 import { ScrollView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  coverArtUrl,
-  getAlbum,
-  getAppearsOn,
-  getArtist,
-  getArtistInfo,
-  getTopSongs,
-  COVER,
-} from '@/api/data';
+import { getAlbum, getAppearsOn, getArtist, getArtistInfo, getTopSongs, COVER } from '@/api/data';
 import { type Album, type Artist, type Song } from '@/api/subsonic';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
@@ -40,6 +32,7 @@ import { Message } from '@/components/Message';
 import { SheetModal } from '@/components/SheetModal';
 import { StarRating } from '@/components/StarRating';
 import { TrackRow } from '@/components/TrackRow';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useDownloadMessage } from '@/hooks/useDownloadMessage';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
@@ -95,6 +88,7 @@ const CARD_W = 140;
 const ROW_LIMIT = 50;
 
 export default function ArtistScreen() {
+  const { coverArtUrl } = useCoverUrls();
   const bottomPad = useScreenBottomPadding();
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.

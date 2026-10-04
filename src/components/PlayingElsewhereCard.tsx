@@ -20,10 +20,11 @@ import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { getNowPlaying, getPlayQueue } from '@/api/backend';
-import { COVER, songCoverUrl } from '@/api/data';
+import { COVER } from '@/api/data';
 import { CLIENT_NAME, type NowPlayingEntry, type SavedQueue } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
 import Icon from '@/components/Icon';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useT } from '@/i18n';
 import { haptic } from '@/lib/haptics';
@@ -130,6 +131,7 @@ async function playHere(entry: NowPlayingEntry, fetchedAt: number) {
 }
 
 export function PlayingElsewhereCard() {
+  const { songCoverUrl } = useCoverUrls();
   const { accent } = useTheme();
   const t = useT();
   const router = useRouter();

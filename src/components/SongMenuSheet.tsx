@@ -18,22 +18,10 @@ import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-ha
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
 import { useScreenSize } from '@/hooks/useScreenSize';
-import {
-  addToPlaylist,
-  coverArtUrl,
-  songCoverUrl,
-  createPlaylist,
-  getPlaylist,
-  getPlaylists,
-  removeFromPlaylist,
-  reorderPlaylist,
-  star,
-  unstar,
-  type Song,
-  COVER,
-} from '@/api/data';
+import { addToPlaylist, createPlaylist, getPlaylist, getPlaylists, removeFromPlaylist, reorderPlaylist, star, unstar, type Song, COVER } from '@/api/data';
 import { useCanShare } from '@/hooks/useCanShare';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { applyStarChange, resyncFavorites } from '@/lib/favoritesCache';
@@ -118,6 +106,7 @@ function Action({
 }
 
 export function SongMenuSheet() {
+  const { coverArtUrl, songCoverUrl } = useCoverUrls();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useScreenSize();
   const router = useRouter();

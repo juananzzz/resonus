@@ -132,7 +132,7 @@ export default function GenreScreen() {
   // The first order is by album here, not by whatever the server would have
   // answered, so it is named for what it does (see `ND_GENRE_DEFAULT`).
   const { sort, dir, openSort, sortSheet } = useServerSort(
-    auth ? genreSongSorts() : [],
+    auth ? genreSongSorts(offline) : [],
     { server: 'By album', frequent: 'Most played::songs' },
     genreSongDir,
   );
@@ -142,7 +142,7 @@ export default function GenreScreen() {
     openSort: openAlbumSort,
     sortSheet: albumSortSheet,
   } = useServerSort<AlbumListSort>(
-    auth ? genreAlbumSorts() : [],
+    auth ? genreAlbumSorts(offline) : [],
     { frequent: 'Most played::albums' },
     genreAlbumDir,
   );

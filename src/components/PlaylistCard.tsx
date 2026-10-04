@@ -3,13 +3,14 @@ import { Link } from 'expo-router';
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { COVER, coverArtUrl, type Playlist } from '@/api/data';
+import { COVER, type Playlist } from '@/api/data';
 import { songsLabel } from '@/i18n';
 import { haptic } from '@/lib/haptics';
 import { useMediaMenu } from '@/store/mediaMenu';
 import { useSettings } from '@/store/settings';
 import { fontSize, spacing, themed, useTheme } from '@/theme';
 import { bump } from '@/lib/perfLog';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { Cover } from './Cover';
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export const PlaylistCard = memo(function PlaylistCard({ playlist, width = 150 }: Props) {
+  const { coverArtUrl } = useCoverUrls();
   bump('render · PlaylistCard');
   // Memoised, so it has to ask for a repaint on a theme change itself.
   useTheme();

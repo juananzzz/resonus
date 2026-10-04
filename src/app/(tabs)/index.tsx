@@ -15,19 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  COVER,
-  coverArtUrl,
-  getAlbumList,
-  getArtists,
-  getPlaylists,
-  getRandomSongs,
-  getSongList,
-  type Album,
-  type Artist,
-  type Playlist,
-  type Song,
-} from '@/api/data';
+import { COVER, getAlbumList, getArtists, getPlaylists, getRandomSongs, getSongList, type Album, type Artist, type Playlist, type Song } from '@/api/data';
 import { listRecentEpisodes, type RecentEpisode } from '@/api/podcasts';
 import { AlbumCard } from '@/components/AlbumCard';
 import { AlbumCardsSkeleton } from '@/components/AlbumCardsSkeleton';
@@ -40,6 +28,7 @@ import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { PodcastEpisodeCard } from '@/components/PodcastEpisodeCard';
 import { TrackRow } from '@/components/TrackRow';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { columnsFor, useScreenSize } from '@/hooks/useScreenSize';
 import { songsLabel, useT } from '@/i18n';
@@ -125,6 +114,7 @@ function QuickTile({
 }
 
 function QuickGrid() {
+  const { coverArtUrl } = useCoverUrls();
   // Measured on every render, not once when the file was first imported:
   // otherwise turning the phone leaves the tiles at the width they had when
   // the app started (#131).
@@ -210,7 +200,7 @@ function QuickGrid() {
       })
       .filter((it): it is Item => it !== null);
     return [...al, ...pl, ...played].sort((x, y) => y.ts - x.ts).slice(0, dynamicCount);
-  }, [playlists, albums, times, names, withPlaylists, withAlbums, dynamicCount]);
+  }, [playlists, albums, times, names, withPlaylists, withAlbums, dynamicCount, coverArtUrl]);
 
   // Without active sources there's nothing to show (the master toggle still
   // decides if the block mounts; this covers "all off" from here).

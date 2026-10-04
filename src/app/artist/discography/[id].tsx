@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { COVER, coverArtUrl, getAppearsOn, getArtist, type Album } from '@/api/data';
+import { COVER, getAppearsOn, getArtist, type Album } from '@/api/data';
 import { AlbumCard } from '@/components/AlbumCard';
 import { Cover } from '@/components/Cover';
 import { Message } from '@/components/Message';
@@ -33,6 +33,7 @@ import { useAuthStore } from '@/store/auth';
 import { useSettings } from '@/store/settings';
 import { colors, fontSize, spacing, SCREEN_BOTTOM_PADDING, themed, useTheme, tracking } from '@/theme';
 import { BackChevron } from '@/components/BackChevron';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useAlbumSort } from '@/hooks/useAlbumSort';
 import { useGridColumns } from '@/hooks/useGridColumns';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
@@ -49,6 +50,7 @@ function cardWidth(columns: number): number {
 }
 
 export default function DiscographyScreen() {
+  const { coverArtUrl } = useCoverUrls();
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();

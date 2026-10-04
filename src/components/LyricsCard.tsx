@@ -24,9 +24,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { COVER, songCoverUrl } from '@/api/data';
+import { COVER } from '@/api/data';
 import { useCoverRadius } from '@/components/Cover';
 import { type LyricLine, type LyricWord } from '@/api/subsonic';
+import { useCoverUrls } from '@/hooks/useCoverUrls';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useLyrics } from '@/hooks/useLyrics';
 import { useT } from '@/i18n';
@@ -37,6 +38,7 @@ import { colors, fontSize, radius, spacing, themed, useTheme } from '@/theme';
 import { motion } from '@/theme/motion';
 
 export function LyricsCard() {
+  const { songCoverUrl } = useCoverUrls();
   const t = useT();
   const song = usePlayerStore(currentSong);
   const { data } = useLyrics(song ?? undefined);
