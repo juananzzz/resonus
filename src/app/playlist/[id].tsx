@@ -43,25 +43,39 @@ import { colors, fontSize, spacing, themed, useTheme, tracking } from '@/theme';
 const SEED_COUNT = 5;
 const SIMILAR_PER_SEED = 3;
 const SUGGESTION_MAX = 5;
+const SEEDS_AT_ONCE = 2;
 
 /** Stops the preview playing on whichever playlist screen started it, so a
  *  second screen never plays over the first. */
 let activePreview: { player: AudioPlayer; stop: () => void } | null = null;
 
+/**
+ * Two seeds at a time, and only until there are enough.
+ *
+ * `getSimilarSongs2` can take seconds a call on a server that asks Last.fm, and
+ * Android sends at most five requests to one host at once: the five seeds in
+ * parallel took every slot, so the next playlist opened sat on its placeholder
+ * behind suggestions nobody was looking at. Two usually bring enough and leave
+ * the rest free. `stale` says the screen has gone or asked again.
+ */
 async function fetchSuggestions(
   songs: Song[],
   existingIds: Set<string>,
+  stale: () => boolean,
 ): Promise<Song[]> {
   if (songs.length === 0) return [];
   const shuffled = songs.slice().sort(() => Math.random() - 0.5);
   const seeds = shuffled.slice(0, SEED_COUNT);
-  const results = await Promise.all(
-    seeds.map((s) => getSimilarSongs(s.id, SIMILAR_PER_SEED).catch(() => [])),
-  );
   const seen = new Set<string>();
   const out: Song[] = [];
-  for (const list of results) {
-    for (const song of list) {
+  for (let i = 0; i < seeds.length; i += SEEDS_AT_ONCE) {
+    if (stale()) return out;
+    const lists = await Promise.all(
+      seeds
+        .slice(i, i + SEEDS_AT_ONCE)
+        .map((seed) => getSimilarSongs(seed.id, SIMILAR_PER_SEED).catch(() => [] as Song[])),
+    );
+    for (const song of lists.flat()) {
       if (!seen.has(song.id) && !existingIds.has(song.id)) {
         seen.add(song.id);
         out.push(song);
@@ -121,7 +135,11 @@ function SuggestedTracks({
 
   const refresh = useCallback(async () => {
     const request = ++requestRef.current;
-    const result = await fetchSuggestions(songsRef.current, existingRef.current);
+    const result = await fetchSuggestions(
+      songsRef.current,
+      existingRef.current,
+      () => request !== requestRef.current,
+    );
     if (request !== requestRef.current) return;
     setSuggestions(result);
   }, []);

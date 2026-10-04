@@ -9,6 +9,10 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+### Fixed
+
+- Playlists open without waiting behind the suggested tracks of the last one, on servers slow to find similar songs.
+
 ## [0.8.1-beta.1] - 2026-10-04
 
 ### Added
