@@ -7,7 +7,6 @@
  */
 import { requireOptionalNativeModule } from 'expo-modules-core';
 
-import { CACHED_COVER } from '@/api/data';
 import { tg } from '@/i18n';
 import { artworkUrlFor, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
@@ -34,12 +33,10 @@ function nowPlaying(): NowPlayingState {
   if (!song) return { title: '', artist: '', playing: false, active: false };
   // A station says what is on, like the notification does.
   const live = song.url ? st.streamInfo : null;
-  const artwork = artworkUrlFor(song);
   return {
     title: live?.title ?? song.title,
     artist: live?.artist ?? song.artist ?? '',
-    // Offline, a cover the app only has in its image cache is no address at all.
-    artworkUrl: artwork && !artwork.startsWith(CACHED_COVER) ? artwork : undefined,
+    artworkUrl: artworkUrlFor(song),
     playing: st.isPlaying,
     active: true,
   };

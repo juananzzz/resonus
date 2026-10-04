@@ -24,6 +24,7 @@ Releases before 0.2.1 are only listed on the
 - Local M4A and FLAC files show their titles, artists, albums and covers (#249).
 - Casting to a TV moves on to the next song on time with the screen off (#246).
 - On phones that freeze apps in the background, the player no longer shows the old song for seconds on return (#192).
+- Offline, a song whose cover is not downloaded no longer breaks the lock screen and the car.
 
 ## [0.7.14] - 2026-10-03
 

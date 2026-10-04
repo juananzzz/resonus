@@ -49,7 +49,7 @@ import { CLIENT_NAME } from '@/api/subsonic';
 // filter and asks each library for its share (the rest of the mix cannot be
 // filtered, see `radioCandidates`), and `coverArtUrl` hands back the file on
 // disk when the album is downloaded instead of an address on the server.
-import { COVER, coverArtUrl, getRandomSongs } from '@/api/data';
+import { CACHED_COVER, COVER, coverArtUrl, getRandomSongs } from '@/api/data';
 import { prefetchLyrics } from '@/hooks/useLyrics';
 import { tg } from '@/i18n';
 import { transcodeTarget } from '@/lib/audioQuality';
@@ -623,7 +623,10 @@ function seekActive(sec: number) {
 export function artworkUrlFor(song: Song): string | undefined {
   // A radio has no album to fall back to, but the server may hold an image for
   // the station, and one picked on the device arrives as a file:// path.
-  return coverArtUrl(song.coverArt ?? (song.url ? undefined : song.albumId), COVER.card);
+  const url = coverArtUrl(song.coverArt ?? (song.url ? undefined : song.albumId), COVER.card);
+  // Offline, a cover only in the image cache is no address at all, and the
+  // media session throws on what it cannot parse as a URL.
+  return url?.startsWith(CACHED_COVER) ? undefined : url;
 }
 
 /**

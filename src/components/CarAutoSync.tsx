@@ -9,7 +9,7 @@
  */
 import { useEffect } from 'react';
 
-import { COVER, songCoverUrl, type Song } from '@/api/data';
+import { CACHED_COVER, COVER, songCoverUrl, type Song } from '@/api/data';
 import {
   carAutoAvailable,
   onCarConnected,
@@ -47,6 +47,11 @@ const POSITION_PUSH_MS = 1000;
  */
 const CAR_SEEN_KEY = 'resonus.carSeen';
 
+/** Offline, a cover only in the image cache is no address the car can load. */
+function carArtwork(url: string | undefined): string | undefined {
+  return url && !url.startsWith(CACHED_COVER) ? url : undefined;
+}
+
 /** `live` is what a radio says it is playing, which replaces the title and the
  *  artist and nothing else: the station is not an album. */
 function toCarTrack(song: Song, live?: StreamInfo | null): CarTrack {
@@ -55,7 +60,7 @@ function toCarTrack(song: Song, live?: StreamInfo | null): CarTrack {
     title: live?.title ?? song.title ?? undefined,
     artist: live?.artist ?? song.artist ?? undefined,
     album: song.album || undefined,
-    artworkUrl: songCoverUrl(song, COVER.card) || undefined,
+    artworkUrl: carArtwork(songCoverUrl(song, COVER.card)),
     durationMs: Math.round((song.duration ?? 0) * 1000),
   };
 }
