@@ -9,6 +9,8 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+## [0.8.1-beta.1] - 2026-10-04
+
 ### Added
 
 - The player's ⋯ menu always opens the queue, and devices and speed when their buttons are hidden (#248).
