@@ -27,9 +27,10 @@ export const TABS: { segment: TabSegment; href: string; label: string }[] = [
 let origin: TabSegment = 'index';
 
 /** Called while the tabs are on screen: this is where any new stack starts. */
-export function rememberTab(segment: string | undefined): void {
+export function rememberTab(segment: string | undefined): TabSegment {
   const known = TABS.find((tb) => tb.segment === segment);
   origin = known ? known.segment : 'index';
+  return origin;
 }
 
 export function tabOrigin(): TabSegment {

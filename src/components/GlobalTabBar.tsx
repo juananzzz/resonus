@@ -60,8 +60,9 @@ export function GlobalTabBar() {
   const inTabs = root === '(tabs)' || root === undefined;
   // Where a stack opened from here would belong; the back arrow reads the same
   // thing to know where to let you out (see `tabOrigin`).
-  if (inTabs) rememberTab(segments[1]);
-  const origin = tabOrigin();
+  // From the segments while on a tab: the React Compiler would keep a bare
+  // `tabOrigin()` from the first render, and the bar would never move.
+  const origin = inTabs ? rememberTab(segments[1]) : tabOrigin();
   const current = inTabs ? origin : null;
   /**
    * Going, rather than gone.

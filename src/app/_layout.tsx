@@ -55,7 +55,7 @@ import { useRecentSearches } from '@/store/recentSearches';
 import { APP_FONT_FAMILY, useSettings } from '@/store/settings';
 import { useSongCache } from '@/store/songCache';
 import { useSortPrefs } from '@/store/sortPrefs';
-import { colors, themeMode, useTheme } from '@/theme';
+import { useTheme, useThemeMode, useThemeVersion } from '@/theme';
 
 // Patches Text/TextInput once, before the first render.
 installAppFont();
@@ -134,6 +134,8 @@ export default function RootLayout() {
   // bar, sheets, toast) repaints from here; the screens inside subscribe on
   // their own, because a stack keeps them mounted and out of this render.
   const palette = useTheme();
+  const mode = useThemeMode();
+  const themeVersion = useThemeVersion();
   // The window behind everything the app draws. It shows through for an instant
   // between screens and under an overscroll, and left at the launch colour it
   // was a dark flash in the middle of the light theme.
@@ -280,27 +282,29 @@ export default function RootLayout() {
   }, [keepScreenAwake]);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: palette.background }}>
       <QueryClientProvider client={queryClient}>
         {/* The clock and the battery at the top, and the gesture pill or the
             buttons at the bottom, are painted by the system over our
             background: dark on the light theme, light on the dark one. */}
-        <StatusBar style={themeMode() === 'light' ? 'dark' : 'light'} />
-        <NavigationBar style={themeMode() === 'light' ? 'dark' : 'light'} />
+        <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
+        <NavigationBar style={mode === 'light' ? 'dark' : 'light'} />
         {hydrating ? (
           <View
             style={{
               flex: 1,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: colors.background,
+              backgroundColor: palette.background,
             }}
           >
-            <ActivityIndicator color={colors.accent} size="large" />
+            <ActivityIndicator color={palette.accent} size="large" />
           </View>
         ) : (
           <ErrorBoundary>
-          <View style={{ flex: 1 }}>
+          {/* Keyed on the theme: the React Compiler memoizes what was drawn
+              with `colors`, and a new appearance has to draw everything again. */}
+          <View key={themeVersion} style={{ flex: 1 }}>
             <BarBlurTarget>
             <Stack
               screenOptions={{
@@ -318,7 +322,7 @@ export default function RootLayout() {
                 // between the tap and the screen that was asked for, which is
                 // why the lag grew the more you browsed.
                 freezeOnBlur: true,
-                contentStyle: { backgroundColor: colors.background },
+                contentStyle: { backgroundColor: palette.background },
               }}
             >
               <Stack.Protected guard={ready}>

@@ -571,10 +571,17 @@ export function themeMode(): ThemeMode {
 // ---------------------------------------------------------------------------
 
 let version = 0;
+/** `colors` as of this version: a new object per change, so React Compiler
+ *  memos keyed on what `useTheme()` returns go stale with the theme. */
+let snapshot: Palette = { ...colors };
 const listeners = new Set<() => void>();
 
 function getVersion(): number {
   return version;
+}
+
+function getSnapshot(): Palette {
+  return snapshot;
 }
 
 function subscribe(listener: () => void): () => void {
@@ -606,6 +613,7 @@ function rebuild(): void {
     onAccent: light ? '#FFFFFF' : '#000000',
   });
   version += 1;
+  snapshot = { ...colors };
   for (const listener of listeners) listener();
 }
 
@@ -782,17 +790,25 @@ export function themed<T extends NamedStyles<T> | NamedStyles<any>>(
 }
 
 /**
- * Subscribes a component to the theme, and hands back the live palette.
+ * Subscribes a component to the theme, and hands back the palette in force.
  *
- * Colours are already current wherever they are read from — this is what makes
+ * Colours are already current wherever they are read from; this is what makes
  * React read them again. A component that shows any themed colour needs it,
  * whether it reads `colors.x` inline or through a `themed()` sheet; without it
  * the screen keeps the appearance it was last painted in, which for a stack
  * that stays mounted behind you means until you visit it again.
  */
 export function useTheme(): Palette {
-  useSyncExternalStore(subscribe, getVersion, getVersion);
-  return colors;
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
+
+/**
+ * Bumps on every change of appearance. The React Compiler takes `colors` and
+ * `themed()` sheets for constants, so a component that read them keeps what
+ * it memoized; the root layout keys the app on this to draw it all again.
+ */
+export function useThemeVersion(): number {
+  return useSyncExternalStore(subscribe, getVersion, getVersion);
 }
 
 /**
