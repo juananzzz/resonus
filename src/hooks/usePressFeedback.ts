@@ -38,10 +38,7 @@ export function usePressFeedback(): {
   const dim = useSharedValue(1);
 
   const onPressIn = useCallback(() => {
-    dim.value = withDelay(
-      motion.duration.press,
-      withTiming(PRESSED, { duration: motion.duration.press }),
-    );
+    dim.set(withDelay(motion.duration.press, withTiming(PRESSED, { duration: motion.duration.press })));
   }, [dim]);
 
   const onPressOut = useCallback(() => {
@@ -49,7 +46,7 @@ export function usePressFeedback(): {
     // nothing to come back from, and letting it play out after the finger has
     // gone is the flash this exists to avoid.
     cancelAnimation(dim);
-    dim.value = withTiming(1, { duration: motion.duration.exit });
+    dim.set(withTiming(1, { duration: motion.duration.exit }));
   }, [dim]);
 
   const style = useAnimatedStyle(() => ({ opacity: dim.value }));

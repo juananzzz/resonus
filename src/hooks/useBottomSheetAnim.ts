@@ -34,16 +34,16 @@ export function useBottomSheetAnim(open: boolean, onClose?: () => void) {
 
   useEffect(() => {
     if (open) {
-      progress.value = withTiming(1, TIMING_IN);
+      progress.set(withTiming(1, TIMING_IN));
     } else {
-      progress.value = 0;
+      progress.set(0);
     }
   }, [open, progress]);
 
   const dismiss = (after: () => void) => {
-    progress.value = withTiming(0, TIMING_OUT, (f) => {
+    progress.set(withTiming(0, TIMING_OUT, (f) => {
       if (f) scheduleOnRN(after);
-    });
+    }));
   };
 
   const backdropStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
@@ -51,7 +51,7 @@ export function useBottomSheetAnim(open: boolean, onClose?: () => void) {
     transform: [{ translateY: (1 - progress.value) * sheetH.value }],
   }));
   const onSheetLayout = (e: LayoutChangeEvent) => {
-    sheetH.value = e.nativeEvent.layout.height;
+    sheetH.set(e.nativeEvent.layout.height);
   };
 
   /**
@@ -73,17 +73,17 @@ export function useBottomSheetAnim(open: boolean, onClose?: () => void) {
     .activeOffsetY(10)
     .failOffsetY(-10)
     .onUpdate((e) => {
-      progress.value = Math.min(1, Math.max(0, 1 - e.translationY / sheetH.value));
+      progress.set(Math.min(1, Math.max(0, 1 - e.translationY / sheetH.value)));
     })
     .onEnd((e) => {
       const closes =
         e.translationY > sheetH.value * DISMISS_RATIO || e.velocityY > DISMISS_VELOCITY;
       if (closes && onClose) {
-        progress.value = withTiming(0, TIMING_OUT, (f) => {
+        progress.set(withTiming(0, TIMING_OUT, (f) => {
           if (f) scheduleOnRN(onClose);
-        });
+        }));
       } else {
-        progress.value = withTiming(1, TIMING_IN);
+        progress.set(withTiming(1, TIMING_IN));
       }
     });
 

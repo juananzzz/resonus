@@ -392,7 +392,7 @@ export default function PlayerScreen() {
   useEffect(() => {
     // reduceMotion Never: the color fade is part of the look and some devices
     // (battery saver / "reduce motion") would skip it.
-    bgColor.value = withTiming(targetBg, { duration: motion.duration.tint, reduceMotion: ReduceMotion.Never });
+    bgColor.set(withTiming(targetBg, { duration: motion.duration.tint, reduceMotion: ReduceMotion.Never }));
   }, [targetBg, bgColor]);
   const bgStyle = useAnimatedStyle(() => ({ backgroundColor: bgColor.value }));
   // Same query used by the lyrics card (cached): here only to know if there
@@ -481,10 +481,10 @@ export default function PlayerScreen() {
     const asRemembered =
       !!g && g.pageH === pageH && g.coverH === coverBoxH && g.coverW === coverBoxW && g.starsH === starsH;
     if (asRemembered) coverAppear.set(1);
-    else coverAppear.value = withTiming(1, {
-        duration: motion.duration.fade,
-        reduceMotion: motion.reduceMotion.essential,
-      });
+    else coverAppear.set(withTiming(1, {
+      duration: motion.duration.fade,
+      reduceMotion: motion.reduceMotion.essential,
+    }));
   }, [coverStable, pageH, coverBoxH, coverBoxW, starsH, coverAppear]);
   useEffect(() => {
     const id = setTimeout(() => setCoverStable(true), 300);
@@ -613,8 +613,8 @@ export default function PlayerScreen() {
    */
   const stepSV = useSharedValue(screenW);
   useEffect(() => {
-    stepSV.value = screenW;
-    offset.value = -spinsSV.value * screenW;
+    stepSV.set(screenW);
+    offset.set(-spinsSV.value * screenW);
   }, [screenW, stepSV, offset, spinsSV]);
   /**
    * The strip travelled, so the song follows it. Where to is worked out here
@@ -636,8 +636,8 @@ export default function PlayerScreen() {
           ? i - 1
           : -1;
     if (to < 0) {
-      spinsSV.value -= advance;
-      offset.value = withSpring(-spinsSV.value * screenW, { damping: 20, stiffness: 200 });
+      spinsSV.set(spinsSV.get() - advance);
+      offset.set(withSpring(-spinsSV.value * screenW, { damping: 20, stiffness: 200 }));
       return;
     }
     setSpins((n) => n + advance);
@@ -650,7 +650,7 @@ export default function PlayerScreen() {
     .activeOffsetX([-20, 20])
     .failOffsetY([-20, 20])
     .onStart(() => {
-      dragBase.value = offset.value;
+      dragBase.set(offset.value);
     })
     .onUpdate((e) => {
       // Dragging right reveals the previous track, left reveals the next. Past
@@ -662,7 +662,7 @@ export default function PlayerScreen() {
       const rest = spinsSV.value;
       const min = canNext ? -(rest + 1) * screenW : -rest * screenW;
       const max = canPrev ? -(rest - 1) * screenW : -rest * screenW;
-      offset.value = Math.min(max, Math.max(min, raw));
+      offset.set(Math.min(max, Math.max(min, raw)));
     })
     .onEnd((e) => {
       const swipe = screenW * SWIPE_SHARE;
@@ -676,20 +676,22 @@ export default function PlayerScreen() {
         // track changes at the end. If React lags, it's not noticeable: the
         // centered panel already shows the right cover and the swap happens
         // in the hidden panel.
-        offset.value = withTiming(
-          target,
-          { duration: motion.duration.move, easing: motion.easing.move },
-          (finished) => {
-            // Counted where the strip actually arrived, and only if it did: a
-            // travel cut short by the next swipe never happened.
-            if (finished) {
-              spinsSV.value = base + advance;
-              scheduleOnRN(commitSwipe, advance as 1 | -1);
-            }
-          },
+        offset.set(
+          withTiming(
+            target,
+            { duration: motion.duration.move, easing: motion.easing.move },
+            (finished) => {
+              // Counted where the strip actually arrived, and only if it did: a
+              // travel cut short by the next swipe never happened.
+              if (finished) {
+                spinsSV.set(base + advance);
+                scheduleOnRN(commitSwipe, advance as 1 | -1);
+              }
+            },
+          ),
         );
       } else {
-        offset.value = withSpring(target, { damping: 20, stiffness: 200 });
+        offset.set(withSpring(target, { damping: 20, stiffness: 200 }));
       }
     });
   // Cover tap shows lyrics (if any). Coexists with swipe: tap only wins if
@@ -717,10 +719,11 @@ export default function PlayerScreen() {
     const next = !(favIds ? favIds.has(track.id) : !!track.starred);
     haptic('medium');
     applyStarChange('song', track.id, next, track);
+    const done = next ? t('Added to favorites') : t('Removed from favorites');
     try {
       if (next) await star(track.id);
       else await unstar(track.id);
-      useToast.getState().show(next ? t('Added to favorites') : t('Removed from favorites'));
+      useToast.getState().show(done);
     } catch {
       resyncFavorites();
       useToast.getState().show(t("Couldn't complete the action"));
@@ -801,15 +804,15 @@ export default function PlayerScreen() {
     .activeOffsetY(15)
     .failOffsetX([-25, 25])
     .onUpdate((e) => {
-      transY.value = Math.max(0, e.translationY);
+      transY.set(Math.max(0, e.translationY));
     })
     .onEnd((e) => {
       if (e.translationY > DISMISS_THRESHOLD || e.velocityY > 800) {
-        transY.value = withTiming(screenH, { duration: motion.duration.move }, (f) => {
+        transY.set(withTiming(screenH, { duration: motion.duration.move }, (f) => {
           if (f) scheduleOnRN(closePlayer);
-        });
+        }));
       } else {
-        transY.value = withSpring(0, { damping: 20, stiffness: 200 });
+        transY.set(withSpring(0, { damping: 20, stiffness: 200 }));
       }
     });
   // While it is being pulled up out of the mini player, the finger places it
@@ -817,7 +820,7 @@ export default function PlayerScreen() {
   // A pull that was let go of ends with the player closing while still held
   // at the bottom; it is released here, once it is off the screen for good.
   useEffect(() => () => {
-    revealOffset.value = -1;
+    revealOffset.set(-1);
   }, []);
   const rootStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: revealOffset.value >= 0 ? revealOffset.value : transY.value }],
@@ -832,10 +835,10 @@ export default function PlayerScreen() {
     transform: [{ translateY: -scrollY.value }],
   }));
   const onScroll = useAnimatedScrollHandler((e) => {
-    scrollY.value = e.contentOffset.y;
+    scrollY.set(e.contentOffset.y);
     const next = e.contentOffset.y <= 4;
     if (next !== atTopSV.value) {
-      atTopSV.value = next;
+      atTopSV.set(next);
       // Only on the crossing, not on every frame: this one is a React state,
       // it decides whether the drag-to-dismiss gesture is armed.
       scheduleOnRN(setAtTop, next);

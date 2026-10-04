@@ -55,7 +55,11 @@ export function useAlbumSort<T extends Album>(source: T[], persistKey: string): 
     if (field === 'alpha') arr.sort((a, b) => sign * cmp(a.name, b.name));
     // An album with no year at all counts as year zero, which is where it was
     // already going: the split that feeds these lists says the same.
-    else arr.sort((a, b) => sign * ((a.year ?? 0) - (b.year ?? 0)) || cmp(a.name, b.name));
+    else
+      arr.sort((a, b) => {
+        const byYear = sign * ((a.year ?? 0) - (b.year ?? 0));
+        return byYear !== 0 ? byYear : cmp(a.name, b.name);
+      });
     return arr;
   }, [source, field, dir]);
 

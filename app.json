@@ -94,7 +94,7 @@
     ],
     "experiments": {
       "typedRoutes": false,
-      "reactCompiler": false
+      "reactCompiler": true
     },
     "extra": {
       "router": {}

@@ -158,7 +158,7 @@ export default function ArtistScreen() {
   const { width: screenW, height: screenH } = useScreenSize();
   const headerH = headerHeight(screenW, screenH);
 
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollY = useState(() => new Animated.Value(0))[0];
   const barContentOpacity = scrollY.interpolate({
     inputRange: [headerH * 0.45, headerH * 0.75],
     outputRange: [0, 1],
@@ -276,13 +276,11 @@ export default function ArtistScreen() {
       return;
     }
     setShuffling(true);
-    try {
-      const songs = await fetchAlbumSongs();
-      if (!songs || songs.length === 0) return;
-      await playQueue(songs, 0, name, `/artist/${id}`, { shuffled: true });
-    } finally {
-      setShuffling(false);
-    }
+    await fetchAlbumSongs()
+      .then((songs) => {
+        if (songs && songs.length > 0) return playQueue(songs, 0, name, `/artist/${id}`, { shuffled: true });
+      })
+      .finally(() => setShuffling(false));
   }
 
   /**
@@ -314,11 +312,7 @@ export default function ArtistScreen() {
    */
   async function gatherSongs(list: typeof albums = albums) {
     setGathering(true);
-    try {
-      return await fetchAlbumSongs(list);
-    } finally {
-      setGathering(false);
-    }
+    return fetchAlbumSongs(list).finally(() => setGathering(false));
   }
 
   async function addToPlaylist() {

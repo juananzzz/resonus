@@ -36,12 +36,11 @@ export function StarRating({ id, rating, size = 22, onRated }: Props) {
     setBusy(true);
     try {
       await setRating(id, next);
-      onRated?.(next);
+      if (onRated) onRated(next);
     } catch {
       setValue(prev); // revert on failure
-    } finally {
-      setBusy(false);
     }
+    setBusy(false);
   }
 
   return (

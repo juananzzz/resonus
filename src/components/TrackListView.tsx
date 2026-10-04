@@ -195,6 +195,68 @@ interface Props {
   onPlay: (startIndex: number, opts?: { shuffled?: boolean }) => void | Promise<void | boolean>;
 }
 
+/**
+ * The hidden "search in list" bar: the pull-down that reveals it and the
+ * scroll that hides it again. A hook of its own because its callbacks read
+ * refs, and the React Compiler skips whichever function holds them.
+ */
+function useSearchReveal(searchBar: boolean, searching: boolean, scrollY: Animated.Value) {
+  const [revealed, setRevealed] = useState(false);
+  /** Last real scroll offset (the gesture only reveals at the top). */
+  const lastOffsetY = useRef(0);
+  const searchH = useState(() => new Animated.Value(0))[0];
+
+  // `setRevealed` is async: the gesture fires `onChange` many times per drag,
+  // and several would pass the `!revealed` guard before the re-render, each
+  // triggering haptic. The ref updates instantly and stops the rest.
+  const revealedRef = useRef(false);
+
+  function revealSearchBar() {
+    if (revealedRef.current) return;
+    revealedRef.current = true;
+    haptic('light');
+    setRevealed(true);
+    Animated.timing(searchH, { toValue: SEARCH_H, duration: motion.duration.fade, useNativeDriver: false }).start();
+  }
+
+  function collapseSearchBar() {
+    revealedRef.current = false;
+    setRevealed(false);
+    Animated.timing(searchH, { toValue: 0, duration: motion.duration.fade, useNativeDriver: false }).start();
+  }
+
+  // Simultaneous pan with the list scroll: doesn't steal the gesture, just
+  // observes. Android doesn't fire overscroll events (the list clamps offset
+  // at 0), so the "pull down at the top" must be detected separately. The
+  // simultaneity is declared on the list (simultaneousHandlers prop with the
+  // gesture ref): without it, native scroll cancels this Pan before it starts.
+  const revealPanRef = useRef<GestureType | undefined>(undefined);
+  const revealPan = Gesture.Pan()
+    .withRef(revealPanRef)
+    .runOnJS(true)
+    // Only downward drags: upward ones (normal scroll) cancel it.
+    .activeOffsetY(10)
+    .failOffsetY(-10)
+    .onChange((e) => {
+      if (!searchBar || searching || revealed) return;
+      if (lastOffsetY.current <= 1 && e.translationY > 60) revealSearchBar();
+    });
+
+  const onScroll = Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+    // The listener still runs on this side: a native event is delivered to
+    // JS as well, it just no longer has to be for the animation to move.
+    useNativeDriver: true,
+    listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = e.nativeEvent.contentOffset.y;
+      lastOffsetY.current = y;
+      // Scrolling down with the bar open collapses it.
+      if (revealed && !searching && y > 30) collapseSearchBar();
+    },
+  });
+
+  return { revealed, searchH, revealPan, revealPanRef, collapseSearchBar, onScroll };
+}
+
 export function TrackListView({
   title,
   subtitle,
@@ -264,7 +326,7 @@ export function TrackListView({
         ? () => router.push(`/artist/${subtitleTargets[0].id}`)
         : undefined;
 
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollY = useState(() => new Animated.Value(0))[0];
 
   // ── In-list search ──────────────────────────────────────────────────────
   // The bar is rendered collapsed (height 0) above the header; a pull-down
@@ -273,49 +335,14 @@ export function TrackListView({
   const listRef = useRef<GHFlatList<Song>>(null);
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [revealed, setRevealed] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [descriptionHasMore, setDescriptionHasMore] = useState(false);
-  /** Last real scroll offset (the gesture only reveals at the top). */
-  const lastOffsetY = useRef(0);
-  const searchH = useRef(new Animated.Value(0)).current;
   const searchBar = !!searchable && songs.length > 0;
-
-  // `setRevealed` is async: the gesture fires `onChange` many times per drag,
-  // and several would pass the `!revealed` guard before the re-render, each
-  // triggering haptic. The ref updates instantly and stops the rest.
-  const revealedRef = useRef(false);
-
-  function revealSearchBar() {
-    if (revealedRef.current) return;
-    revealedRef.current = true;
-    haptic('light');
-    setRevealed(true);
-    Animated.timing(searchH, { toValue: SEARCH_H, duration: motion.duration.fade, useNativeDriver: false }).start();
-  }
-
-  function collapseSearchBar() {
-    revealedRef.current = false;
-    setRevealed(false);
-    Animated.timing(searchH, { toValue: 0, duration: motion.duration.fade, useNativeDriver: false }).start();
-  }
-
-  // Simultaneous pan with the list scroll: doesn't steal the gesture, just
-  // observes. Android doesn't fire overscroll events (the list clamps offset
-  // at 0), so the "pull down at the top" must be detected separately. The
-  // simultaneity is declared on the list (simultaneousHandlers prop with the
-  // gesture ref): without it, native scroll cancels this Pan before it starts.
-  const revealPanRef = useRef<GestureType | undefined>(undefined);
-  const revealPan = Gesture.Pan()
-    .withRef(revealPanRef)
-    .runOnJS(true)
-    // Only downward drags: upward ones (normal scroll) cancel it.
-    .activeOffsetY(10)
-    .failOffsetY(-10)
-    .onChange((e) => {
-      if (!searchBar || searching || revealed) return;
-      if (lastOffsetY.current <= 1 && e.translationY > 60) revealSearchBar();
-    });
+  const { revealed, searchH, revealPan, revealPanRef, collapseSearchBar, onScroll } = useSearchReveal(
+    searchBar,
+    searching,
+    scrollY,
+  );
 
   // ── Multi-select ────────────────────────────────────────────────────────
   /**
@@ -536,17 +563,7 @@ export function TrackListView({
           },
         ]}
         scrollEventThrottle={16}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-          // The listener still runs on this side: a native event is delivered to
-          // JS as well, it just no longer has to be for the animation to move.
-          useNativeDriver: true,
-          listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-            const y = e.nativeEvent.contentOffset.y;
-            lastOffsetY.current = y;
-            // Scrolling down with the bar open collapses it.
-            if (revealed && !searching && y > 30) collapseSearchBar();
-          },
-        })}
+        onScroll={onScroll}
         ListHeaderComponent={
           <View>
             {searchBar ? (

@@ -5,7 +5,7 @@
  * instead of disappearing instantly, to avoid flickering while the modal slides up.
  */
 import { useSegments } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -30,10 +30,10 @@ export function GlobalMiniPlayer() {
 
   // Keep the last visible position so it doesn't jump while fading out
   // when opening a full-screen modal.
-  const lastBottom = useRef(bottom);
-  if (visible) lastBottom.current = bottom;
+  const [lastBottom, setLastBottom] = useState(bottom);
+  if (visible && bottom !== lastBottom) setLastBottom(bottom);
 
-  const opacity = useRef(new Animated.Value(1)).current;
+  const opacity = useState(() => new Animated.Value(1))[0];
   useEffect(() => {
     Animated.timing(opacity, {
       toValue: visible ? 1 : 0,
@@ -44,7 +44,7 @@ export function GlobalMiniPlayer() {
 
   return (
     <Animated.View
-      style={{ position: 'absolute', left: 0, right: 0, bottom: lastBottom.current, opacity }}
+      style={{ position: 'absolute', left: 0, right: 0, bottom: visible ? bottom : lastBottom, opacity }}
       pointerEvents={visible ? 'box-none' : 'none'}
     >
       <MiniPlayer />

@@ -15,6 +15,10 @@ Releases before 0.2.1 are only listed on the
 - An optional Queue button at the top of Home, off by default.
 - An empty queue offers to bring over the server's saved queue.
 
+### Changed
+
+- Screens redraw less, so scrolling and the player should feel smoother.
+
 ### Fixed
 
 - Local M4A and FLAC files show their titles, artists, albums and covers (#249).

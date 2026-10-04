@@ -91,28 +91,28 @@ export function MiniPlayer() {
   // -1) by the player as it unmounts, or it would flash back up for a frame.
   const cancelReveal = () => {
     if (router.canGoBack()) router.back();
-    else revealOffset.value = -1;
+    else revealOffset.set(-1);
   };
   const pan = Gesture.Pan()
     .minDistance(10)
     .onUpdate((e) => {
       // Once the player is coming up, the pull is only ever vertical.
       if (revealing.value) {
-        revealOffset.value = Math.min(screenH, Math.max(0, screenH + e.translationY + REVEAL_START));
+        revealOffset.set(Math.min(screenH, Math.max(0, screenH + e.translationY + REVEAL_START)));
         return;
       }
       if (Math.abs(e.translationX) > Math.abs(e.translationY)) {
-        translateX.value = e.translationX;
-        translateY.value = 0;
+        translateX.set(e.translationX);
+        translateY.set(0);
       } else if (e.translationY >= 0) {
-        translateY.value = e.translationY;
-        translateX.value = 0;
+        translateY.set(e.translationY);
+        translateX.set(0);
       } else {
-        translateX.value = 0;
-        translateY.value = 0;
+        translateX.set(0);
+        translateY.set(0);
         if (e.translationY < -REVEAL_START) {
-          revealing.value = true;
-          revealOffset.value = screenH;
+          revealing.set(true);
+          revealOffset.set(screenH);
           scheduleOnRN(startReveal);
         }
       }
@@ -123,38 +123,38 @@ export function MiniPlayer() {
         const swipeX = screenW * SWIPE_SHARE;
         if (e.translationX < -swipeX || e.velocityX < -800) scheduleOnRN(next);
         else if (e.translationX > swipeX || e.velocityX > 800) scheduleOnRN(previous);
-        translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
-        translateY.value = 0;
+        translateX.set(withSpring(0, { damping: 20, stiffness: 200 }));
+        translateY.set(0);
       } else if (revealing.value) {
-        revealing.value = false;
+        revealing.set(false);
         const opened = -e.translationY > screenH * REVEAL_COMMIT || e.velocityY < -600;
         if (opened) {
-          revealOffset.value = withTiming(0, { duration: motion.duration.move }, () => {
-            revealOffset.value = -1;
-          });
+          revealOffset.set(withTiming(0, { duration: motion.duration.move }, () => {
+            revealOffset.set(-1);
+          }));
         } else {
-          revealOffset.value = withTiming(screenH, { duration: motion.duration.move }, (f) => {
+          revealOffset.set(withTiming(screenH, { duration: motion.duration.move }, (f) => {
             if (f) scheduleOnRN(cancelReveal);
-            else revealOffset.value = -1;
-          });
+            else revealOffset.set(-1);
+          }));
         }
       } else if (e.translationY > DISMISS_Y || e.velocityY > 800) {
-        translateY.value = withTiming(screenH, { duration: motion.duration.move }, (finished) => {
+        translateY.set(withTiming(screenH, { duration: motion.duration.move }, (finished) => {
           if (finished) scheduleOnRN(reset);
-        });
+        }));
       } else {
-        translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
-        translateY.value = withSpring(0, { damping: 20, stiffness: 200 });
+        translateX.set(withSpring(0, { damping: 20, stiffness: 200 }));
+        translateY.set(withSpring(0, { damping: 20, stiffness: 200 }));
       }
     })
     // A pull that was cut off (the system took the touch) still ends somewhere:
     // opened, since the player is already up on the screen.
     .onFinalize(() => {
       if (!revealing.value) return;
-      revealing.value = false;
-      revealOffset.value = withTiming(0, { duration: motion.duration.move }, () => {
-        revealOffset.value = -1;
-      });
+      revealing.set(false);
+      revealOffset.set(withTiming(0, { duration: motion.duration.move }, () => {
+        revealOffset.set(-1);
+      }));
     });
   // The entire card only moves (and fades) when dismissed downward.
   const cardStyle = useAnimatedStyle(() => ({
@@ -171,8 +171,8 @@ export function MiniPlayer() {
   // When the song changes (or playback resumes) we return the card to its place
   // in case it was offset from a previous gesture.
   useEffect(() => {
-    translateX.value = 0;
-    translateY.value = 0;
+    translateX.set(0);
+    translateY.set(0);
   }, [song?.id, translateX, translateY]);
 
   // A radio has no album, but the station may carry its own image.

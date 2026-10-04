@@ -7,7 +7,7 @@
  */
 import Icon from '@/components/Icon';
 import { LinearGradient } from 'expo-linear-gradient';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -130,6 +130,16 @@ export function CoverLyrics({ size, onClose }: { size: number; onClose: () => vo
   );
 }
 
+/** A tap, with where it landed. Out of the component because what it calls
+ *  reads refs, and the React Compiler skips whichever function holds that. */
+function useTapAt(onTap: (y: number) => void) {
+  return Gesture.Tap()
+    .maxDuration(300)
+    .onEnd((e) => {
+      scheduleOnRN(onTap, e.y);
+    });
+}
+
 /**
  * Reusable karaoke list (card and full screen): the current line lights up
  * and grows a little (spring), the rest are dimmed. Auto-scroll keeps the
@@ -188,7 +198,9 @@ export function SyncedLyricsView({
   /** What `onMeasure` needs to know without being rebuilt on every line. */
   const currentRef = useRef(-1);
 
-  currentRef.current = current;
+  useLayoutEffect(() => {
+    currentRef.current = current;
+  }, [current]);
 
   // In full screen we anchor the active line near the center (and pad
   // top/bottom) so that when the song starts, the lyrics begin centered and
@@ -241,11 +253,7 @@ export function SyncedLyricsView({
     [lines, onLineTap, liveY],
   );
 
-  const tapGesture = Gesture.Tap()
-    .maxDuration(300)
-    .onEnd((e) => {
-      scheduleOnRN(handleTap, e.y);
-    });
+  const tapGesture = useTapAt(handleTap);
 
   useEffect(() => {
     if (current < 0 || viewH === 0 || userScroll.current) return;
@@ -259,12 +267,12 @@ export function SyncedLyricsView({
     // ignores animations. Opening part way through a song is the same journey
     // as any other, taken as soon as there is somewhere to go rather than at
     // the next line.
-    targetY.value = liveY.value;
-    targetY.value = withTiming(dest, {
+    targetY.set(liveY.value);
+    targetY.set(withTiming(dest, {
       duration: motion.duration.scroll,
       easing: motion.easing.move,
       reduceMotion: motion.reduceMotion.essential,
-    });
+    }));
   }, [current, viewH, anchor, targetY, liveY, placed]);
 
   useEffect(
@@ -371,18 +379,18 @@ const LyricRow = memo(({
   // reduceMotion Never: the transition between lines (karaoke) is the essence
   // of the screen; without this, devices with "reduce motion" skip it.
   useEffect(() => {
-    focus.value = withSpring(active ? 1 : 0, {
+    focus.set(withSpring(active ? 1 : 0, {
       damping: 20,
       stiffness: 180,
       mass: 0.5,
       reduceMotion: ReduceMotion.Never,
-    });
+    }));
   }, [active, focus]);
   useEffect(() => {
-    dim.value = withTiming(past ? 0.85 : active ? 1 : next ? 0.55 : 0.3, {
+    dim.set(withTiming(past ? 0.85 : active ? 1 : next ? 0.55 : 0.3, {
       duration: motion.duration.enter,
       reduceMotion: motion.reduceMotion.essential,
-    });
+    }));
   }, [active, past, next, dim]);
   // The growth (8%) is compensated by the right margin of `content` so the
   // active line, scaling from the left, doesn't overflow the edge.

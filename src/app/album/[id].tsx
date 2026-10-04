@@ -171,9 +171,9 @@ export default function AlbumScreen() {
   // screen stays mounted for a bit with the album already deleted: without this
   // "Unknown album" and 0 songs would flash before going away. Freezing it, the
   // screen simply slides out as it was.
-  const lastGood = useRef(fresh);
-  if (fresh && fresh.songs.length > 0) lastGood.current = fresh;
-  const data = vanished ? (lastGood.current ?? fresh) : fresh;
+  const [lastGood, setLastGood] = useState(fresh);
+  if (fresh && fresh.songs.length > 0 && fresh !== lastGood) setLastGood(fresh);
+  const data = vanished ? (lastGood ?? fresh) : fresh;
 
   const discHeaders = useMemo(
     () =>

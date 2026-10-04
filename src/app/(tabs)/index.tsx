@@ -672,11 +672,7 @@ function HomeChips({ offline }: { offline: boolean }) {
   async function onShuffle() {
     if (shuffling) return;
     setShuffling(true);
-    try {
-      await playShuffle();
-    } finally {
-      setShuffling(false);
-    }
+    await playShuffle().finally(() => setShuffling(false));
   }
 
   // No chips means no row: this replaces the master toggle that was there.

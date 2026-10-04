@@ -51,6 +51,8 @@ export function FavoriteButton({ id, type = 'song', starred, size = 22, undo }: 
     }
     const nextFav = !fav;
     setFav(nextFav); // optimistic update
+    const done = nextFav ? t('Added to favorites') : t('Removed from favorites');
+    const unpinAlbum = !nextFav && type === 'album';
     setBusy(true);
     try {
       if (nextFav) await star(id, type);
@@ -59,15 +61,14 @@ export function FavoriteButton({ id, type = 'song', starred, size = 22, undo }: 
       // list to refresh when something needs it (see `favoritesCache`).
       applyStarChange(type, id, nextFav);
       // Albums are only listed as favourites, so the pin would outlive the row.
-      if (!nextFav && type === 'album') usePins.getState().unpin(`album:${id}`);
-      toast(nextFav ? t('Added to favorites') : t('Removed from favorites'));
+      if (unpinAlbum) usePins.getState().unpin(`album:${id}`);
+      toast(done);
     } catch {
       setFav(!nextFav); // revert on failure
       resyncFavorites();
       toast(t("Couldn't complete the action"));
-    } finally {
-      setBusy(false);
     }
+    setBusy(false);
   }
 
   return (
