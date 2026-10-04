@@ -12,6 +12,9 @@ import { useSongCache } from '@/store/songCache';
 import { fontSize, themed } from '@/theme';
 
 export function AudioQualityBadge({ song }: { song: Song }) {
+  // Out of the React Compiler: `localSourceFor` reads the two settings below
+  // from their stores, and a memo would keep the answer they first gave.
+  'use no memo';
   // Streaming quality depends on the current network (Wi-Fi or mobile data).
   const cellular = useNetworkType((s) => s.cellular);
   const maxBitRate = useSettings((s) => (cellular ? s.maxBitRateCellular : s.maxBitRate));

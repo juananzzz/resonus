@@ -63,6 +63,11 @@ import {
 import { useSongMenu } from '@/store/songMenu';
 import { colors, fontSize, radius, spacing, themed, useTheme, tracking } from '@/theme';
 
+/** The hour on the clock, read when the greeting's timer says so. */
+function readClock(): { hour: number } {
+  return { hour: new Date().getHours() };
+}
+
 /**
  * How wide a quick tile wants to be, in dp.
  *
@@ -866,8 +871,10 @@ export default function HomeScreen() {
   // Catalan say the same thing for the last two ("Buenas noches" / "Bona nit"),
   // which is why splitting them costs those two nothing.
   const [morning, afternoon, evening] = greetingHours(language);
-  const [slotTick, nextSlot] = useReducer((n: number) => n + 1, 0);
-  const hour = new Date().getHours();
+  // A new object on every tick, so the timer below re-arms even when it fires
+  // a moment early and the hour has not moved.
+  const [clock, nextSlot] = useReducer(readClock, null, readClock);
+  const hour = clock.hour;
   const byHour =
     hour >= morning && hour < afternoon
       ? t('Good morning')
@@ -899,7 +906,7 @@ export default function HomeScreen() {
     }
     const id = setTimeout(nextSlot, Math.max(1000, at.getTime() - now.getTime()));
     return () => clearTimeout(id);
-  }, [slotTick, morning, afternoon, evening, showGreeting, customGreeting]);
+  }, [clock, morning, afternoon, evening, showGreeting, customGreeting]);
 
   // Detects if the server is unreachable (shares cache with the "newest" section).
   // Online only: locally there is no server and the key is also used by QuickGrid.

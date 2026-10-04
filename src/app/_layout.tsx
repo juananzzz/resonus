@@ -302,9 +302,11 @@ export default function RootLayout() {
           </View>
         ) : (
           <ErrorBoundary>
-          {/* Keyed on the theme: the React Compiler memoizes what was drawn
-              with `colors`, and a new appearance has to draw everything again. */}
-          <View key={themeVersion} style={{ flex: 1 }}>
+          {/* Keyed on what everything reads from module state while drawing:
+              the colours, the font patched into JSX, and offline mode (which
+              cover URL, which source). The React Compiler keeps whatever it
+              memoized, so a change of any of them draws the app again. */}
+          <View key={`${themeVersion}:${appFont}:${offline}`} style={{ flex: 1 }}>
             <BarBlurTarget>
             <Stack
               screenOptions={{

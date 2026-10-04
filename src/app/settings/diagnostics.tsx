@@ -27,6 +27,9 @@ import { useSettings } from '@/store/settings';
 import { fontSize, spacing, themed, useTheme } from '@/theme';
 
 export default function DiagnosticsSettings() {
+  // Out of the React Compiler: every number here is read from module state,
+  // and `tick` only redraws it if nothing was memoized.
+  'use no memo';
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
