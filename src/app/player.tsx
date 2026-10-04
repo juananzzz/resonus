@@ -180,7 +180,9 @@ function SleepButton({ onPress, color }: { onPress: () => void; color: string })
   const t = useT();
   const endsAt = usePlayerStore((s) => s.sleepEndsAt);
   const atSongEnd = usePlayerStore((s) => s.sleepAtSongEnd);
-  const [, tick] = useReducer((n: number) => n + 1, 0);
+  // The clock in state, not read while drawing: a memo keyed on `endsAt` alone
+  // would keep the minutes it first showed.
+  const [now, tick] = useReducer(() => Date.now(), 0, () => Date.now());
   useEffect(() => {
     if (!endsAt) return;
     const id = setInterval(tick, 15_000);
@@ -198,7 +200,7 @@ function SleepButton({ onPress, color }: { onPress: () => void; color: string })
       <Icon name="moon-outline" size={26} color={on ? colors.accent : color} />
       {endsAt ? (
         <Text style={styles.speedText}>
-          {`${Math.max(1, Math.ceil((endsAt - Date.now()) / 60_000))}′`}
+          {`${Math.max(1, Math.ceil((endsAt - now) / 60_000))}′`}
         </Text>
       ) : null}
     </Pressable>
@@ -210,9 +212,9 @@ function usePaneStyle(offset: SharedValue<number>, k: number, step: SharedValue<
     // A screen's width, and it is a shared value rather than a constant
     // because the screen can be turned while the player is open: read once,
     // the strip would keep parking its neighbours a portrait width away (#131).
-    const w = step.value;
-    const m = k + 3 * Math.round((-offset.value / w - k) / 3);
-    const x = m * w + offset.value;
+    const w = step.get();
+    const m = k + 3 * Math.round((-offset.get() / w - k) / 3);
+    const x = m * w + offset.get();
     return {
       transform: [{ translateX: x }],
       opacity: interpolate(Math.abs(x), [0, w * 0.6], [1, 0.4], Extrapolation.CLAMP),
@@ -394,7 +396,7 @@ export default function PlayerScreen() {
     // (battery saver / "reduce motion") would skip it.
     bgColor.set(withTiming(targetBg, { duration: motion.duration.tint, reduceMotion: ReduceMotion.Never }));
   }, [targetBg, bgColor]);
-  const bgStyle = useAnimatedStyle(() => ({ backgroundColor: bgColor.value }));
+  const bgStyle = useAnimatedStyle(() => ({ backgroundColor: bgColor.get() }));
   // Same query used by the lyrics card (cached): here only to know if there
   // are lyrics and let the card peek below the first page.
   const { data: lyrics } = useLyrics(canLyrics ? (song ?? undefined) : undefined);
@@ -558,7 +560,7 @@ export default function PlayerScreen() {
     setCoverStable(true);
     coverAppear.set(1);
   }, [isFocused, coverAppear]);
-  const coverAppearStyle = useAnimatedStyle(() => ({ opacity: coverAppear.value }));
+  const coverAppearStyle = useAnimatedStyle(() => ({ opacity: coverAppear.get() }));
   // The swipe-to-close gesture should only work when scrolled to the top;
   // otherwise it would steal the gesture when returning from the lyrics card.
   const [atTop, setAtTop] = useState(true);
@@ -614,7 +616,7 @@ export default function PlayerScreen() {
   const stepSV = useSharedValue(screenW);
   useEffect(() => {
     stepSV.set(screenW);
-    offset.set(-spinsSV.value * screenW);
+    offset.set(-spinsSV.get() * screenW);
   }, [screenW, stepSV, offset, spinsSV]);
   /**
    * The strip travelled, so the song follows it. Where to is worked out here
@@ -637,7 +639,7 @@ export default function PlayerScreen() {
           : -1;
     if (to < 0) {
       spinsSV.set(spinsSV.get() - advance);
-      offset.set(withSpring(-spinsSV.value * screenW, { damping: 20, stiffness: 200 }));
+      offset.set(withSpring(-spinsSV.get() * screenW, { damping: 20, stiffness: 200 }));
       return;
     }
     setSpins((n) => n + advance);
@@ -650,7 +652,7 @@ export default function PlayerScreen() {
     .activeOffsetX([-20, 20])
     .failOffsetY([-20, 20])
     .onStart(() => {
-      dragBase.set(offset.value);
+      dragBase.set(offset.get());
     })
     .onUpdate((e) => {
       // Dragging right reveals the previous track, left reveals the next. Past
@@ -658,8 +660,8 @@ export default function PlayerScreen() {
       // is clamped so no (absent) neighbor panel can slide into view.
       const goingPrev = e.translationX > 0;
       const blocked = goingPrev ? !canPrev : !canNext;
-      const raw = dragBase.value + (blocked ? e.translationX / 4 : e.translationX);
-      const rest = spinsSV.value;
+      const raw = dragBase.get() + (blocked ? e.translationX / 4 : e.translationX);
+      const rest = spinsSV.get();
       const min = canNext ? -(rest + 1) * screenW : -rest * screenW;
       const max = canPrev ? -(rest - 1) * screenW : -rest * screenW;
       offset.set(Math.min(max, Math.max(min, raw)));
@@ -669,7 +671,7 @@ export default function PlayerScreen() {
       const wantNext = canNext && (e.translationX < -swipe || e.velocityX < -600);
       const wantPrev = canPrev && (e.translationX > swipe || e.velocityX > 600);
       const advance = wantNext ? 1 : wantPrev ? -1 : 0;
-      const base = spinsSV.value;
+      const base = spinsSV.get();
       const target = -(base + advance) * screenW;
       if (advance !== 0) {
         // The carousel finishes the travel with the neighbor centered; the
@@ -823,7 +825,7 @@ export default function PlayerScreen() {
     revealOffset.set(-1);
   }, []);
   const rootStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: revealOffset.value >= 0 ? revealOffset.value : transY.value }],
+    transform: [{ translateY: revealOffset.get() >= 0 ? revealOffset.get() : transY.get() }],
   }));
   // The full-screen animated cover travels with the content instead of staying
   // pinned to the screen, so scrolling down to the lyrics moves it out of the
@@ -832,12 +834,12 @@ export default function PlayerScreen() {
   const scrollY = useSharedValue(0);
   const atTopSV = useSharedValue(true);
   const animatedBgStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: -scrollY.value }],
+    transform: [{ translateY: -scrollY.get() }],
   }));
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollY.set(e.contentOffset.y);
     const next = e.contentOffset.y <= 4;
-    if (next !== atTopSV.value) {
+    if (next !== atTopSV.get()) {
       atTopSV.set(next);
       // Only on the crossing, not on every frame: this one is a React state,
       // it decides whether the drag-to-dismiss gesture is armed.

@@ -89,13 +89,13 @@ export function GlobalTabBar() {
     // Straight back on the way in: coming out of the player the bar was there
     // before and belongs there again, and until the modal finishes dismissing
     // nobody can see it anyway.
-    fade.value = shown
+    fade.set(shown
       ? 1
       : withTiming(0, { duration: motion.duration.exit }, (done) => {
           if (done) scheduleOnRN(setBlurOn, false);
-        });
+        }));
   }, [shown, fade]);
-  const fadeStyle = useAnimatedStyle(() => ({ opacity: fade.value }));
+  const fadeStyle = useAnimatedStyle(() => ({ opacity: fade.get() }));
 
   /** Leaves for a tab, dropping the screens piled on top of it. */
   const go = (href: string) => {

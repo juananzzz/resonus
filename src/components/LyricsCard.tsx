@@ -218,7 +218,7 @@ export function SyncedLyricsView({
 
   // Each targetY change pushes the scroll from the UI thread.
   useAnimatedReaction(
-    () => targetY.value,
+    () => targetY.get(),
     (y, prev) => {
       if (prev !== null && y !== prev) scrollTo(scrollRef, 0, y, false);
     },
@@ -241,7 +241,7 @@ export function SyncedLyricsView({
   // The line is located by vertical position using actual measurements.
   const handleTap = useCallback(
     (yInView: number) => {
-      const contentY = yInView + liveY.value;
+      const contentY = yInView + liveY.get();
       for (let i = 0; i < lines.length; i++) {
         const m = offsets.current[i];
         if (m && contentY >= m.y && contentY < m.y + m.h) {
@@ -267,7 +267,7 @@ export function SyncedLyricsView({
     // ignores animations. Opening part way through a song is the same journey
     // as any other, taken as soon as there is somewhere to go rather than at
     // the next line.
-    targetY.set(liveY.value);
+    targetY.set(liveY.get());
     targetY.set(withTiming(dest, {
       duration: motion.duration.scroll,
       easing: motion.easing.move,
@@ -395,8 +395,8 @@ const LyricRow = memo(({
   // The growth (8%) is compensated by the right margin of `content` so the
   // active line, scaling from the left, doesn't overflow the edge.
   const anim = useAnimatedStyle(() => ({
-    opacity: dim.value,
-    transform: [{ scale: 1 + focus.value * 0.08 }],
+    opacity: dim.get(),
+    transform: [{ scale: 1 + focus.get() * 0.08 }],
   }));
   return (
     <View

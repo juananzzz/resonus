@@ -338,7 +338,7 @@ export function TrackListView({
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [descriptionHasMore, setDescriptionHasMore] = useState(false);
   const searchBar = !!searchable && songs.length > 0;
-  const { revealed, searchH, revealPan, revealPanRef, collapseSearchBar, onScroll } = useSearchReveal(
+  const { searchH, revealPan, revealPanRef, collapseSearchBar, onScroll } = useSearchReveal(
     searchBar,
     searching,
     scrollY,

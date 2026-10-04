@@ -18,9 +18,9 @@ import { motion } from '@/theme/motion';
 export function AlbumRowsSkeleton({ count = 10 }: { count?: number }) {
   const pulse = useSharedValue(1);
   useEffect(() => {
-    pulse.value = withRepeat(withTiming(0.45, { duration: motion.duration.pulse }), -1, true);
+    pulse.set(withRepeat(withTiming(0.45, { duration: motion.duration.pulse }), -1, true));
   }, [pulse]);
-  const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
+  const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.get() }));
 
   return (
     <Animated.View style={[styles.list, pulseStyle]}>

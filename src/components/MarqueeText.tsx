@@ -49,12 +49,12 @@ export function MarqueeText({
 
   useEffect(() => {
     cancelAnimation(offset);
-    offset.value = 0;
+    offset.set(0);
     if (!overflows) return;
     const distance = textW + GAP;
     // reduceMotion Never: without marquee the long title gets cut off with no
     // way to read it, so it animates even with "reduce motion".
-    offset.value = withRepeat(
+    offset.set(withRepeat(
       withDelay(
         PAUSE_MS,
         withTiming(-distance, {
@@ -68,11 +68,11 @@ export function MarqueeText({
       false,
       undefined,
       ReduceMotion.Never,
-    );
+    ));
     return () => cancelAnimation(offset);
   }, [overflows, textW, text, offset]);
 
-  const anim = useAnimatedStyle(() => ({ transform: [{ translateX: offset.value }] }));
+  const anim = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
 
   return (
     <View style={styles.hug} onLayout={(e) => setContainerW(e.nativeEvent.layout.width)}>

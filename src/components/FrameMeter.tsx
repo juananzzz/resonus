@@ -30,10 +30,10 @@ export function FrameMeter() {
     'worklet';
     const dt = info.timeSincePreviousFrame;
     if (dt === null || dt > AWAY_GAP_MS) return;
-    frames.value += 1;
-    if (dt > LATE_MS) late.value += 1;
-    if (dt > VERY_LATE_MS) veryLate.value += 1;
-    if (dt > worst.value) worst.value = dt;
+    frames.set(frames.get() + 1);
+    if (dt > LATE_MS) late.set(late.get() + 1);
+    if (dt > VERY_LATE_MS) veryLate.set(veryLate.get() + 1);
+    if (dt > worst.get()) worst.set(dt);
   }, false);
 
   // Totals are cumulative so a read never races a reset; only `worst` resets.

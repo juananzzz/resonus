@@ -49,6 +49,6 @@ export function usePressFeedback(): {
     dim.set(withTiming(1, { duration: motion.duration.exit }));
   }, [dim]);
 
-  const style = useAnimatedStyle(() => ({ opacity: dim.value }));
+  const style = useAnimatedStyle(() => ({ opacity: dim.get() }));
   return { style: style as unknown as { opacity: number }, onPressIn, onPressOut };
 }

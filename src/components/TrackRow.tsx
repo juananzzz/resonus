@@ -89,7 +89,7 @@ function SwipeActionPanel({
   /** Side where the strip peeks out: the icon sticks to the edge it enters from. */
   side: 'left' | 'right';
 }) {
-  const visible = useAnimatedStyle(() => ({ opacity: progress.value > 0.01 ? 1 : 0 }));
+  const visible = useAnimatedStyle(() => ({ opacity: progress.get() > 0.01 ? 1 : 0 }));
   return (
     <Reanimated.View
       style={[

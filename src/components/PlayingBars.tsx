@@ -45,17 +45,17 @@ function Bar({ index, playing, color }: { index: number; playing: boolean; color
     if (!playing) {
       // Down to the resting height rather than frozen mid-rise: a paused row
       // showing bars stopped at random heights looks like it is still going.
-      height.value = withTiming(REST, { duration: motion.duration.move });
+      height.set(withTiming(REST, { duration: motion.duration.move }));
       return;
     }
-    height.value = withDelay(
+    height.set(withDelay(
       index * STAGGER,
       withRepeat(
         withTiming(1, { duration: DURATIONS[index], easing: motion.easing.loop }),
         -1,
         true,
       ),
-    );
+    ));
     return () => cancelAnimation(height);
   }, [playing, index, height]);
 
@@ -65,7 +65,7 @@ function Bar({ index, playing, color }: { index: number; playing: boolean; color
    * virtualised list, which is exactly the shape of the jank #154 was about. A
    * transform never touches layout.
    */
-  const style = useAnimatedStyle(() => ({ transform: [{ scaleY: height.value }] }));
+  const style = useAnimatedStyle(() => ({ transform: [{ scaleY: height.get() }] }));
 
   return (
     <Animated.View

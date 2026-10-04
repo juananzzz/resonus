@@ -46,9 +46,9 @@ export function useBottomSheetAnim(open: boolean, onClose?: () => void) {
     }));
   };
 
-  const backdropStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
+  const backdropStyle = useAnimatedStyle(() => ({ opacity: progress.get() }));
   const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: (1 - progress.value) * sheetH.value }],
+    transform: [{ translateY: (1 - progress.get()) * sheetH.get() }],
   }));
   const onSheetLayout = (e: LayoutChangeEvent) => {
     sheetH.set(e.nativeEvent.layout.height);
@@ -73,11 +73,11 @@ export function useBottomSheetAnim(open: boolean, onClose?: () => void) {
     .activeOffsetY(10)
     .failOffsetY(-10)
     .onUpdate((e) => {
-      progress.set(Math.min(1, Math.max(0, 1 - e.translationY / sheetH.value)));
+      progress.set(Math.min(1, Math.max(0, 1 - e.translationY / sheetH.get())));
     })
     .onEnd((e) => {
       const closes =
-        e.translationY > sheetH.value * DISMISS_RATIO || e.velocityY > DISMISS_VELOCITY;
+        e.translationY > sheetH.get() * DISMISS_RATIO || e.velocityY > DISMISS_VELOCITY;
       if (closes && onClose) {
         progress.set(withTiming(0, TIMING_OUT, (f) => {
           if (f) scheduleOnRN(onClose);

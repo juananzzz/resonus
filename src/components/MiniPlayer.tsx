@@ -97,7 +97,7 @@ export function MiniPlayer() {
     .minDistance(10)
     .onUpdate((e) => {
       // Once the player is coming up, the pull is only ever vertical.
-      if (revealing.value) {
+      if (revealing.get()) {
         revealOffset.set(Math.min(screenH, Math.max(0, screenH + e.translationY + REVEAL_START)));
         return;
       }
@@ -118,14 +118,14 @@ export function MiniPlayer() {
       }
     })
     .onEnd((e) => {
-      const horizontal = !revealing.value && Math.abs(e.translationX) > Math.abs(e.translationY);
+      const horizontal = !revealing.get() && Math.abs(e.translationX) > Math.abs(e.translationY);
       if (horizontal) {
         const swipeX = screenW * SWIPE_SHARE;
         if (e.translationX < -swipeX || e.velocityX < -800) scheduleOnRN(next);
         else if (e.translationX > swipeX || e.velocityX > 800) scheduleOnRN(previous);
         translateX.set(withSpring(0, { damping: 20, stiffness: 200 }));
         translateY.set(0);
-      } else if (revealing.value) {
+      } else if (revealing.get()) {
         revealing.set(false);
         const opened = -e.translationY > screenH * REVEAL_COMMIT || e.velocityY < -600;
         if (opened) {
@@ -150,7 +150,7 @@ export function MiniPlayer() {
     // A pull that was cut off (the system took the touch) still ends somewhere:
     // opened, since the player is already up on the screen.
     .onFinalize(() => {
-      if (!revealing.value) return;
+      if (!revealing.get()) return;
       revealing.set(false);
       revealOffset.set(withTiming(0, { duration: motion.duration.move }, () => {
         revealOffset.set(-1);
@@ -158,14 +158,14 @@ export function MiniPlayer() {
     });
   // The entire card only moves (and fades) when dismissed downward.
   const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-    opacity: interpolate(translateY.value, [0, screenW * 0.6], [1, 0], Extrapolation.CLAMP),
+    transform: [{ translateY: translateY.get() }],
+    opacity: interpolate(translateY.get(), [0, screenW * 0.6], [1, 0], Extrapolation.CLAMP),
   }));
   // On horizontal swipe the bar stays fixed: only the song details slide/fade,
   // to read as "changing track", not as dismissing.
   const detailsStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-    opacity: interpolate(Math.abs(translateX.value), [0, screenW * 0.5], [1, 0.15], Extrapolation.CLAMP),
+    transform: [{ translateX: translateX.get() }],
+    opacity: interpolate(Math.abs(translateX.get()), [0, screenW * 0.5], [1, 0.15], Extrapolation.CLAMP),
   }));
 
   // When the song changes (or playback resumes) we return the card to its place

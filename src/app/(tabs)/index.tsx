@@ -531,7 +531,7 @@ const ARTIST_SIZE_WIDE = 165;
 const ARTISTS_DELAY_MS = 4000;
 
 /** Row of random artists (rediscovery). */
-function ArtistSection({ title, reshuffleKey }: { title: string; reshuffleKey: number }) {
+function ArtistSection({ title }: { title: string }) {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const { wide } = useScreenSize();
   const artistSize = wide ? ARTIST_SIZE_WIDE : ARTIST_SIZE;
@@ -548,14 +548,10 @@ function ArtistSection({ title, reshuffleKey }: { title: string; reshuffleKey: n
     queryFn: () => getArtists(),
     enabled: canFetch && ready,
   });
-  // Reshuffles when the list changes or on pull-to-refresh (`reshuffleKey`).
-  // Without that key, when the list doesn't change react-query keeps the same
-  // reference (structural sharing) and the memo would always return the same
-  // 10 artists.
-  const artists = useMemo(
-    () => (data ? shuffled(data).slice(0, 10) : []),
-    [data, reshuffleKey],
-  );
+  // Reshuffles when the list changes, and on pull-to-refresh, which mounts the
+  // section again (see where it is keyed): react-query keeps the same list
+  // when nothing changed, so a memo alone would deal the same 10 every time.
+  const artists = useMemo(() => (data ? shuffled(data).slice(0, 10) : []), [data]);
 
   // The skeleton covers the wait as well as the request, so the shelf holds
   // its place instead of appearing from nowhere four seconds in.
@@ -591,7 +587,7 @@ function ArtistSection({ title, reshuffleKey }: { title: string; reshuffleKey: n
 const DISCOVER_OFFSET = 15;
 const DISCOVER_POOL = 50;
 
-function DiscoverSection({ title, reshuffleKey }: { title: string; reshuffleKey: number }) {
+function DiscoverSection({ title }: { title: string }) {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const card = useShelfCard();
   const { data, isLoading } = useQuery({
@@ -599,12 +595,8 @@ function DiscoverSection({ title, reshuffleKey }: { title: string; reshuffleKey:
     queryFn: () => getAlbumList('recent', DISCOVER_POOL, DISCOVER_OFFSET),
     enabled: canFetch,
   });
-  // Reshuffles when changing the list or on pull-to-refresh (`reshuffleKey`);
-  // see the note in ArtistSection about react-query's structural sharing.
-  const albums = useMemo(
-    () => (data ? shuffled(data).slice(0, 10) : []),
-    [data, reshuffleKey],
-  );
+  // Reshuffles like ArtistSection: on a new list, and on a new mount.
+  const albums = useMemo(() => (data ? shuffled(data).slice(0, 10) : []), [data]);
 
   if (isLoading) {
     return (
@@ -1000,16 +992,13 @@ export default function HomeScreen() {
               if (s.key === 'discover' && offline) return null;
               if (s.key === 'discover') {
                 return (
-                  <DiscoverSection key={s.key} title={t('Discover')} reshuffleKey={reshuffleKey} />
+                  // Keyed on the pull-to-refresh count: a new mount deals again.
+                  <DiscoverSection key={`${s.key}:${reshuffleKey}`} title={t('Discover')} />
                 );
               }
               if (s.key === 'randomArtists') {
                 return (
-                  <ArtistSection
-                    key={s.key}
-                    title={t('Random artists')}
-                    reshuffleKey={reshuffleKey}
-                  />
+                  <ArtistSection key={`${s.key}:${reshuffleKey}`} title={t('Random artists')} />
                 );
               }
               if (s.key === 'playlists') {

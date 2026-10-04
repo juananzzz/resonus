@@ -27,9 +27,9 @@ interface Props {
 export function AlbumCardsSkeleton({ width = 150, count = 6, horizontal }: Props) {
   const pulse = useSharedValue(1);
   useEffect(() => {
-    pulse.value = withRepeat(withTiming(0.45, { duration: motion.duration.pulse }), -1, true);
+    pulse.set(withRepeat(withTiming(0.45, { duration: motion.duration.pulse }), -1, true));
   }, [pulse]);
-  const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
+  const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.get() }));
 
   return (
     <Animated.View style={[styles.wrap, horizontal ? styles.row : styles.grid, pulseStyle]}>
