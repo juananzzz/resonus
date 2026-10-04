@@ -80,8 +80,8 @@ function actionsMaxH(height: number): number {
  * The minimum of 1 is for the last minute: "0 min" would read as if the timer
  * is already gone, and it's still there.
  */
-function minutesLeft(endsAt: number): number {
-  return Math.max(1, Math.floor((endsAt - Date.now()) / 60_000));
+function minutesLeft(endsAt: number, now: number): number {
+  return Math.max(1, Math.floor((endsAt - now) / 60_000));
 }
 
 
@@ -167,8 +167,13 @@ export function SongMenuSheet() {
 
   // When opening the menu for a song, always go back to the actions view,
   // unless it was opened for the sleep timer.
+  // And the clock is read then too, for the minutes the timer has left: the
+  // sheet stays mounted, and a time read while drawing would be memoized.
+  const [openedAt, setOpenedAt] = useState(() => Date.now());
   useEffect(() => {
-    if (song) setMode(startInSleep ? 'sleep' : 'actions');
+    if (!song) return;
+    setMode(startInSleep ? 'sleep' : 'actions');
+    setOpenedAt(Date.now());
   }, [song, startInSleep]);
 
   // Every new song or view starts the list scrolled to the top; the sheet
@@ -706,7 +711,7 @@ export function SongMenuSheet() {
                     icon="moon-outline"
                     label={
                       sleepEndsAt
-                        ? t('Sleep timer ({n} min left)', { n: minutesLeft(sleepEndsAt) })
+                        ? t('Sleep timer ({n} min left)', { n: minutesLeft(sleepEndsAt, openedAt) })
                         : sleepAtSongEnd
                           ? t('Sleep timer (end of song)')
                           : t('Sleep timer')
