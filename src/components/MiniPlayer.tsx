@@ -130,6 +130,9 @@ export function MiniPlayer() {
         const opened = -e.translationY > screenH * REVEAL_COMMIT || e.velocityY < -600;
         if (opened) {
           revealOffset.set(withTiming(0, { duration: motion.duration.move }, () => {
+            // Said outright: capturing nothing, the React Compiler lifts this
+            // out of the gesture, where it would no longer be a worklet.
+            'worklet';
             revealOffset.set(-1);
           }));
         } else {
@@ -153,6 +156,7 @@ export function MiniPlayer() {
       if (!revealing.get()) return;
       revealing.set(false);
       revealOffset.set(withTiming(0, { duration: motion.duration.move }, () => {
+        'worklet';
         revealOffset.set(-1);
       }));
     });
