@@ -29,13 +29,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { BarBlur, useBarBlur } from '@/components/BarBlur';
+import { ChromeBar } from '@/components/Chrome';
 
 import { useTabBarShown } from '@/hooks/useTabBar';
 import { motion } from '@/theme/motion';
 import { useT } from '@/i18n';
 import { rememberTab, reselectTab, tabOrigin, TABS } from '@/lib/tabOrigin';
 import { useSettings } from '@/store/settings';
-import { colors, MINI_PLAYER_GAP, MINI_PLAYER_HEIGHT, TAB_BAR_HEIGHT, themed, useThemeMode } from '@/theme';
+import {
+  colors,
+  MINI_PLAYER_GAP,
+  MINI_PLAYER_HEIGHT,
+  TAB_BAR_HEIGHT,
+  themed,
+  useThemeMode,
+  useThemeSkin,
+} from '@/theme';
 
 const ICONS: Record<string, 'home' | 'search' | 'library' | 'albums' | 'settings'> = {
   index: 'home',
@@ -98,6 +107,8 @@ export function GlobalTabBar() {
   // on the light one. Also what makes this bar repaint when the appearance
   // changes underneath it.
   const mode = useThemeMode();
+  // The chrome skin draws the bar in metal, whatever the style and blur say.
+  const chromeSkin = useThemeSkin() === 'chrome';
   const bottomTabs = useSettings((s) => s.bottomTabs);
   const showLabels = useSettings((s) => s.showTabLabels);
   const root = segments[0];
@@ -157,13 +168,14 @@ export function GlobalTabBar() {
       style={[
         styles.bar,
         { height: TAB_BAR_HEIGHT + insets.bottom, paddingBottom: insets.bottom },
-        navStyle === 'gradient' ? null : blur ? null : styles.solid,
+        chromeSkin || navStyle === 'gradient' ? null : blur ? null : styles.solid,
         fadeStyle,
       ]}
     >
-      {blur && blurOn ? <BarBlur /> : null}
+      {chromeSkin ? <ChromeBar /> : null}
+      {!chromeSkin && blur && blurOn ? <BarBlur /> : null}
       {/* The fill, under everything else in here. */}
-      {navStyle === 'gradient' ? (
+      {!chromeSkin && navStyle === 'gradient' ? (
         <LinearGradient
           pointerEvents="none"
           style={[StyleSheet.absoluteFill, { top: -GRADIENT_REACH }]}
@@ -172,7 +184,7 @@ export function GlobalTabBar() {
         />
       ) : null}
       {/* Where the glass starts, when something bright passes under it. */}
-      {blur ? <View pointerEvents="none" style={styles.edge} /> : null}
+      {blur && !chromeSkin ? <View pointerEvents="none" style={styles.edge} /> : null}
       {/* The user's order, and only the ones they kept (Settings › Appearance
           › Navigation bar). `TABS` stays the catalogue: it is what says where
           each one goes and what it is called. */}
@@ -186,7 +198,7 @@ export function GlobalTabBar() {
         // enough to keep the bar from looking dead.
         const here = current === tab.segment;
         const from = !inTabs && origin === tab.segment;
-        const color = here || from ? colors.text : colors.textSecondary;
+        const color = chromeSkin && here ? colors.accent : here || from ? colors.text : colors.textSecondary;
         return (
           <Pressable
             key={tab.href}

@@ -19,6 +19,7 @@ import {
   themed,
   type BackgroundTint,
   type ThemePreference,
+  type ThemeSkin,
   useTheme,
   useThemeMode,
 } from '@/theme';
@@ -177,12 +178,35 @@ export default function ThemeSettings() {
   const setBackgroundTint = useSettings((s) => s.setBackgroundTint);
   const customAccentColor = useSettings((s) => s.customAccentColor);
   const setCustomAccentColor = useSettings((s) => s.setCustomAccentColor);
+  const themeSkin = useSettings((s) => s.themeSkin);
+  const setThemeSkin = useSettings((s) => s.setThemeSkin);
   const [pickerOpen, setPickerOpen] = useState(false);
   const accent = mode === 'light' ? accentColorLight : accentColor;
 
   return (
     <SettingsPage title={t('Theme')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
+        <Text style={styles.label}>{t('Style')}</Text>
+        <SelectList<ThemeSkin>
+          collapsible={false}
+          value={themeSkin}
+          onChange={setThemeSkin}
+          options={[
+            { value: 'default', label: t('Default') },
+            { value: 'chrome', label: t('Chrome (experimental)') },
+          ]}
+        />
+        {themeSkin === 'chrome' ? (
+          <Text style={[styles.subLabel, styles.skinNote]}>
+            {t('Chrome brings its own colours, font and corners. The settings below come back when it is off.')}
+          </Text>
+        ) : null}
+        {/* Everything below is the default style's, and stays set while
+            another one is on. */}
+        <View
+          style={[styles.secondLabel, themeSkin !== 'default' && styles.dimmed]}
+          pointerEvents={themeSkin === 'default' ? 'auto' : 'none'}
+        >
         {/* "Mode" and not "Appearance": Appearance is the screen this one hangs
             off, and two headings with the same word one level apart read as a
             mistake. */}
@@ -265,6 +289,7 @@ export default function ThemeSettings() {
             }}
           />
         ) : null}
+        </View>
       </ScrollView>
     </SettingsPage>
   );
@@ -280,6 +305,7 @@ const styles = themed((colors) => ({
   secondLabel: { marginTop: spacing.xl },
   subLabel: { color: colors.textMuted, fontSize: fontSize.xs, marginBottom: spacing.sm },
   secondSubLabel: { marginTop: spacing.lg },
+  skinNote: { marginTop: spacing.sm, marginBottom: 0 },
   gap: { height: spacing.md },
   swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg },
   swatch: {

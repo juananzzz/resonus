@@ -56,7 +56,10 @@ import { useRecentSearches } from '@/store/recentSearches';
 import { APP_FONT_FAMILY, useSettings } from '@/store/settings';
 import { useSongCache } from '@/store/songCache';
 import { useSortPrefs } from '@/store/sortPrefs';
-import { colors, themeMode, useTheme } from '@/theme';
+import { colors, themeMode, useTheme, useThemeSkin } from '@/theme';
+
+/** The chrome skin's face, used while no other font is picked. */
+const CHROME_FONT = 'Exo2';
 
 // Patches Text/TextInput once, before the first render.
 installAppFont();
@@ -121,6 +124,15 @@ export default function RootLayout() {
   // flag: settings hydrate after the first render, and a flag already set by
   // then would apply a family that isn't loaded yet.
   const [loadedCustom, setLoadedCustom] = useState<string | null>(null);
+  const skin = useThemeSkin();
+  const [chromeFontLoaded, setChromeFontLoaded] = useState(() => Font.isLoaded(CHROME_FONT));
+
+  useEffect(() => {
+    if (skin !== 'chrome' || chromeFontLoaded) return;
+    void Font.loadAsync({ [CHROME_FONT]: require('../../assets/fonts/Exo2-Regular.ttf') })
+      .then(() => setChromeFontLoaded(true))
+      .catch(() => {});
+  }, [skin, chromeFontLoaded]);
 
   useEffect(() => {
     if (appFont !== 'custom' || !customFontFamily || !customFontUri) return;
@@ -139,6 +151,8 @@ export default function RootLayout() {
         ? customFontFamily
         : undefined,
     );
+  } else if (appFont === 'system' && skin === 'chrome' && chromeFontLoaded) {
+    setAppFont(CHROME_FONT);
   } else {
     setAppFont(APP_FONT_FAMILY[appFont]);
   }

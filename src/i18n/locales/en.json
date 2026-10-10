@@ -793,5 +793,8 @@
   "Radios built from the artists you play most. Off, there are none on Home or in the menus, and nothing is fetched for them.": "Radios built from the artists you play most. Off, there are none on Home or in the menus, and nothing is fetched for them.",
   "Radios on Home": "Radios on Home",
   "Keep playing when a radio ends": "Keep playing when a radio ends",
-  "When its songs run out, another round from the same artists.": "When its songs run out, another round from the same artists."
+  "When its songs run out, another round from the same artists.": "When its songs run out, another round from the same artists.",
+  "Style": "Style",
+  "Chrome (experimental)": "Chrome (experimental)",
+  "Chrome brings its own colours, font and corners. The settings below come back when it is off.": "Chrome brings its own colours, font and corners. The settings below come back when it is off."
 }

@@ -33,6 +33,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { CACHED_COVER, COVER, songCoverUrl, star, unstar, type Song } from '@/api/data';
 import { ArtistPlayerCard } from '@/components/ArtistPlayerCard';
 import { AudioQualityBadge } from '@/components/AudioQualityBadge';
+import { ChromeSilver } from '@/components/Chrome';
 import { SeekBar } from '@/components/SeekBar';
 import { Cover, useRedrawOnReturn, useSettledSource } from '@/components/Cover';
 import { ExplicitBadge } from '@/components/ExplicitBadge';
@@ -76,6 +77,7 @@ import { useToast } from '@/store/toast';
 import { useUpnp } from '@/store/upnp';
 import {
   BACKGROUND_TINTS,
+  chrome,
   colors,
   fontSize,
   radius,
@@ -85,6 +87,7 @@ import {
   transparentOf,
   useTheme,
   useThemeMode,
+  useThemeSkin,
 } from '@/theme';
 import { motion } from '@/theme/motion';
 
@@ -406,7 +409,12 @@ export default function PlayerScreen() {
   // background shade is picked, so they never pick up its hue.
   const tintBase = BACKGROUND_TINTS.neutral.dark.surfaceHighlight;
   const playFill = lightMode ? toneOf(tintBase, 0.22, 0.2) : toneOf(tintBase, 0.9, 0.3);
-  const playInk = lightMode ? toneOf(tintBase, 0.97, 0.2) : toneOf(tintBase, 0.14, 0.3);
+  const chromeSkin = useThemeSkin() === 'chrome';
+  const playInk = chromeSkin
+    ? chrome.ink
+    : lightMode
+      ? toneOf(tintBase, 0.97, 0.2)
+      : toneOf(tintBase, 0.14, 0.3);
   const ink = lightMode ? toneOf(tintBase, 0.2, 0.2) : colors.text;
   // Under the blurred artwork the flat colour is irrelevant, but it still
   // paints the frame before the image decodes, so it stays dark rather than
@@ -1350,7 +1358,11 @@ export default function PlayerScreen() {
               which is large: cover, gradient, quality badge, controls, queue
               sheet (#50). The seek buttons read the position when they are
               pressed instead of subscribing to it. */}
-          <SeekBar duration={duration} style={styles.progress} tint={playFill} />
+          <SeekBar
+            duration={duration}
+            style={styles.progress}
+            tint={chromeSkin ? colors.accent : playFill}
+          />
 
           <View style={styles.controls}>
             <Pressable
@@ -1392,7 +1404,10 @@ export default function PlayerScreen() {
               </Pressable>
             ) : null}
             <Pressable
-              style={[styles.playButton, { backgroundColor: playFill }]}
+              style={[
+                styles.playButton,
+                chromeSkin ? styles.playButtonChrome : { backgroundColor: playFill },
+              ]}
               accessibilityRole="button"
               accessibilityLabel={isPlaying ? t('Pause') : t('Play')}
               onPress={toggle}
@@ -1417,6 +1432,7 @@ export default function PlayerScreen() {
                   way in. Centred as it comes, the icon still reads as pushed
                   right, so the box itself moves left - padding on the right,
                   the only side with room to take it. */}
+              {chromeSkin ? <ChromeSilver /> : null}
               {isBuffering ? (
                 <ActivityIndicator size="small" color={playInk} />
               ) : (
@@ -1730,6 +1746,11 @@ const styles = themed((colors) => ({
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Silver, with a neon halo: the chrome skin's (see `ThemeSkin`).
+  playButtonChrome: {
+    overflow: 'hidden',
+    boxShadow: `0px 0px 18px ${colors.accent}99`,
   },
   // Stars centered below the cover (optional element).
   belowCover: { alignItems: 'center', marginTop: spacing.md },

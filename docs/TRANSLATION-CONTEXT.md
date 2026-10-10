@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 795 of them.
+Every string the app can show, under the screen it shows up on. 798 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -1110,10 +1110,13 @@ you are actually typing into, which is easier than reading it here.
 | --- | --- |
 | `Accent color` | The colour the app uses for buttons, links and anything it wants you to notice |
 | `Background` | Section header over what is drawn behind the player. Its two values are `Plain` and `Blurred cover` |
+| `Chrome (experimental)` |  |
+| `Chrome brings its own colours, font and corners. The settings below come back when it is off.` |  |
 | `Create custom color` |  |
 | `Custom color` |  |
 | `Dark` | The appearance the app has always had, and what it uses unless the other is chosen. |
 | `Dark from` |  |
+| `Default` | Sorting pill: what you get when nothing is sorted, which is the order the server keeps its songs in. Not alphabetical, and not Resonus deciding. On a playlist it is the order the list came in, which is the one you made by dragging the songs if it is an ordinary playlist and the one its rules produced if it is a smart one — hence a word that is true of both rather than "custom" or "pre-defined" |
 | `Edit custom color` |  |
 | `Hex code` |  |
 | `Light` | The light appearance, in Settings › Theme |
@@ -1122,6 +1125,7 @@ you are actually typing into, which is easier than reading it here.
 | `Palette` |  |
 | `Pure black` |  |
 | `Scheduled` |  |
+| `Style` |  |
 | `System` | Two places: a theme setting (use whichever appearance the phone itself is set to, light or dark), and `System::section`, the heading in Settings › Quality & playback over Keep screen on and the battery warning. Add `System::section` to your file if one word cannot do both |
 | `Theme` | The screen where the appearance and the accent colour are chosen, and the name of the row that opens it |
 
@@ -1181,7 +1185,6 @@ you are actually typing into, which is easier than reading it here.
 | `Couldn't load songs.` | Error on the screen, with a Retry button |
 | `Couldn't play the song` | Toast: the app could not start it at all |
 | `Create` | The confirm button of the new-playlist dialog. A verb |
-| `Default` | Sorting pill: what you get when nothing is sorted, which is the order the server keeps its songs in. Not alphabetical, and not Resonus deciding. On a playlist it is the order the list came in, which is the one you made by dragging the songs if it is an ordinary playlist and the one its rules produced if it is a smart one — hence a word that is true of both rather than "custom" or "pre-defined" |
 | `Delete downloads` | Menu action: delete the downloaded files of everything here |
 | `Descending` | Sort option: the order of a list |
 | `Direction` | Sort sheet: the ascending vs descending toggle. Not a compass direction |

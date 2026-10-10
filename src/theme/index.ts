@@ -469,6 +469,66 @@ const LIGHT: BasePalette = {
   success: '#287F38',
 };
 
+/**
+ * An alternative look laid over everything else (Settings › Theme › Style).
+ * `chrome` is the Y2K experiment: gunmetal, brushed silver and a neon accent.
+ * It pins the appearance to dark and ignores the tint, pure black and the
+ * picked accent while it is on; turning it off brings them all back.
+ */
+export type ThemeSkin = 'default' | 'chrome';
+
+export function isThemeSkin(value: unknown): value is ThemeSkin {
+  return value === 'default' || value === 'chrome';
+}
+
+const CHROME: BasePalette = {
+  background: '#07090D',
+  surface: '#12161D',
+  surfaceHighlight: '#1C222B',
+  border: '#3A4350',
+  text: '#E8EEF4',
+  textSecondary: '#9AA7B4',
+  textMuted: '#65707C',
+  textTime: '#9FF6FF',
+  onInverse: '#05070A',
+  snackbar: '#1C222B',
+  onSnackbar: '#E8EEF4',
+  backdrop: 'rgba(0,0,0,0.6)',
+  backdropStrong: 'rgba(0,0,0,0.7)',
+  scrim: 'rgba(0,0,0,0.5)',
+  onArtwork: '#FFFFFF',
+  veil: 'rgba(7,9,13,0.6)',
+  highlight: 'rgba(170,200,230,0.16)',
+  coverWash: 'rgba(0,0,0,0.5)',
+  playerPlain: '#0D1117',
+  mediaTrack: 'rgba(170,190,210,0.28)',
+  control: '#2C3440',
+  knob: '#DDE3EA',
+  shadow: '#000000',
+  danger: '#FF3B5C',
+  success: '#39FF88',
+};
+
+const CHROME_ACCENT = '#00E5FF';
+
+/**
+ * The metal itself, for the few pieces that are drawn in it (play button,
+ * mini player, navigation bar). Gradients top to bottom.
+ */
+export const chrome = {
+  /** Polished silver: the play button. */
+  silver: ['#FBFCFD', '#C9D0D8', '#8C96A1', '#D9DEE4', '#A7B0BA'] as const,
+  silverAt: [0, 0.45, 0.5, 0.82, 1] as const,
+  /** Dark brushed gunmetal: the bars. */
+  gunmetal: ['#2A313B', '#161B22', '#0E1217', '#1A2028'] as const,
+  gunmetalAt: [0, 0.48, 0.52, 1] as const,
+  /** The lit top edge and the shadowed bottom one of a bevel. */
+  edgeLight: 'rgba(255,255,255,0.35)',
+  edgeDark: 'rgba(0,0,0,0.7)',
+  /** Icons drawn on silver. */
+  ink: '#0A0D12',
+};
+
 /** Parses `#rrggbb` into its three channels. Returns null for anything else. */
 function channels(hex: string): [number, number, number] | null {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
@@ -565,10 +625,16 @@ let darkAccent = DEFAULT_ACCENT;
 let lightAccent = DEFAULT_ACCENT;
 let pureBlack = false;
 let tint: BackgroundTint = 'blue';
+let skin: ThemeSkin = 'default';
 
 /** Which appearance is active right now (for code outside a component). */
 export function themeMode(): ThemeMode {
-  return currentMode;
+  return skin === 'chrome' ? 'dark' : currentMode;
+}
+
+/** Which skin is active right now (for code outside a component). */
+export function themeSkin(): ThemeSkin {
+  return skin;
 }
 
 // ---------------------------------------------------------------------------
@@ -591,6 +657,19 @@ function subscribe(listener: () => void): () => void {
 
 /** Rebuilds `colors` from the current mode + accent and wakes everyone up. */
 function rebuild(): void {
+  Object.assign(radius, skin === 'chrome' ? CHROME_RADIUS : DEFAULT_RADIUS);
+  if (skin === 'chrome') {
+    Object.assign(colors, CHROME, {
+      accent: CHROME_ACCENT,
+      accentPressed: darken(CHROME_ACCENT),
+      accentVivid: CHROME_ACCENT,
+      brand: CHROME_ACCENT,
+      onAccent: '#001418',
+    });
+    version += 1;
+    for (const listener of listeners) listener();
+    return;
+  }
   const light = currentMode === 'light';
   const base = light
     ? { ...LIGHT, ...BACKGROUND_TINTS[tint].light }
@@ -634,6 +713,13 @@ export function applyPureBlack(on: boolean): void {
 export function applyBackgroundTint(next: BackgroundTint): void {
   if (next === tint) return;
   tint = next;
+  rebuild();
+}
+
+/** Hot-swaps the skin (see `ThemeSkin`). */
+export function applyThemeSkin(next: ThemeSkin): void {
+  if (next === skin) return;
+  skin = next;
   rebuild();
 }
 
@@ -808,7 +894,13 @@ export function useTheme(): Palette {
  */
 export function useThemeMode(): ThemeMode {
   useSyncExternalStore(subscribe, getVersion, getVersion);
-  return currentMode;
+  return themeMode();
+}
+
+/** The same subscription, for the pieces drawn differently under a skin. */
+export function useThemeSkin(): ThemeSkin {
+  useSyncExternalStore(subscribe, getVersion, getVersion);
+  return skin;
 }
 
 export const spacing = {
@@ -833,7 +925,7 @@ export const spacing = {
  * almost everything in the app sat on 8, which reads flat next to anything
  * drawn in the last few years.
  */
-export const radius = {
+const DEFAULT_RADIUS = {
   sm: 6,
   md: 10,
   lg: 16,
@@ -841,7 +933,16 @@ export const radius = {
   /** A sheet rising from the bottom, and anything else that owns the screen. */
   xxl: 32,
   pill: 999,
-} as const;
+};
+
+/** The chrome skin's corners: machined, not soft. Circles stay circles. */
+const CHROME_RADIUS: typeof DEFAULT_RADIUS = { sm: 2, md: 3, lg: 5, xl: 8, xxl: 12, pill: 999 };
+
+/**
+ * Rewritten in place by the skin, like `colors`, so it is only current where
+ * it is read inside a `themed()` sheet or while rendering.
+ */
+export const radius: Readonly<typeof DEFAULT_RADIUS> = { ...DEFAULT_RADIUS };
 
 /**
  * The type scale, from the smallest label to the biggest heading.

@@ -13,6 +13,9 @@ import { getItem, setItem } from '@/lib/storage';
 import {
   applyAccents,
   applyBackgroundTint,
+  applyThemeSkin,
+  isThemeSkin,
+  type ThemeSkin,
   applyPureBlack,
   BACKGROUND_TINTS,
   applyThemePreference,
@@ -838,7 +841,8 @@ type CustomSetter =
   | 'setThemeDarkFrom'
   | 'setPureBlack'
   | 'setAnimatedArtworkFps'
-  | 'setBackgroundTint';
+  | 'setBackgroundTint'
+  | 'setThemeSkin';
 
 interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   /** Streaming quality over Wi-Fi (and any non-cellular network). */
@@ -1193,6 +1197,8 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   pureBlack: boolean;
   /** The hue in the dark appearance's greys. */
   backgroundTint: BackgroundTint;
+  /** An alternative look over all of the above (Settings › Theme › Style). */
+  themeSkin: ThemeSkin;
   /** UI font (system font family; `system` = default). */
   appFont: AppFont;
   /** Loaded custom font family name (the key passed to `Font.loadAsync`). */
@@ -1221,6 +1227,7 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   setThemeDarkFrom: (hour: number) => void;
   setPureBlack: (value: boolean) => void;
   setBackgroundTint: (value: BackgroundTint) => void;
+  setThemeSkin: (value: ThemeSkin) => void;
   setCustomFont: (fontFamily: string | null, uri: string | null) => void;
   /** Resets to factory defaults (language is preserved). */
   resetToDefaults: () => void;
@@ -1418,6 +1425,7 @@ const DEFAULTS = {
   themeDarkFrom: 21,
   pureBlack: false,
   backgroundTint: 'blue' as BackgroundTint,
+  themeSkin: 'default' as ThemeSkin,
   appFont: 'system' as AppFont,
   customFontFamily: null as string | null,
   customFontUri: null as string | null,
@@ -1449,6 +1457,7 @@ function applyFactoryLook() {
   applyThemePreference(DEFAULTS.themeMode);
   applyPureBlack(DEFAULTS.pureBlack);
   applyBackgroundTint(DEFAULTS.backgroundTint);
+  applyThemeSkin(DEFAULTS.themeSkin);
 }
 
 /**
@@ -1819,6 +1828,10 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
     set({ backgroundTint: parsed.backgroundTint });
     applyBackgroundTint(parsed.backgroundTint);
   }
+  if (isThemeSkin(parsed.themeSkin)) {
+    set({ themeSkin: parsed.themeSkin });
+    applyThemeSkin(parsed.themeSkin);
+  }
   if (parsed.appFont && (parsed.appFont in APP_FONT_FAMILY || parsed.appFont === 'custom')) {
     set({ appFont: parsed.appFont });
   }
@@ -1969,6 +1982,12 @@ export const useSettings = create<SettingsState>((set, get) => ({
   setBackgroundTint: (backgroundTint) => {
     applyBackgroundTint(backgroundTint);
     set({ backgroundTint });
+    persist(snapshot(get));
+  },
+
+  setThemeSkin: (themeSkin) => {
+    applyThemeSkin(themeSkin);
+    set({ themeSkin });
     persist(snapshot(get));
   },
 

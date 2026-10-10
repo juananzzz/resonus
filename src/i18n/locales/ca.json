@@ -795,5 +795,8 @@
   "Radios built from the artists you play most. Off, there are none on Home or in the menus, and nothing is fetched for them.": "Ràdios fetes amb els artistes que més escoltes. Desactivades, no apareixen a Inici ni als menús i no es descarrega res per a elles.",
   "Radios on Home": "Ràdios a Inici",
   "Keep playing when a radio ends": "Continua sonant quan s'acaba una ràdio",
-  "When its songs run out, another round from the same artists.": "Quan s'acaben les cançons, una altra tanda dels mateixos artistes."
+  "When its songs run out, another round from the same artists.": "Quan s'acaben les cançons, una altra tanda dels mateixos artistes.",
+  "Style": "Estil",
+  "Chrome (experimental)": "Cromat (experimental)",
+  "Chrome brings its own colours, font and corners. The settings below come back when it is off.": "Cromat porta els seus propis colors, font i cantonades. Els ajustos de sota tornen en treure'l."
 }
