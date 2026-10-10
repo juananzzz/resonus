@@ -4,7 +4,9 @@
  * and basic controls (progress and play/pause) at the bottom.
  */
 import Icon from '@/components/Icon';
+import MaskedView from '@react-native-masked-view/masked-view';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,16 +42,32 @@ export default function LyricsScreen() {
   // Only extract the palette when it's actually going to be used.
   const dominant = useDominantColor(background === 'color' ? cover : undefined);
   const bg = background === 'color' ? dominant : colors.background;
-  // No edge fade over the artwork: that effect paints a gradient from a SOLID
-  // colour, and with an image behind there is no colour to fade into — it came
-  // out as two black bands with hard edges, only as wide as the lyrics body.
-  // The scrim already keeps the text readable, so the fade just goes away.
+  // A solid-colour overlay cannot fade into artwork without painting a visible
+  // band over it. Cover mode instead masks the lyrics themselves below, so the
+  // real blurred artwork remains continuous behind the soft top edge.
   const fadeColor = background === 'cover' ? undefined : bg;
   const duration = durationSec || song?.duration || 0;
   const insets = useSafeAreaInsets();
   // Inside a full-screen modal iOS reports no top inset, and the close
   // button would sit against the edge.
   const topPad = insets.top > 0 ? insets.top : 12;
+  const lyricsContent = (
+    <View style={[styles.bodyContent, { paddingHorizontal: centredPadding(width, spacing.xl) }]}>
+      {isLoading ? (
+        <ActivityIndicator style={{ marginTop: spacing.xxl }} color={colors.text} />
+      ) : data?.synced ? (
+        <SyncedLyricsView lines={data.lines} large fadeColor={fadeColor} />
+      ) : data ? (
+        <ScrollView contentContainerStyle={styles.plainContent} showsVerticalScrollIndicator={false}>
+          <Text style={plainLineStyle}>
+            {data.lines.map((l) => l.value).join('\n')}
+          </Text>
+        </ScrollView>
+      ) : (
+        <Text style={styles.empty}>{t('No lyrics available for this song.')}</Text>
+      )}
+    </View>
+  );
 
   return (
     <View style={[styles.root, { backgroundColor: bg }]}>
@@ -89,22 +107,26 @@ export default function LyricsScreen() {
       </View>
 
       {/* Lyrics are a column of text: across a tablet a line runs the whole
-          width and the eye loses the next one on the way back (#131). */}
-      <View style={[styles.body, { paddingHorizontal: centredPadding(width, spacing.xl) }]}>
-        {isLoading ? (
-          <ActivityIndicator style={{ marginTop: spacing.xxl }} color={colors.text} />
-        ) : data?.synced ? (
-          <SyncedLyricsView lines={data.lines} large fadeColor={fadeColor} />
-        ) : data ? (
-          <ScrollView contentContainerStyle={styles.plainContent} showsVerticalScrollIndicator={false}>
-            <Text style={plainLineStyle}>
-              {data.lines.map((l) => l.value).join('\n')}
-            </Text>
-          </ScrollView>
-        ) : (
-          <Text style={styles.empty}>{t('No lyrics available for this song.')}</Text>
-        )}
-      </View>
+          width and the eye loses the next one on the way back (#131). Cover
+          mode fades the content's alpha rather than painting over the art. */}
+      {background === 'cover' ? (
+        <MaskedView
+          style={styles.body}
+          maskElement={(
+            <View style={styles.lyricsMask}>
+              <LinearGradient
+                colors={['transparent', '#000']}
+                style={styles.lyricsMaskFade}
+              />
+              <View style={styles.lyricsMaskSolid} />
+            </View>
+          )}
+        >
+          {lyricsContent}
+        </MaskedView>
+      ) : (
+        <View style={styles.body}>{lyricsContent}</View>
+      )}
 
       <View style={styles.controls}>
         <SeekBar duration={duration} />
@@ -159,6 +181,10 @@ const styles = themed((colors) => ({
   title: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
   artist: { color: colors.textSecondary, fontSize: fontSize.xs },
   body: { flex: 1 },
+  bodyContent: { flex: 1 },
+  lyricsMask: { flex: 1 },
+  lyricsMaskFade: { height: 72 },
+  lyricsMaskSolid: { flex: 1, backgroundColor: '#000' },
   plainContent: { paddingVertical: spacing.lg, paddingBottom: spacing.xxl },
   empty: {
     color: colors.textSecondary,
