@@ -56,9 +56,9 @@ import { useRecentSearches } from '@/store/recentSearches';
 import { APP_FONT_FAMILY, useSettings } from '@/store/settings';
 import { useSongCache } from '@/store/songCache';
 import { useSortPrefs } from '@/store/sortPrefs';
-import { colors, themeMode, useTheme, useThemeSkin } from '@/theme';
+import { colors, themeMode, useTheme, useThemeSpec } from '@/theme';
 
-/** The chrome skin's face, used while no other font is picked. */
+/** The face a theme can ask for (`font: 'exo2'`), used while no other font is picked. */
 const CHROME_FONT = 'Exo2';
 
 // Patches Text/TextInput once, before the first render.
@@ -124,15 +124,15 @@ export default function RootLayout() {
   // flag: settings hydrate after the first render, and a flag already set by
   // then would apply a family that isn't loaded yet.
   const [loadedCustom, setLoadedCustom] = useState<string | null>(null);
-  const skin = useThemeSkin();
+  const wantsExo = useThemeSpec()?.font === 'exo2';
   const [chromeFontLoaded, setChromeFontLoaded] = useState(() => Font.isLoaded(CHROME_FONT));
 
   useEffect(() => {
-    if (skin !== 'chrome' || chromeFontLoaded) return;
+    if (!wantsExo || chromeFontLoaded) return;
     void Font.loadAsync({ [CHROME_FONT]: require('../../assets/fonts/Exo2-Regular.ttf') })
       .then(() => setChromeFontLoaded(true))
       .catch(() => {});
-  }, [skin, chromeFontLoaded]);
+  }, [wantsExo, chromeFontLoaded]);
 
   useEffect(() => {
     if (appFont !== 'custom' || !customFontFamily || !customFontUri) return;
@@ -151,7 +151,7 @@ export default function RootLayout() {
         ? customFontFamily
         : undefined,
     );
-  } else if (appFont === 'system' && skin === 'chrome' && chromeFontLoaded) {
+  } else if (appFont === 'system' && wantsExo && chromeFontLoaded) {
     setAppFont(CHROME_FONT);
   } else {
     setAppFont(APP_FONT_FAMILY[appFont]);
@@ -376,6 +376,7 @@ export default function RootLayout() {
                 <Stack.Screen name="settings/player" />
                 <Stack.Screen name="settings/language" />
                 <Stack.Screen name="settings/font" />
+                <Stack.Screen name="settings/theme-editor" />
                 <Stack.Screen name="settings/personalization" />
                 <Stack.Screen name="settings/home-chips" />
                 <Stack.Screen name="settings/home-sections" />

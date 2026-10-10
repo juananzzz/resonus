@@ -87,7 +87,7 @@ import {
   transparentOf,
   useTheme,
   useThemeMode,
-  useThemeSkin,
+  useThemeSpec,
 } from '@/theme';
 import { motion } from '@/theme/motion';
 
@@ -409,10 +409,15 @@ export default function PlayerScreen() {
   // background shade is picked, so they never pick up its hue.
   const tintBase = BACKGROUND_TINTS.neutral.dark.surfaceHighlight;
   const playFill = lightMode ? toneOf(tintBase, 0.22, 0.2) : toneOf(tintBase, 0.9, 0.3);
-  const chromeSkin = useThemeSkin() === 'chrome';
-  const playInk = chromeSkin
+  // A theme can draw the play button in its accent or in silver, and then
+  // the bar takes the accent too.
+  const theme = useThemeSpec();
+  const playStyle = theme?.playButton ?? 'default';
+  const playInk = playStyle === 'silver'
     ? chrome.ink
-    : lightMode
+    : playStyle === 'accent'
+      ? colors.onAccent
+      : lightMode
       ? toneOf(tintBase, 0.97, 0.2)
       : toneOf(tintBase, 0.14, 0.3);
   const ink = lightMode ? toneOf(tintBase, 0.2, 0.2) : colors.text;
@@ -1361,7 +1366,7 @@ export default function PlayerScreen() {
           <SeekBar
             duration={duration}
             style={styles.progress}
-            tint={chromeSkin ? colors.accent : playFill}
+            tint={theme ? colors.accent : playFill}
           />
 
           <View style={styles.controls}>
@@ -1406,7 +1411,9 @@ export default function PlayerScreen() {
             <Pressable
               style={[
                 styles.playButton,
-                chromeSkin ? styles.playButtonChrome : { backgroundColor: playFill },
+                playStyle === 'silver'
+                  ? styles.playButtonChrome
+                  : { backgroundColor: playStyle === 'accent' ? colors.accent : playFill },
               ]}
               accessibilityRole="button"
               accessibilityLabel={isPlaying ? t('Pause') : t('Play')}
@@ -1432,7 +1439,7 @@ export default function PlayerScreen() {
                   way in. Centred as it comes, the icon still reads as pushed
                   right, so the box itself moves left - padding on the right,
                   the only side with room to take it. */}
-              {chromeSkin ? <ChromeSilver /> : null}
+              {playStyle === 'silver' ? <ChromeSilver /> : null}
               {isBuffering ? (
                 <ActivityIndicator size="small" color={playInk} />
               ) : (

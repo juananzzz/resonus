@@ -13,8 +13,13 @@ import { getItem, setItem } from '@/lib/storage';
 import {
   applyAccents,
   applyBackgroundTint,
-  applyThemeSkin,
+  applyThemeSpec,
+  CHROME_THEME,
+  DEFAULT_CUSTOM_THEME,
   isThemeSkin,
+  parseCustomTheme,
+  specFromCustom,
+  type CustomTheme,
   type ThemeSkin,
   applyPureBlack,
   BACKGROUND_TINTS,
@@ -842,7 +847,8 @@ type CustomSetter =
   | 'setPureBlack'
   | 'setAnimatedArtworkFps'
   | 'setBackgroundTint'
-  | 'setThemeSkin';
+  | 'setThemeSkin'
+  | 'setCustomTheme';
 
 interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   /** Streaming quality over Wi-Fi (and any non-cellular network). */
@@ -1199,6 +1205,8 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   backgroundTint: BackgroundTint;
   /** An alternative look over all of the above (Settings › Theme › Style). */
   themeSkin: ThemeSkin;
+  /** The theme made in the creator, kept while another style is on. */
+  customTheme: CustomTheme;
   /** UI font (system font family; `system` = default). */
   appFont: AppFont;
   /** Loaded custom font family name (the key passed to `Font.loadAsync`). */
@@ -1228,6 +1236,8 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   setPureBlack: (value: boolean) => void;
   setBackgroundTint: (value: BackgroundTint) => void;
   setThemeSkin: (value: ThemeSkin) => void;
+  /** Changes some of the creator's fields; on screen at once if it is the style on. */
+  setCustomTheme: (patch: Partial<CustomTheme>) => void;
   setCustomFont: (fontFamily: string | null, uri: string | null) => void;
   /** Resets to factory defaults (language is preserved). */
   resetToDefaults: () => void;
@@ -1426,6 +1436,7 @@ const DEFAULTS = {
   pureBlack: false,
   backgroundTint: 'blue' as BackgroundTint,
   themeSkin: 'default' as ThemeSkin,
+  customTheme: DEFAULT_CUSTOM_THEME,
   appFont: 'system' as AppFont,
   customFontFamily: null as string | null,
   customFontUri: null as string | null,
@@ -1457,7 +1468,12 @@ function applyFactoryLook() {
   applyThemePreference(DEFAULTS.themeMode);
   applyPureBlack(DEFAULTS.pureBlack);
   applyBackgroundTint(DEFAULTS.backgroundTint);
-  applyThemeSkin(DEFAULTS.themeSkin);
+  applySkin(DEFAULTS.themeSkin, DEFAULTS.customTheme);
+}
+
+/** The theme the style setting names, put on screen. */
+function applySkin(skin: ThemeSkin, custom: CustomTheme) {
+  applyThemeSpec(skin === 'chrome' ? CHROME_THEME : skin === 'custom' ? specFromCustom(custom) : null);
 }
 
 /**
@@ -1828,10 +1844,10 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
     set({ backgroundTint: parsed.backgroundTint });
     applyBackgroundTint(parsed.backgroundTint);
   }
-  if (isThemeSkin(parsed.themeSkin)) {
-    set({ themeSkin: parsed.themeSkin });
-    applyThemeSkin(parsed.themeSkin);
-  }
+  const customTheme = parseCustomTheme(parsed.customTheme) ?? DEFAULTS.customTheme;
+  const themeSkin = isThemeSkin(parsed.themeSkin) ? parsed.themeSkin : DEFAULTS.themeSkin;
+  set({ customTheme, themeSkin });
+  applySkin(themeSkin, customTheme);
   if (parsed.appFont && (parsed.appFont in APP_FONT_FAMILY || parsed.appFont === 'custom')) {
     set({ appFont: parsed.appFont });
   }
@@ -1986,8 +2002,15 @@ export const useSettings = create<SettingsState>((set, get) => ({
   },
 
   setThemeSkin: (themeSkin) => {
-    applyThemeSkin(themeSkin);
+    applySkin(themeSkin, get().customTheme);
     set({ themeSkin });
+    persist(snapshot(get));
+  },
+
+  setCustomTheme: (patch) => {
+    const customTheme = { ...get().customTheme, ...patch };
+    set({ customTheme });
+    if (get().themeSkin === 'custom') applySkin('custom', customTheme);
     persist(snapshot(get));
   },
 

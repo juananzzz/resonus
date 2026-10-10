@@ -470,15 +470,93 @@ const LIGHT: BasePalette = {
 };
 
 /**
- * An alternative look laid over everything else (Settings › Theme › Style).
- * `chrome` is the Y2K experiment: gunmetal, brushed silver and a neon accent.
- * It pins the appearance to dark and ignores the tint, pure black and the
- * picked accent while it is on; turning it off brings them all back.
+ * A theme as data (Settings › Theme › Style): the palette to paint with, and
+ * how the few pieces that can be drawn another way are drawn. The default
+ * style is none; the chrome one and the user's own are one each. Anything a
+ * theme can change is a field here, and a screen that wants to follow themes
+ * reads it from here rather than asking which theme is on.
  */
-export type ThemeSkin = 'default' | 'chrome';
+export interface ThemeSpec {
+  /** The appearance it is drawn in; the mode setting waits while it is on. */
+  base: ThemeMode;
+  colors: BasePalette;
+  accent: string;
+  corners: ThemeCorners;
+  /** `app` keeps the font picked in Settings; `exo2` comes with the app. */
+  font: 'app' | 'exo2';
+  /** Section headings as written, or in spaced-out capitals. */
+  headings: 'normal' | 'upper';
+  /** A one-point bevel round cards and covers. */
+  bevel: boolean;
+  /** The player's play button: the app's own, the accent, or polished silver. */
+  playButton: 'default' | 'accent' | 'silver';
+  /** The navigation bar and the mini player: the app's own, or gunmetal. */
+  bars: 'default' | 'metal';
+}
+
+export type ThemeCorners = 'sharp' | 'soft' | 'round';
+
+/** Which theme is on: none (`default`), the built-in chrome, or the user's. */
+export type ThemeSkin = 'default' | 'chrome' | 'custom';
 
 export function isThemeSkin(value: unknown): value is ThemeSkin {
-  return value === 'default' || value === 'chrome';
+  return value === 'default' || value === 'chrome' || value === 'custom';
+}
+
+/**
+ * What the theme creator asks for. Three colours and not twenty-nine: the
+ * rest follow from these (`specFromCustom`), which is what keeps a theme made
+ * in a minute readable everywhere.
+ */
+export interface CustomTheme {
+  background: string;
+  surface: string;
+  accent: string;
+  corners: ThemeCorners;
+  font: ThemeSpec['font'];
+  headings: ThemeSpec['headings'];
+  bevel: boolean;
+  playButton: ThemeSpec['playButton'];
+  bars: ThemeSpec['bars'];
+}
+
+export const DEFAULT_CUSTOM_THEME: CustomTheme = {
+  background: '#101418',
+  surface: '#1A2027',
+  accent: '#FF4FD8',
+  corners: 'soft',
+  font: 'app',
+  headings: 'normal',
+  bevel: false,
+  playButton: 'accent',
+  bars: 'default',
+};
+
+const HEX = /^#[0-9a-f]{6}$/i;
+
+/**
+ * A saved (or, later, imported) custom theme, field by field: whatever is
+ * missing or not one of the known values falls back to the default's, so an
+ * old file still opens. Null when it is not an object at all.
+ */
+export function parseCustomTheme(raw: unknown): CustomTheme | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const d = DEFAULT_CUSTOM_THEME;
+  const hex = (v: unknown, fallback: string) => (typeof v === 'string' && HEX.test(v) ? v : fallback);
+  const pick = <T extends string>(v: unknown, allowed: readonly T[], fallback: T): T =>
+    allowed.includes(v as T) ? (v as T) : fallback;
+  return {
+    background: hex(r.background, d.background),
+    surface: hex(r.surface, d.surface),
+    accent: hex(r.accent, d.accent),
+    corners: pick(r.corners, ['sharp', 'soft', 'round'] as const, d.corners),
+    font: pick(r.font, ['app', 'exo2'] as const, d.font),
+    headings: pick(r.headings, ['normal', 'upper'] as const, d.headings),
+    bevel: typeof r.bevel === 'boolean' ? r.bevel : d.bevel,
+    playButton: pick(r.playButton, ['default', 'accent', 'silver'] as const, d.playButton),
+    bars: pick(r.bars, ['default', 'metal'] as const, d.bars),
+  };
 }
 
 const CHROME: BasePalette = {
@@ -529,17 +607,30 @@ export const chrome = {
   ink: '#0A0D12',
 };
 
+/** The Y2K experiment: gunmetal, brushed silver and a neon accent. */
+export const CHROME_THEME: ThemeSpec = {
+  base: 'dark',
+  colors: CHROME,
+  accent: CHROME_ACCENT,
+  corners: 'sharp',
+  font: 'exo2',
+  headings: 'upper',
+  bevel: true,
+  playButton: 'silver',
+  bars: 'metal',
+};
+
 /**
- * What the chrome skin adds to a section heading: capitals, spaced out. Spread
- * last into a `themed()` style, so it is read again when the skin changes.
+ * A section heading in spaced-out capitals, when the theme asks for them. Spread
+ * last into a `themed()` style, so it is read again when the theme changes.
  */
 export function skinHeading(): TextStyle {
-  return skin === 'chrome' ? { textTransform: 'uppercase', letterSpacing: 1.2 } : {};
+  return spec?.headings === 'upper' ? { textTransform: 'uppercase', letterSpacing: 1.2 } : {};
 }
 
-/** A one-point bevel round a card or a cover under the chrome skin. */
+/** A one-point bevel round a card or a cover, when the theme asks for one. */
 export function skinBevel(): ViewStyle {
-  return skin === 'chrome'
+  return spec?.bevel
     ? {
         borderWidth: 1,
         borderTopColor: 'rgba(220,235,250,0.22)',
@@ -624,6 +715,56 @@ function readableOn(hex: string, bg: string, ratio = 4.5): string {
   return out;
 }
 
+/** `a` moved towards `b` by `t` (0–1). */
+function mix(a: string, b: string, t: number): string {
+  const x = channels(a);
+  const y = channels(b);
+  if (!x || !y) return a;
+  return toHex(x[0] + (y[0] - x[0]) * t, x[1] + (y[1] - x[1]) * t, x[2] + (y[2] - x[2]) * t);
+}
+
+function rgba(hex: string, alpha: number): string {
+  const ch = channels(hex);
+  return ch ? `rgba(${ch[0]},${ch[1]},${ch[2]},${alpha})` : hex;
+}
+
+/**
+ * The whole palette from the creator's three colours. Text is black or white
+ * by the background, the greys step from the surface towards the text, and
+ * the accent is pushed until it reads, the same rule the app's own accents
+ * follow (`readableOn`).
+ */
+export function specFromCustom(c: CustomTheme): ThemeSpec {
+  const light = luminance(c.background) > 0.4;
+  const text = light ? '#111113' : '#F2F4F7';
+  const own = light ? LIGHT : DARK;
+  return {
+    base: light ? 'light' : 'dark',
+    colors: {
+      ...own,
+      background: c.background,
+      surface: c.surface,
+      surfaceHighlight: mix(c.surface, text, 0.07),
+      border: mix(c.surface, text, 0.1),
+      control: mix(c.surface, text, 0.16),
+      text,
+      textSecondary: mix(text, c.background, 0.35),
+      textMuted: mix(text, c.background, 0.55),
+      textTime: mix(text, c.background, 0.15),
+      snackbar: light ? own.snackbar : mix(c.surface, text, 0.12),
+      veil: rgba(c.background, 0.6),
+      playerPlain: mix(c.background, text, 0.06),
+    },
+    accent: readableOn(c.accent, c.background),
+    corners: c.corners,
+    font: c.font,
+    headings: c.headings,
+    bevel: c.bevel,
+    playButton: c.playButton,
+    bars: c.bars,
+  };
+}
+
 /**
  * The live palette. Rewritten in place by `rebuild` so that anything holding
  * a reference to it — including code outside React — always reads the current
@@ -646,16 +787,16 @@ let darkAccent = DEFAULT_ACCENT;
 let lightAccent = DEFAULT_ACCENT;
 let pureBlack = false;
 let tint: BackgroundTint = 'blue';
-let skin: ThemeSkin = 'default';
+let spec: ThemeSpec | null = null;
 
 /** Which appearance is active right now (for code outside a component). */
 export function themeMode(): ThemeMode {
-  return skin === 'chrome' ? 'dark' : currentMode;
+  return spec ? spec.base : currentMode;
 }
 
-/** Which skin is active right now (for code outside a component). */
-export function themeSkin(): ThemeSkin {
-  return skin;
+/** The theme on, if any (for code outside a component). */
+export function themeSpec(): ThemeSpec | null {
+  return spec;
 }
 
 // ---------------------------------------------------------------------------
@@ -678,14 +819,14 @@ function subscribe(listener: () => void): () => void {
 
 /** Rebuilds `colors` from the current mode + accent and wakes everyone up. */
 function rebuild(): void {
-  Object.assign(radius, skin === 'chrome' ? CHROME_RADIUS : DEFAULT_RADIUS);
-  if (skin === 'chrome') {
-    Object.assign(colors, CHROME, {
-      accent: CHROME_ACCENT,
-      accentPressed: darken(CHROME_ACCENT),
-      accentVivid: CHROME_ACCENT,
-      brand: CHROME_ACCENT,
-      onAccent: '#001418',
+  Object.assign(radius, CORNERS[spec?.corners ?? 'round']);
+  if (spec) {
+    Object.assign(colors, spec.colors, {
+      accent: spec.accent,
+      accentPressed: darken(spec.accent),
+      accentVivid: spec.accent,
+      brand: spec.accent,
+      onAccent: contrast(spec.accent, '#000000') >= contrast(spec.accent, '#FFFFFF') ? '#000000' : '#FFFFFF',
     });
     version += 1;
     for (const listener of listeners) listener();
@@ -737,10 +878,9 @@ export function applyBackgroundTint(next: BackgroundTint): void {
   rebuild();
 }
 
-/** Hot-swaps the skin (see `ThemeSkin`). */
-export function applyThemeSkin(next: ThemeSkin): void {
-  if (next === skin) return;
-  skin = next;
+/** Puts a theme on, or takes it off with null (see `ThemeSpec`). */
+export function applyThemeSpec(next: ThemeSpec | null): void {
+  spec = next;
   rebuild();
 }
 
@@ -918,10 +1058,10 @@ export function useThemeMode(): ThemeMode {
   return themeMode();
 }
 
-/** The same subscription, for the pieces drawn differently under a skin. */
-export function useThemeSkin(): ThemeSkin {
+/** The same subscription, for the pieces a theme can draw another way. */
+export function useThemeSpec(): ThemeSpec | null {
   useSyncExternalStore(subscribe, getVersion, getVersion);
-  return skin;
+  return spec;
 }
 
 export const spacing = {
@@ -956,11 +1096,16 @@ const DEFAULT_RADIUS = {
   pill: 999,
 };
 
-/** The chrome skin's corners: machined, not soft. Circles stay circles. */
-const CHROME_RADIUS: typeof DEFAULT_RADIUS = { sm: 2, md: 3, lg: 5, xl: 8, xxl: 12, pill: 999 };
+/** The corners a theme can ask for. Circles stay circles in all three. */
+const CORNERS: Record<ThemeCorners, typeof DEFAULT_RADIUS> = {
+  /** Machined, not soft: the chrome theme's. */
+  sharp: { sm: 2, md: 3, lg: 5, xl: 8, xxl: 12, pill: 999 },
+  soft: { sm: 4, md: 6, lg: 10, xl: 14, xxl: 20, pill: 999 },
+  round: DEFAULT_RADIUS,
+};
 
 /**
- * Rewritten in place by the skin, like `colors`, so it is only current where
+ * Rewritten in place by the theme, like `colors`, so it is only current where
  * it is read inside a `themed()` sheet or while rendering.
  */
 export const radius: Readonly<typeof DEFAULT_RADIUS> = { ...DEFAULT_RADIUS };

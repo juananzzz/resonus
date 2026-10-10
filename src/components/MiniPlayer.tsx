@@ -28,7 +28,7 @@ import { currentSong, useLiveInfo, usePlayerStore } from '@/store/player';
 import { CONTENT_MAX_WIDTH, useScreenSize } from '@/hooks/useScreenSize';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
-import { colors, fontSize, radius, spacing, themed, themeSkin, useThemeSkin } from '@/theme';
+import { colors, fontSize, radius, spacing, themed, themeSpec, useThemeSpec } from '@/theme';
 import { motion } from '@/theme/motion';
 import { BarBlur, useBarBlur } from './BarBlur';
 import { ChromeBar } from './Chrome';
@@ -63,7 +63,7 @@ function MiniProgress({ song }: { song: Song }) {
         style={[
           styles.progressFill,
           { width: `${progress * 100}%` },
-          themeSkin() === 'chrome' && { backgroundColor: colors.accent },
+          themeSpec() && { backgroundColor: colors.accent },
         ]}
       />
     </View>
@@ -196,7 +196,7 @@ export function MiniPlayer() {
   const dominant = useDominantColor(miniColor ? colorSource : undefined);
   const bg = miniColor ? dominant : colors.surfaceHighlight;
   const blur = useBarBlur('miniPlayer');
-  const chromeSkin = useThemeSkin() === 'chrome';
+  const metal = useThemeSpec()?.bars === 'metal';
   const buttons = useSettings((s) => s.miniPlayerButtons);
   const showProgress = useSettings((s) => s.miniPlayerProgress);
   // Not "unless the file is on the phone": see the player screen, which had the
@@ -219,10 +219,10 @@ export function MiniPlayer() {
         {/* The shadow sits outside the card, which clips its own contents. */}
         <View style={[styles.card, wide && styles.narrow]}>
         <Pressable
-          style={[styles.container, { backgroundColor: blur || chromeSkin ? 'transparent' : bg }]}
+          style={[styles.container, { backgroundColor: blur || metal ? 'transparent' : bg }]}
           onPress={() => pushOnce('/player')}
         >
-          {chromeSkin ? (
+          {metal ? (
             <ChromeBar corner={radius.lg} />
           ) : blur ? (
             <BarBlur tint={bg} alpha={0.55} />

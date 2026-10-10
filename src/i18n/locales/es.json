@@ -798,5 +798,21 @@
   "When its songs run out, another round from the same artists.": "Cuando se acaban sus canciones, otra tanda de los mismos artistas.",
   "Style": "Estilo",
   "Chrome (experimental)": "Cromado (experimental)",
-  "Chrome brings its own colours, font and corners. The settings below come back when it is off.": "Cromado trae sus propios colores, fuente y esquinas. Los ajustes de abajo vuelven al quitarlo."
+  "My theme": "Mi tema",
+  "Make your own: colors, corners, font and a few pieces": "Hazte el tuyo: colores, esquinas, fuente y algunas piezas",
+  "A style brings its own colors, font and corners. The settings below come back with Default.": "Un estilo trae sus propios colores, fuente y esquinas. Los ajustes de abajo vuelven con Predeterminado.",
+  "Use my theme": "Usar mi tema",
+  "Colors": "Colores",
+  "Cards": "Tarjetas",
+  "Shape and type": "Forma y letra",
+  "Corners": "Esquinas",
+  "Headings": "Títulos",
+  "Capitals": "Mayúsculas",
+  "Bevel": "Bisel",
+  "A thin lit edge round cards and covers": "Un borde fino iluminado en tarjetas y carátulas",
+  "Pieces": "Piezas",
+  "Play button": "Botón de reproducir",
+  "Silver": "Plata",
+  "Navigation bar and mini player": "Barra de navegación y mini reproductor",
+  "Metal": "Metal"
 }

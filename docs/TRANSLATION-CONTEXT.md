@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 798 of them.
+Every string the app can show, under the screen it shows up on. 814 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -1108,10 +1108,10 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
+| `A style brings its own colors, font and corners. The settings below come back with Default.` |  |
 | `Accent color` | The colour the app uses for buttons, links and anything it wants you to notice |
 | `Background` | Section header over what is drawn behind the player. Its two values are `Plain` and `Blurred cover` |
 | `Chrome (experimental)` |  |
-| `Chrome brings its own colours, font and corners. The settings below come back when it is off.` |  |
 | `Create custom color` |  |
 | `Custom color` |  |
 | `Dark` | The appearance the app has always had, and what it uses unless the other is chosen. |
@@ -1121,13 +1121,45 @@ you are actually typing into, which is easier than reading it here.
 | `Hex code` |  |
 | `Light` | The light appearance, in Settings › Theme |
 | `Light from` |  |
+| `Make your own: colors, corners, font and a few pieces` | The line under “My theme”, explaining it |
 | `Mode` | Heading over the two appearances on the Theme screen. Not a playback mode and not a profile: dark or light. It is called this and not "Appearance" because Appearance is the settings screen one level up |
+| `My theme` |  |
 | `Palette` |  |
 | `Pure black` |  |
 | `Scheduled` |  |
 | `Style` |  |
 | `System` | Two places: a theme setting (use whichever appearance the phone itself is set to, light or dark), and `System::section`, the heading in Settings › Quality & playback over Keep screen on and the battery warning. Add `System::section` to your file if one word cannot do both |
 | `Theme` | The screen where the appearance and the accent colour are chosen, and the name of the row that opens it |
+
+## Settings › Theme editor
+
+| String | What it is |
+| --- | --- |
+| `A thin lit edge round cards and covers` | The line under “Bevel”, explaining it |
+| `Accent color` | The colour the app uses for buttons, links and anything it wants you to notice |
+| `Background` | Section header over what is drawn behind the player. Its two values are `Plain` and `Blurred cover` |
+| `Bevel` |  |
+| `Capitals` | One of the values of “Headings” |
+| `Cards` |  |
+| `Colors` |  |
+| `Corners` |  |
+| `Custom color` |  |
+| `Default` | Sorting pill: what you get when nothing is sorted, which is the order the server keeps its songs in. Not alphabetical, and not Resonus deciding. On a playlist it is the order the list came in, which is the one you made by dragging the songs if it is an ordinary playlist and the one its rules produced if it is a smart one — hence a word that is true of both rather than "custom" or "pre-defined" |
+| `Font` |  |
+| `Headings` |  |
+| `Hex code` |  |
+| `Metal` | One of the values of “Navigation bar and mini player” |
+| `More rounded` | One of the values of “Cover corners” |
+| `My theme` |  |
+| `Navigation bar and mini player` |  |
+| `Pieces` |  |
+| `Play button` |  |
+| `Rounded` | One of the values of “Cover corners” |
+| `Shape and type` |  |
+| `Silver` | One of the values of “Play button” |
+| `Square` | One of the values of “Cover corners” |
+| `Start over` | Button: clears the measurements and starts counting again. Not "start playback" |
+| `Use my theme` |  |
 
 ## Shortcut
 

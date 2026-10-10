@@ -5,10 +5,18 @@
  */
 import { ColorPickerDialog } from '@/components/ColorPickerDialog';
 import Icon from '@/components/Icon';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { SelectList, SettingsGroup, SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
+import {
+  SelectList,
+  SettingRow,
+  SettingsGroup,
+  SettingsPage,
+  settingsStyles,
+  SwitchList,
+} from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { ACCENT_OPTIONS, useSettings } from '@/store/settings';
 import {
@@ -180,6 +188,7 @@ export default function ThemeSettings() {
   const setCustomAccentColor = useSettings((s) => s.setCustomAccentColor);
   const themeSkin = useSettings((s) => s.themeSkin);
   const setThemeSkin = useSettings((s) => s.setThemeSkin);
+  const router = useRouter();
   const [pickerOpen, setPickerOpen] = useState(false);
   const accent = mode === 'light' ? accentColorLight : accentColor;
 
@@ -194,11 +203,19 @@ export default function ThemeSettings() {
           options={[
             { value: 'default', label: t('Default') },
             { value: 'chrome', label: t('Chrome (experimental)') },
+            { value: 'custom', label: t('My theme') },
           ]}
         />
-        {themeSkin === 'chrome' ? (
+        <View style={styles.gap} />
+        <SettingRow
+          label={t('My theme')}
+          description={t('Make your own: colors, corners, font and a few pieces')}
+          chevron
+          onPress={() => router.push('/settings/theme-editor')}
+        />
+        {themeSkin !== 'default' ? (
           <Text style={[styles.subLabel, styles.skinNote]}>
-            {t('Chrome brings its own colours, font and corners. The settings below come back when it is off.')}
+            {t('A style brings its own colors, font and corners. The settings below come back with Default.')}
           </Text>
         ) : null}
         {/* Everything below is the default style's, and stays set while

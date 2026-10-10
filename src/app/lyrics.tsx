@@ -20,14 +20,15 @@ import { useLyrics } from '@/hooks/useLyrics';
 import { useT } from '@/i18n';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
-import { chrome, colors, fontSize, radius, spacing, themed, useTheme, useThemeSkin } from '@/theme';
+import { chrome, colors, fontSize, radius, spacing, themed, useTheme, useThemeSpec } from '@/theme';
 import { centredPadding, useScreenSize } from '@/hooks/useScreenSize';
 
 export default function LyricsScreen() {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
-  const chromeSkin = useThemeSkin() === 'chrome';
+  const theme = useThemeSpec();
+  const playStyle = theme?.playButton ?? 'default';
   const router = useRouter();
   const t = useT();
   const { width } = useScreenSize();
@@ -131,7 +132,7 @@ export default function LyricsScreen() {
       )}
 
       <View style={styles.controls}>
-        <SeekBar duration={duration} tint={chromeSkin ? colors.accent : undefined} />
+        <SeekBar duration={duration} tint={theme ? colors.accent : undefined} />
         <View style={styles.buttons}>
           <Pressable
             hitSlop={10}
@@ -142,16 +143,26 @@ export default function LyricsScreen() {
             <Icon name="play-skip-back" size={32} color={colors.text} />
           </Pressable>
           <Pressable
-            style={[styles.playButton, chromeSkin && styles.playButtonChrome]}
+            style={[
+              styles.playButton,
+              playStyle === 'silver' && styles.playButtonChrome,
+              playStyle === 'accent' && { backgroundColor: colors.accent },
+            ]}
             accessibilityRole="button"
             accessibilityLabel={isPlaying ? t('Pause') : t('Play')}
             onPress={toggle}
           >
-            {chromeSkin ? <ChromeSilver /> : null}
+            {playStyle === 'silver' ? <ChromeSilver /> : null}
             <Icon
               name={isPlaying ? 'pause' : 'play'}
               size={30}
-              color={chromeSkin ? chrome.ink : colors.onInverse}
+              color={
+                playStyle === 'silver'
+                  ? chrome.ink
+                  : playStyle === 'accent'
+                    ? colors.onAccent
+                    : colors.onInverse
+              }
             />
           </Pressable>
           <Pressable

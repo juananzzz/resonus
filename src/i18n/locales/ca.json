@@ -798,5 +798,21 @@
   "When its songs run out, another round from the same artists.": "Quan s'acaben les cançons, una altra tanda dels mateixos artistes.",
   "Style": "Estil",
   "Chrome (experimental)": "Cromat (experimental)",
-  "Chrome brings its own colours, font and corners. The settings below come back when it is off.": "Cromat porta els seus propis colors, font i cantonades. Els ajustos de sota tornen en treure'l."
+  "My theme": "El meu tema",
+  "Make your own: colors, corners, font and a few pieces": "Fes-te el teu: colors, cantonades, font i algunes peces",
+  "A style brings its own colors, font and corners. The settings below come back with Default.": "Un estil porta els seus propis colors, font i cantonades. Els ajustos de sota tornen amb Predeterminat.",
+  "Use my theme": "Fes servir el meu tema",
+  "Colors": "Colors",
+  "Cards": "Targetes",
+  "Shape and type": "Forma i lletra",
+  "Corners": "Cantonades",
+  "Headings": "Títols",
+  "Capitals": "Majúscules",
+  "Bevel": "Bisell",
+  "A thin lit edge round cards and covers": "Una vora fina il·luminada a targetes i caràtules",
+  "Pieces": "Peces",
+  "Play button": "Botó de reproduir",
+  "Silver": "Plata",
+  "Navigation bar and mini player": "Barra de navegació i mini reproductor",
+  "Metal": "Metall"
 }
