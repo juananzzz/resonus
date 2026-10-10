@@ -29,6 +29,14 @@
             ],
             "versions": [
                 {
+                    "version": "0.8.2",
+                    "date": "2026-10-10T16:00:51+02:00",
+                    "size": 20149668,
+                    "downloadURL": "https://github.com/juananzzz/resonus/releases/download/v0.8.2/resonus-v0.8.2.ipa",
+                    "localizedDescription": "Added\nArtist radios on Home, built from your most played artists, with new ones each time Home is pulled to refresh (#252).\nA radio's ⋯ menu, also on a long press of its card, to queue it, save it as a playlist, refresh it or go to its artist.\nAny artist's radio from the artist's ⋯ menu or a song's menu, and a radio keeps playing once its songs run out.\nRadio settings in Appearance: turn them off entirely, choose how many Home shows and whether they keep playing.\nThe navigation bar can be solid, blurred or a gradient, from one setting (#252).\niOS: a home screen widget with the current track and a play/pause button (#252).\niOS: a Precise timing switch and a frame rate choice for animated lock screen covers (#252).\nTurkish, thanks to @sectns (#250).\nA lyrics weight setting, from light to bold (#244).\nAndroid: an option to blur the lyrics lines that are not playing (#244).\nChanged\nWord-timed lyrics sweep across each word as it is sung, with a small bounce (#244).\nThe lyrics size also applies to the lyrics card and the lyrics on the cover (#244).\nLyrics fade out softly under the header over a blurred cover (#244).\nFixed\nA track that fails in the background retries instead of stopping, and resumes when the network comes back (#254).\nLyrics open right away, with a spinner while they load (#255).\niOS: opening an artist or album from the player no longer lands it in a sheet (#252).\niOS: the Dynamic Island shows tall covers square (#252).\niOS: opening the app no longer stops what another app is playing (#252).\nAlbums and playlists fade their colour in instead of flashing grey first.\nScreens no longer wait behind slow similar-song, top-song and artist-info requests, or behind the Android Auto library filling in.\nA shelf with a title in Japanese, Chinese or with an emoji is no longer taller than the rest.\nHome scrolls smoothly again with the Most played songs and Random songs shelves on.\nThose song shelves show pages side by side on a wide or turned screen instead of stretching one.\nGenres scroll smoothly once their covers have loaded.",
+                    "minOSVersion": "16.4"
+                },
+                {
                     "version": "0.8.1",
                     "date": "2026-10-04T13:19:37+02:00",
                     "size": 19982837,
