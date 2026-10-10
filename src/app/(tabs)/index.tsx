@@ -64,7 +64,7 @@ import {
   type HomeSectionKey,
 } from '@/store/settings';
 import { useSongMenu } from '@/store/songMenu';
-import { colors, fontSize, radius, spacing, themed, useTheme, tracking } from '@/theme';
+import { colors, fontSize, radius, spacing, themed, useTheme, skinHeading, tracking } from '@/theme';
 
 /**
  * How wide a quick tile wants to be, in dp.
@@ -1189,13 +1189,20 @@ const styles = themed((colors) => ({
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
-  sectionHeaderTitle: { color: colors.text, fontSize: fontSize.lg, letterSpacing: tracking.heading, fontWeight: '500' },
+  sectionHeaderTitle: {
+    color: colors.text,
+    fontSize: fontSize.lg,
+    letterSpacing: tracking.heading,
+    fontWeight: '500',
+    ...skinHeading(),
+  },
   showAll: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '500' },
   sectionTitle: {
     color: colors.text,
     fontSize: fontSize.lg,
     letterSpacing: tracking.heading,
     fontWeight: '500',
+    ...skinHeading(),
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },

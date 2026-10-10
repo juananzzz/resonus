@@ -10,7 +10,9 @@ import { chrome } from '@/theme';
 /** Polished silver with a bevel: the play button. */
 export function ChromeSilver() {
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    // Round and clipped on its own: a button that clipped it would clip its
+    // halo too.
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.round]}>
       <LinearGradient
         style={StyleSheet.absoluteFill}
         colors={chrome.silver}
@@ -38,6 +40,7 @@ export function ChromeBar({ corner }: { corner?: number }) {
 }
 
 const styles = StyleSheet.create({
+  round: { borderRadius: 999, overflow: 'hidden' },
   bevel: {
     position: 'absolute',
     top: 0,

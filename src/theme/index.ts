@@ -529,6 +529,27 @@ export const chrome = {
   ink: '#0A0D12',
 };
 
+/**
+ * What the chrome skin adds to a section heading: capitals, spaced out. Spread
+ * last into a `themed()` style, so it is read again when the skin changes.
+ */
+export function skinHeading(): TextStyle {
+  return skin === 'chrome' ? { textTransform: 'uppercase', letterSpacing: 1.2 } : {};
+}
+
+/** A one-point bevel round a card or a cover under the chrome skin. */
+export function skinBevel(): ViewStyle {
+  return skin === 'chrome'
+    ? {
+        borderWidth: 1,
+        borderTopColor: 'rgba(220,235,250,0.22)',
+        borderLeftColor: 'rgba(220,235,250,0.12)',
+        borderRightColor: 'rgba(0,0,0,0.6)',
+        borderBottomColor: 'rgba(0,0,0,0.6)',
+      }
+    : {};
+}
+
 /** Parses `#rrggbb` into its three channels. Returns null for anything else. */
 function channels(hex: string): [number, number, number] | null {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());

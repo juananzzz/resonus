@@ -21,7 +21,17 @@ import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-cont
 
 import { useAccent } from '@/hooks/useAccent';
 import { CONTENT_MAX_WIDTH } from '@/hooks/useScreenSize';
-import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING, themed, tracking } from '@/theme';
+import {
+  colors,
+  fontSize,
+  radius,
+  SCREEN_BOTTOM_PADDING,
+  skinBevel,
+  skinHeading,
+  spacing,
+  themed,
+  tracking,
+} from '@/theme';
 import { BackChevron } from './BackChevron';
 
 /**
@@ -785,6 +795,8 @@ export const settingsStyles = themed((colors) => ({
     marginTop: spacing.lg,
     marginBottom: spacing.xs,
     marginLeft: spacing.xs,
+
+    ...skinHeading(),
   },
   sectionDescription: {
     color: colors.textMuted,
@@ -809,7 +821,7 @@ export const settingsStyles = themed((colors) => ({
     marginBottom: spacing.xs,
   },
   // Rounded box on the background (rows live inside, more readable).
-  cardBox: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: 'hidden' },
+  cardBox: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: 'hidden', ...skinBevel() },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

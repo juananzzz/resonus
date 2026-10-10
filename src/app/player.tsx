@@ -1749,7 +1749,6 @@ const styles = themed((colors) => ({
   },
   // Silver, with a neon halo: the chrome skin's (see `ThemeSkin`).
   playButtonChrome: {
-    overflow: 'hidden',
     boxShadow: `0px 0px 18px ${colors.accent}99`,
   },
   // Stars centered below the cover (optional element).

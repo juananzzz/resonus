@@ -7,7 +7,7 @@ import { AppState, View, type StyleProp, type ViewStyle } from 'react-native';
 import { CACHED_COVER, COVER } from '@/api/data';
 import { bump } from '@/lib/perfLog';
 import { useSettings, type CoverCorners } from '@/store/settings';
-import { colors, radius } from '@/theme';
+import { colors, radius, skinBevel } from '@/theme';
 
 /**
  * The corner of a cover of this size (Settings › Appearance › Cover corners).
@@ -392,7 +392,7 @@ export function Cover({
       key={redraw.nonce}
       ref={imageRef}
       source={{ uri: shown }}
-      style={[{ width: size, height: size, borderRadius }, style as StyleProp<ImageStyle>]}
+      style={[{ width: size, height: size, borderRadius }, skinBevel() as ImageStyle, style as StyleProp<ImageStyle>]}
       contentFit={contentFit}
       transition={transition}
       recyclingKey={shown}

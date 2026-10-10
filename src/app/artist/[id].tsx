@@ -55,7 +55,7 @@ import { currentSong, usePlayerStore } from '@/store/player';
 import { usePlaylistPicker } from '@/store/playlistPicker';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
-import { colors, fontSize, radius, spacing, themed, useTheme, tracking, transparentOf } from '@/theme';
+import { colors, fontSize, radius, spacing, themed, useTheme, skinHeading, tracking, transparentOf } from '@/theme';
 import { BackChevron } from '@/components/BackChevron';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useScreenSize } from '@/hooks/useScreenSize';
@@ -1037,13 +1037,20 @@ const styles = themed((colors) => ({
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
-  sectionHeaderTitle: { color: colors.text, fontSize: fontSize.lg, letterSpacing: tracking.heading, fontWeight: '500' },
+  sectionHeaderTitle: {
+    color: colors.text,
+    fontSize: fontSize.lg,
+    letterSpacing: tracking.heading,
+    fontWeight: '500',
+    ...skinHeading(),
+  },
   showAll: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '500' },
   sectionTitle: {
     color: colors.text,
     fontSize: fontSize.lg,
     letterSpacing: tracking.heading,
     fontWeight: '500',
+    ...skinHeading(),
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
