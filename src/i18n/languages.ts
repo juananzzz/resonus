@@ -20,6 +20,7 @@ import zhCN from './locales/zh-CN.json';
 import uk from './locales/uk.json';
 import pl from './locales/pl.json';
 import sv from './locales/sv.json';
+import fr from './locales/fr.json';
 import ptBR from './locales/pt-BR.json';
 import tr from './locales/tr.json';
 
@@ -56,6 +57,7 @@ export const LANGUAGES = [
   { code: 'uk', name: 'Українська', dict: uk },
   { code: 'pl', name: 'Polski', dict: pl },
   { code: 'sv', name: 'Svenska', dict: sv },
+  { code: 'fr', name: 'Français', dict: fr },
   { code: 'pt-BR', name: 'Português (Brasil)', dict: ptBR },
   { code: 'tr', name: 'Türkçe', dict: tr },
 ] as const satisfies readonly LangDef[];
