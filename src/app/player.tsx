@@ -421,7 +421,9 @@ export default function PlayerScreen() {
   const bgStyle = useAnimatedStyle(() => ({ backgroundColor: bgColor.value }));
   // Same query used by the lyrics card (cached): here only to know if there
   // are lyrics and let the card peek below the first page.
-  const { data: lyrics } = useLyrics(canLyrics ? (song ?? undefined) : undefined);
+  const { data: lyrics, isLoading: lyricsLoading } = useLyrics(
+    canLyrics ? (song ?? undefined) : undefined,
+  );
   // The only reason this screen scrolls at all: the room left under the first
   // page and the card itself both read this, and they must stay in step or the
   // player can be dragged for no reason (#107). What does NOT read it is the
@@ -716,10 +718,10 @@ export default function PlayerScreen() {
         offset.value = withSpring(target, { damping: 20, stiffness: 200 });
       }
     });
-  // Cover tap shows lyrics (if any). Coexists with swipe: tap only wins if
-  // there was no drag. `hasLyrics` is a boolean so it can be read from the
-  // gesture's UI thread.
-  const hasLyrics = !!lyrics;
+  // Opens while the query is still out; once it answers with nothing, the
+  // tap stays put rather than opening an empty screen. Coexists with swipe:
+  // tap only wins if there was no drag.
+  const canOpenLyrics = !!song && canLyrics && (lyricsLoading || !!lyrics);
   // What tap does based on setting: «inline» shows lyrics in place of the
   // cover (toggle), «screen» opens the full screen, «none» nothing.
   const [inlineLyrics, setInlineLyrics] = useState(false);
@@ -754,9 +756,8 @@ export default function PlayerScreen() {
    * Every action the cover offers, wherever it was asked for.
    *
    * One tap and two share the list, so this is the one place that knows how to
-   * run any of them. The two lyrics actions are the only ones that can find
-   * nothing to do: a song with no lyrics leaves the tap where it was rather
-   * than opening an empty screen.
+   * run any of them. Lyrics open immediately and show their loading or empty
+   * state until the query returns.
    *
    * Handed to `scheduleOnRN` by name, with the action as its argument: a
    * gesture's `onEnd` is a worklet, and a function written inside one is not
@@ -765,10 +766,10 @@ export default function PlayerScreen() {
   const runCoverAction = (action: CoverTapAction) => {
     switch (action) {
       case 'inline':
-        if (hasLyrics) setInlineLyrics((v) => !v);
+        if (canOpenLyrics) setInlineLyrics((v) => !v);
         break;
       case 'screen':
-        if (hasLyrics) pushOnce('/lyrics');
+        if (canOpenLyrics) pushOnce('/lyrics');
         break;
       case 'playPause':
         toggle();
@@ -960,7 +961,7 @@ export default function PlayerScreen() {
   // and the speed button while not at 1×, and then it is there.
   const buttonOn = (key: string) => playerButtons.some((b) => b.key === key && b.enabled);
   const menuOptions = () => ({
-    showLyrics: hasLyrics,
+    showLyrics: canOpenLyrics,
     queue: true,
     devices: !buttonOn('devices') && canDevices && !remoteDevice ? () => setOutputOpen(true) : undefined,
     speed: !buttonOn('speed') && canSpeed && speed === 1 ? () => openSpeedSheet.current() : undefined,
@@ -1198,7 +1199,7 @@ export default function PlayerScreen() {
             </Animated.View>
           </GestureDetector>
           {/* Lyrics in place of the cover (setting): same frame, on top. */}
-          {inlineLyrics && hasLyrics ? (
+          {inlineLyrics && canLyrics ? (
             <View style={[styles.lyricsOverlay, { height: coverSize }]}>
               <CoverLyrics size={coverSize} onClose={() => setInlineLyrics(false)} />
             </View>
@@ -1519,9 +1520,9 @@ export default function PlayerScreen() {
                       hitSlop={10}
                       accessibilityRole="button"
                       accessibilityLabel={t('Lyrics')}
-                      disabled={!hasLyrics}
+                      disabled={!canOpenLyrics}
                       onPress={() => pushOnce('/lyrics')}
-                      style={[styles.bottomButton, !hasLyrics && styles.bottomButtonOff]}
+                      style={[styles.bottomButton, !canOpenLyrics && styles.bottomButtonOff]}
                     >
                       <Icon name="mic-outline" size={26} color={ink} />
                     </Pressable>

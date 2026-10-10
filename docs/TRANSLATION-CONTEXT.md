@@ -450,6 +450,7 @@ you are actually typing into, which is easier than reading it here.
 | `History` | The listening history: what was played and when |
 | `Mix of “{name}”` | What the player calls the queue once it has grown past its album into songs the app picked itself. `{name}` is the song it was grown from |
 | `No devices found` |  |
+| `No lyrics available for this song.` | Empty state on the lyrics screen |
 | `NOW PLAYING` | Small label above the cover, in the same place and style as `PLAYING FROM`, when there is nothing to name |
 | `Output` |  |
 | `Playback speed` |  |
