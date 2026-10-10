@@ -31,6 +31,7 @@ Releases before 0.2.1 are only listed on the
 ### Fixed
 
 - A track that fails in the background retries instead of stopping, and resumes when the network comes back (#254).
+- Lyrics open right away, with a spinner while they load (#255).
 - iOS: opening an artist or album from the player no longer lands it in a sheet (#252).
 - iOS: the Dynamic Island shows tall covers square (#252).
 - iOS: opening the app no longer stops what another app is playing (#252).
