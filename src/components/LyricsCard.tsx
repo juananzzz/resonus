@@ -8,7 +8,7 @@
 import Icon from '@/components/Icon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { AppState, Pressable, ScrollView, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -464,7 +464,12 @@ function useSungPosition(): SharedValue<number> {
       return anchor.sec * 1000 + ahead + WORD_LEAD_MS;
     };
     let last = pos.value;
-    const timer = setInterval(() => {
+    // 20 reads a second nobody watches in the background: on iOS (audio mode)
+    // timers keep running out there, so the tick only runs in the foreground.
+    // The store subscription above stays always on, so the anchor is fresh on
+    // return and the fill resumes without a jump.
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const tick = () => {
       const { isPlaying, speed } = usePlayerStore.getState();
       const target = read() + TICK_MS * (isPlaying ? speed || 1 : 0);
       // A seek is somewhere else entirely: it lands there rather than
@@ -479,10 +484,25 @@ function useSungPosition(): SharedValue<number> {
           reduceMotion: motion.reduceMotion.essential,
         });
       last = target;
-    }, TICK_MS);
+    };
+    const start = () => {
+      if (!timer) timer = setInterval(tick, TICK_MS);
+    };
+    const stop = () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+    if (AppState.currentState === 'active') start();
+    const appStateSub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') start();
+      else stop();
+    });
     return () => {
       unsubscribe();
-      clearInterval(timer);
+      stop();
+      appStateSub.remove();
     };
   }, [pos]);
   return pos;

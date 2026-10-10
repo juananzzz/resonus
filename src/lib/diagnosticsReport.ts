@@ -11,7 +11,7 @@ import { COVER, songCoverUrl, songListSorts } from '@/api/data';
 import { widgetStatus } from '@/lib/homeWidget';
 import { coverSourceOf, mirrorCoverState } from '@/lib/mirrorCovers';
 import { repairStatus } from '@/lib/navidromeRepair';
-import { formatMs, perfEnabled, perfEvents, perfReport, perfTime } from '@/lib/perfLog';
+import { formatMs, pastEvents, perfEnabled, perfEvents, perfReport, perfTime } from '@/lib/perfLog';
 import { useAuthStore } from '@/store/auth';
 import { anyDownloads, useDownloads } from '@/store/downloads';
 import { useJukebox } from '@/store/jukebox';
@@ -131,12 +131,18 @@ export function stateLines(screensOpen?: number): string[] {
 
 /** Clock time, which is what anyone pasting this remembers the problem by. */
 export function eventLines(): string[] {
-  return perfEvents().map((e) => {
-    const d = new Date(e.at);
+  const line = (at: number, text: string) => {
+    const d = new Date(at);
     const hh = String(d.getHours()).padStart(2, '0');
     const mm = String(d.getMinutes()).padStart(2, '0');
-    return `${hh}:${mm} ${e.text}`;
-  });
+    return `${hh}:${mm} ${text}`;
+  };
+  return [
+    // What the last session wrote down going away, if it never came back:
+    // the minutes before a background death, which this session never saw.
+    ...pastEvents().map((e) => `${line(e.at, e.text)} · previous session`),
+    ...perfEvents().map((e) => line(e.at, e.text)),
+  ];
 }
 
 export function fullReport(screensOpen?: number): string {

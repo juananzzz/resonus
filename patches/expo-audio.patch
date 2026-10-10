@@ -3199,7 +3199,20 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..4f16e709309c0a9f8b690232ae23d806
        applyAssetMetadata(&nowPlayingInfo, for: player)
      }
  
-@@ -80,7 +84,11 @@ class MediaController {
+@@ -72,7 +76,12 @@ class MediaController {
+     }
+ 
+     nowPlayingInfoCenter.nowPlayingInfo = nowPlayingInfo
++    // The state itself, alongside the rate above: what tells the system this
++    // is playback in progress rather than metadata sitting idle.
++    if #available(iOS 13.0, *) {
++      nowPlayingInfoCenter.playbackState = player.isPlaying ? .playing : .paused
++    }
+   }
+ 
+   private func applyPlaybackInfo(_ info: inout [String: Any], for player: AudioPlayer) {
+     if isLiveStream {
+@@ -80,7 +89,11 @@ class MediaController {
        info.removeValue(forKey: MPMediaItemPropertyPlaybackDuration)
        info.removeValue(forKey: MPNowPlayingInfoPropertyElapsedPlaybackTime)
      } else {
@@ -3212,7 +3225,7 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..4f16e709309c0a9f8b690232ae23d806
        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = player.currentTime
      }
      info[MPNowPlayingInfoPropertyPlaybackRate] = player.isPlaying ? player.ref.rate : 0.0
-@@ -139,17 +147,21 @@ class MediaController {
+@@ -139,17 +152,21 @@ class MediaController {
      guard let artworkUrl = metadata.artworkUrl else {
        resetArtworkState()
        info.removeValue(forKey: MPMediaItemPropertyArtwork)
@@ -3234,7 +3247,7 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..4f16e709309c0a9f8b690232ae23d806
        return
      }
  
-@@ -173,16 +185,67 @@ class MediaController {
+@@ -173,16 +190,67 @@ class MediaController {
          return
        }
  
@@ -3305,7 +3318,18 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..4f16e709309c0a9f8b690232ae23d806
    }
  
    private func clearNowPlayingInfoOnMain() {
-@@ -204,34 +267,120 @@ class MediaController {
+@@ -188,7 +256,10 @@ class MediaController {
+   private func clearNowPlayingInfoOnMain() {
+     nowPlayingInfoCenter.nowPlayingInfo = nil
++    if #available(iOS 13.0, *) {
++      nowPlayingInfoCenter.playbackState = .stopped
++    }
+     activePlayer = nil
+     isLiveStream = false
+     resetArtworkState()
+     currentArtworkItemIdentifier = nil
+   }
+@@ -204,34 +275,120 @@ class MediaController {
    private func resetArtworkState() {
      currentArtworkUrl = nil
      cachedArtwork = nil
@@ -3439,7 +3463,7 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..4f16e709309c0a9f8b690232ae23d806
      remoteCommandCenter.playCommand.addTarget { [weak self] _ in
        guard let player = self?.activePlayer else {
          return .commandFailed
-@@ -270,7 +419,7 @@ class MediaController {
+@@ -270,7 +427,7 @@ class MediaController {
        }
  
        let seekTime = CMTime(seconds: event.positionTime, preferredTimescale: 1)
@@ -3448,7 +3472,7 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..4f16e709309c0a9f8b690232ae23d806
  
        return .success
      }
-@@ -303,12 +452,34 @@ class MediaController {
+@@ -303,12 +460,34 @@ class MediaController {
        return .success
      }
  
@@ -3483,7 +3507,7 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..4f16e709309c0a9f8b690232ae23d806
    }
  
    private func disableRemoteCommands() {
-@@ -318,6 +489,8 @@ class MediaController {
+@@ -318,6 +497,8 @@ class MediaController {
      remoteCommandCenter.changePlaybackPositionCommand.isEnabled = false
      remoteCommandCenter.skipForwardCommand.isEnabled = false
      remoteCommandCenter.skipBackwardCommand.isEnabled = false

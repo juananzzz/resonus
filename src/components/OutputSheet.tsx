@@ -13,7 +13,7 @@
  */
 import Icon from '@/components/Icon';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -197,8 +197,31 @@ export function OutputSheet({ visible, onClose }: { visible: boolean; onClose: (
     // Re-scan periodically while the sheet is open: SSDP is lossy, so repeating
     // the search lets renderers that missed the first round appear on their own
     // (upnpSearch merges results and no-ops if a scan is still running).
-    const id = setInterval(() => void upnpSearch(), 10000);
-    return () => clearInterval(id);
+    // Foreground only: waking the JS thread every 10 s all night for a sheet
+    // nobody looks at is pure background CPU (iOS timers keep running).
+    let id: ReturnType<typeof setInterval> | null = null;
+    const arm = () => {
+      if (AppState.currentState === 'active' && !id) {
+        id = setInterval(() => void upnpSearch(), 10000);
+      }
+    };
+    const disarm = () => {
+      if (id) {
+        clearInterval(id);
+        id = null;
+      }
+    };
+    arm();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void upnpSearch();
+        arm();
+      } else disarm();
+    });
+    return () => {
+      disarm();
+      sub.remove();
+    };
   }, [visible]);
 
   async function pickPhone() {

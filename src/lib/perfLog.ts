@@ -10,6 +10,7 @@
  * per measured operation, so it can stay on for everyone.
  */
 
+import * as FileSystem from 'expo-file-system/legacy';
 import { AppState } from 'react-native';
 
 /**
@@ -132,7 +133,19 @@ AppState.addEventListener('change', (state) => {
   // Whatever happened out there is not ours to measure, and the clock starts
   // again here.
   lastTick = now;
-  if (!wasAwake && awake) onReturn();
+  // Going away with a history worth keeping: if the session dies out there,
+  // this file is what the next launch reads the minutes by.
+  if (wasAwake && !nowAwake) {
+    persistEvents();
+    // The JS frame loop measures nothing while away (`onJsFrame` drops every
+    // background frame) but keeps the JS thread waking up to 60×/s. On iOS the
+    // audio background mode keeps timers running, so stop it out there.
+    stopJsFrames();
+  }
+  if (!wasAwake && awake) {
+    onReturn();
+    if (enabled) startJsFrames();
+  }
 });
 
 export interface TimeSplit {
@@ -176,7 +189,9 @@ export function startPerfLog(): void {
   backgroundMs = 0;
   trips = 0;
   bgTicks = 0;
-  startJsFrames();
+  // No frames to count while away (see the AppState listener above, which
+  // restarts them on return).
+  if (awake) startJsFrames();
   timer = setInterval(() => {
     const now = Date.now();
     const late = now - lastTick - TICK_MS;
@@ -279,11 +294,66 @@ const events: { at: number; text: string }[] = [];
 export function note(text: string): void {
   events.push({ at: Date.now(), text });
   if (events.length > MAX_EVENTS) events.shift();
+  // Backgrounded, this may be the last thing ever written down: a kill in
+  // the background takes the memory with it, so notes taken out there go to
+  // disk at once. They are rare by design, which is what makes each one
+  // affordable to save.
+  if (!awake) persistEvents();
 }
 
 /** Oldest first, as they happened. */
 export function perfEvents(): { at: number; text: string }[] {
   return [...events];
+}
+
+/** Where the events wait out a death in the background: a plain file, which
+ *  writes on a locked phone where SecureStore may not. */
+function eventsPath(): string | null {
+  const dir = FileSystem.documentDirectory;
+  return dir ? `${dir}diag-events.json` : null;
+}
+
+/** Writes the in-memory events where the next launch finds them. */
+export function persistEvents(): void {
+  const path = eventsPath();
+  if (!path) return;
+  try {
+    void FileSystem.writeAsStringAsync(path, JSON.stringify(events)).catch(() => {});
+  } catch {
+    // A hint that fails to save changes nothing about what it hints at.
+  }
+}
+
+/** Events a previous session left behind, read once at startup. */
+let past: { at: number; text: string }[] = [];
+export function pastEvents(): { at: number; text: string }[] {
+  return [...past];
+}
+
+/** Loads what the last session saved going away, then clears it: this
+ *  session's report carries it once, and a later one has nothing stale. */
+export async function loadPastEvents(): Promise<void> {
+  const path = eventsPath();
+  if (!path) return;
+  try {
+    const info = await FileSystem.getInfoAsync(path);
+    if (!info.exists) return;
+    const raw = await FileSystem.readAsStringAsync(path);
+    await FileSystem.deleteAsync(path, { idempotent: true }).catch(() => {});
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      past = parsed
+        .filter(
+          (e): e is { at: number; text: string } =>
+            !!e && typeof e === 'object' && typeof (e as { at: unknown }).at === 'number' &&
+            typeof (e as { text: unknown }).text === 'string',
+        )
+        .slice(-MAX_EVENTS);
+    }
+  } catch {
+    // Unreadable or half-written: starting with no past is the same thing a
+    // first run does.
+  }
 }
 
 export function clearPerfEvents(): void {

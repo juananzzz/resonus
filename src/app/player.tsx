@@ -185,8 +185,30 @@ function SleepButton({ onPress, color }: { onPress: () => void; color: string })
   const [, tick] = useReducer((n: number) => n + 1, 0);
   useEffect(() => {
     if (!endsAt) return;
-    const id = setInterval(tick, 15_000);
-    return () => clearInterval(id);
+    // The tick only repaints the minutes left: nothing to repaint in background
+    // (timers keep running there on iOS), so it runs in the foreground only,
+    // repainting at once on return to catch up.
+    let id: ReturnType<typeof setInterval> | null = null;
+    const disarm = () => {
+      if (id) {
+        clearInterval(id);
+        id = null;
+      }
+    };
+    const arm = () => {
+      if (AppState.currentState === 'active' && !id) id = setInterval(tick, 15_000);
+    };
+    arm();
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') {
+        tick();
+        arm();
+      } else disarm();
+    });
+    return () => {
+      disarm();
+      sub.remove();
+    };
   }, [endsAt]);
   const on = !!endsAt || atSongEnd;
   return (

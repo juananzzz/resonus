@@ -23,6 +23,8 @@ import {
   type NativeAudioModule,
 } from 'expo-audio';
 import { fetch as expoFetch } from 'expo/fetch';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Network from 'expo-network';
 import { AppState, Platform } from 'react-native';
 import { create } from 'zustand';
 
@@ -1299,6 +1301,9 @@ function endBootQuiet(catchUp = false) {
 
 /** Now playing / history + syncs the queue on track change. */
 function onTrackChanged(song: Song) {
+  // A new track is a new context for everything the old one left pending.
+  stopBgRetry();
+  gaveUp = null;
   // Whatever the last stream announced was about the last stream. The
   // notification was built from it moments ago (this runs right after
   // `applyLockScreen`), so it has to be told again, or a station with nothing
@@ -1322,10 +1327,13 @@ function onTrackChanged(song: Song) {
   // a track change is the busiest moment there is, and the phone only holds a
   // handful of connections to the server at once, so speculative requests sent
   // right then put themselves in front of what the screens are waiting for
-  // (#50). Nobody swipes to the next lyrics in the first five seconds.
-  if (!bootQuiet) prefetchLyrics(song);
+  // (#50). Nobody swipes to the next lyrics in the first five seconds. While
+  // backgrounded nobody swipes at all: the card fetches on demand when it is
+  // shown, so nothing is lost by skipping the warm-up.
+  if (!bootQuiet && AppState.currentState === 'active') prefetchLyrics(song);
   if (nextLyricsTimer) clearTimeout(nextLyricsTimer);
   nextLyricsTimer = setTimeout(() => {
+    if (AppState.currentState !== 'active') return;
     const { queue, index } = usePlayerStore.getState();
     if (queue.length > 1) prefetchLyrics(queue[(index + 1) % queue.length]);
   }, NEXT_LYRICS_DELAY_MS);
@@ -2483,12 +2491,14 @@ function maybeDetectStall(intendPlay: boolean, buffering: boolean, positionSec: 
     stallPos = positionSec;
     return;
   }
-  // If the position advances, it's a normal rebuffer, not a stall.
+  // If the position advances, it's a normal rebuffer, not a stall — and any
+  // background wait for this track is over with it.
   if (Math.abs(positionSec - stallPos) > 0.5) {
     stallSince = 0;
     stallProbed = false;
     stallFellBack = false;
     stallPos = positionSec;
+    stopBgRetry();
     return;
   }
   const now = Date.now();
@@ -2509,6 +2519,16 @@ function maybeDetectStall(intendPlay: boolean, buffering: boolean, positionSec: 
     bump('player · fell back to the file after a stall');
     failedSource.set(song.id, 'stream');
     void reloadCurrent(positionSec, true);
+    return;
+  }
+  // Still stuck with nowhere to fall back to: backgrounded, this becomes the
+  // background wait rather than silence forever (see `startBgRetry`) — a
+  // stall nobody watches is the error give-up without the error. Foreground
+  // it stays a stall, with the spinner the watcher can see.
+  if (!stallFellBack && now - stallSince >= STALL_FALLBACK_MS && song && AppState.currentState !== 'active') {
+    stallFellBack = true;
+    gaveUp = { songId: song.id, at: Date.now() };
+    startBgRetry();
   }
 }
 
@@ -2524,6 +2544,81 @@ let errorTrackId: string | null = null;
 let errorAttempts = 0;
 /** Two: enough to ride out a hiccup, few enough not to retry a dead source. */
 const MAX_ERROR_ATTEMPTS = 2;
+/** The track given up on for a dead connection, waiting for the network to
+ *  come back (see `tryResumeAfterOutage`). Null the moment anything else
+ *  owns the player again — validated, not cleared, at resume time. */
+let gaveUp: { songId: string; at: number } | null = null;
+/** Auto-resume only soon after giving up: hours later it would be a surprise
+ *  in a meeting, not a rescue in a tunnel. */
+const RESUME_WINDOW_MS = 15 * 60 * 1000;
+/** The background wait (see `startBgRetry`): its timer, if one is running. */
+let bgRetryTimer: ReturnType<typeof setTimeout> | null = null;
+/** Still waiting out a dead connection in the background. Set with `gaveUp`,
+ *  cleared the moment anything else owns the player (a press, another track,
+ *  the foreground) or the wait runs its course. */
+let bgWaiting = false;
+let bgRounds = 0;
+/** How many reloads the background wait gets: about half an hour of asking
+ *  once a minute, then it stops asking a server that is not answering. */
+const BG_RETRY_ROUNDS = 30;
+const BG_RETRY_MS = 60_000;
+const BG_RETRY_FIRST_MS = 15_000;
+
+function stopBgRetry() {
+  bgWaiting = false;
+  bgRounds = 0;
+  if (bgRetryTimer) {
+    clearTimeout(bgRetryTimer);
+    bgRetryTimer = null;
+  }
+}
+
+function scheduleBgRetry(ms: number) {
+  if (bgRetryTimer) clearTimeout(bgRetryTimer);
+  bgRetryTimer = setTimeout(() => {
+    bgRetryTimer = null;
+    void bgRetryRound();
+  }, ms);
+}
+
+function startBgRetry() {
+  if (bgWaiting) return;
+  bgWaiting = true;
+  bgRounds = 0;
+  scheduleBgRetry(BG_RETRY_FIRST_MS);
+}
+
+/**
+ * One round of the background wait: the current track reloaded at the saved
+ * second. Anything else owning the player by now ends the wait instead: a
+ * press, another track, a stop, the foreground.
+ */
+async function bgRetryRound() {
+  if (!bgWaiting || AppState.currentState === 'active' || remoteKind()) {
+    stopBgRetry();
+    return;
+  }
+  const st = usePlayerStore.getState();
+  const song = st.queue[st.index];
+  if (!song || !gaveUp || song.id !== gaveUp.songId || !st.isPlaying) {
+    stopBgRetry();
+    return;
+  }
+  if (++bgRounds > BG_RETRY_ROUNDS) {
+    // A server that is not answering: stop asking, silently — nobody is
+    // watching, and the foreground return shows the stopped truth.
+    stopBgRetry();
+    usePlayerStore.setState({ isPlaying: false, isBuffering: false });
+    return;
+  }
+  bump('player · retrying the track in background');
+  try {
+    await reloadCurrent(st.positionSec, true);
+  } catch {
+    // The next round asks again.
+  }
+  if (bgWaiting) scheduleBgRetry(BG_RETRY_MS);
+}
 
 /**
  * The error in its own words, with anything that looks like an address taken
@@ -2561,6 +2656,21 @@ function onPlaybackError(message: string, wasPlaying: boolean): void {
   );
   if (errorAttempts >= MAX_ERROR_ATTEMPTS) {
     bump('player · gave up on the track');
+    // Where it stopped is written down now, not at the next tick: the queue
+    // position is only saved every so often, so coming back without this
+    // would resume minutes before the stop instead of at it.
+    saveQueueLocal(true);
+    // And the door is left open for the network coming back (see
+    // `tryResumeAfterOutage`): a tunnel is not a dead server.
+    gaveUp = { songId: song.id, at: Date.now() };
+    // Backgrounded, the stop is not final: nobody is watching, and killing
+    // the intent kills the session iOS keeps the app alive for. Wait it out
+    // with retries instead; the foreground return finalizes. Foreground, or
+    // remote output, it ends here as before.
+    if (AppState.currentState !== 'active' && !remoteKind()) {
+      startBgRetry();
+      return;
+    }
     usePlayerStore.setState({ isPlaying: false, isBuffering: false });
     useToast.getState().show(tg("Couldn't play the song"));
     return;
@@ -2608,9 +2718,54 @@ async function reloadCurrent(atSec: number, autoplay: boolean): Promise<void> {
   }
 }
 
+/**
+ * The network is back after giving up on a track: play it again from where
+ * it stopped, without being asked. Validated, not trusted: anything started,
+ * moved or resumed since clears it instead. Not for remote output, whose
+ * transport belongs to the device, and not forever after — only in the
+ * window where coming back still reads as continuing.
+ */
+async function tryResumeAfterOutage(): Promise<void> {
+  if (!gaveUp || remoteKind()) return;
+  const st = usePlayerStore.getState();
+  const song = st.queue[st.index];
+  if (!song || song.id !== gaveUp.songId) {
+    gaveUp = null;
+    return;
+  }
+  // Somebody resumed by hand meanwhile: nothing to take over.
+  if (st.isPlaying && !bgWaiting) {
+    gaveUp = null;
+    return;
+  }
+  if (Date.now() - gaveUp.at > RESUME_WINDOW_MS) {
+    gaveUp = null;
+    stopBgRetry();
+    return;
+  }
+  // Taking over: a background wait (if any) ends here, and the reload below
+  // either plays or fails back into the wait through the error path.
+  stopBgRetry();
+  gaveUp = null;
+  bump('player · resuming after the network came back');
+  try {
+    await reloadCurrent(st.positionSec, true);
+  } catch {
+    // No network after all, or nothing to load with.
+  }
+}
+
 /** When the last status was taken in, and how close a next one means a pile. */
 let lastStatusAt = 0;
 const BACKLOG_GAP_MS = 200;
+/**
+ * How often the plain position reaches the store while backgrounded. Nobody
+ * watches the slider out there: pushing it 2×/s only re-renders every
+ * subscriber all night. Material changes (play/pause, buffering, duration,
+ * track end) always go through at once.
+ */
+const BG_POSITION_PUSH_MS = 5000;
+let lastBgPositionPush = 0;
 
 /** `live`: read from the player just now, never part of a pile. */
 function onStatus(status: AudioStatus, live = false) {
@@ -2621,6 +2776,9 @@ function onStatus(status: AudioStatus, live = false) {
   // With remote output (UPnP/DLNA) the local player is paused and its
   // states should not override those coming from the remote device.
   if (remoteKind()) return;
+  // Sounding again after waiting it out in the background: the wait is over,
+  // whichever round did it.
+  if (bgWaiting && status.playing) stopBgRetry();
   // Sleep timer fallback: if setTimeout got frozen in background, the
   // native player heartbeat fires it here.
   const endsAt = sleepDeadline();
@@ -2701,16 +2859,31 @@ function onStatus(status: AudioStatus, live = false) {
       positionSec = pendingSeek.sec;
     }
   }
-  usePlayerStore.setState({
-    positionSec,
-    // With offset active the native reports the duration of the remaining segment,
-    // not the song's: the known duration is kept.
-    durationSec: streamOffsetSec > 0 ? prev.durationSec : status.duration || prev.durationSec,
-    // During pause/resume fade the native player keeps playing for a few ms;
-    // we keep the already-set state so the button doesn't flicker.
-    isPlaying: pauseFadeTimer ? prev.isPlaying : status.playing,
-    isBuffering: buffering,
-  });
+  // With offset active the native reports the duration of the remaining segment,
+  // not the song's: the known duration is kept.
+  const nextDurationSec = streamOffsetSec > 0 ? prev.durationSec : status.duration || prev.durationSec;
+  // During pause/resume fade the native player keeps playing for a few ms;
+  // we keep the already-set state so the button doesn't flicker.
+  const nextIsPlaying = pauseFadeTimer ? prev.isPlaying : status.playing;
+  // Backgrounded, the plain position is pushed at most every few seconds (see
+  // `BG_POSITION_PUSH_MS`): 2×/s `setState` re-renders every subscriber all
+  // night on iOS, where timers keep running. Everything below (scrobble,
+  // stall, crossfade, track end) still runs on every beat off the local value.
+  const material =
+    AppState.currentState === 'active' ||
+    nextIsPlaying !== prev.isPlaying ||
+    buffering !== prev.isBuffering ||
+    nextDurationSec !== prev.durationSec ||
+    status.didJustFinish;
+  if (material || now - lastBgPositionPush >= BG_POSITION_PUSH_MS) {
+    lastBgPositionPush = now;
+    usePlayerStore.setState({
+      positionSec,
+      durationSec: nextDurationSec,
+      isPlaying: nextIsPlaying,
+      isBuffering: buffering,
+    });
+  }
   maybeScrobbleThreshold(positionSec);
   maybeDetectStall(intendPlay, buffering, positionSec);
   // Queue sync with the server.
@@ -2846,6 +3019,13 @@ function isRepeatMode(v: unknown): v is RepeatMode {
  */
 let queueDirty = true;
 
+/** How often the queue is rewritten while backgrounded with nothing but the
+ *  position moving: SecureStore encrypts every write, and on a locked phone
+ *  those writes can fail outright — while nobody is waiting on them. Track
+ *  changes still write at once (see `queueDirty`), so coming back always
+ *  resumes the right song. */
+const BG_SAVE_MS = 120_000;
+
 /** When this device's queue was last written, for the comparison in
  *  `adoptNewerServerQueue`. Zero until something is saved or restored. */
 let localSavedAt = 0;
@@ -2890,6 +3070,9 @@ function saveQueueLocal(force = false) {
   } = usePlayerStore.getState();
   if (queue.length === 0) return;
   if (!force && !queueDirty && AppState.currentState === 'active') return;
+  // Backgrounded with only the position moving: at most one write per couple
+  // of minutes instead of every twenty seconds.
+  if (!force && !queueDirty && Date.now() - localSavedAt < BG_SAVE_MS) return;
   queueDirty = false;
   // Size cap as a precaution for SecureStore; 500 songs is more than enough.
   const payload: StoredQueue = {
@@ -2960,6 +3143,55 @@ let lastAdoptCheck = 0;
 /** When the app last left the foreground, so a quick trip to another app is
  *  not treated as somebody coming back from a different player. */
 let wentAway = 0;
+
+/** Marker left while the app is away: if it is still there at launch, the
+ *  previous session never came back — killed in the background, not closed.
+ *  A plain file, not SecureStore, which can refuse writes on a locked phone.
+ *  Foreground deletes it, so its presence means the return never happened. */
+function awayMarkerPath(): string | null {
+  const dir = FileSystem.documentDirectory;
+  return dir ? `${dir}away.json` : null;
+}
+
+function markAway() {
+  const path = awayMarkerPath();
+  if (!path) return;
+  void FileSystem.writeAsStringAsync(path, JSON.stringify({ at: Date.now() })).catch(() => {});
+}
+
+function clearAway() {
+  const path = awayMarkerPath();
+  if (!path) return;
+  void FileSystem.deleteAsync(path, { idempotent: true }).catch(() => {});
+}
+
+/** Once, at startup: was the last session killed while away? Answered into
+ *  the diagnostics, where the shared report picks it up. */
+export function checkBackgroundDeath() {
+  const path = awayMarkerPath();
+  if (!path) return;
+  void (async () => {
+    try {
+      const info = await FileSystem.getInfoAsync(path);
+      if (!info.exists) return;
+      const raw = await FileSystem.readAsStringAsync(path);
+      await FileSystem.deleteAsync(path, { idempotent: true }).catch(() => {});
+      let at = 0;
+      try {
+        at = Number(JSON.parse(raw)?.at) || 0;
+      } catch {
+        // A half-written marker still means away, only without the when.
+      }
+      note(
+        at > 0
+          ? `background death: last seen away ${Math.round((Date.now() - at) / 1000)}s before launch`
+          : 'background death: away marker with no time',
+      );
+    } catch {
+      // The marker is a hint, not data: failing to read it changes nothing.
+    }
+  })();
+}
 
 async function adoptNewerServerQueue(): Promise<void> {
   if (!useSettings.getState().syncQueueFromServer) return;
@@ -3134,11 +3366,34 @@ function periodicSync() {
   if (st.isPlaying) reportState('playing', st.queue[st.index], st.positionSec);
 }
 
+const SYNC_MS = 20_000;
+/**
+ * The sync while backgrounded. The server entry only needs keeping alive out
+ * there, not a 20 s refresh all night (on iOS timers keep running in the
+ * audio background).
+ */
+const SYNC_BG_MS = 120_000;
+
+/** Whether playback currently wants the periodic sync (armed rate follows AppState). */
+let syncWanted = false;
+
+function armSync() {
+  if (syncInterval) {
+    clearInterval(syncInterval);
+    syncInterval = null;
+  }
+  if (!syncWanted) return;
+  syncInterval = setInterval(periodicSync, AppState.currentState === 'active' ? SYNC_MS : SYNC_BG_MS);
+}
+
 function startPeriodicSync() {
-  if (!syncInterval) syncInterval = setInterval(periodicSync, 20000);
+  if (syncWanted && syncInterval) return;
+  syncWanted = true;
+  armSync();
 }
 
 function stopPeriodicSync() {
+  syncWanted = false;
   if (syncInterval) {
     clearInterval(syncInterval);
     syncInterval = null;
@@ -3148,7 +3403,25 @@ function stopPeriodicSync() {
 function attachAppState() {
   if (appStateAttached) return;
   appStateAttached = true;
+  // A return of the connection after giving up on a track resumes it (see
+  // `tryResumeAfterOutage`): edge-triggered, so a state that arrives already
+  // up does not count as a return.
+  let netUp = true;
+  Network.addNetworkStateListener((state) => {
+    const up = !!state.isConnected && state.isInternetReachable !== false;
+    if (!up) {
+      netUp = false;
+      return;
+    }
+    if (!netUp) {
+      netUp = true;
+      void tryResumeAfterOutage();
+    }
+  });
   AppState.addEventListener('change', (st) => {
+    // The periodic sync rate follows the state (fast in foreground, slow in
+    // background): re-arm on every change so it switches both ways.
+    if (syncWanted) armSync();
     if (st !== 'active') {
       // A ramp started an instant ago is about to lose its timer, and with it
       // whatever was waiting on the end of it (the pause, most of all). This is
@@ -3161,8 +3434,10 @@ function attachAppState() {
       // current Sonos transport state.
       syncQueueNow(true, false);
       wentAway = Date.now();
+      markAway();
       return;
     }
+    clearAway();
     // Back to foreground. The native `playbackStatusUpdate` heartbeat that feeds
     // `positionSec`/`durationSec` can stall while backgrounded — especially right
     // after a background auto-advance, where the freshly `replace()`d track never
@@ -3194,6 +3469,14 @@ function attachAppState() {
     // Not for a trip to another app and back, though: changing players takes
     // longer than that, and this is a request.
     if (Date.now() - wentAway > 30_000) void adoptNewerServerQueue();
+    // Still waiting out a dead connection: it did not come back while nobody
+    // was watching, so the stop becomes final now that somebody is — with
+    // the toast the background never showed.
+    if (bgWaiting) {
+      stopBgRetry();
+      usePlayerStore.setState({ isPlaying: false, isBuffering: false });
+      useToast.getState().show(tg("Couldn't play the song"));
+    }
   });
 }
 
@@ -3801,7 +4084,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   toggle: () => {
     // The one press that does not change track: what was restored is about to
-    // be heard, so what the opening held back is due now.
+    // be heard, so what the opening held back is due now. A press owns the
+    // player again, so a background wait (if any) ends here.
+    stopBgRetry();
+    gaveUp = null;
     endBootQuiet(true);
     if (remoteKind()) {
       if (get().isPlaying) {

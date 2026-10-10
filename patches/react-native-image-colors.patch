@@ -1,0 +1,31 @@
+diff --git a/ios/UIImageColors.swift b/ios/UIImageColors.swift
+index 3fb6c7469f87744f34d2e552ca5e7551e5c52159..2142cbc2e3f162d00105807862e0bfc5ec90419f 100644
+--- a/ios/UIImageColors.swift
++++ b/ios/UIImageColors.swift
+@@ -198,7 +198,11 @@ extension UIImage {
+                 }
+                 self.draw(in: CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height))
+                 guard let result = UIGraphicsGetImageFromCurrentImageContext() else {
+-                    fatalError("UIImageColors.resizeForUIImageColors failed: UIGraphicsGetImageFromCurrentImageContext returned nil.")
++                    // No palette is better than a dead app: callers already
++                    // handle nil (fallback colours), a trap here killed the
++                    // process instead - audited after background kills while a
++                    // cover was being read.
++                    return nil
+                 }
+ 
+                 return result
+@@ -240,8 +244,11 @@ extension UIImage {
+         let threshold = Int(CGFloat(height)*0.01)
+         var proposed: [Double] = [-1,-1,-1,-1]
+         
+-        guard let data = CFDataGetBytePtr(cgImage.dataProvider!.data) else {
+-            fatalError("UIImageColors.getColors failed: could not get cgImage data.")
++        guard let provider = cgImage.dataProvider,
++              let data = CFDataGetBytePtr(provider.data) else {
++            // Same as above: nil flows into the fallback colours, a trap
++            // would take the app - and its audio - down with it.
++            return nil
+         }
+         
+         let imageColors = NSCountedSet(capacity: width*height)
