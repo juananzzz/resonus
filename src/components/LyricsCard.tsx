@@ -8,7 +8,7 @@
 import Icon from '@/components/Icon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -91,27 +91,29 @@ export function LyricsCard() {
 /**
  * Lyrics in place of the cover art ("Lyrics on the cover" setting): occupies
  * the same box as the player cover. Same karaoke as the card, with a button
- * in the corner to go back to the cover. If there are no lyrics, nothing is
- * rendered (the caller only mounts it when lyrics exist).
+ * in the corner to go back to the cover. Shows a spinner while fetching and
+ * an empty message if no lyrics are available.
  */
 export function CoverLyrics({ size, onClose }: { size: number; onClose: () => void }) {
   const t = useT();
   const corner = useCoverRadius(size);
   const song = usePlayerStore(currentSong);
-  const { data } = useLyrics(song ?? undefined);
+  const { data, isLoading } = useLyrics(song ?? undefined);
   const lineStyle = useLyricsLineStyle();
   const centered = useSettings((s) => s.lyricsAlign) === 'center';
-
-  if (!data) return null;
 
   return (
     // Transparent background: the lyrics go directly over the player background
     // (the cover is hidden while showing).
     <View style={[styles.coverBox, { width: size, height: size, borderRadius: corner }]}>
       <View style={styles.coverBody}>
-        {data.synced ? (
+        {isLoading ? (
+          <View style={styles.coverStatus}>
+            <ActivityIndicator color={colors.text} />
+          </View>
+        ) : data?.synced ? (
           <SyncedLyricsView lines={data.lines} nested />
-        ) : (
+        ) : data ? (
           <ScrollView
             nestedScrollEnabled
             showsVerticalScrollIndicator={false}
@@ -119,6 +121,10 @@ export function CoverLyrics({ size, onClose }: { size: number; onClose: () => vo
           >
             <Text style={lineStyle}>{data.lines.map((l) => l.value).join('\n')}</Text>
           </ScrollView>
+        ) : (
+          <View style={styles.coverStatus}>
+            <Text style={styles.coverEmpty}>{t('No lyrics available for this song.')}</Text>
+          </View>
         )}
       </View>
       <Pressable
@@ -664,6 +670,8 @@ const styles = themed((colors) => ({
   // Lyrics in place of the cover: box exactly the size of the cover.
   coverBox: { overflow: 'hidden', padding: spacing.lg },
   coverBody: { flex: 1, overflow: 'hidden' },
+  coverStatus: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  coverEmpty: { color: colors.textSecondary, fontSize: fontSize.md, textAlign: 'center' },
   wrap: { flex: 1 },
   // Right margin so the active line (which grows 8% from the left) doesn't get
   // clipped against the edge.
