@@ -347,17 +347,10 @@ export type CoverDoubleTapAction = CoverTapAction;
  */
 export type LyricsSource = 'local' | 'online' | 'off';
 
-/** Adjustable type size shared by every lyrics surface. */
-export type LyricsSize = number;
-export const LYRICS_SIZE_MIN = 20;
-export const LYRICS_SIZE_DEFAULT = 28;
-export const LYRICS_SIZE_MAX = 40;
-
-/** Keep imported settings and programmatic callers inside the slider's range. */
-export function clampLyricsSize(value: number): LyricsSize {
-  if (!Number.isFinite(value)) return LYRICS_SIZE_DEFAULT;
-  return Math.min(LYRICS_SIZE_MAX, Math.max(LYRICS_SIZE_MIN, Math.round(value)));
-}
+/** Type size on every lyrics surface. */
+export type LyricsSize = 'small' | 'normal' | 'large';
+/** Each size in full-screen points; the compact surfaces scale from these. */
+export const LYRICS_SIZE_POINTS: Record<LyricsSize, number> = { small: 22, normal: 28, large: 34 };
 
 /** Font weights Android and iOS can both synthesize consistently. */
 export const LYRICS_WEIGHTS = ['300', '400', '500', '600', '700'] as const;
@@ -835,7 +828,6 @@ type AutoSetters = {
 /** The generated setters that a hand-written one replaces with another shape. */
 type CustomSetter =
   | 'setDiagnostics'
-  | 'setLyricsSize'
   | 'setHideUnavailableOffline'
   | 'setReplayGainPreampDb'
   | 'setCustomGreeting'
@@ -1210,7 +1202,6 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   setLanguage: (language: Language) => void;
   setDiagnostics: (value: boolean) => void;
   setAnimatedArtworkFps: (value: number) => void;
-  setLyricsSize: (value: number) => void;
   resetScrobbleRules: () => void;
   setHideUnavailableOffline: (value: boolean) => void;
   setReplayGainPreampDb: (value: number) => void;
@@ -1321,7 +1312,7 @@ const DEFAULTS = {
   lyricsBackground: 'cover' as ScreenBackground,
   lyricsCardBackground: 'color' as CardBackground,
   lyricsSource: 'local' as LyricsSource,
-  lyricsSize: LYRICS_SIZE_DEFAULT as LyricsSize,
+  lyricsSize: 'normal' as LyricsSize,
   lyricsWeight: '500' as LyricsWeight,
   lyricsAlign: 'left' as LyricsAlign,
   // Opt-in, matching Primuse: it changes the reading treatment substantially.
@@ -1603,11 +1594,12 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
   }
   const oneOf = <T extends string>(v: unknown, all: readonly T[]): v is T =>
     all.includes(v as T);
-  if (typeof parsed.lyricsSize === 'number') {
-    set({ lyricsSize: clampLyricsSize(parsed.lyricsSize) });
-  } else if (oneOf(parsed.lyricsSize, ['small', 'normal', 'large'] as const)) {
-    // Before the continuous control these were the three full-screen sizes.
-    set({ lyricsSize: { small: 22, normal: 28, large: 34 }[parsed.lyricsSize] });
+  if (oneOf(parsed.lyricsSize, ['small', 'normal', 'large'] as const)) {
+    set({ lyricsSize: parsed.lyricsSize });
+  } else if (typeof parsed.lyricsSize === 'number') {
+    // A build briefly stored it as points: the nearest of the three.
+    const pts = parsed.lyricsSize;
+    set({ lyricsSize: pts < 25 ? 'small' : pts < 31 ? 'normal' : 'large' });
   }
   if (oneOf(parsed.lyricsWeight, LYRICS_WEIGHTS)) {
     set({ lyricsWeight: parsed.lyricsWeight });
@@ -1860,11 +1852,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
     // The encoder reads this the next time a clip is built; one already on
     // disk keeps the rate it was written at, which is the rate it holds.
     pushArtworkEncodeFps(animatedArtworkFps);
-  },
-
-  setLyricsSize: (lyricsSize) => {
-    set({ lyricsSize: clampLyricsSize(lyricsSize) });
-    persist(snapshot(get));
   },
 
   // Both at once, and one write: put back separately, the first of the two

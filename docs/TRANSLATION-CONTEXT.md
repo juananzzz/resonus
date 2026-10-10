@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 792 of them.
+Every string the app can show, under the screen it shows up on. 795 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -998,6 +998,7 @@ you are actually typing into, which is easier than reading it here.
 | `Fit cover art` | Show the whole cover even if it is not square, instead of cropping it to fill |
 | `Go to album` | Leave this sheet and open the album the song is on |
 | `Keep paused when skipping` |  |
+| `Large` | One of the values of “Lyrics size” |
 | `Left` | One of the values of “Lyrics alignment” |
 | `Light font weight` | One of the values of “Lyrics weight” |
 | `Lyrics alignment` |  |
@@ -1011,6 +1012,7 @@ you are actually typing into, which is easier than reading it here.
 | `Mini player blur` |  |
 | `No` | A setting value meaning none or zero, not the answer to a question: no crossfade, no seek buttons |
 | `None` | One of the values of “Buttons next to play” |
+| `Normal` | One of the values of “Lyrics size” |
 | `Nothing` | A value of `On cover tap`: tapping the cover does nothing |
 | `On cover double tap` | Settings > Player: what tapping the album artwork twice does |
 | `On cover tap` | What tapping the cover art in the player does. One tap and two share the same values, listed below |
@@ -1038,6 +1040,7 @@ you are actually typing into, which is easier than reading it here.
 | `Show rating` |  |
 | `Skip buttons` | The seek forward / back buttons setting |
 | `Slightly blur synchronized lyrics other than the current line to emphasize what is playing.` | Help text under that switch. Only the current synchronized lyric line stays sharp |
+| `Small` | One of the values of “Lyrics size” |
 | `Swap favorite and menu` | Exchange the places of those two buttons in the player, for whichever hand you hold the phone in |
 | `Where to get lyrics from. Online search uses LRCLIB (sends the artist and title).` |  |
 

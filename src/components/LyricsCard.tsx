@@ -33,7 +33,7 @@ import { lyricBlurRadius, WORD_SWEEP_LEAD_MS } from '@/lib/lyricMotion';
 import { pushOnce } from '@/lib/pushOnce';
 import { currentSong, usePlayerStore } from '@/store/player';
 import {
-  LYRICS_SIZE_DEFAULT,
+  LYRICS_SIZE_POINTS,
   type LyricsSize,
   type LyricsWeight,
   useSettings,
@@ -496,9 +496,10 @@ function lyricsLineStyle(
   // The setting is expressed in full-screen points. Compact surfaces retain
   // the old 20:28 ratio, so the default is visually unchanged while every
   // other size still follows the listener's choice.
+  const points = LYRICS_SIZE_POINTS[size];
   const textSize = large
-    ? size
-    : Math.max(16, Math.round((size * 20) / LYRICS_SIZE_DEFAULT));
+    ? points
+    : Math.max(16, Math.round((points * 20) / LYRICS_SIZE_POINTS.normal));
   const lineHeight = Math.round(textSize * (large ? 10 / 7 : 1.5));
   return [
     lyricsStyles.line,

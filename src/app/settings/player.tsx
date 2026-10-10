@@ -9,7 +9,6 @@ import {
   SettingsGroup,
   SettingsPage,
   settingsStyles,
-  SliderRow,
   SwitchList,
 } from '@/components/SettingsUI';
 import { useLocalProfile } from '@/hooks/useLocalProfile';
@@ -21,8 +20,7 @@ import {
   type CoverDoubleTapAction,
   type CoverTapAction,
   type LyricsAlign,
-  LYRICS_SIZE_MAX,
-  LYRICS_SIZE_MIN,
+  type LyricsSize,
   type LyricsWeight,
   type MiniPlayerButtons,
   type LyricsSource,
@@ -332,13 +330,14 @@ export default function PlayerSettings() {
             value={lyricsSource}
             onChange={setLyricsSource}
           />
-          <SliderRow
+          <SelectList<LyricsSize>
             label={t('Lyrics size')}
+            options={[
+              { value: 'small', label: t('Small') },
+              { value: 'normal', label: t('Normal') },
+              { value: 'large', label: t('Large') },
+            ]}
             value={lyricsSize}
-            min={LYRICS_SIZE_MIN}
-            max={LYRICS_SIZE_MAX}
-            step={1}
-            formatValue={(value) => `${Math.round(value)}`}
             onChange={setLyricsSize}
           />
           <SelectList<LyricsWeight>
