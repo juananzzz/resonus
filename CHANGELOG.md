@@ -9,6 +9,8 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-10-10
+
 ### Added
 
 - Artist radios on Home, built from your most played artists, with new ones each time Home is pulled to refresh (#252).
