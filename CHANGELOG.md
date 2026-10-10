@@ -19,13 +19,18 @@ Releases before 0.2.1 are only listed on the
 - iOS: a home screen widget with the current track and a play/pause button (#252).
 - iOS: a Precise timing switch and a frame rate choice for animated lock screen covers (#252).
 - Turkish, thanks to @sectns (#250).
+- A lyrics weight setting, from light to bold (#244).
+- Android: an option to blur the lyrics lines that are not playing (#244).
 
 ### Changed
 
-- Word-timed lyrics fill each word with colour as it is sung (#252).
+- Word-timed lyrics sweep across each word as it is sung, with a small bounce (#244).
+- The lyrics size also applies to the lyrics card and the lyrics on the cover (#244).
+- Lyrics fade out softly under the header over a blurred cover (#244).
 
 ### Fixed
 
+- A track that fails in the background retries instead of stopping, and resumes when the network comes back (#254).
 - iOS: opening an artist or album from the player no longer lands it in a sheet (#252).
 - iOS: the Dynamic Island shows tall covers square (#252).
 - iOS: opening the app no longer stops what another app is playing (#252).
