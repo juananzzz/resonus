@@ -104,12 +104,12 @@ export function useSelectionMenu(
       ? []
       : [
           {
-            icon: 'heart-outline',
+            icon: 'add-circle-outline',
             label: t('Add to favorites'),
             onPress: () => run((sel) => void applyFavorite(sel, true)),
           },
           {
-            icon: 'heart-dislike-outline',
+            icon: 'add-circle-outline',
             label: t('Remove from favorites'),
             onPress: () => run((sel) => void applyFavorite(sel, false)),
           },

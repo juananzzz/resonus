@@ -103,9 +103,10 @@ export function Dialog({
           {neutral ? (
             <Pressable
               hitSlop={8}
-              style={[
+              style={({ pressed }) => [
                 styles.neutral,
                 neutral.align === 'end' && { alignSelf: 'flex-end' },
+                pressed && { opacity: 0.6 },
               ]}
               onPress={neutral.onPress}
             >
@@ -116,7 +117,7 @@ export function Dialog({
             </Pressable>
           ) : null}
           <View style={styles.actions}>
-            <Pressable hitSlop={8} onPress={onCancel}>
+            <Pressable hitSlop={8} onPress={onCancel} style={({ pressed }) => pressed && { opacity: 0.6 }}>
               <Text style={styles.cancel}>{t('Cancel')}</Text>
             </Pressable>
             <Pressable

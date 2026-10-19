@@ -47,6 +47,7 @@ import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { useInsets } from '@/hooks/useInsets';
 import { useT } from '@/i18n';
 import { splitArtistAlbums } from '@/lib/artistAlbums';
+import { darken } from '@/lib/colorPick';
 import { groupArtistAlbums, RELEASE_GROUP_TITLE } from '@/lib/releaseGroups';
 import { listPerf } from '@/lib/listPerf';
 import { useAuthStore } from '@/store/auth';
@@ -749,6 +750,17 @@ export default function ArtistScreen() {
       {/* Fixed bar: the back button always; background + title on collapse. */}
       <View style={[styles.bar, { height: insets.top + BAR_H, paddingTop: insets.top }]}>
         <TopBarBackground color={dominant} opacity={barBgOpacity} />
+        {/* The bar's own shadow, like the album and playlist bars: the accent
+            falling slightly darker toward the content. */}
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { opacity: barBgOpacity }]}
+        >
+          <LinearGradient
+            colors={[dominant, darken(dominant, 0.15)]}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
         {/* The same chevron, at the same size, as the album and playlist bars.
             What it keeps of its own is the disc behind it: those screens open
             on a cover of the app's own making, and this one on a photo from

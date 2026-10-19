@@ -36,6 +36,7 @@ import { PlayingElsewhereCard } from '@/components/PlayingElsewhereCard';
 import { Cover } from '@/components/Cover';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { PodcastEpisodeCard } from '@/components/PodcastEpisodeCard';
@@ -734,7 +735,7 @@ const OFFLINE_KEYS = new Set<HomeChipKey>([
   'history',
 ]);
 
-function HomeChips({ offline }: { offline: boolean }) {
+function HomeChips({ offline, slid }: { offline: boolean; slid?: boolean }) {
   const t = useT();
   const chips = useSettings((s) => s.homeChips).filter(
     (c) => c.enabled && (!offline || OFFLINE_KEYS.has(c.key)),
@@ -742,6 +743,11 @@ function HomeChips({ offline }: { offline: boolean }) {
   // Icons off leaves the name on its own (Settings › Home chips): the row
   // reads as words rather than as buttons, and more of it fits on screen.
   const icons = useSettings((s) => s.homeChipIcons);
+  // The picture is forced on while the settings gear is off, so Settings
+  // stay one tap away through it.
+  const avatarOn = useSettings(
+    (s) => s.showProfileImage || !s.homeButtons.some((b) => b.key === 'settings' && b.enabled),
+  );
   // The shuffle one takes whatever the server returns: without this, you tap
   // and nothing happens for half a second and it feels broken.
   const [shuffling, setShuffling] = useState(false);
@@ -756,15 +762,17 @@ function HomeChips({ offline }: { offline: boolean }) {
     }
   }
 
-  // No chips means no row: this replaces the master toggle that was there.
-  if (chips.length === 0) return null;
+  // No chips means no row, unless the picture is on: that replaces the master
+  // toggle that was there.
+  if (chips.length === 0 && !avatarOn) return null;
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      style={styles.chipsRow}
-      contentContainerStyle={styles.chips}
+      style={[styles.chipsRow, slid && styles.chipsRowSlid]}
+      contentContainerStyle={[styles.chips, slid && styles.chipsSlid]}
     >
+      {avatarOn ? <ProfileAvatar /> : null}
       {chips.map(({ key }) => {
         const cfg = CHIPS[key];
         // The shuffle one is the only one that plays instead of taking you
@@ -942,6 +950,10 @@ export default function HomeScreen() {
   const showQuickGrid = useSettings((s) => s.showQuickGrid);
   const showPlayingElsewhere = useSettings((s) => s.showPlayingElsewhere);
   const showGreeting = useSettings((s) => s.showGreeting);
+  // With the greeting off and the gear off, the chips slide up into the
+  // greeting's place: the icons left on keep the right end of the row.
+  const gearOn = homeButtons.some((b) => b.key === 'settings' && b.enabled);
+  const slidUp = !showGreeting && !gearOn;
   const customGreeting = useSettings((s) => s.customGreeting);
   const language = useSettings((s) => s.language);
   const homeSections = useSettings((s) => s.homeSections);
@@ -1023,8 +1035,22 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Scrolls away with the rest: pinned, it only took room. */}
+        {/* Scrolls away with the rest: pinned, it only took room. Slid up,
+            the chips take the greeting's place: greeting off, gear off. */}
         <View style={styles.topHeader}>
+          {slidUp ? (
+          <View style={styles.headerSlid}>
+            <HomeChips offline={offline} slid />
+            <View style={styles.headerRight}>
+              {/* Before the buttons, and dimmer than them, so it reads as a state
+                  and not as something to press. */}
+              <OfflineIndicator />
+              {homeButtons.map(({ key, enabled }) =>
+                enabled ? <HomeHeaderButton key={key} which={key} /> : null,
+              )}
+            </View>
+          </View>
+          ) : (
           <View style={styles.header}>
             {/* `flexShrink` and `numberOfLines`: the greeting is customizable,
                 and although the setting caps it at GREETING_MAX, those characters
@@ -1055,13 +1081,14 @@ export default function HomeScreen() {
               )}
             </View>
           </View>
+          )}
 
           {offline && scanning ? <ScanningPanel /> : null}
         </View>
         {/* First, above the chips: what was playing on the computer is the
             thing to pick up on opening the app, when there is one. */}
         {showPlayingElsewhere ? <PlayingElsewhereCard /> : null}
-        <HomeChips offline={offline} />
+        {slidUp ? null : <HomeChips offline={offline} />}
         {!offline && serverUnreachable ? (
           <Message
             text={t("Couldn't reach the server. Check your connection.")}
@@ -1144,7 +1171,19 @@ const styles = themed((colors) => ({
     gap: spacing.md,
   },
   chipsRow: { flexGrow: 0, marginBottom: spacing.lg },
-  chips: { gap: spacing.sm, paddingHorizontal: spacing.lg },
+  /** Chips in the greeting's place, icons keeping the right end. */
+  headerSlid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  /** Slid into the header: fills the row's free half, no margins of its own. */
+  chipsRowSlid: { flex: 1, flexGrow: 1, marginBottom: 0 },
+  chips: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg },
+  /** Slid into the header: the row's own padding is the inset. */
+  chipsSlid: { paddingHorizontal: 0 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1166,7 +1205,7 @@ const styles = themed((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceHighlight,
     borderRadius: radius.md,
     overflow: 'hidden',
     paddingRight: spacing.sm,

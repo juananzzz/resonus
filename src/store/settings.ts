@@ -732,8 +732,7 @@ function normalizeHomeButtons(raw: unknown): HomeButton[] {
       seen.add(key);
       out.push({
         key,
-        enabled:
-          key === 'settings' ? true : typeof item.enabled === 'boolean' ? item.enabled : true,
+        enabled: typeof item.enabled === 'boolean' ? item.enabled : true,
       });
     }
   }
@@ -1111,6 +1110,11 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   quickGridSize: number;
   /** Show the greeting ("Good morning"…) on Home. */
   showGreeting: boolean;
+  /** The profile picture beside the Home chips: tapping it opens Settings.
+   *  Forced on while the settings gear is off, so settings stay one tap away. */
+  showProfileImage: boolean;
+  /** Local file of that picture (picked on the profile screen), if any. */
+  profileImageUri: string | null;
   /** Custom greeting; empty = the automatic one based on time of day. */
   customGreeting: string;
   /** Home explore chips, in order (each with its state). With none active, the
@@ -1361,6 +1365,8 @@ const DEFAULTS = {
   quickGridPlaylists: true,
   quickGridSize: 8,
   showGreeting: false,
+  showProfileImage: false,
+  profileImageUri: null as string | null,
   customGreeting: '',
   homeChips: DEFAULT_HOME_CHIPS.map((c) => ({ ...c })),
   exploreSections: DEFAULT_EXPLORE_SECTIONS.map((s) => ({ ...s })),
@@ -1675,6 +1681,9 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
   // cap must not sneak in longer than what fits.
   if (typeof parsed.customGreeting === 'string') {
     set({ customGreeting: parsed.customGreeting.slice(0, GREETING_MAX) });
+  }
+  if (typeof parsed.profileImageUri === 'string' && parsed.profileImageUri.length > 0) {
+    set({ profileImageUri: parsed.profileImageUri });
   }
   // Two older names are still read here, and this is the whole of the
   // rename's cost. The row used to be called the Explore chips, one word

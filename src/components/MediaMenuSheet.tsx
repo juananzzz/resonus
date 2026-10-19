@@ -355,7 +355,7 @@ export function MediaMenuSheet() {
             ) : null}
             {album ? (
               <Action
-                icon={album.starred ? 'heart' : 'heart-outline'}
+                icon={album.starred ? 'checkmark-circle' : 'add-circle-outline'}
                 label={album.starred ? t('Remove from favorites') : t('Add to favorites')}
                 onPress={() => void toggleFavorite()}
               />

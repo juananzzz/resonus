@@ -572,7 +572,7 @@ export function SongMenuSheet() {
                     }}
                   />
                   <Action
-                    icon={favorited ? 'heart' : 'heart-outline'}
+                    icon={favorited ? 'checkmark-circle' : 'add-circle-outline'}
                     label={favorited ? t('Remove from favorites') : t('Add to favorites')}
                     onPress={() => {
                       (favorited ? unstar(song.id) : star(song.id))

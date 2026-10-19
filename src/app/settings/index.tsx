@@ -6,6 +6,8 @@
  */
 import Icon from '@/components/Icon';
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { ScreenHeader, SettingsSafeArea, settingsStyles } from '@/components/SettingsUI';
@@ -45,6 +47,12 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
     : offline
       ? 'O'
       : (auth?.username ?? '?').charAt(0).toUpperCase();
+  // The picture for Home lives here: tapping it opens its screen.
+  const profileImageUri = useSettings((s) => s.profileImageUri);
+  const [photoFailed, setPhotoFailed] = useState(false);
+  useEffect(() => {
+    setPhotoFailed(false);
+  }, [profileImageUri]);
   const name = offline && !auth ? t('Local profile') : auth?.username ?? '—';
   const detail = serverOffline
     ? t('Offline · your downloads')
@@ -115,9 +123,23 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <View style={[settingsStyles.cardBox, styles.accountCard]}>
           <View style={[settingsStyles.row, styles.profileRow]}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initial}</Text>
-            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('Profile picture')}
+              onPress={() => router.push('/settings/profile-picture')}
+            >
+              {profileImageUri && !photoFailed ? (
+                <Image
+                  source={{ uri: profileImageUri }}
+                  style={styles.avatarPhoto}
+                  onError={() => setPhotoFailed(true)}
+                />
+              ) : (
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>{initial}</Text>
+                </View>
+              )}
+            </Pressable>
             <View style={settingsStyles.rowLabelBox}>
               <Text style={styles.profileName}>{name}</Text>
               <Text style={settingsStyles.rowDescription} numberOfLines={1}>
@@ -204,6 +226,11 @@ const styles = themed((colors) => ({
     backgroundColor: colors.surfaceHighlight,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarPhoto: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
   },
   avatarText: { color: colors.text, fontSize: fontSize.lg, letterSpacing: tracking.heading, fontWeight: '500' },
   profileName: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },

@@ -75,10 +75,18 @@ export function ColorPickerDialog({
               />
             </View>
             <View style={styles.actions}>
-              <Pressable hitSlop={8} onPress={onCancel}>
+              <Pressable
+                hitSlop={8}
+                onPress={onCancel}
+                style={({ pressed }) => pressed && { opacity: 0.6 }}
+              >
                 <Text style={styles.cancel}>{t('Cancel')}</Text>
               </Pressable>
-              <Pressable hitSlop={8} onPress={() => onSave(hex)}>
+              <Pressable
+                hitSlop={8}
+                onPress={() => onSave(hex)}
+                style={({ pressed }) => pressed && { opacity: 0.6 }}
+              >
                 <Text style={[styles.confirm, { color: colors.accent }]}>{t('Save')}</Text>
               </Pressable>
             </View>

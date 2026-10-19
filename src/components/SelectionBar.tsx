@@ -25,10 +25,12 @@
 import Icon from '@/components/Icon';
 import { useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 
 import { useFloatingBottom } from '@/hooks/useScreenBottomPadding';
 import { useT } from '@/i18n';
 import { colors, fontSize, radius, spacing, themed } from '@/theme';
+import { motion } from '@/theme/motion';
 import { SheetModal } from './SheetModal';
 
 export interface SelectionAction {
@@ -61,7 +63,13 @@ export function SelectionBar({
 
   return (
     <>
-      <View style={[styles.bar, { bottom }]}>
+      {/* The bar rises in and sinks back out instead of popping: it arrives
+          from a long-press and leaves from its own ✕, occasional both ways. */}
+      <Animated.View
+        entering={FadeInUp.duration(motion.duration.enter)}
+        exiting={FadeOutDown.duration(motion.duration.exit)}
+        style={[styles.bar, { bottom }]}
+      >
         {shown.map((a) => (
           <BarButton key={a.label} action={a} disabled={count === 0} onPress={a.onPress} />
         ))}
@@ -72,7 +80,7 @@ export function SelectionBar({
             onPress={() => openMenu.current()}
           />
         ) : null}
-      </View>
+      </Animated.View>
       {hasMenu ? (
         <SheetModal
           openRef={openMenu}

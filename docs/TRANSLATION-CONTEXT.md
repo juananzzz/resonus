@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 795 of them.
+Every string the app can show, under the screen it shows up on. 801 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -281,7 +281,7 @@ you are actually typing into, which is easier than reading it here.
 | `Couldn't load favorites.` | Error on the screen, with a Retry button |
 | `Find in favorites` | Placeholder of the search box that narrows the favourites already shown |
 | `No favorites yet` | Empty state heading |
-| `Tap the heart on songs to see them here.` | The line under an empty state, saying how to fill it |
+| `Tap the plus button on songs to see them here.` | The line under an empty state, saying how to fill it |
 
 ## Favorites add
 
@@ -356,6 +356,7 @@ you are actually typing into, which is easier than reading it here.
 | `Random songs` |  |
 | `Recent episodes` |  |
 | `Scanning your music…` | Going through the phone's own files |
+| `Settings` | The app's settings, and the button that opens them |
 
 ## Library
 
@@ -633,6 +634,7 @@ you are actually typing into, which is easier than reading it here.
 | `Music on your device` | Signing in to nothing at all and playing the phone's own files |
 | `Offline · your downloads` | Settings subtitle shown in offline mode |
 | `Offline mode` | The app working with no server: downloads only |
+| `Profile picture` |  |
 | `Settings` | The app's settings, and the button that opens them |
 
 ## Settings › About
@@ -784,7 +786,6 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
-| `Always shown` | Said where a switch would be, on the Home tab, which cannot be taken off the bar |
 | `Home buttons` | The icons at the top right of Home (search, history, settings), which of them show and in what order |
 
 ## Settings › Home chips
@@ -1053,6 +1054,18 @@ you are actually typing into, which is easier than reading it here.
 | `Bottom row` |  |
 | `Grouped in the middle` | One of the values of “Arrangement” |
 | `Spread across the width` | One of the values of “Arrangement” |
+
+## Settings › Profile picture
+
+| String | What it is |
+| --- | --- |
+| `Always shown` | Said where a switch would be, on the Home tab, which cannot be taken off the bar |
+| `Choose photo` |  |
+| `Profile picture` |  |
+| `Remove photo` |  |
+| `Round, beside the Home chips: tapping it opens Settings.` | The line under “Show profile picture”, explaining it |
+| `Show profile picture` |  |
+| `With the settings icon off, your picture stays on so settings are one tap away.` |  |
 
 ## Settings › Quick grid
 

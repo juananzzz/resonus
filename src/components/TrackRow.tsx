@@ -70,7 +70,7 @@ interface Props {
 const SWIPE_ICON: Record<Exclude<SwipeAction, 'off'>, keyof typeof Icon.glyphMap> = {
   queue: 'list',
   next: 'play-forward',
-  favorite: 'heart',
+  favorite: 'add-circle-outline',
   menu: 'ellipsis-horizontal',
 };
 

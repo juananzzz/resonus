@@ -1,7 +1,8 @@
 /** Brief pill-shaped message at the bottom (Spotify style). */
 import { useEffect } from 'react';
 import { Pressable, Text } from 'react-native';
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
+import { motion } from '@/theme/motion';
 
 import { useFloatingBottom } from '@/hooks/useScreenBottomPadding';
 import { useToast } from '@/store/toast';
@@ -29,8 +30,10 @@ export function Toast() {
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(200)}
-      exiting={FadeOut.duration(150)}
+      // Leaves the way it came, on the same axis: entering drops it in from
+      // above, so exiting fades it back up instead of just blinking out.
+      entering={FadeInDown.duration(motion.duration.fade)}
+      exiting={FadeOutUp.duration(motion.duration.exit)}
       style={[styles.pill, actionLabel ? styles.pillRow : null, { bottom }]}
       // Without an action the toast is purely informational and shouldn't steal touches.
       pointerEvents={actionLabel ? 'box-none' : 'none'}

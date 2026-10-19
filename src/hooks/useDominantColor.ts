@@ -14,34 +14,9 @@
 import { useEffect, useState } from 'react';
 
 import { CACHED_COVER, COVER } from '@/api/data';
+import { hexToRgb, pickIosColor, rgbToHsl } from '@/lib/colorPick';
+import { note } from '@/lib/perfLog';
 import { BACKGROUND_TINTS, colors as theme, useThemeMode, type ThemeMode } from '@/theme';
-
-function hexToRgb(hex: string): [number, number, number] | null {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return null;
-  const n = parseInt(m[1], 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
-function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  const d = max - min;
-  let h = 0;
-  let s = 0;
-  if (d !== 0) {
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
-    else if (max === g) h = (b - r) / d + 2;
-    else h = (r - g) / d + 4;
-    h /= 6;
-  }
-  return [h, s, l];
-}
 
 function hslToHex(h: number, s: number, l: number): string {
   let r: number;
@@ -80,51 +55,6 @@ export function toneOf(hex: string, lightness: number, maxSaturation: number): s
   if (!rgb) return hex;
   const [h, s] = rgbToHsl(rgb[0], rgb[1], rgb[2]);
   return hslToHex(h, Math.min(s, maxSaturation), lightness);
-}
-
-/** Saturation of a hex color in HSL, or -1 if it cannot be read. */
-function saturationOf(hex: string): number {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return -1;
-  return rgbToHsl(rgb[0], rgb[1], rgb[2])[1];
-}
-
-/**
- * Picks the accent from the four colors iOS returns.
- *
- * They come labeled by role, not by vibrancy: `background` is the dominant
- * area of the cover and `primary`, `secondary` and `detail` are the foreground
- * ones in order of how much of the cover they take. The dominant area is the
- * one that reads as "the color of this cover", so it wins whenever it carries
- * any color at all; the covers it fails on are the ones whose dominant area is
- * a white border or a black void, and there the foreground colors are all
- * there is. Among those, order beats saturation unless the gap is wide: a
- * small vivid detail should not push aside the color the cover is made of.
- */
-function pickIosColor(
-  background: string | undefined,
-  primary: string | undefined,
-  secondary: string | undefined,
-  detail: string | undefined,
-): string | undefined {
-  const NEUTRAL = 0.15;
-  const CLEARLY_MORE = 1.5;
-
-  if (background && saturationOf(background) >= NEUTRAL) return background;
-
-  let best: string | undefined;
-  let bestSat = 0;
-  for (const hex of [primary, secondary, detail]) {
-    if (!hex) continue;
-    const s = saturationOf(hex);
-    if (s < NEUTRAL) continue;
-    if (!best || s >= bestSat * CLEARLY_MORE) {
-      best = hex;
-      bestSat = s;
-    }
-  }
-
-  return best || background;
 }
 
 /**
@@ -238,6 +168,12 @@ export async function coverColorOf(
     }
     return normalize(c, mode, vivid);
   } catch {
+    // A read that fails leaves the plain tint, which is also what "no accent
+    // on this song" looks like — so say which cover it was, with the query
+    // (and its secrets) cut off. The next report that carries one of these
+    // names the format or the host to fix instead of the picker.
+    const tail = src.split('?')[0].split('/').slice(-2).join('/');
+    note(`accent unreadable: ${tail}`);
     return null;
   }
 }
