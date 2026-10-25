@@ -163,7 +163,13 @@ private enum HomeWidgetStore {
       // Nothing is playing: the widget holds on to the track that was, stopped
       // where it stopped. Clearing instead would empty it for the seconds a
       // cold start takes to bring the queue back, and for good whenever the
-      // app opens with no queue at all.
+      // app opens with no queue at all. Stopped where its bar had walked to:
+      // the app writes on seeks and track changes, not every few seconds, so
+      // the last position written can be minutes behind.
+      let updated = seconds(kept["updated"])
+      if (kept["playing"] as? Bool) == true, updated > 0 {
+        kept["position"] = seconds(kept["position"]) + max(0, now - updated)
+      }
       kept["playing"] = false
       kept["updated"] = now
       if let patched = try? JSONSerialization.data(withJSONObject: kept) {
