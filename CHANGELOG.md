@@ -20,7 +20,7 @@ Releases before 0.2.1 are only listed on the
 
 ### Changed
 
-- Settings: swipe actions moved to Lists & albums, and keeping a radio playing to Quality & playback.
+- Settings: list, album and swipe options are now in Appearance, and keeping a radio playing in Quality & playback.
 - Animated covers on Android stay in a 150 MB cache instead of downloading again (#293).
 - To reorder a playlist, choose Reorder in its ⋯ menu or hold a song, drag the rows, and press Save order (#279).
 - Holding a song to start a selection no longer marks that song (#279).

@@ -7,7 +7,7 @@
  * for. Nothing at all is what a track with no advisory tag shows, which is most
  * of them.
  *
- * Switched off from Settings › Appearance › Lists & albums, and the switch is read
+ * Switched off from Settings › Appearance, and the switch is read
  * here rather than by each of the eight places that draw one, so there is no
  * screen left to remember to check.
  */

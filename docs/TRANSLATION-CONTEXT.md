@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 846 of them.
+Every string the app can show, under the screen it shows up on. 845 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -979,22 +979,37 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
+| `Album pages` |  |
 | `Appearance` |  |
 | `Corners` |  |
 | `Cover corners` | The corners of every cover art picture in the app, whose choices are Square, Rounded and More rounded |
 | `Dark` | The appearance the app has always had, and what it uses unless the other is chosen. |
 | `Font` |  |
+| `Full-bleed album artwork` | Album detail layout: cover spans the screen width and fades into the background; not an audio effect. |
+| `Gestures` |  |
 | `Language` |  |
 | `Light` | The light appearance, in Settings › Theme |
-| `Lists & albums` | The screen of settings for what song lists and album and playlist pages show |
+| `Lists` |  |
 | `More rounded` | Corners of the cover art: rounder than the usual |
+| `Off` | A setting value meaning disabled (crossfade, normalization…) |
 | `Pointier` | One of the values of “Corners” |
 | `Round` | One of the values of “Corners” |
 | `Round corners everywhere, or flatter ones` | The line under “Corners”, explaining it |
 | `Rounded` | Corners of the cover art: slightly rounded, the usual look |
 | `Scheduled` | A theme mode: light from one hour of the day, dark from another |
+| `Show artist photo` | Whether the artist's photo shows at the top of their screen |
+| `Show artwork` | Whether song rows carry the album's little picture |
+| `Show description` | A setting: whether playlist and album descriptions are drawn under their names on their screens |
+| `Show disc titles` | On an album in several discs, whether each disc's own name shows |
+| `Show explicit tag` | A switch: whether to draw the E on anything carrying a parental advisory. "Explicit" here is the music-industry label for strong language, not "clear" or "stated outright" |
+| `Show genres` | Whether a song row says its genre |
+| `Show rating` |  |
+| `Show song duration` | Whether a song row says how long the song is |
 | `Square` | Corners of the cover art: sharp, not rounded at all |
+| `Swipe left` | What dragging a song to the left in a list does |
+| `Swipe right` | What dragging a song to the right in a list does. Its values are the actions listed under it |
 | `System` | Two places: a theme setting (use whichever appearance the phone itself is set to, light or dark), and `System::section`, the heading in Settings › Quality & playback over Keep screen on and the battery warning. Add `System::section` to your file if one word cannot do both |
+| `The cover takes the full width and fades into the page.` | The line under “Full-bleed album artwork”, explaining it |
 | `Theme` | The screen where the appearance and the accent colour are chosen, and the name of the row that opens it |
 
 ## Settings › Playback
@@ -1155,28 +1170,6 @@ you are actually typing into, which is easier than reading it here.
 | `Scrobbling` | Reporting a song as played, to the user's own server and from there to Last.fm or ListenBrainz. The title of its own screen and the row that opens it. The word comes from Last.fm and most languages keep it; use whatever those services call it in yours if they do |
 | `Time played` | How long a song must have played before it counts, as a time. The other scrobble rule, and it can be `Off` too. Whichever of the two comes first is the one that counts |
 | `With both off nothing is reported, not even to your own server.` | Shown only when both scrobble rules are `Off`, since that also stops the play counts on the user's own server |
-
-## Settings › Song lists
-
-| String | What it is |
-| --- | --- |
-| `Album pages` |  |
-| `Full-bleed album artwork` | Album detail layout: cover spans the screen width and fades into the background; not an audio effect. |
-| `Gestures` |  |
-| `Lists` |  |
-| `Lists & albums` | The screen of settings for what song lists and album and playlist pages show |
-| `Off` | A setting value meaning disabled (crossfade, normalization…) |
-| `Show artist photo` | Whether the artist's photo shows at the top of their screen |
-| `Show artwork` | Whether song rows carry the album's little picture |
-| `Show description` | A setting: whether playlist and album descriptions are drawn under their names on their screens |
-| `Show disc titles` | On an album in several discs, whether each disc's own name shows |
-| `Show explicit tag` | A switch: whether to draw the E on anything carrying a parental advisory. "Explicit" here is the music-industry label for strong language, not "clear" or "stated outright" |
-| `Show genres` | Whether a song row says its genre |
-| `Show rating` |  |
-| `Show song duration` | Whether a song row says how long the song is |
-| `Swipe left` | What dragging a song to the left in a list does |
-| `Swipe right` | What dragging a song to the right in a list does. Its values are the actions listed under it |
-| `The cover takes the full width and fades into the page.` | The line under “Full-bleed album artwork”, explaining it |
 
 ## Settings › Theme
 
