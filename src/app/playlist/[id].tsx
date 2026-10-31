@@ -207,22 +207,38 @@ export default function PlaylistScreen() {
     });
   }
 
-  /** Saves the new order (optimistic) and rewrites it on the server. */
+  /** The latest order waiting to be written while another write is in flight. */
+  const pendingOrder = useRef<string[] | null>(null);
+  const writingOrder = useRef(false);
+
+  /**
+   * Shows the new order now and writes it. Drops can come faster than the server
+   *  answers, so writes go one at a time and only the latest waiting one is sent;
+   *  the list is re-read only after the last, or it would snap back mid-drag.
+   */
   async function onReorderSave(songIds: string[]) {
-    // The view goes back to manual order so the just-made change is visible.
-    setSort({ field: 'recent', dir: 'asc' });
     const key = ['playlist', id];
+    void queryClient.cancelQueries({ queryKey: key });
     const prev = queryClient.getQueryData<{ playlist: unknown; songs: Song[] }>(key);
     if (prev) {
       const byId = new Map(prev.songs.map((s) => [s.id, s]));
       const songs = songIds.map((sid) => byId.get(sid)).filter(Boolean) as Song[];
       queryClient.setQueryData(key, { ...prev, songs });
     }
+    pendingOrder.current = songIds;
+    if (writingOrder.current) return;
+    writingOrder.current = true;
     try {
-      await reorderPlaylist(id, songIds);
+      while (pendingOrder.current) {
+        const next = pendingOrder.current;
+        pendingOrder.current = null;
+        await reorderPlaylist(id, next);
+      }
     } catch {
+      pendingOrder.current = null;
       toast(t("Couldn't complete the action"));
     } finally {
+      writingOrder.current = false;
       queryClient.invalidateQueries({ queryKey: key });
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
     }
@@ -266,7 +282,7 @@ export default function PlaylistScreen() {
    *  A-Z or Recently-added view would not move one song inside the order the
    *  server keeps - it would rewrite that order to whatever the view happens to
    *  show, which is a sort the hand never asked for and cannot undo - so over
-   *  another view neither the grip nor the bar's Save order is offered. The
+   *  another view the grip is not offered. The
    *  drag is entered with a hold on a row, or from Reorder in the ⋯ menu, which
    *  goes back to this view first.
    */
@@ -405,8 +421,7 @@ export default function PlaylistScreen() {
           // A playlist's order is the app's to rewrite, so its rows live under
           //  the engine whose rows answer a hold by travelling: the drag surface
           //  the ⋯ menu used to open is there under the finger instead, over the
-          //  view that is the server's order, and the bar's Save order button keeps
-          //  whatever order the hand ended with (#279).
+          //  view that is the server's order, and each drop is written (#279).
           reorder:
             hasOrder
               ? { onSave: (ids) => void onReorderSave(ids), serverOrder, openRef: openReorder }

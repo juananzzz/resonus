@@ -9,6 +9,11 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+### Changed
+
+- Moving a song in a playlist saves the new order right away, and the selection bar has Add to playlist and Remove again (#279).
+- Holding a song to start a selection marks that song again (#279).
+
 ## [0.8.6] - 2026-10-31
 
 ### Added

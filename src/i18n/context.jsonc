@@ -137,7 +137,6 @@
     "Rate": "Verb: give it stars. Used for a song and for an artist. Not \"bitrate\"",
     "Restore": "Restore settings to their defaults",
     "Reorder": "Verb. In a playlist's menu, it opens the mode to drag songs to another place; also the grip icon on a row whose hold moves it",
-    "Save order": "Button on a playlist's selection bar, lit once a row has been dragged to another place: it writes the new order of the songs back to the server",
     "Turn off": "Turn off the sleep timer",
     "Start mix": "Start an auto-generated radio mix from this song",
     "More options": "Read out by the screen reader for the three-dot button, which is ⋮ on a song row and in the player and ⋯ in a screen's header",
