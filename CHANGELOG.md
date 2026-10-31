@@ -14,6 +14,7 @@ Releases before 0.2.1 are only listed on the
 - Podcasts: mark episodes as played or unplayed.
 - Podcasts: new episodes of favorite shows can download by themselves over Wi-Fi.
 - Option to show album artwork across the full width (#289).
+- Option to show the player artwork across the full width (#290).
 
 ### Changed
 

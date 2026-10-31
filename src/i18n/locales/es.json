@@ -832,5 +832,8 @@
   "Find one, or add it with the address of its feed.": "Busca uno o añádelo con la dirección de su feed.",
   "Download new episodes of favorite podcasts": "Descargar episodios nuevos de pódcasts favoritos",
   "The latest 3 of each new batch, over Wi-Fi only.": "Los 3 últimos de cada tanda nueva, solo por wifi.",
-  "Full-bleed album artwork": "Portada del álbum de borde a borde"
+  "Full-bleed album artwork": "Portada del álbum de borde a borde",
+  "Full-bleed Now Playing artwork": "Portada de borde a borde en Ahora suena",
+  "Full bleed": "A sangre",
+  "For static covers. Choose animated artwork separately below.": "Para portadas estáticas. Elige las animaciones por separado más abajo."
 }

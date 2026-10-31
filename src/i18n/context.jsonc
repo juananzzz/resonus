@@ -801,7 +801,10 @@
     "Couldn't read this feed": "Filed under a show whose feed would not load, so the reason is still there offline. One show, not the whole list",
     "No episodes": "A show whose feed lists no items at all: the publisher has nothing published",
     "No episodes yet": "Where a show's episode count would be on the list of shows: nothing published yet",
-    "Full-bleed album artwork": "Album detail layout: cover spans the screen width and fades into the background; not an audio effect."
+    "Full-bleed album artwork": "Album detail layout: cover spans the screen width and fades into the background; not an audio effect.",
+    "Full-bleed Now Playing artwork": "Now Playing layout: the complete artwork sits below the header and fades into colours from its edges.",
+    "Full bleed": "Third animated-artwork layout: fitted edge-to-edge artwork, independent of static full bleed.",
+    "For static covers. Choose animated artwork separately below.": "Description of the static full-bleed switch; animated artwork has a separate three-way selector."
   },
 
   // Strings that are meant to stay in English, and are not counted as missing.
