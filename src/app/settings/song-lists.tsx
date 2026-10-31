@@ -37,6 +37,8 @@ export default function SongListsSettings() {
   const setShowDiscHeaders = useSettings((s) => s.setShowDiscHeaders);
   const showGenreChips = useSettings((s) => s.showGenreChips);
   const setShowGenreChips = useSettings((s) => s.setShowGenreChips);
+  const albumFullBleed = useSettings((s) => s.albumFullBleed);
+  const setAlbumFullBleed = useSettings((s) => s.setAlbumFullBleed);
 
   return (
     <SettingsPage title={t('Lists & albums')}>
@@ -86,6 +88,11 @@ export default function SongListsSettings() {
               label: t('Show genres'),
               value: showGenreChips,
               onChange: setShowGenreChips,
+            },
+            {
+              label: t('Full-bleed album artwork'),
+              value: albumFullBleed,
+              onChange: setAlbumFullBleed,
             },
           ]}
         />

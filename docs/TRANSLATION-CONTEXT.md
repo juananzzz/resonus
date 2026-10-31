@@ -1074,7 +1074,6 @@ you are actually typing into, which is easier than reading it here.
 | `Fit cover art` | Show the whole cover even if it is not square, instead of cropping it to fill |
 | `For static covers. Choose animated artwork separately below.` | Description of the static full-bleed switch; animated artwork has a separate three-way selector. |
 | `Full bleed` | Third animated-artwork layout: fitted edge-to-edge artwork, independent of static full bleed. |
-| `Full-bleed album artwork` | Album detail layout: cover spans the screen width and fades into the background; not an audio effect. |
 | `Full-bleed Now Playing artwork` | Now Playing layout: the complete artwork sits below the header and fades into colours from its edges. |
 | `Go to album` | Leave this sheet and open the album the song is on |
 | `In the cover` | A value of `Animated artwork`: the animated cover plays inside the square where the cover is |
@@ -1164,6 +1163,7 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
+| `Full-bleed album artwork` | Album detail layout: cover spans the screen width and fades into the background; not an audio effect. |
 | `Lists & albums` | The screen of settings for what song lists and album and playlist pages show |
 | `Show artist photo` | Whether the artist's photo shows at the top of their screen |
 | `Show artwork` | Whether song rows carry the album's little picture |
