@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class TrackWatchTest {
-  private var now = 0L
+  private var now = 1_000L
   private val watch = TrackWatch { now }
 
   private fun poll(playback: String, positionMs: Long, durationMs: Long = 200_000) {
@@ -32,6 +32,21 @@ class TrackWatchTest {
     poll("STOPPED", 0, 0)
     poll("STOPPED", 0, 0)
     assertEquals(TrackWatch.Verdict.NONE, verdict("STOPPED"))
+  }
+
+  @Test fun aTrackThatEndedWhileNoPollGotThroughIsTheEnd() {
+    poll("PLAYING", 60_000)
+    now += 150_000
+    poll("STOPPED", 0, 0)
+    assertEquals(TrackWatch.Verdict.ENDED, verdict("STOPPED"))
+  }
+
+  @Test fun aStopAfterAPauseIsNotCountedAsTimePlayed() {
+    poll("PLAYING", 60_000)
+    poll("PAUSED", 60_000)
+    now += 150_000
+    repeat(TrackWatch.INTERRUPTED_POLLS) { poll("STOPPED", 0, 0) }
+    assertEquals(TrackWatch.Verdict.INTERRUPTED, verdict("STOPPED"))
   }
 
   @Test fun aStopHalfwayIsAnInterruptionOnceItLasts() {

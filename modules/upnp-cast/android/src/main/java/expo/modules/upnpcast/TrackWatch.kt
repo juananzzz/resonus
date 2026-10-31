@@ -34,8 +34,13 @@ internal class TrackWatch(private val clock: () -> Long = System::currentTimeMil
   private var lastSeenPositionMs = -1L
   private var lastSeenPlayback = ""
   private var frozenSinceMs = 0L
+  private var playingSeenAtMs = 0L
+  /** How far the track can have got by the first poll that found it stopped. */
+  private var reachedMs = 0L
 
   fun reset(positionMs: Long = 0) {
+    playingSeenAtMs = 0
+    reachedMs = 0
     observedPlaying = false
     lastPositionMs = positionMs.coerceAtLeast(0)
     lastDurationMs = 0
@@ -51,6 +56,13 @@ internal class TrackWatch(private val clock: () -> Long = System::currentTimeMil
     if (durationMs > 0) lastDurationMs = durationMs
     if (playback == PLAYING) observedPlaying = true
     if (playback == STOPPED) stoppedPolls++ else if (playback != TRANSITIONING) stoppedPolls = 0
+
+    // Polls can be missing for a long while (Wi-Fi napping, phone dozing), and
+    // the last position seen then says nothing about where the stop happened.
+    if (playback == STOPPED && stoppedPolls == 1) {
+      reachedMs = lastPositionMs + if (playingSeenAtMs > 0) clock() - playingSeenAtMs else 0
+    }
+    if (playback != STOPPED) playingSeenAtMs = if (playback == PLAYING) clock() else 0
 
     // The clock counts as stuck only for as long as the state holds: a pause
     // near the end, played again, is not a track that has been over for as
@@ -74,7 +86,7 @@ internal class TrackWatch(private val clock: () -> Long = System::currentTimeMil
   fun verdict(playback: String, expectedDurationMs: Long, stoppedByController: Boolean): Verdict {
     if (!observedPlaying || stoppedByController) return Verdict.NONE
     if (playback == STOPPED) {
-      if (GenericQueueProgression.isNearEnd(lastPositionMs, lastDurationMs, expectedDurationMs)) {
+      if (GenericQueueProgression.isNearEnd(maxOf(lastPositionMs, reachedMs), lastDurationMs, expectedDurationMs)) {
         return Verdict.ENDED
       }
       return if (stoppedPolls >= INTERRUPTED_POLLS) Verdict.INTERRUPTED else Verdict.NONE

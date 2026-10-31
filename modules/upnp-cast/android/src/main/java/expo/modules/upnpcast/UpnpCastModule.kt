@@ -787,7 +787,11 @@ class UpnpCastModule : Module() {
         val found = indexOfUri(uri)
         if (found != null) {
           foreignPolls = 0
-          adoptLocked(current, found, state.positionMs)
+          // Only once it plays. A renderer can move on to the next address and
+          // sit there stopped; following it then forgot that anything had
+          // played, so nothing ever loaded the track (#285). Left alone, that
+          // stop reads as the end of the current one.
+          if (playback == TrackWatch.PLAYING) adoptLocked(current, found, state.positionMs)
         } else if (recentUris.none { GenericQueueProgression.sameUri(uri, it) } &&
           (playback == TrackWatch.PLAYING || playback == TrackWatch.PAUSED)
         ) {

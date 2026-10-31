@@ -11,6 +11,7 @@ Releases before 0.2.1 are only listed on the
 
 ### Fixed
 
+- Casting: more cases where the queue stayed on a song after it ended are handled (#285).
 - The progress bar looks the same on every Android phone.
 - Next and previous from other apps and devices, like Garmin watches, should now work (#307).
 

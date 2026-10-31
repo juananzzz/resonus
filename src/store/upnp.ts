@@ -152,7 +152,10 @@ function onNativeState(e: NativeState) {
   if (e.volume != null && e.volume >= 0) {
     events?.onVolumeChanged?.(e.volume / 100);
   }
-  const repeat = repeatForPlayMode(e.playMode);
+  // A queue kept natively repeats by what the app told it. The renderer's own
+  // mode is not ours to follow: taken as the app's, a renderer saying REPEAT_ONE
+  // held the queue on one track (#285).
+  const repeat = e.nativeQueueManaged ? null : repeatForPlayMode(e.playMode);
   if (repeat != null && repeat !== lastRemoteRepeat) {
     lastRemoteRepeat = repeat;
     events?.onRepeatChanged?.(repeat);
