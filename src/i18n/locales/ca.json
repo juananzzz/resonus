@@ -835,8 +835,11 @@
   "Home & navigation": "Inici i navegació",
   "Where animated covers play": "On es veuen les caràtules animades",
   "Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.": "Demana al servidor les cançons següents per endavant, per a servidors lents i proxies. No es desa res al mòbil.",
+<<<<<<< HEAD
   "Motion artwork on Wi-Fi only": "Animacions només amb Wi-Fi",
   "Use static covers and artist images on mobile data.": "Utilitza portades i imatges d’artistes estàtiques amb dades mòbils.",
+=======
+>>>>>>> origin/main
   "Full-bleed album artwork": "Portada de l’àlbum de vora a vora",
   "Full-bleed Now Playing artwork": "Portada de vora a vora a Ara sona",
   "Full bleed": "A sang",
