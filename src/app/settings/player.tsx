@@ -86,6 +86,8 @@ export default function PlayerSettings() {
   const setAnimatedCovers = useSettings((s) => s.setAnimatedCovers);
   const setAnimatedArtworkEndpoint = useSettings((s) => s.setAnimatedArtworkEndpoint);
   const miniPlayerColorBackground = useSettings((s) => s.miniPlayerColorBackground);
+  const albumFullBleed = useSettings((s) => s.albumFullBleed);
+  const setAlbumFullBleed = useSettings((s) => s.setAlbumFullBleed);
   const miniPlayerPills = useSettings((s) => s.miniPlayerPills);
   const setMiniPlayerPills = useSettings((s) => s.setMiniPlayerPills);
   const blurMiniPlayer = useSettings((s) => s.blurMiniPlayer);
@@ -132,6 +134,15 @@ export default function PlayerSettings() {
       <ScrollView contentContainerStyle={settingsStyles.content}>
         {/* The first title sticks to the header (no section margin). */}
         <Text style={[settingsStyles.sectionTitle, { marginTop: 0 }]}>{t('Background')}</Text>
+        <SettingsGroup>
+          <SwitchList options={[
+            {
+              label: t('Full-bleed album artwork'),
+              value: albumFullBleed,
+              onChange: setAlbumFullBleed,
+            },
+          ]} />
+        </SettingsGroup>
         <SelectList<ScreenBackground>
           label={t('Player background')}
           options={[

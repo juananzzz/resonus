@@ -1107,6 +1107,7 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   batteryWarning: boolean;
   /** Player background: flat, cover color, or blurred cover art. */
   playerBackground: ScreenBackground;
+  albumFullBleed: boolean;
   navbarPills: boolean;
   miniPlayerPills: boolean;
   /**
@@ -1367,6 +1368,7 @@ function snapshot(get: () => SettingsState): Persisted {
 
 /** Factory default values for all preferences. */
 const DEFAULTS = {
+  albumFullBleed: false,
   navbarPills: false,
   miniPlayerPills: false,
   maxBitRate: 0,
