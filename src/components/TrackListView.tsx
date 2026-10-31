@@ -149,8 +149,10 @@ interface Props {
    * width, only the picture takes the whole screen.
    */
   wideCover?: {
+    /** Albums keep the whole width-sized cover; radio headers keep their existing clamp. */
+    preserveHeight?: boolean;
     height: number;
-    render: (width: number, height: number) => ReactNode;
+    render: (width: number, height: number, visible: boolean) => ReactNode;
   };
   /** Gradient/bar color if there's no cover with a dominant color. */
   accentColor?: string;
@@ -508,7 +510,8 @@ export function TrackListView({
   // it goes under the bar - but is clamped so it ends just above where this
   // one would, on every screen there is.
   const albumPadTop = insets.top + TOPBAR_H + spacing.md;
-  const wideH = wideCover ? Math.min(wideCover.height, albumPadTop + art - 24) : 0;
+  const [wideVisible, setWideVisible] = useState(true);
+  const wideH = wideCover ? wideCover.preserveHeight ? wideCover.height : Math.min(wideCover.height, albumPadTop + art - 24) : 0;
   const cover = wideCover || hideCover ? 0 : art;
   const collapse = wideCover ? wideH : hideCover ? 120 : art;
   // Down past the title and the buttons, so the header is the cover's colour
@@ -796,6 +799,7 @@ export function TrackListView({
           listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
             const y = e.nativeEvent.contentOffset.y;
             lastOffsetY.current = y;
+            if (wideCover) setWideVisible(y < wideH && !searching);
             // Scrolling down with the bar open collapses it.
             if (revealed && !searching && y > 30) collapseSearchBar();
             // The bar reaching the button hands the taps (and the screen
@@ -891,10 +895,10 @@ export function TrackListView({
                     accessibilityRole="imagebutton"
                     accessibilityLabel={t('View cover')}
                   >
-                    {wideCover.render(screenW, wideH)}
+                    {wideCover.render(screenW, wideH, wideVisible)}
                   </Pressable>
                 ) : (
-                  wideCover.render(screenW, wideH)
+                  wideCover.render(screenW, wideH, wideVisible)
                 )}
               </Animated.View>
             ) : hideCover ? null : (

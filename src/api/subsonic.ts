@@ -307,6 +307,7 @@ export interface GuestAlbum extends Album {
 }
 
 export interface Artist {
+  musicBrainzId?: string;
   id: string;
   name: string;
   coverArt?: string;
@@ -1295,6 +1296,7 @@ export async function getSimilarSongs(
 }
 
 export interface ArtistInfo {
+  musicBrainzId?: string;
   biography?: string;
   imageUrl?: string;
   similarArtists: Artist[];
@@ -1307,6 +1309,7 @@ export async function getArtistInfo(
 ): Promise<ArtistInfo> {
   const res = await request<{
     artistInfo2?: {
+      musicBrainzId?: string;
       biography?: string;
       largeImageUrl?: string;
       similarArtist?: Artist[];
@@ -1324,6 +1327,7 @@ export async function getArtistInfo(
   });
   return {
     biography,
+    musicBrainzId: info.musicBrainzId,
     imageUrl: info.largeImageUrl || undefined,
     similarArtists,
   };
