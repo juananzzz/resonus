@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 836 of them.
+Every string the app can show, under the screen it shows up on. 842 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -1072,11 +1072,16 @@ you are actually typing into, which is easier than reading it here.
 | `Elements` | Which player elements to show |
 | `Favorite` | One of the choices for the button next to play on the mini player: the heart. Not a verb |
 | `Fit cover art` | Show the whole cover even if it is not square, instead of cropping it to fill |
+| `For static covers. Choose animated artwork separately below.` | Description of the static full-bleed switch; animated artwork has a separate three-way selector. |
+| `Full bleed` | Third animated-artwork layout: fitted edge-to-edge artwork, independent of static full bleed. |
+| `Full-bleed album artwork` | Album detail layout: cover spans the screen width and fades into the background; not an audio effect. |
+| `Full-bleed Now Playing artwork` | Now Playing layout: the complete artwork sits below the header and fades into colours from its edges. |
 | `Go to album` | Leave this sheet and open the album the song is on |
 | `In the cover` | A value of `Animated artwork`: the animated cover plays inside the square where the cover is |
 | `Keep paused when skipping` |  |
 | `Mini player` |  |
 | `Mini player blur` |  |
+| `Motion artwork on Wi-Fi only` | Persistent network rule for decorative album and artist motion, including cached videos. On by default. Does not affect music streaming. |
 | `No` | A setting value meaning none or zero, not the answer to a question: no crossfade, no seek buttons |
 | `None` | One of the choices for the buttons next to play on the mini player: no button at all |
 | `Nothing` | A value of `On cover tap`: tapping the cover does nothing |
@@ -1103,6 +1108,7 @@ you are actually typing into, which is easier than reading it here.
 | `Show rating` |  |
 | `Skip buttons` | The seek forward / back buttons setting |
 | `Swap favorite and menu` | Exchange the places of those two buttons in the player, for whichever hand you hold the phone in |
+| `Use static covers and artist images on mobile data.` | Description of the motion Wi-Fi restriction. Turning it off permits videos on mobile data. |
 | `Where animated covers play` |  |
 
 ## Settings › Player buttons

@@ -1,4 +1,6 @@
 {
+  "Motion artwork on Wi-Fi only": "Animacions només amb Wi-Fi",
+  "Use static covers and artist images on mobile data.": "Utilitza portades i imatges d’artistes estàtiques amb dades mòbils.",
   "Diagnostics": "Diagnòstic",
   "Profile": "Perfil",
   "Share report": "Comparteix l'informe",
@@ -834,5 +836,9 @@
   "Temporary data cleared": "Dades temporals esborrades",
   "Home & navigation": "Inici i navegació",
   "Where animated covers play": "On es veuen les caràtules animades",
-  "Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.": "Demana al servidor les cançons següents per endavant, per a servidors lents i proxies. No es desa res al mòbil."
+  "Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.": "Demana al servidor les cançons següents per endavant, per a servidors lents i proxies. No es desa res al mòbil.",
+  "Full-bleed album artwork": "Portada de l’àlbum de vora a vora",
+  "Full-bleed Now Playing artwork": "Portada de vora a vora a Ara sona",
+  "Full bleed": "A sang",
+  "For static covers. Choose animated artwork separately below.": "Per a portades estàtiques. Tria les animacions per separat més avall."
 }

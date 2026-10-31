@@ -1,4 +1,6 @@
 {
+  "Motion artwork on Wi-Fi only": "Animaciones solo con Wi-Fi",
+  "Use static covers and artist images on mobile data.": "Usar portadas e imágenes de artistas estáticas con datos móviles.",
   "All": "Todo",
   "Diagnostics": "Diagnóstico",
   "Help translate": "Ayuda a traducir",
@@ -834,5 +836,9 @@
   "Temporary data cleared": "Datos temporales borrados",
   "Home & navigation": "Inicio y navegación",
   "Where animated covers play": "Dónde se ven las carátulas animadas",
-  "Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.": "Pide al servidor las siguientes canciones por adelantado, para servidores lentos y proxies. No se guarda nada en el móvil."
+  "Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.": "Pide al servidor las siguientes canciones por adelantado, para servidores lentos y proxies. No se guarda nada en el móvil.",
+  "Full-bleed album artwork": "Portada del álbum de borde a borde",
+  "Full-bleed Now Playing artwork": "Portada de borde a borde en Ahora suena",
+  "Full bleed": "A sangre",
+  "For static covers. Choose animated artwork separately below.": "Para portadas estáticas. Elige las animaciones por separado más abajo."
 }
