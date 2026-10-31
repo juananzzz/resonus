@@ -1,4 +1,5 @@
 /** Square cover art with placeholder when no image. */
+import { useArtworkNetworkAllowed } from '@/hooks/useArtworkMotionAllowed';
 import Icon from '@/components/Icon';
 import { Image, type ImageContentFit, type ImageStyle } from 'expo-image';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
@@ -325,7 +326,8 @@ export function Cover({
 }: Props) {
   // Animated covers off (Settings › Player): a GIF or WebP shows its first
   // frame, wherever it is.
-  const animate = useSettings((s) => s.animatedCovers) && autoplay;
+  const motionNetworkAllowed = useArtworkNetworkAllowed();
+  const animate = useSettings((s) => s.animatedCovers) && autoplay && motionNetworkAllowed;
   // If the image fails to load (e.g. offline without cache or download), we fall
   // back to the placeholder instead of leaving a gap. Reset on `uri` change
   // because lists recycle the same instance with a different song.

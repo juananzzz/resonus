@@ -1,0 +1,145 @@
+{
+  "artist": {
+    "id": "artist_6d21d945cc11061a42",
+    "name": "Emilia",
+    "musicbrainz_id": null,
+    "wikidata_id": null
+  },
+  "signatures": [
+    {
+      "id": "sig_5f8292ec65a199e81e",
+      "artist": {
+        "name": "Emilia",
+        "musicbrainz_id": null,
+        "wikidata_id": null
+      },
+      "asset": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Emilia_Clarke_autograph.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "format": "svg",
+        "type": "autograph",
+        "width": 315,
+        "height": 318,
+        "sha256": null
+      },
+      "source": {
+        "provider": "wikimedia_commons",
+        "url": "https://commons.wikimedia.org/wiki/File:Emilia_Clarke_autograph.svg",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Emilia_Clarke_autograph.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+      },
+      "license": {
+        "name": "PD-signature",
+        "url": "https://commons.wikimedia.org/wiki/Template:PD-signature",
+        "status": "known"
+      },
+      "verification": "unverified"
+    },
+    {
+      "id": "sig_dd795d875912a5724e",
+      "artist": {
+        "name": "Emilia",
+        "musicbrainz_id": null,
+        "wikidata_id": null
+      },
+      "asset": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/c/c5/Firma_de_Emilia_de_Azc%C3%A1rate.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "format": "svg",
+        "type": "handwritten",
+        "width": 1085,
+        "height": 256,
+        "sha256": null
+      },
+      "source": {
+        "provider": "wikimedia_commons",
+        "url": "https://commons.wikimedia.org/wiki/File:Firma_de_Emilia_de_Azc%C3%A1rate.svg",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/c/c5/Firma_de_Emilia_de_Azc%C3%A1rate.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+      },
+      "license": {
+        "name": "Public Domain",
+        "url": "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+        "status": "known"
+      },
+      "verification": "unverified"
+    },
+    {
+      "id": "sig_000c10be39e9cb4417",
+      "artist": {
+        "name": "Emilia",
+        "musicbrainz_id": null,
+        "wikidata_id": null
+      },
+      "asset": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Firma_de_Emilia_Pardo_Baz%C3%A1n.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "format": "svg",
+        "type": "handwritten",
+        "width": 1300,
+        "height": 422,
+        "sha256": null
+      },
+      "source": {
+        "provider": "wikimedia_commons",
+        "url": "https://commons.wikimedia.org/wiki/File:Firma_de_Emilia_Pardo_Baz%C3%A1n.svg",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Firma_de_Emilia_Pardo_Baz%C3%A1n.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+      },
+      "license": {
+        "name": "Public Domain",
+        "url": null,
+        "status": "known"
+      },
+      "verification": "unverified"
+    },
+    {
+      "id": "sig_b95d4d6ee177b6d7da",
+      "artist": {
+        "name": "Emilia",
+        "musicbrainz_id": null,
+        "wikidata_id": null
+      },
+      "asset": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/9/94/Emilia_Piave_signature.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "format": "jpeg",
+        "type": "handwritten",
+        "width": 800,
+        "height": 246,
+        "sha256": null
+      },
+      "source": {
+        "provider": "wikimedia_commons",
+        "url": "https://commons.wikimedia.org/wiki/File:Emilia_Piave_signature.jpg",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/9/94/Emilia_Piave_signature.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+      },
+      "license": {
+        "name": "Public Domain",
+        "url": null,
+        "status": "known"
+      },
+      "verification": "unverified"
+    },
+    {
+      "id": "sig_928e41a533d4959e13",
+      "artist": {
+        "name": "Emilia",
+        "musicbrainz_id": null,
+        "wikidata_id": null
+      },
+      "asset": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Emilia_Segrest%C3%A1n_firma.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "format": "jpeg",
+        "type": "handwritten",
+        "width": 776,
+        "height": 339,
+        "sha256": null
+      },
+      "source": {
+        "provider": "wikimedia_commons",
+        "url": "https://commons.wikimedia.org/wiki/File:Emilia_Segrest%C3%A1n_firma.jpg",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Emilia_Segrest%C3%A1n_firma.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+      },
+      "license": {
+        "name": "Public Domain",
+        "url": null,
+        "status": "known"
+      },
+      "verification": "unverified"
+    }
+  ]
+}

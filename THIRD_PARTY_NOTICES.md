@@ -27,3 +27,15 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## BitChord artist header metadata lookup
+
+The Apple artist header dictionary lookup in `src/lib/appleArtistArt.ts` and
+`src/lib/artistLogo.ts` is adapted from BitChord's `AppleArtistArt.kt`:
+
+https://github.com/kushagrasinghx/BitChord/blob/1189e6a566c9181111205f26a983f7984f9393ea/app/src/main/java/com/music/bitchord/data/canvas/AppleArtistArt.kt
+
+BitChord's source is licensed under GNU GPL version 3. The adapted files are
+provided under GPL-3.0-only; the GPL version 3 text is included in LICENSE.
+This source-code licence does not grant rights to Apple artwork, trademarks,
+or services. No Apple images or videos are bundled with this contribution.

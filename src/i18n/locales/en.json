@@ -1,4 +1,6 @@
 {
+  "Motion artwork on Wi-Fi only": "Motion artwork on Wi-Fi only",
+  "Use static covers and artist images on mobile data.": "Use static covers and artist images on mobile data.",
   "All": "All",
   "Diagnostics": "Diagnostics",
   "Help translate": "Help translate",
@@ -829,5 +831,18 @@
   "Lost the connection to {name}": "Lost the connection to {name}",
   "{name} is playing something else": "{name} is playing something else",
   "Pill-shaped navigation bar": "Pill-shaped navigation bar",
-  "Pill-shaped mini player": "Pill-shaped mini player"
+  "Pill-shaped mini player": "Pill-shaped mini player",
+  "Full-bleed album artwork": "Full-bleed album artwork",
+  "Full-bleed Now Playing artwork": "Full-bleed Now Playing artwork",
+  "Full bleed": "Full bleed",
+  "For static covers. Choose animated artwork separately below.": "For static covers. Choose animated artwork separately below.",
+  "Artist pages": "Artist pages",
+  "Artist signatures": "Artist signatures",
+  "Artist signatures API": "Artist signatures API",
+  "Show signature source": "Show signature source",
+  "Optional HTTPS provider. Artist names are sent when signatures are enabled.": "Optional HTTPS provider. Artist names are sent when signatures are enabled.",
+  "Apple Music artist logos": "Apple Music artist logos",
+  "Apple Music artist images": "Apple Music artist images",
+  "Animated Apple Music artist images": "Animated Apple Music artist images",
+  "Apple options contact Apple using artist names. Missing artwork keeps the server image or name.": "Apple options contact Apple using artist names. Missing artwork keeps the server image or name."
 }

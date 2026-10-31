@@ -1,4 +1,5 @@
 /** App settings (persisted): streaming quality and language. */
+import { isAnimatedArtworkMode, savedAnimatedArtworkMode, type AnimatedArtworkMode } from '@/lib/artworkLayout';
 import { Platform } from 'react-native';
 import { create } from 'zustand';
 
@@ -889,6 +890,7 @@ type CustomSetter =
   | 'setThemeLightFrom'
   | 'setThemeDarkFrom'
   | 'setPureBlack'
+  | 'setAnimatedArtworkMode'
   | 'setAnimatedArtworkFps'
   | 'setAnimatedArtworkUrls'
   | 'setBackgroundTint';
@@ -1105,14 +1107,18 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   batteryWarning: boolean;
   /** Player background: flat, cover color, or blurred cover art. */
   playerBackground: ScreenBackground;
+  appleArtistImages: boolean;
+  appleArtistVideos: boolean;
+  appleArtistLogos: boolean;
+  artistSignaturesEnabled: boolean;
+  artistSignaturesApi: string;
+  playerFullBleed: boolean;
+  albumFullBleed: boolean;
   navbarPills: boolean;
   miniPlayerPills: boolean;
-  /**
-   * When the cover art is animated (GIF, animated WebP, APNG), use it as
-   * the fullscreen player background and show a small static copy beside
-   * the title. Off by default: the cover plays inside the square as before.
-   */
+  /** Legacy export compatibility; animatedArtworkMode controls the player. */
   animatedCoverBackground: boolean;
+  animatedArtworkMode: AnimatedArtworkMode;
   /**
    * The fps animated covers encode at for the lock screen (30 or 60). A clip
    * already on disk keeps the rate it was written at; the next one picks up
@@ -1131,6 +1137,7 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
    * its first frame, and the endpoint is kept but not asked.
    */
   animatedCovers: boolean;
+  motionArtworkWifiOnly: boolean;
   /**
    * Play endpoint clips as in-app video (cover square and background).
    * Kills the video players without touching the lock-screen tall clips:
@@ -1300,6 +1307,7 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   customFontUri: string | null;
   setLanguage: (language: Language) => void;
   setDiagnostics: (value: boolean) => void;
+  setAnimatedArtworkMode: (value: AnimatedArtworkMode) => void;
   setAnimatedArtworkFps: (value: number) => void;
   resetScrobbleRules: () => void;
   setHideUnavailableOffline: (value: boolean) => void;
@@ -1365,6 +1373,13 @@ function snapshot(get: () => SettingsState): Persisted {
 
 /** Factory default values for all preferences. */
 const DEFAULTS = {
+  appleArtistImages: false,
+  appleArtistVideos: false,
+  appleArtistLogos: false,
+  artistSignaturesEnabled: false,
+  artistSignaturesApi: "",
+  playerFullBleed: false,
+  albumFullBleed: false,
   navbarPills: false,
   miniPlayerPills: false,
   maxBitRate: 0,
@@ -1440,6 +1455,7 @@ const DEFAULTS = {
   batteryWarning: true,
   playerBackground: 'cover' as ScreenBackground,
   animatedCoverBackground: false,
+  animatedArtworkMode: 'cover' as AnimatedArtworkMode,
   // 30: half the frames of 60 for a cover that reads the same; see
   // `ANIMATED_ARTWORK_FPS_OPTIONS`.
   animatedArtworkFps: 30,
@@ -1449,6 +1465,7 @@ const DEFAULTS = {
   animatedCoverVideo: true,
   // On: what the app always did with an animated cover.
   animatedCovers: true,
+  motionArtworkWifiOnly: true,
   // Empty: search decides everything.
   animatedArtworkUrls: {},
   fitCoverArt: false,
@@ -1631,6 +1648,11 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
     if (typeof DEFAULTS[key] === 'boolean' && typeof value === 'boolean') flags[key] = value;
   }
   set(flags as Partial<SettingsState>);
+  const motionMode = savedAnimatedArtworkMode(parsed);
+  if (motionMode) set({ animatedArtworkMode: motionMode, animatedCoverBackground: motionMode === 'background' });
+  if (typeof parsed.artistSignaturesApi === 'string' && parsed.artistSignaturesApi.length <= 2048) {
+    set({ artistSignaturesApi: parsed.artistSignaturesApi.trim() });
+  }
   // One switch used to blur both bars.
   if (typeof parsed.blurMiniPlayer !== 'boolean' && typeof parsed.blurBars === 'boolean') {
     set({ blurMiniPlayer: parsed.blurBars });
@@ -2030,6 +2052,12 @@ export const useSettings = create<SettingsState>((set, get) => ({
   setDiagnostics: (diagnostics) => {
     set({ diagnostics });
     setPerfEnabled(diagnostics);
+    persist(snapshot(get));
+  },
+
+  setAnimatedArtworkMode: (animatedArtworkMode) => {
+    if (!isAnimatedArtworkMode(animatedArtworkMode)) return;
+    set({ animatedArtworkMode, animatedCoverBackground: animatedArtworkMode === 'background' });
     persist(snapshot(get));
   },
 

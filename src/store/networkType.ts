@@ -9,6 +9,8 @@ import { create } from 'zustand';
 interface NetworkTypeState {
   /** true if the active connection is cellular. */
   cellular: boolean;
+  /** Explicit Wi-Fi detection; false until the initial network check finishes. */
+  wifi: boolean;
   /**
    * true if there is a network at all. Not the same as the app's offline mode,
    * which is about the music server: a local profile has no server and every
@@ -25,6 +27,7 @@ interface NetworkTypeState {
  */
 export const useNetworkType = create<NetworkTypeState>(() => ({
   cellular: false,
+  wifi: false,
   connected: true,
 }));
 
@@ -34,9 +37,10 @@ function apply(state: Network.NetworkState) {
   // connection), but it is also the one that goes undefined; `isConnected`
   // backs it up, and an unknown answer is treated as connected.
   const connected = state.isInternetReachable ?? state.isConnected ?? true;
+  const wifi = state.type === Network.NetworkStateType.WIFI;
   const current = useNetworkType.getState();
-  if (current.cellular !== cellular || current.connected !== connected) {
-    useNetworkType.setState({ cellular, connected });
+  if (current.cellular !== cellular || current.connected !== connected || current.wifi !== wifi) {
+    useNetworkType.setState({ cellular, connected, wifi });
   }
 }
 

@@ -9,6 +9,7 @@ import {
   SettingsPage,
   settingsStyles,
   SwitchList,
+  TextRow,
 } from '@/components/SettingsUI';
 import { canBlurBars } from '@/components/BarBlur';
 import { useLocalProfile } from '@/hooks/useLocalProfile';
@@ -79,6 +80,16 @@ export default function AppearanceSettings() {
   const appFont = useSettings((s) => s.appFont);
   const coverCorners = useSettings((s) => s.coverCorners);
   const setCoverCorners = useSettings((s) => s.setCoverCorners);
+  const appleArtistImages = useSettings((s) => s.appleArtistImages);
+  const setAppleArtistImages = useSettings((s) => s.setAppleArtistImages);
+  const appleArtistVideos = useSettings((s) => s.appleArtistVideos);
+  const setAppleArtistVideos = useSettings((s) => s.setAppleArtistVideos);
+  const appleArtistLogos = useSettings((s) => s.appleArtistLogos);
+  const setAppleArtistLogos = useSettings((s) => s.setAppleArtistLogos);
+  const artistSignaturesEnabled = useSettings((s) => s.artistSignaturesEnabled);
+  const setArtistSignaturesEnabled = useSettings((s) => s.setArtistSignaturesEnabled);
+  const artistSignaturesApi = useSettings((s) => s.artistSignaturesApi);
+  const setArtistSignaturesApi = useSettings((s) => s.setArtistSignaturesApi);
   const borderStyle = useSettings((s) => s.borderStyle);
   const setBorderStyle = useSettings((s) => s.setBorderStyle);
 
@@ -325,6 +336,17 @@ export default function AppearanceSettings() {
             ]}
           />
         </SettingsGroup>
+        <Text style={settingsStyles.sectionTitle}>{t('Artist pages')}</Text>
+        <SettingsGroup>
+          <SwitchList options={[
+            { label: t('Artist signatures'), value: artistSignaturesEnabled, onChange: setArtistSignaturesEnabled },
+            { label: t('Apple Music artist logos'), value: appleArtistLogos, onChange: setAppleArtistLogos },
+            { label: t('Apple Music artist images'), value: appleArtistImages, onChange: setAppleArtistImages },
+            { label: t('Animated Apple Music artist images'), value: appleArtistVideos, onChange: setAppleArtistVideos },
+          ]} />
+          <TextRow label={t('Artist signatures API')} description={t('Optional HTTPS provider. Artist names are sent when signatures are enabled.')} value={artistSignaturesApi} onChange={setArtistSignaturesApi} maxLength={2048} keyboardType="url" autoCapitalize="none" />
+        </SettingsGroup>
+        <Text style={settingsStyles.sectionDescription}>{t('Apple options contact Apple using artist names. Missing artwork keeps the server image or name.')}</Text>
       </ScrollView>
     </SettingsPage>
   );

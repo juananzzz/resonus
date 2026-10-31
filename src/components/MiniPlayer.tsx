@@ -66,7 +66,7 @@ function MiniProgress({ song }: { song: Song }) {
   );
 }
 
-export function MiniPlayer() {
+export function MiniPlayer({ active = true }: { active?: boolean }) {
   const { width: screenW, height: screenH, wide } = useScreenSize();
   const song = usePlayerStore(currentSong);
   // A radio saying what it plays says it here too: down here there is only room
@@ -234,7 +234,7 @@ export function MiniPlayer() {
         >
           {blur ? <BarBlur tint={bg} alpha={0.55} /> : null}
       <Animated.View style={[styles.details, detailsStyle]}>
-        <Cover uri={cover} size={44} placeholderIcon={song.url ? 'radio' : 'musical-notes'} />
+        <Cover uri={cover} size={44} autoplay={active} placeholderIcon={song.url ? 'radio' : 'musical-notes'} />
         <View style={styles.info}>
           <MarqueeText
             text={live?.title ?? song.title}
