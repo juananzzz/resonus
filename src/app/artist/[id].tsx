@@ -36,6 +36,7 @@ import { CoverViewer } from '@/components/CoverViewer';
 import { Dialog } from '@/components/Dialog';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { TopBarBackground } from '@/components/BarBlur';
+import { ArtistSignature } from '@/components/ArtistSignature';
 import { BackButton } from '@/components/BackButton';
 import { Message } from '@/components/Message';
 import { SheetModal } from '@/components/SheetModal';
@@ -546,13 +547,9 @@ export default function ArtistScreen() {
             colors={[transparentOf(colors.background), transparentOf(colors.background), colors.background] as const}
             style={StyleSheet.absoluteFill}
           />
-          <Animated.Text
-            pointerEvents="none"
-            style={[styles.name, { opacity: nameOpacity }]}
-            numberOfLines={2}
-          >
-            {data.artist.name}
-          </Animated.Text>
+          <Animated.View style={{ opacity: nameOpacity }}>
+            <ArtistSignature name={data.artist.name} width={screenW} musicBrainzId={data.artist.musicBrainzId ?? info?.musicBrainzId} />
+          </Animated.View>
         </View>
 
         <View style={styles.actions}>
@@ -985,6 +982,7 @@ const styles = themed((colors) => ({
   headerWrap: { justifyContent: 'flex-end' },
   headerImg: { ...StyleSheet.absoluteFill },
   name: {
+    textAlign: 'center',
     color: colors.text,
     fontSize: fontSize.xxl,
     letterSpacing: tracking.display,
