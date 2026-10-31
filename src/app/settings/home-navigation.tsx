@@ -16,7 +16,7 @@ import { useT } from '@/i18n';
 import { haptic } from '@/lib/haptics';
 import { useAuthStore } from '@/store/auth';
 import { useTheme } from '@/theme';
-import { useSettings, type DefaultTab, type SwipeAction } from '@/store/settings';
+import { useSettings, type DefaultTab } from '@/store/settings';
 
 export default function HomeNavigationSettings() {
   // Repaints on a change of appearance or accent: a stack keeps this screen
@@ -48,10 +48,6 @@ export default function HomeNavigationSettings() {
   const setDefaultTab = useSettings((s) => s.setDefaultTab);
   const libraryShowsPlaylists = useSettings((s) => s.libraryShowsPlaylists);
   const setLibraryShowsPlaylists = useSettings((s) => s.setLibraryShowsPlaylists);
-  const swipeAction = useSettings((s) => s.swipeAction);
-  const setSwipeAction = useSettings((s) => s.setSwipeAction);
-  const swipeLeftAction = useSettings((s) => s.swipeLeftAction);
-  const setSwipeLeftAction = useSettings((s) => s.setSwipeLeftAction);
   const showFolderBrowser = useSettings((s) => s.showFolderBrowser);
   const setShowFolderBrowser = useSettings((s) => s.setShowFolderBrowser);
   const hapticsEnabled = useSettings((s) => s.hapticsEnabled);
@@ -204,38 +200,6 @@ export default function HomeNavigationSettings() {
                 value: libraryShowsPlaylists,
                 onChange: setLibraryShowsPlaylists,
               },
-            ]}
-          />
-        </SettingsGroup>
-
-        <Text style={settingsStyles.sectionTitle}>{t('Interaction')}</Text>
-        <SettingsGroup>
-          <SelectList<SwipeAction>
-            label={t('Swipe right')}
-            options={[
-              { value: 'off', label: t('Off') },
-              { value: 'queue', label: t('Add to queue') },
-              { value: 'next', label: t('Play next') },
-              { value: 'favorite', label: t('Add to favorites') },
-              { value: 'menu', label: t('More options') },
-            ]}
-            value={swipeAction}
-            onChange={setSwipeAction}
-          />
-          <SelectList<SwipeAction>
-            label={t('Swipe left')}
-            options={[
-              { value: 'off', label: t('Off') },
-              { value: 'queue', label: t('Add to queue') },
-              { value: 'next', label: t('Play next') },
-              { value: 'favorite', label: t('Add to favorites') },
-              { value: 'menu', label: t('More options') },
-            ]}
-            value={swipeLeftAction}
-            onChange={setSwipeLeftAction}
-          />
-          <SwitchList
-            options={[
               {
                 label: t('Haptic feedback'),
                 value: hapticsEnabled,

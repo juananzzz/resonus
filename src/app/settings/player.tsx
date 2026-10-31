@@ -117,8 +117,8 @@ export default function PlayerSettings() {
         <SettingsGroup>
           <SwitchList options={[
             {
-              label: t('Full-bleed Now Playing artwork'),
-              description: t('For static covers. Choose animated artwork separately below.'),
+              label: t('Full-bleed artwork'),
+              description: t('Static covers in portrait. Replaces the background below; animated covers are set further down.'),
               value: playerFullBleed,
               onChange: setPlayerFullBleed,
             },
@@ -185,6 +185,7 @@ export default function PlayerSettings() {
             options={[
               {
                 label: t('Fit cover art'),
+                description: t('Shows the whole cover even when it is not square.'),
                 value: fitCoverArt,
                 onChange: setFitCoverArt,
               },
@@ -213,16 +214,19 @@ export default function PlayerSettings() {
           <SwitchList
             options={[
               {
-                label: t('Motion artwork on Wi-Fi only'),
-                description: t('Use static covers and artist images on mobile data.'),
-                value: motionArtworkWifiOnly,
-                onChange: setMotionArtworkWifiOnly,
-              },
-              {
                 label: t('Show animated covers'),
                 value: animatedCovers,
                 onChange: setAnimatedCovers,
               },
+              ...(animatedCovers
+                ? [
+                    {
+                      label: t('No animated covers on mobile data'),
+                      value: motionArtworkWifiOnly,
+                      onChange: setMotionArtworkWifiOnly,
+                    },
+                  ]
+                : []),
             ]}
           />
           {animatedCovers ? (
@@ -259,6 +263,7 @@ export default function PlayerSettings() {
                 options={[
                   {
                     label: t('Clips in the app too'),
+                    description: t('Plays the clip inside the app, not only on the lock screen.'),
                     value: animatedCoverVideo,
                     onChange: setAnimatedCoverVideo,
                   },

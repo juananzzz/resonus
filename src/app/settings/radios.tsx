@@ -31,8 +31,6 @@ export default function RadiosSettings() {
   const setEnabled = useSettings((s) => s.setRadiosEnabled);
   const count = useSettings((s) => s.radioCount);
   const setCount = useSettings((s) => s.setRadioCount);
-  const endless = useSettings((s) => s.radioEndless);
-  const setEndless = useSettings((s) => s.setRadioEndless);
 
   return (
     <SettingsPage title={t('Radios')}>
@@ -66,16 +64,6 @@ export default function RadiosSettings() {
                   .then(() => queryClient.invalidateQueries({ queryKey: ['radios'] }))
                   .catch(() => {});
               }}
-            />
-            <SwitchList
-              options={[
-                {
-                  label: t('Keep playing when a radio ends'),
-                  description: t('When its songs run out, another round from the same artists.'),
-                  value: endless,
-                  onChange: setEndless,
-                },
-              ]}
             />
           </SettingsGroup>
         ) : null}

@@ -55,7 +55,6 @@
     // ── Settings section headers (short titles grouping toggles) ─────────────
     "Elements": "Which player elements to show",
     "Buttons": "Which player buttons to show",
-    "Interaction": "Section header grouping toggles",
     "Interface": "Section header grouping toggles",
     "Size": "The size of the quick grid tiles",
     "Sources": "Which shortcuts the quick grid shows",
@@ -598,8 +597,7 @@
     "Always previous track": "A value of `Previous button`: never restarts, always goes back a song",
     "No": "A setting value meaning none or zero, not the answer to a question: no crossfade, no seek buttons",
     "Fit cover art": "Show the whole cover even if it is not square, instead of cropping it to fill",
-    "Motion artwork on Wi-Fi only": "Persistent network rule for decorative album and artist motion, including cached videos. On by default. Does not affect music streaming.",
-    "Use static covers and artist images on mobile data.": "Description of the motion Wi-Fi restriction. Turning it off permits videos on mobile data.",
+    "No animated covers on mobile data": "On, animated covers stay still on mobile data. Other connections are not affected, and neither is the music",
     "Animated covers": "Section header of the player settings: covers that move, video clips from a server or animated GIF and WebP files",
     "Show animated covers": "The switch for all of them: off, no cover moves anywhere in the app",
     "In the cover": "A value of `Animated artwork`: the animated cover plays inside the square where the cover is",
@@ -804,9 +802,9 @@
     "No episodes": "A show whose feed lists no items at all: the publisher has nothing published",
     "No episodes yet": "Where a show's episode count would be on the list of shows: nothing published yet",
     "Full-bleed album artwork": "Album detail layout: cover spans the screen width and fades into the background; not an audio effect.",
-    "Full-bleed Now Playing artwork": "Now Playing layout: the complete artwork sits below the header and fades into colours from its edges.",
+    "Full-bleed artwork": "Now Playing layout: the complete artwork sits below the header and fades into colours from its edges.",
     "Full bleed": "Third animated-artwork layout: fitted edge-to-edge artwork, independent of static full bleed.",
-    "For static covers. Choose animated artwork separately below.": "Description of the static full-bleed switch; animated artwork has a separate three-way selector."
+    "Static covers in portrait. Replaces the background below; animated covers are set further down.": "Description of the static full-bleed switch; animated artwork has a separate three-way selector."
   },
 
   // Strings that are meant to stay in English, and are not counted as missing.

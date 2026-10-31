@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 842 of them.
+Every string the app can show, under the screen it shows up on. 846 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -837,12 +837,10 @@ you are actually typing into, which is easier than reading it here.
 | `Home buttons` | The icons at the top right of Home (search, history, settings), which of them show and in what order |
 | `Home chips` | The row of tappable category chips |
 | `Home sections` | Reorder which sections appear on Home |
-| `Interaction` | Section header grouping toggles |
 | `Interface` | Section header grouping toggles |
 | `Navigation` | Section header: how you move around the app |
 | `Navigation bar` | Settings screen: which tabs are on the bar at the bottom, and in what order |
 | `Navigation bar style` |  |
-| `Off` | A setting value meaning disabled (crossfade, normalization…) |
 | `Open the app on` | Which tab the app opens on, and comes back to after a while away |
 | `Pill-shaped navigation bar` |  |
 | `Playing on other devices` |  |
@@ -851,8 +849,6 @@ you are actually typing into, which is easier than reading it here.
 | `Show tab names` |  |
 | `Solid` | One of the values of “Navigation bar style” |
 | `Start on your playlists` | A switch: with it on, Your library with no chip pressed shows the Favorites entry and the playlists, the way it used to, instead of albums, artists and playlists mixed together |
-| `Swipe left` | What dragging a song to the left in a list does |
-| `Swipe right` | What dragging a song to the right in a list does. Its values are the actions listed under it |
 | `With no chip pressed, Your library shows Favorites and your playlists instead of everything mixed together.` |  |
 | `Your library` | The tab with your albums, artists and playlists |
 
@@ -1016,6 +1012,7 @@ you are actually typing into, which is easier than reading it here.
 | `Crossfade` | One song fading into the next |
 | `Done` | The button that accepts a fine-tuned number |
 | `Equalizer` |  |
+| `Keep playing when a radio ends` |  |
 | `Keep screen on` |  |
 | `Mobile data` | Group header under `Streaming`: the settings that apply on mobile data, as opposed to Wi-Fi |
 | `MP3, AAC, Opus and other lossy files stream as they are. Only files like FLAC are transcoded.` |  |
@@ -1047,6 +1044,7 @@ you are actually typing into, which is easier than reading it here.
 | `Transcode lossless files only` |  |
 | `Uses your files' ReplayGain tags.` | The line under “Normalize volume”, explaining it |
 | `Warn about battery optimization` |  |
+| `When its songs run out, another round from the same artists.` | The line under “Keep playing when a radio ends”, explaining it |
 | `Your server must support it.` |  |
 
 ## Settings › Player
@@ -1072,16 +1070,15 @@ you are actually typing into, which is easier than reading it here.
 | `Elements` | Which player elements to show |
 | `Favorite` | One of the choices for the button next to play on the mini player: the heart. Not a verb |
 | `Fit cover art` | Show the whole cover even if it is not square, instead of cropping it to fill |
-| `For static covers. Choose animated artwork separately below.` | Description of the static full-bleed switch; animated artwork has a separate three-way selector. |
 | `Full bleed` | Third animated-artwork layout: fitted edge-to-edge artwork, independent of static full bleed. |
-| `Full-bleed Now Playing artwork` | Now Playing layout: the complete artwork sits below the header and fades into colours from its edges. |
+| `Full-bleed artwork` | Now Playing layout: the complete artwork sits below the header and fades into colours from its edges. |
 | `Go to album` | Leave this sheet and open the album the song is on |
 | `In the cover` | A value of `Animated artwork`: the animated cover plays inside the square where the cover is |
 | `Keep paused when skipping` |  |
 | `Mini player` |  |
 | `Mini player blur` |  |
-| `Motion artwork on Wi-Fi only` | Persistent network rule for decorative album and artist motion, including cached videos. On by default. Does not affect music streaming. |
 | `No` | A setting value meaning none or zero, not the answer to a question: no crossfade, no seek buttons |
+| `No animated covers on mobile data` | On, animated covers stay still on mobile data. Other connections are not affected, and neither is the music |
 | `None` | One of the choices for the buttons next to play on the mini player: no button at all |
 | `Nothing` | A value of `On cover tap`: tapping the cover does nothing |
 | `On cover double tap` | Settings > Player: what tapping the album artwork twice does |
@@ -1092,6 +1089,7 @@ you are actually typing into, which is easier than reading it here.
 | `Play or pause` | One of its options: the same as the play button |
 | `Player` |  |
 | `Player background` | What is drawn behind the player: the blurred artwork, or a flat tint |
+| `Plays the clip inside the app, not only on the lock screen.` | The line under “Clips in the app too”, explaining it |
 | `Previous and next` | One of the values of “Buttons next to play” |
 | `Previous button` | What the previous button does when a song is already playing. Its values are the two lines below it |
 | `Queue` | The list of songs waiting to play. Not a playlist |
@@ -1105,9 +1103,10 @@ you are actually typing into, which is easier than reading it here.
 | `Show progress bar` |  |
 | `Show quality label` |  |
 | `Show rating` |  |
+| `Shows the whole cover even when it is not square.` | The line under “Fit cover art”, explaining it |
 | `Skip buttons` | The seek forward / back buttons setting |
+| `Static covers in portrait. Replaces the background below; animated covers are set further down.` | Description of the static full-bleed switch; animated artwork has a separate three-way selector. |
 | `Swap favorite and menu` | Exchange the places of those two buttons in the player, for whichever hand you hold the phone in |
-| `Use static covers and artist images on mobile data.` | Description of the motion Wi-Fi restriction. Turning it off permits videos on mobile data. |
 | `Where animated covers play` |  |
 
 ## Settings › Player buttons
@@ -1140,11 +1139,9 @@ you are actually typing into, which is easier than reading it here.
 | String | What it is |
 | --- | --- |
 | `Artist radios` |  |
-| `Keep playing when a radio ends` |  |
 | `Radios` |  |
 | `Radios built from the artists you play most. Off, there are none on Home or in the menus, and nothing is fetched for them.` |  |
 | `Radios on Home` |  |
-| `When its songs run out, another round from the same artists.` | The line under “Keep playing when a radio ends”, explaining it |
 
 ## Settings › Scrobbling
 
@@ -1163,8 +1160,12 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
+| `Album pages` |  |
 | `Full-bleed album artwork` | Album detail layout: cover spans the screen width and fades into the background; not an audio effect. |
+| `Gestures` |  |
+| `Lists` |  |
 | `Lists & albums` | The screen of settings for what song lists and album and playlist pages show |
+| `Off` | A setting value meaning disabled (crossfade, normalization…) |
 | `Show artist photo` | Whether the artist's photo shows at the top of their screen |
 | `Show artwork` | Whether song rows carry the album's little picture |
 | `Show description` | A setting: whether playlist and album descriptions are drawn under their names on their screens |
@@ -1173,6 +1174,9 @@ you are actually typing into, which is easier than reading it here.
 | `Show genres` | Whether a song row says its genre |
 | `Show rating` |  |
 | `Show song duration` | Whether a song row says how long the song is |
+| `Swipe left` | What dragging a song to the left in a list does |
+| `Swipe right` | What dragging a song to the right in a list does. Its values are the actions listed under it |
+| `The cover takes the full width and fades into the page.` | The line under “Full-bleed album artwork”, explaining it |
 
 ## Settings › Theme
 

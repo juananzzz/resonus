@@ -193,7 +193,6 @@
   "Home buttons": "Botons d'Inici",
   "Home chips": "Xips d'Inici",
   "Home sections": "Seccions d'Inici",
-  "Interaction": "Interacció",
   "Interface": "Interfície",
   "Keep at least one library on": "Mantén almenys una biblioteca activada",
   "Keep screen on": "Mantén la pantalla encesa",
@@ -835,10 +834,15 @@
   "Home & navigation": "Inici i navegació",
   "Where animated covers play": "On es veuen les caràtules animades",
   "Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.": "Demana al servidor les cançons següents per endavant, per a servidors lents i proxies. No es desa res al mòbil.",
-  "Motion artwork on Wi-Fi only": "Animacions només amb Wi-Fi",
-  "Use static covers and artist images on mobile data.": "Utilitza portades i imatges d’artistes estàtiques amb dades mòbils.",
   "Full-bleed album artwork": "Portada de l’àlbum de vora a vora",
-  "Full-bleed Now Playing artwork": "Portada de vora a vora a Ara sona",
-  "Full bleed": "A sang",
-  "For static covers. Choose animated artwork separately below.": "Per a portades estàtiques. Tria les animacions per separat més avall."
+  "Full bleed": "De vora a vora",
+  "Shows the whole cover even when it is not square.": "Mostra la caràtula sencera encara que no sigui quadrada.",
+  "Plays the clip inside the app, not only on the lock screen.": "Reprodueix el clip dins de l'app, no només a la pantalla de bloqueig.",
+  "Lists": "Llistes",
+  "Album pages": "Pàgines d'àlbum",
+  "Gestures": "Gestos",
+  "The cover takes the full width and fades into the page.": "La portada ocupa tota l'amplada i es fon amb la pàgina.",
+  "No animated covers on mobile data": "Sense caràtules animades amb dades mòbils",
+  "Full-bleed artwork": "Portada de vora a vora",
+  "Static covers in portrait. Replaces the background below; animated covers are set further down.": "Portades estàtiques en vertical. Substitueix el fons de sota; les animades es trien més endavant."
 }

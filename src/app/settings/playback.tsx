@@ -55,6 +55,9 @@ export default function PlaybackSettings() {
   const setStreamFormatCellular = useSettings((s) => s.setStreamFormatCellular);
   const streamLosslessOnly = useSettings((s) => s.streamLosslessOnly);
   const setStreamLosslessOnly = useSettings((s) => s.setStreamLosslessOnly);
+  const radiosEnabled = useSettings((s) => s.radiosEnabled);
+  const radioEndless = useSettings((s) => s.radioEndless);
+  const setRadioEndless = useSettings((s) => s.setRadioEndless);
   const autoplaySimilar = useSettings((s) => s.autoplaySimilar);
   const syncQueueFromServer = useSettings((s) => s.syncQueueFromServer);
   const setSyncQueueFromServer = useSettings((s) => s.setSyncQueueFromServer);
@@ -303,6 +306,18 @@ export default function PlaybackSettings() {
               ]}
             />
           )}
+          {radiosEnabled ? (
+            <SwitchList
+              options={[
+                {
+                  label: t('Keep playing when a radio ends'),
+                  description: t('When its songs run out, another round from the same artists.'),
+                  value: radioEndless,
+                  onChange: setRadioEndless,
+                },
+              ]}
+            />
+          ) : null}
           {/* Its own screen: two sliders and a line of explanation is more than
               fits under a heading here, and it is a thing somebody sets once. */}
           <SettingRow

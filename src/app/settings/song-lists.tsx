@@ -6,12 +6,18 @@
  * Appearance, between the language and the navigation bar, so everything under
  * it was a scroll away for anyone who had not come looking for this.
  */
-import { ScrollView } from 'react-native';
+import { ScrollView, Text } from 'react-native';
 
-import { SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
+import {
+  SelectList,
+  SettingsGroup,
+  SettingsPage,
+  settingsStyles,
+  SwitchList,
+} from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
-import { useSettings } from '@/store/settings';
+import { useSettings, type SwipeAction } from '@/store/settings';
 import { useTheme } from '@/theme';
 
 export default function SongListsSettings() {
@@ -39,10 +45,24 @@ export default function SongListsSettings() {
   const setShowGenreChips = useSettings((s) => s.setShowGenreChips);
   const albumFullBleed = useSettings((s) => s.albumFullBleed);
   const setAlbumFullBleed = useSettings((s) => s.setAlbumFullBleed);
+  const swipeAction = useSettings((s) => s.swipeAction);
+  const setSwipeAction = useSettings((s) => s.setSwipeAction);
+  const swipeLeftAction = useSettings((s) => s.swipeLeftAction);
+  const setSwipeLeftAction = useSettings((s) => s.setSwipeLeftAction);
+
+  const swipeOptions: { value: SwipeAction; label: string }[] = [
+    { value: 'off', label: t('Off') },
+    { value: 'queue', label: t('Add to queue') },
+    { value: 'next', label: t('Play next') },
+    { value: 'favorite', label: t('Add to favorites') },
+    { value: 'menu', label: t('More options') },
+  ];
 
   return (
     <SettingsPage title={t('Lists & albums')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
+        {/* The first title sticks to the header (no section margin). */}
+        <Text style={[settingsStyles.sectionTitle, { marginTop: 0 }]}>{t('Lists')}</Text>
         <SwitchList
           options={[
             {
@@ -74,6 +94,12 @@ export default function SongListsSettings() {
               value: showPlaylistDescription,
               onChange: setShowPlaylistDescription,
             },
+          ]}
+        />
+
+        <Text style={settingsStyles.sectionTitle}>{t('Album pages')}</Text>
+        <SwitchList
+          options={[
             {
               label: t('Show artist photo'),
               value: showArtistPhoto,
@@ -91,11 +117,28 @@ export default function SongListsSettings() {
             },
             {
               label: t('Full-bleed album artwork'),
+              description: t('The cover takes the full width and fades into the page.'),
               value: albumFullBleed,
               onChange: setAlbumFullBleed,
             },
           ]}
         />
+
+        <Text style={settingsStyles.sectionTitle}>{t('Gestures')}</Text>
+        <SettingsGroup>
+          <SelectList<SwipeAction>
+            label={t('Swipe right')}
+            options={swipeOptions}
+            value={swipeAction}
+            onChange={setSwipeAction}
+          />
+          <SelectList<SwipeAction>
+            label={t('Swipe left')}
+            options={swipeOptions}
+            value={swipeLeftAction}
+            onChange={setSwipeLeftAction}
+          />
+        </SettingsGroup>
       </ScrollView>
     </SettingsPage>
   );
