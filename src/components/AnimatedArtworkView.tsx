@@ -5,9 +5,11 @@
  */
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { useEffect, useState } from 'react';
-import { AppState, Platform, StyleSheet, View } from 'react-native';
+import { Animated, AppState, Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Cover } from './Cover';
 
 import { useSettings } from '@/store/settings';
+import { useArtworkMotionAllowed } from '@/hooks/useArtworkMotionAllowed';
 
 let VideoView: React.ComponentType<any> | null = null;
 let useVideoPlayer: ((source: string, setup?: (player: any) => void) => any) | null = null;
@@ -137,7 +139,8 @@ export function AnimatedArtworkView({
   // Only iOS offers the switch (see the Player settings).
   const videoOn = useSettings((s) => s.animatedCoverVideo || Platform.OS !== 'ios');
   const bg = useIsBackground();
-  if (!videoOn || !square || bg) return null;
+  const motionAllowed = useArtworkMotionAllowed();
+  if (!videoOn || !square || bg || !motionAllowed) return null;
   if (Platform.OS === 'ios') {
     if (!CoverClipNativeView) return null;
     const CCV = CoverClipNativeView;
@@ -156,16 +159,21 @@ export function AnimatedArtworkView({
 }
 
 /** Full-screen clip behind everything, like the animated image background. */
-export function AnimatedArtworkBackground({ square }: { square: string | null | undefined }) {
+export function AnimatedArtworkBackground({ square, fallbackUri, frame, enabled }: { square: string | null | undefined; fallbackUri?: string; frame?: { width: number; height: number }; enabled?: boolean }) {
+  const screen = useWindowDimensions();
+  const { width, height } = frame ?? screen;
+  const poster = <Cover uri={fallbackUri} size={width} style={{ height, borderRadius: 0 }} contentFit="cover" autoplay={false} />;
   // Only iOS offers the switch (see the Player settings).
   const videoOn = useSettings((s) => s.animatedCoverVideo || Platform.OS !== 'ios');
   const bg = useIsBackground();
-  if (!videoOn || !square || bg) return null;
+  const motionAllowed = useArtworkMotionAllowed();
+  if (!(enabled ?? videoOn) || !square || bg || !motionAllowed) return null;
   if (Platform.OS === 'ios') {
     if (!CoverClipNativeView) return null;
     const CCV = CoverClipNativeView;
     return (
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        {poster}
         <CCV style={StyleSheet.absoluteFill} uri={square} />
       </View>
     );
@@ -173,23 +181,39 @@ export function AnimatedArtworkBackground({ square }: { square: string | null | 
   if (!VideoView || !useVideoPlayer) return null;
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <BackgroundClip uri={square} />
+      {poster}
+      <BackgroundClip uri={square} fit={frame ? 'contain' : 'cover'} />
     </View>
   );
 }
 
-function BackgroundClip({ uri }: { uri: string }) {
+function BackgroundClip({ uri, fit }: { uri: string; fit: 'contain' | 'cover' }) {
   const player = useClipPlayer(uri);
+  const [opacity] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    opacity.setValue(0);
+    const sub = player.addListener('statusChange', ({ status }: { status: string }) => {
+      if (status === 'error') {
+        opacity.stopAnimation();
+        opacity.setValue(0);
+      }
+    });
+    return () => sub.remove();
+  }, [uri, player, opacity]);
   if (!VideoView) return null;
   const VV = VideoView;
   return (
+    <Animated.View style={[StyleSheet.absoluteFill, { opacity }]}>
     <VV
       style={StyleSheet.absoluteFill}
+      surfaceType="textureView"
+      onFirstFrameRender={() => Animated.timing(opacity, { toValue: 1, duration: 400, useNativeDriver: true }).start()}
       player={player}
-      contentFit="cover"
+      contentFit={fit}
       nativeControls={false}
       allowsFullscreen={false}
       allowsPictureInPicture={false}
     />
+    </Animated.View>
   );
 }
