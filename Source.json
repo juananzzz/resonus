@@ -29,6 +29,14 @@
             ],
             "versions": [
                 {
+                    "version": "0.8.6",
+                    "date": "2026-10-31T21:08:46Z",
+                    "size": 20773272,
+                    "downloadURL": "https://github.com/juananzzz/resonus/releases/download/v0.8.6/resonus-v0.8.6.ipa",
+                    "localizedDescription": "Added\nExplore has a Downloads chip with your downloaded albums (#310).\nPodcasts: mark episodes as played or unplayed.\nPodcasts: new episodes of favorite shows can download by themselves over Wi-Fi.\nOption to show album artwork across the full width (#289).\nOption to show the player artwork across the full width (#290).\nOption to keep motion artwork off mobile data, on by default (#294).\nChanged\nSettings: list, album and swipe options are now in Appearance, and keeping a radio playing in Quality & playback.\nAnimated covers on Android stay in a 150 MB cache instead of downloading again (#293).\nTo reorder a playlist, choose Reorder in its ⋯ menu or hold a song, drag the rows, and press Save order (#279).\nHolding a song to start a selection no longer marks that song (#279).\nAdd to a playlist marks the playlists a song is already in, and a tap adds or removes it without closing the sheet.\nSettings has a new Home & navigation category, with what used to fill Appearance: Home, Explore, the navigation bar, swipes and haptics.\nLyrics settings have their own screen, inside Settings > Player.\nClear cache is now Clear temporary data, in Settings > Downloads & offline.\nSong lists settings are now Lists & albums, and options that did nothing on Jellyfin or the local profile are gone.\nFixed\nWith on-screen navigation buttons, the mini player no longer covers the last option in Settings.\nA playlist's page no longer freezes while songs are selected, and leaving the selection no longer jumps to the top (#279).\nCasting: more cases where the queue stayed on a song after it ended are handled (#285).\nThe progress bar looks the same on every Android phone.\nNext and previous from other apps and devices, like Garmin watches, should now work (#307).\nPodcast episodes pick up where you left them, even after playing music or restarting the app.\nThe podcasts screen says how to find a show when it is empty, and the feed address field is ready to type in.",
+                    "minOSVersion": "16.4"
+                },
+                {
                     "version": "0.8.5",
                     "date": "2026-10-30T19:27:50Z",
                     "size": 20676537,
