@@ -49,7 +49,7 @@ export function GlobalMiniPlayer() {
       style={{ position: 'absolute', left: 0, right: 0, bottom: lastBottom.current, opacity }}
       pointerEvents={visible ? 'box-none' : 'none'}
     >
-      <MiniPlayer />
+      <MiniPlayer active={visible} />
     </Animated.View>
   );
 }

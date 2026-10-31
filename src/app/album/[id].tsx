@@ -7,6 +7,10 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { COVER, coverArtUrl, getAlbum } from '@/api/data';
 import { type Album, type Song } from '@/api/subsonic';
+import { useAnimatedArtwork } from '@/hooks/useAnimatedArtwork';
+import { BleedArtwork } from '@/components/BleedArtwork';
+import { useScreenSize } from '@/hooks/useScreenSize';
+import { useArtworkEdgeColor } from '@/hooks/useArtworkEdgeColor';
 import { BackButton } from '@/components/BackButton';
 import { CoverViewer } from '@/components/CoverViewer';
 import { Dialog } from '@/components/Dialog';
@@ -129,6 +133,8 @@ export default function AlbumScreen() {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const offline = useAuthStore((s) => s.offline);
   const t = useT();
+  const { width: artworkWidth } = useScreenSize();
+  const albumFullBleed = useSettings((s) => s.albumFullBleed);
   const lang = useSettings((s) => s.language);
   const showArtistPhoto = useSettings((s) => s.showArtistPhoto);
   const showDiscHeaders = useSettings((s) => s.showDiscHeaders);
@@ -174,6 +180,10 @@ export default function AlbumScreen() {
   const lastGood = useRef(fresh);
   if (fresh && fresh.songs.length > 0) lastGood.current = fresh;
   const data = vanished ? (lastGood.current ?? fresh) : fresh;
+  const artworkUri = data ? coverArtUrl(data.album.coverArt ?? data.album.id, COVER.full) : undefined;
+  const artworkEdge = useArtworkEdgeColor(artworkUri);
+  const animatedArtwork = useAnimatedArtwork(fresh ? { artist: fresh.album.artist, album: fresh.album.name } : undefined);
+  const animatedCovers = useSettings((s) => s.animatedCovers);
 
   const discHeaders = useMemo(
     () =>
@@ -277,7 +287,14 @@ export default function AlbumScreen() {
         meta={metaParts.join(' · ')}
         explicit={explicit}
         genres={genres}
-        coverUri={coverArtUrl(data.album.coverArt ?? data.album.id, COVER.card)}
+        coverUri={artworkUri}
+        accentColor={albumFullBleed && artworkUri ? artworkEdge : undefined}
+        wideCover={albumFullBleed && artworkUri ? {
+          height: artworkWidth,
+          preserveHeight: true,
+          render: (width, height, visible) => <BleedArtwork uri={artworkUri} width={width} height={height} color={artworkEdge}
+            video={visible ? animatedArtwork?.square : null} autoplay={animatedCovers && visible} />,
+        } : undefined}
         onCoverPress={() => setCoverOpen(true)}
         // Same sheet as the long-press on cards: play, queue, download,
         // favorite and pin, without duplicating the menu.

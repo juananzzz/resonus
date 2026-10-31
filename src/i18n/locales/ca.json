@@ -829,5 +829,9 @@
   "Lost the connection to {name}": "S'ha perdut la connexió amb {name}",
   "{name} is playing something else": "{name} està reproduint una altra cosa",
   "Pill-shaped navigation bar": "Barra de navegació en forma de píndola",
-  "Pill-shaped mini player": "Minireproductor en forma de píndola"
+  "Pill-shaped mini player": "Minireproductor en forma de píndola",
+  "Full-bleed album artwork": "Portada de l’àlbum de vora a vora",
+  "Full-bleed Now Playing artwork": "Portada de vora a vora a Ara sona",
+  "Full bleed": "A sang",
+  "For static covers. Choose animated artwork separately below.": "Per a portades estàtiques. Tria les animacions per separat més avall."
 }
