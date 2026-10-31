@@ -8,7 +8,7 @@ body:
     attributes:
       label: Resonus version
       description: Under Settings › About. If it isn't the latest [release](https://github.com/juananzzz/resonus/releases), please try that one first.
-      placeholder: "0.6.0"
+      placeholder: "0.8.5"
     validations:
       required: true
   - type: dropdown

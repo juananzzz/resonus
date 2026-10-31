@@ -37,7 +37,7 @@ Release with the APK attached, so you can review it before publishing.
 
 1. Bump the version in `app.json`: `expo.version` (visible name) and
    `expo.android.versionCode` (an integer, it must **increase** with every release).
-   Update the About screen text too if needed.
+   In `CHANGELOG.md`, move what is under `Unreleased` to a section for that version.
 2. Generate the F-Droid notes with `pnpm fastlane:changelog`: they come from
    that version's section of `CHANGELOG.md` and go to
    `fastlane/metadata/android/en-US/changelogs/`. F-Droid reads them from the
@@ -55,22 +55,28 @@ Release with the APK attached, so you can review it before publishing.
    to that same draft. Open it in the Releases tab, review the notes and
    press **Publish**.
 5. Publishing it adds the version to `Source.json`, through
-   `.github/workflows/altstore-source.yml`. Check that the commit lands on `main`;
-   to rerun it, start that workflow by hand with the tag.
+   `.github/workflows/altstore-source.yml`, unless it is marked as a pre-release.
+   Check that the commit lands on `main`; to rerun it, start that workflow by
+   hand with the tag.
+
+To hand somebody a build without a release, run the **Test APK** workflow
+(`.github/workflows/test-apk.yml`) from the Actions tab on any branch and send
+them the link to the run.
 
 ## `Source.json`: the iOS source
 
 `Source.json`, at the repo root, is the AltStore/SideStore source the iOS
-version is installed from. Two things:
+version is installed from. The workflow keeps it up to date, but if you ever
+edit it by hand:
 
 - **Do not move or rename it.** Its URL is saved inside the AltStore of everyone
   subscribed to the source, so changing it breaks it for all of them at once and
   there is no way to tell them. For the same reason, the link handed out has to
   be the `raw.githubusercontent.com` one: the `blob` URL returns GitHub's HTML
   page and AltStore expects JSON.
-- **Add one entry per release**, and make it **the first in the `versions`
-  array**: AltStore takes the first one as the latest version, so one added at
-  the end leaves the file valid and nobody updated.
+- **A new entry goes first in the `versions` array**: AltStore takes the first
+  one as the latest version, so one added at the end leaves the file valid and
+  nobody updated.
 
 Each entry has `version`, `date` in ISO 8601, `size` in bytes, the
 `downloadURL` of the Release's `.ipa` and `localizedDescription` with that

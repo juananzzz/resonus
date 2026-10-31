@@ -19,17 +19,20 @@ Resonus should be in the car's app list from then on.
 
 ## How do I install Resonus on iOS?
 
-Resonus on iOS is provided as an unsigned .ipa file, so it has to be sideloaded.
+Resonus on iOS is an unsigned `.ipa` from the
+[Releases](https://github.com/juananzzz/resonus/releases/latest) page, so it has
+to be sideloaded. Any method that can install an unsigned `.ipa` works. These are
+the ones we suggest:
 
-There are various sideloading methods available on iOS and anyone that can install an unsigned ipa works fine.
-The sideloading methods we suggest are:
-1. SideStore:
-   Official guide (requires a PC) [Prerequisites](https://docs.sidestore.io/docs/installation/prerequisites), [Installation](https://docs.sidestore.io/docs/installation/install)<br>
-   Unofficial method (on device, doesn't require a PC) [SideInstaller guide](https://sideinstaller.net/)
-2. AltStore:
-   Official guide (requires a PC) [Windows](https://faq.altstore.io/altstore-classic/how-to-install-altstore-windows), [MacOS](https://faq.altstore.io/altstore-classic/how-to-install-altstore-macos)
+1. **SideStore**
+   - Official guide, needs a computer: [prerequisites](https://docs.sidestore.io/docs/installation/prerequisites), [installation](https://docs.sidestore.io/docs/installation/install)
+   - Unofficial method, on the device with no computer: [SideInstaller guide](https://sideinstaller.net/)
+2. **AltStore**
+   - Official guide, needs a computer: [Windows](https://faq.altstore.io/altstore-classic/how-to-install-altstore-windows), [macOS](https://faq.altstore.io/altstore-classic/how-to-install-altstore-macos)
 
-You can also [add Resonus repository as an altsource](https://altdirect.app/?url=https://raw.githubusercontent.com/juananzzz/resonus/main/Source.json).
+With either one you can
+[add Resonus as an AltSource](https://altdirect.app/?url=https://raw.githubusercontent.com/juananzzz/resonus/main/Source.json)
+to get updates.
 
 ## Is Resonus on F-Droid?
 
