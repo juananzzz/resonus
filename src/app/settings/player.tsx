@@ -1,4 +1,5 @@
 /** Settings › Player: looks and extras for the playback screen. */
+import type { AnimatedArtworkMode } from '@/lib/artworkLayout';
 import { useRouter } from 'expo-router';
 import { Platform, ScrollView, Text } from 'react-native';
 
@@ -69,17 +70,23 @@ export default function PlayerSettings() {
   const setPlayerBackground = useSettings((s) => s.setPlayerBackground);
   const fitCoverArt = useSettings((s) => s.fitCoverArt);
   const setFitCoverArt = useSettings((s) => s.setFitCoverArt);
-  const animatedCoverBackground = useSettings((s) => s.animatedCoverBackground);
-  const setAnimatedCoverBackground = useSettings((s) => s.setAnimatedCoverBackground);
+  const animatedArtworkMode = useSettings((s) => s.animatedArtworkMode);
+  const setAnimatedArtworkMode = useSettings((s) => s.setAnimatedArtworkMode);
   const animatedCoverVideo = useSettings((s) => s.animatedCoverVideo);
   const setAnimatedCoverVideo = useSettings((s) => s.setAnimatedCoverVideo);
   const animatedArtworkFps = useSettings((s) => s.animatedArtworkFps);
   const setAnimatedArtworkFps = useSettings((s) => s.setAnimatedArtworkFps);
   const animatedArtworkEndpoint = useSettings((s) => s.animatedArtworkEndpoint);
+  const motionArtworkWifiOnly = useSettings((s) => s.motionArtworkWifiOnly);
+  const setMotionArtworkWifiOnly = useSettings((s) => s.setMotionArtworkWifiOnly);
   const animatedCovers = useSettings((s) => s.animatedCovers);
   const setAnimatedCovers = useSettings((s) => s.setAnimatedCovers);
   const setAnimatedArtworkEndpoint = useSettings((s) => s.setAnimatedArtworkEndpoint);
   const miniPlayerColorBackground = useSettings((s) => s.miniPlayerColorBackground);
+  const playerFullBleed = useSettings((s) => s.playerFullBleed);
+  const setPlayerFullBleed = useSettings((s) => s.setPlayerFullBleed);
+  const albumFullBleed = useSettings((s) => s.albumFullBleed);
+  const setAlbumFullBleed = useSettings((s) => s.setAlbumFullBleed);
   const miniPlayerPills = useSettings((s) => s.miniPlayerPills);
   const setMiniPlayerPills = useSettings((s) => s.setMiniPlayerPills);
   const blurMiniPlayer = useSettings((s) => s.blurMiniPlayer);
@@ -109,6 +116,21 @@ export default function PlayerSettings() {
       <ScrollView contentContainerStyle={settingsStyles.content}>
         {/* The first title sticks to the header (no section margin). */}
         <Text style={[settingsStyles.sectionTitle, { marginTop: 0 }]}>{t('Background')}</Text>
+        <SettingsGroup>
+          <SwitchList options={[
+            {
+              label: t('Full-bleed album artwork'),
+              value: albumFullBleed,
+              onChange: setAlbumFullBleed,
+            },
+            {
+              label: t('Full-bleed Now Playing artwork'),
+              description: t('For static covers. Choose animated artwork separately below.'),
+              value: playerFullBleed,
+              onChange: setPlayerFullBleed,
+            },
+          ]} />
+        </SettingsGroup>
         <SelectList<ScreenBackground>
           label={t('Player background')}
           options={[
@@ -198,6 +220,12 @@ export default function PlayerSettings() {
           <SwitchList
             options={[
               {
+                label: t('Motion artwork on Wi-Fi only'),
+                description: t('Use static covers and artist images on mobile data.'),
+                value: motionArtworkWifiOnly,
+                onChange: setMotionArtworkWifiOnly,
+              },
+              {
                 label: t('Show animated covers'),
                 value: animatedCovers,
                 onChange: setAnimatedCovers,
@@ -219,14 +247,15 @@ export default function PlayerSettings() {
           />
           {/* Where, not whether: it also places a GIF or WebP cover from the
               server, with no endpoint at all. */}
-          <SelectList<'cover' | 'background'>
+          <SelectList<AnimatedArtworkMode>
             label={t('Where animated covers play')}
             options={[
               { value: 'cover', label: t('In the cover') },
               { value: 'background', label: t('As the background') },
+              { value: 'fullBleed', label: t('Full bleed') },
             ]}
-            value={animatedCoverBackground ? 'background' : 'cover'}
-            onChange={(v) => setAnimatedCoverBackground(v === 'background')}
+            value={animatedArtworkMode}
+            onChange={setAnimatedArtworkMode}
           />
           {/* iOS only: there the lock screen has a clip of its own, so the one
               in the app can go while that one stays. On Android an empty

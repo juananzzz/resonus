@@ -834,5 +834,11 @@
   "The latest 3 of each new batch, over Wi-Fi only.": "The latest 3 of each new batch, over Wi-Fi only.",
   "Home & navigation": "Home & navigation",
   "Where animated covers play": "Where animated covers play",
-  "Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.": "Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone."
+  "Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.": "Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.",
+  "Motion artwork on Wi-Fi only": "Motion artwork on Wi-Fi only",
+  "Use static covers and artist images on mobile data.": "Use static covers and artist images on mobile data.",
+  "Full-bleed album artwork": "Full-bleed album artwork",
+  "Full-bleed Now Playing artwork": "Full-bleed Now Playing artwork",
+  "Full bleed": "Full bleed",
+  "For static covers. Choose animated artwork separately below.": "For static covers. Choose animated artwork separately below."
 }
