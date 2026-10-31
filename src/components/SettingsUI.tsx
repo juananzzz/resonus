@@ -112,6 +112,7 @@ export function SettingRow({
   right,
   chevron,
   destructive,
+  disabled,
   onPress,
 }: {
   label: string;
@@ -126,6 +127,7 @@ export function SettingRow({
   /** Right arrow: only for rows that navigate to another screen. */
   chevron?: boolean;
   destructive?: boolean;
+  disabled?: boolean;
   onPress?: () => void;
 }) {
   const box = useCardBox();
@@ -149,9 +151,12 @@ export function SettingRow({
   }
   return (
     <Pressable
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
       style={({ pressed }) => [
         box,
         settingsStyles.row,
+        disabled && { opacity: 0.5 },
         pressed && { opacity: 0.6 },
       ]}
       onPress={onPress}

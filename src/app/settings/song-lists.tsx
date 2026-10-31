@@ -1,5 +1,5 @@
 /**
- * Settings › Appearance › Song lists: what a song shows wherever it is listed.
+ * Settings › Appearance › Lists & albums: what song lists and album pages show.
  *
  * Its own screen, like the quick grid and the home sections. Eight switches
  * with a line of explanation each is a screenful, and it sat in the middle of
@@ -10,6 +10,7 @@ import { ScrollView } from 'react-native';
 
 import { SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
+import { useAuthStore } from '@/store/auth';
 import { useSettings } from '@/store/settings';
 import { useTheme } from '@/theme';
 
@@ -18,6 +19,8 @@ export default function SongListsSettings() {
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
   const t = useT();
+  // Same rule as the player's rating row: no ratings on Jellyfin or locally.
+  const canRate = useAuthStore((s) => !!s.auth && s.auth.serverType !== 'jellyfin');
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const setShowListArtwork = useSettings((s) => s.setShowListArtwork);
   const showSongDuration = useSettings((s) => s.showSongDuration);
@@ -36,7 +39,7 @@ export default function SongListsSettings() {
   const setShowGenreChips = useSettings((s) => s.setShowGenreChips);
 
   return (
-    <SettingsPage title={t('Song lists')}>
+    <SettingsPage title={t('Lists & albums')}>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <SwitchList
           options={[
@@ -50,11 +53,15 @@ export default function SongListsSettings() {
               value: showSongDuration,
               onChange: setShowSongDuration,
             },
-            {
-              label: t('Show rating'),
-              value: showListRating,
-              onChange: setShowListRating,
-            },
+            ...(canRate
+              ? [
+                  {
+                    label: t('Show rating'),
+                    value: showListRating,
+                    onChange: setShowListRating,
+                  },
+                ]
+              : []),
             {
               label: t('Show explicit tag'),
               value: showExplicitTag,

@@ -127,7 +127,7 @@ interface Props {
    * What the list says about itself (a playlist's or an album's description),
    * above the metadata. Two lines, with "Show more" under them when there is
    * more: the words say the tap is there, which is what a bare cut text never
-   * did. Whoever wants the header quiet turns it off in Settings › Appearance.
+   * did. Whoever wants the header quiet turns it off in Settings › Appearance › Lists & albums.
    */
   description?: string;
   /** Metadata line (e.g. "Album · 2021 · 12 songs · 48 min"). */

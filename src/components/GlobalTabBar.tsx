@@ -46,7 +46,7 @@ const ICONS: Record<string, 'home' | 'search' | 'library' | 'albums' | 'settings
 };
 
 /**
- * The gradient fill (Settings › Appearance › Navigation bar style: Gradient).
+ * The gradient fill (Settings › Home & navigation › Navigation bar style: Gradient).
  *
  * The shape the first draft was after, taken off a Figma ramp: clear at the
  * bar's top edge, a scrim by 19%, most of the ink in by the middle, solid a
@@ -178,7 +178,7 @@ export function GlobalTabBar() {
       ) : null}
       {/* Where the glass starts, when something bright passes under it. */}
       {blur && !pills ? <View pointerEvents="none" style={styles.edge} /> : null}
-      {/* The user's order, and only the ones they kept (Settings › Appearance
+      {/* The user's order, and only the ones they kept (Settings › Home & navigation
           › Navigation bar). `TABS` stays the catalogue: it is what says where
           each one goes and what it is called. */}
       {bottomTabs

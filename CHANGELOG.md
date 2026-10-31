@@ -19,6 +19,10 @@ Releases before 0.2.1 are only listed on the
 - To reorder a playlist, choose Reorder in its ⋯ menu or hold a song, drag the rows, and press Save order (#279).
 - Holding a song to start a selection no longer marks that song (#279).
 - Add to a playlist marks the playlists a song is already in, and a tap adds or removes it without closing the sheet.
+- Settings has a new Home & navigation category, with what used to fill Appearance: Home, Explore, the navigation bar, swipes and haptics.
+- Lyrics settings have their own screen, inside Settings > Player.
+- Clear cache is now Clear temporary data, in Settings > Downloads & offline.
+- Song lists settings are now Lists & albums, and options that did nothing on Jellyfin or the local profile are gone.
 
 ### Fixed
 

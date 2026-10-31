@@ -17,15 +17,9 @@ import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { useTheme } from '@/theme';
 import {
-  type CardBackground,
-  LYRICS_PROVIDER_NAMES,
   type CoverDoubleTapAction,
   type CoverTapAction,
-  type LyricsAlign,
-  type LyricsSize,
-  type LyricsWeight,
   type MiniPlayerButtons,
-  type LyricsSource,
   type ScreenBackground,
   type PreviousButtonMode,
   useSettings,
@@ -93,31 +87,14 @@ export default function PlayerSettings() {
   const setMiniPlayerProgress = useSettings((s) => s.setMiniPlayerProgress);
   const miniPlayerButtons = useSettings((s) => s.miniPlayerButtons);
   const setMiniPlayerButtons = useSettings((s) => s.setMiniPlayerButtons);
-  const lyricsSize = useSettings((s) => s.lyricsSize);
-  const setLyricsSize = useSettings((s) => s.setLyricsSize);
-  const lyricsWeight = useSettings((s) => s.lyricsWeight);
-  const setLyricsWeight = useSettings((s) => s.setLyricsWeight);
-  const lyricsAlign = useSettings((s) => s.lyricsAlign);
-  const setLyricsAlign = useSettings((s) => s.setLyricsAlign);
-  const blurInactiveLyrics = useSettings((s) => s.blurInactiveLyrics);
-  const setBlurInactiveLyrics = useSettings((s) => s.setBlurInactiveLyrics);
   const setBlurMiniPlayer = useSettings((s) => s.setBlurMiniPlayer);
   const setMiniPlayerColorBackground = useSettings((s) => s.setMiniPlayerColorBackground);
-  const lyricsBackground = useSettings((s) => s.lyricsBackground);
-  const setLyricsBackground = useSettings((s) => s.setLyricsBackground);
-  const lyricsCardBackground = useSettings((s) => s.lyricsCardBackground);
-  const setLyricsCardBackground = useSettings((s) => s.setLyricsCardBackground);
-  const showLyricsCard = useSettings((s) => s.showLyricsCard);
-  const setShowLyricsCard = useSettings((s) => s.setShowLyricsCard);
   const showArtistCard = useSettings((s) => s.showArtistCard);
   const setShowArtistCard = useSettings((s) => s.setShowArtistCard);
   const coverTapAction = useSettings((s) => s.coverTapAction);
   const coverDoubleTapAction = useSettings((s) => s.coverDoubleTapAction);
   const setCoverDoubleTapAction = useSettings((s) => s.setCoverDoubleTapAction);
   const setCoverTapAction = useSettings((s) => s.setCoverTapAction);
-  const lyricsSource = useSettings((s) => s.lyricsSource);
-  const setLyricsSource = useSettings((s) => s.setLyricsSource);
-  const lyricsProviders = useSettings((s) => s.lyricsProviders);
   const marqueeTitles = useSettings((s) => s.marqueeTitles);
   const setMarqueeTitles = useSettings((s) => s.setMarqueeTitles);
   const seekButtonsSec = useSettings((s) => s.seekButtonsSec);
@@ -230,7 +207,7 @@ export default function PlayerSettings() {
           {animatedCovers ? (
           <>
           <TextRow
-            label={t('Animated artwork endpoint')}
+            label={t('Animated covers server')}
             value={animatedArtworkEndpoint}
             placeholder="https://artwork.example.com"
             maxLength={200}
@@ -243,7 +220,7 @@ export default function PlayerSettings() {
           {/* Where, not whether: it also places a GIF or WebP cover from the
               server, with no endpoint at all. */}
           <SelectList<'cover' | 'background'>
-            label={t('Animated artwork')}
+            label={t('Where animated covers play')}
             options={[
               { value: 'cover', label: t('In the cover') },
               { value: 'background', label: t('As the background') },
@@ -383,102 +360,11 @@ export default function PlayerSettings() {
         </SettingsGroup>
 
         <Text style={settingsStyles.sectionTitle}>{t('Lyrics')}</Text>
-        <SettingsGroup>
-          <SelectList<LyricsSource>
-            label={t('Lyrics source')}
-            options={[
-              { value: 'local', label: t('Prefer local lyrics') },
-              { value: 'online', label: t('Prefer online search') },
-              { value: 'off', label: t('Disable online search') },
-            ]}
-            value={lyricsSource}
-            onChange={setLyricsSource}
-          />
-          {/* Which services online search asks and in what order, on a screen
-              of their own like the bottom row's buttons. Hidden with the
-              search off, when there is nobody to ask. */}
-          {lyricsSource !== 'off' ? (
-            <SettingRow
-              label={t('Providers')}
-              right={
-                lyricsProviders
-                  .filter((p) => p.enabled)
-                  .map((p) => LYRICS_PROVIDER_NAMES[p.key])
-                  .join(', ') || t('None')
-              }
-              chevron
-              onPress={() => router.push('/settings/lyrics-providers')}
-            />
-          ) : null}
-          <SelectList<LyricsSize>
-            label={t('Lyrics size')}
-            options={[
-              { value: 'small', label: t('Small') },
-              { value: 'normal', label: t('Normal') },
-              { value: 'large', label: t('Large') },
-            ]}
-            value={lyricsSize}
-            onChange={setLyricsSize}
-          />
-          <SelectList<LyricsWeight>
-            label={t('Lyrics weight')}
-            options={[
-              { value: '300', label: t('Light font weight') },
-              { value: '400', label: t('Regular font weight') },
-              { value: '500', label: t('Medium font weight') },
-              { value: '600', label: t('Semi-bold font weight') },
-              { value: '700', label: t('Bold font weight') },
-            ]}
-            value={lyricsWeight}
-            onChange={setLyricsWeight}
-          />
-          <SelectList<LyricsAlign>
-            label={t('Lyrics alignment')}
-            options={[
-              { value: 'left', label: t('Left') },
-              { value: 'center', label: t('Centered') },
-            ]}
-            value={lyricsAlign}
-            onChange={setLyricsAlign}
-          />
-          <SwitchList
-            options={[
-              ...(Platform.OS === 'android'
-                ? [
-                    {
-                      label: t('Blur inactive lyrics'),
-                      value: blurInactiveLyrics,
-                      onChange: setBlurInactiveLyrics,
-                    },
-                  ]
-                : []),
-              {
-                label: t('Show lyrics card'),
-                value: showLyricsCard,
-                onChange: setShowLyricsCard,
-              },
-            ]}
-          />
-          <SelectList<ScreenBackground>
-            label={t('Lyrics background')}
-            options={[
-              { value: 'none', label: t('Plain') },
-              { value: 'color', label: t('Cover color') },
-              { value: 'cover', label: t('Blurred cover') },
-            ]}
-            value={lyricsBackground}
-            onChange={setLyricsBackground}
-          />
-          <SelectList<CardBackground>
-            label={t('Lyrics card background')}
-            options={[
-              { value: 'none', label: t('Plain') },
-              { value: 'color', label: t('Cover color') },
-            ]}
-            value={lyricsCardBackground}
-            onChange={setLyricsCardBackground}
-          />
-        </SettingsGroup>
+        <SettingRow
+          label={t('Lyrics')}
+          chevron
+          onPress={() => router.push('/settings/lyrics')}
+        />
       </ScrollView>
     </SettingsPage>
   );

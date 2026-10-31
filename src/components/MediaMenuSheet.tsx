@@ -375,7 +375,7 @@ export function MediaMenuSheet() {
             {album ? (
               <Action
                 icon="film-outline"
-                label={t('Animated artwork')}
+                label={t('Animated cover')}
                 onPress={() => {
                   dismiss(() => {
                     closeNow();

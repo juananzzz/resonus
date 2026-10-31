@@ -1,5 +1,5 @@
 /**
- * Settings › Appearance › Home › Radios: the artist radios as a whole.
+ * Settings › Home & navigation › Radios: the artist radios as a whole.
  *
  * Off at the top means off everywhere: no shelf, no radio in the menus, and
  * nothing built or asked for in the background. Below it, how many radios

@@ -22,8 +22,10 @@ import {
 } from '@/components/SettingsUI';
 import { albumsLabel, playlistsLabel, songsLabel, downloadsLabel, useT } from '@/i18n';
 import { appStorageParts, appStorageTotal, type StorageParts } from '@/lib/appStorage';
+import { clearTemporaryData } from '@/lib/clearCache';
 import { formatBytes } from '@/lib/format';
 import { isManualOffline } from '@/api/netGate';
+import { useAuthStore } from '@/store/auth';
 import { useDownloads } from '@/store/downloads';
 import { useLibraryMirror, type MirrorStats } from '@/store/libraryMirror';
 import {
@@ -83,6 +85,7 @@ export default function DownloadsSettings() {
   // download never asks the server, so its concurrency and Wi-Fi rules
   // still steer transfers while the server is merely not answering.
   const downloadsLive = !isManualOffline();
+  const offlineNow = useAuthStore((s) => s.offline);
   const lang = useSettings((s) => s.language);
   // From the store, not `colors.accent`: without subscription the space bar
   // would keep the previous accent while the screen stays mounted.
@@ -370,6 +373,16 @@ export default function DownloadsSettings() {
                 </Text>
               ))
           : null}
+        {/* Greyed offline: what it drops can only be fetched again from the server. */}
+        <SettingRow
+          icon="trash-outline"
+          label={t('Clear temporary data')}
+          disabled={offlineNow}
+          onPress={async () => {
+            await clearTemporaryData();
+            toast(t('Temporary data cleared'));
+          }}
+        />
         {count > 0 ? (
           <SettingRow
             icon="trash-outline"

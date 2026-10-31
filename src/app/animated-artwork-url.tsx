@@ -43,7 +43,7 @@ export default function AnimatedArtworkUrlScreen() {
     router.back();
   };
   return (
-    <SettingsPage title={t('Animated artwork')}>
+    <SettingsPage title={t('Animated cover')}>
       <View style={{ paddingHorizontal: centredPadding(width, spacing.lg) }}>
       <TextRow
         label={t('Apple Music URL')}

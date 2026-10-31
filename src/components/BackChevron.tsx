@@ -12,7 +12,7 @@
  *
  * Nothing on screen announces the long press, which is why it is a shortcut and
  * not the answer: whoever wants the way out in plain sight turns on the
- * navigation bar in Settings › Appearance.
+ * navigation bar in Settings › Home & navigation.
  */
 import Icon from '@/components/Icon';
 import { useRouter } from 'expo-router';

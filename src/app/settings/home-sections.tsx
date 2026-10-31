@@ -76,7 +76,7 @@ function SectionRow({ section }: { section: HomeSection }) {
 }
 
 /** Sections that don't exist locally: their row here would promise something
- *  Home never renders (same criteria as folder browsing in Appearance). */
+ *  Home never renders (same criteria as folder browsing in Home & navigation). */
 const SERVER_ONLY: HomeSectionKey[] = ['discover'];
 
 export default function HomeSectionsSettings() {
@@ -91,7 +91,7 @@ export default function HomeSectionsSettings() {
   const setHomeSections = useSettings((s) => s.setHomeSections);
   const radiosEnabled = useSettings((s) => s.radiosEnabled);
   // Rows Home would never draw: the server-only ones offline, and the radios
-  // while they are turned off (Appearance › Radios).
+  // while they are turned off (Home & navigation › Radios).
   const hidden = (key: HomeSectionKey) =>
     (offline && SERVER_ONLY.includes(key)) || (!radiosEnabled && key === 'radios');
   const visible = homeSections.filter((s) => !hidden(s.key));

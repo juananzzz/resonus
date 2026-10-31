@@ -121,7 +121,7 @@
     "Quick grid": "The grid of shortcut tiles on Home",
     "Home chips": "The row of tappable category chips",
     "Show chips": "A switch over the Home chips list: turns every chip on or off at once",
-    "Song lists": "The setting for how song lists look",
+    "Lists & albums": "The screen of settings for what song lists and album and playlist pages show",
     "Show explicit tag": "A switch: whether to draw the E on anything carrying a parental advisory. \"Explicit\" here is the music-industry label for strong language, not \"clear\" or \"stated outright\"",
     "Home sections": "Reorder which sections appear on Home",
     "On cover double tap": "Settings > Player: what tapping the album artwork twice does",
@@ -261,7 +261,7 @@
     "Report a bug": "Opens a new issue on GitHub",
     "Share diagnostic report": "Settings › About, under “Report a bug”: hands over a plain-text report (setup and recent playback errors) through the share sheet",
     "FAQ": "Opens the page of frequently asked questions on GitHub. Spell it out if that reads better in your language than the initials",
-    "Cache cleared": "Toast: what was remembered from the server was thrown away. Downloads are untouched",
+    "Temporary data cleared": "Toast: what was remembered from the server was thrown away. Downloads are untouched",
     "Couldn't rescan": "Toast: going through the phone's own files failed",
     "Couldn't start the scan": "Toast: the server refused to start a scan",
     "Scan started": "Toast: the server is now looking for new music",
@@ -677,7 +677,7 @@
     "Library updated": "Toast after the phone finished going through its own files",
     "Source updated": "Toast after changing where music is read from",
     "{n} items": "How many things the server's scan has found so far",
-    "Clear cache": "Throw away what was remembered from the server. Downloads are not touched",
+    "Clear temporary data": "Throw away what was remembered from the server. Downloads are not touched",
 
     // ── Diagnostics (Settings › About, tapping the version five times) ───────
     "Measure performance": "Timing, not analytics: how long the app takes to do things on this phone, kept on the phone. Nothing is sent anywhere. It is turned on when somebody is being walked through a slowdown",

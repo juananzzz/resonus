@@ -43,6 +43,7 @@ export default function PlaybackSettings() {
   const t = useT();
   const router = useRouter();
   const offline = useAuthStore((s) => s.offline);
+  const serverType = useAuthStore((s) => s.auth?.serverType);
   const local = useLocalProfile();
   const maxBitRate = useSettings((s) => s.maxBitRate);
   const setMaxBitRate = useSettings((s) => s.setMaxBitRate);
@@ -128,6 +129,9 @@ export default function PlaybackSettings() {
                 options={[
                   {
                     label: t('Preload upcoming tracks'),
+                    description: t(
+                      'Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.',
+                    ),
                     value: preloadUpcoming,
                     onChange: setPreloadUpcoming,
                     disabled: offline,
@@ -282,15 +286,20 @@ export default function PlaybackSettings() {
                   onChange: setAutoplaySimilar,
                   disabled: offline,
                 },
-                {
-                  label: t('Pick up the queue from other players'),
-                  description: t(
-                    'On opening with nothing playing, take the newer queue another player left on the server.',
-                  ),
-                  value: syncQueueFromServer,
-                  onChange: setSyncQueueFromServer,
-                  disabled: offline,
-                },
+                // Jellyfin keeps no queue on the server.
+                ...(serverType === 'jellyfin'
+                  ? []
+                  : [
+                      {
+                        label: t('Pick up the queue from other players'),
+                        description: t(
+                          'On opening with nothing playing, take the newer queue another player left on the server.',
+                        ),
+                        value: syncQueueFromServer,
+                        onChange: setSyncQueueFromServer,
+                        disabled: offline,
+                      },
+                    ]),
               ]}
             />
           )}

@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 833 of them.
+Every string the app can show, under the screen it shows up on. 836 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -27,9 +27,9 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
-| `Animated artwork` |  |
 | `Animated artwork URL removed.` |  |
 | `Animated artwork URL saved.` |  |
+| `Animated cover` |  |
 | `Apple Music URL` |  |
 | `That does not look like an Apple Music URL.` |  |
 | `The album page on Apple Music whose animated cover plays for this album.` | The line under “Apple Music URL”, explaining it |
@@ -48,7 +48,7 @@ you are actually typing into, which is easier than reading it here.
 | `1 week` | How long a shared link lasts, counted from the moment it is made |
 | `Allow downloads` | Whether whoever gets the link can download the music, not only listen to it |
 | `Android may stop playback in the background, interrupt downloads or delay the sleep timer. Allowing unrestricted battery use fixes it.` |  |
-| `Animated artwork` |  |
+| `Animated cover` |  |
 | `Artist` | In search results, the little word under a result saying what kind of thing it is |
 | `Artists` | A heading over a list of them, never a count |
 | `Back online` | The toast shown when the server answers again and the app comes out of offline mode |
@@ -728,6 +728,7 @@ you are actually typing into, which is easier than reading it here.
 | `Cache size` |  |
 | `Cache songs you play` |  |
 | `Cached songs` |  |
+| `Clear temporary data` | Throw away what was remembered from the server. Downloads are not touched |
 | `Cover art` | Three places, one word: a section header in Settings › Player, a line of the storage bar in Settings › Downloads, and what the screen reader calls the picture in the song information sheet |
 | `Delete` | The confirm button of a delete dialog, for a playlist or a radio station |
 | `Delete all downloads` |  |
@@ -757,6 +758,7 @@ you are actually typing into, which is easier than reading it here.
 | `Song cache` | Copies of streamed songs the app keeps by itself and deletes to make room. Not the same as Downloads, which the person chose |
 | `Songs you stream are kept on this phone and play from it next time, with or without a connection. The next song in the queue is fetched ahead, so it is not streamed at all. When the cache is full, the songs played longest ago make room.` |  |
 | `Storage used` | Section header over the bar showing what is taking up room on the phone |
+| `Temporary data cleared` | Toast: what was remembered from the server was thrown away. Downloads are untouched |
 | `The latest 3 of each new batch, over Wi-Fi only.` | The line under “Download new episodes of favorite podcasts”, explaining it |
 | `Transcode lossless files only` |  |
 | `Your server must support it.` |  |
@@ -817,6 +819,43 @@ you are actually typing into, which is easier than reading it here.
 | `Show chips` | A switch over the Home chips list: turns every chip on or off at once |
 | `Show icons` |  |
 
+## Settings › Home navigation
+
+| String | What it is |
+| --- | --- |
+| `Always show the navigation bar` |  |
+| `At the top of Home, what is playing in your other apps and devices, ready to carry on here.` |  |
+| `Blur` | One of the values of “Navigation bar style” |
+| `Explore` | The tab holding everything the server has: all albums, artists, songs, genres, stations and folders |
+| `Explore sections` |  |
+| `Folder browsing` | Browsing the server's folders as folders, instead of by album and artist |
+| `Gradient` | One of the values of “Navigation bar style” |
+| `Greeting` | Home's "Good morning" line |
+| `Haptic feedback` | The small vibration when something is tapped |
+| `Home` | The first tab, and a folder in the car |
+| `Home & navigation` |  |
+| `Home buttons` | The icons at the top right of Home (search, history, settings), which of them show and in what order |
+| `Home chips` | The row of tappable category chips |
+| `Home sections` | Reorder which sections appear on Home |
+| `Interaction` | Section header grouping toggles |
+| `Interface` | Section header grouping toggles |
+| `Navigation` | Section header: how you move around the app |
+| `Navigation bar` | Settings screen: which tabs are on the bar at the bottom, and in what order |
+| `Navigation bar style` |  |
+| `Off` | A setting value meaning disabled (crossfade, normalization…) |
+| `Open the app on` | Which tab the app opens on, and comes back to after a while away |
+| `Pill-shaped navigation bar` |  |
+| `Playing on other devices` |  |
+| `Quick grid` | The grid of shortcut tiles on Home |
+| `Radios` |  |
+| `Show tab names` |  |
+| `Solid` | One of the values of “Navigation bar style” |
+| `Start on your playlists` | A switch: with it on, Your library with no chip pressed shows the Favorites entry and the playlists, the way it used to, instead of albums, artists and playlists mixed together |
+| `Swipe left` | What dragging a song to the left in a list does |
+| `Swipe right` | What dragging a song to the right in a list does. Its values are the actions listed under it |
+| `With no chip pressed, Your library shows Favorites and your playlists instead of everything mixed together.` |  |
+| `Your library` | The tab with your albums, artists and playlists |
+
 ## Settings › Home sections
 
 | String | What it is |
@@ -841,11 +880,10 @@ you are actually typing into, which is easier than reading it here.
 | `{n} items` | How many things the server's scan has found so far |
 | `Add another folder` | Adds one more phone folder to the local profile's list |
 | `All the music on your device.` | The line under `Scan the whole phone` |
-| `Cache cleared` | Toast: what was remembered from the server was thrown away. Downloads are untouched |
 | `Change source` | The music source (which server, or local). Not source code |
 | `Choose a folder (recommended)` | One of the two ways to find the phone's own music: point at a folder |
 | `Choose which libraries appear across the app.` |  |
-| `Clear cache` | Throw away what was remembered from the server. Downloads are not touched |
+| `Clear temporary data` | Throw away what was remembered from the server. Downloads are not touched |
 | `Couldn't rescan` | Toast: going through the phone's own files failed |
 | `Couldn't start the scan` | Toast: the server refused to start a scan |
 | `Device` | In offline mode, where the phone's own music is read from: the whole device, as opposed to `Folder`, one folder you picked. Not a server library |
@@ -869,9 +907,41 @@ you are actually typing into, which is easier than reading it here.
 | `Source` | The music source (which server, or local). Not source code |
 | `Source updated` | Toast after changing where music is read from |
 | `Storage` | Section header over the cache |
+| `Temporary data cleared` | Toast: what was remembered from the server was thrown away. Downloads are untouched |
 | `That folder is already there` | The folder just picked is already in the local profile's list |
 | `We need permission to read your device music.` | Android has not granted access to the phone's files yet |
 | `Where should we get your music?` | Heading when choosing where the phone's own music is read from |
+
+## Settings › Lyrics
+
+| String | What it is |
+| --- | --- |
+| `Blur inactive lyrics` | A switch in the Lyrics section: progressively softens synchronized lyric rows away from the current line |
+| `Blurred cover` | A value of `Background`: the album art, blurred, behind the player |
+| `Bold font weight` | A lyrics font weight: bold strokes (700) |
+| `Centered` | Lyrics alignment: each line centred |
+| `Cover color` | The colour taken from the cover art |
+| `Disable online search` | A value of `Lyrics source`: only ever use the ones that came with the file |
+| `Large` | A lyrics size |
+| `Left` | Lyrics alignment: lines start at the left edge |
+| `Light font weight` | A lyrics font weight: thin strokes (300) |
+| `Lyrics alignment` |  |
+| `Lyrics background` | What is drawn behind the lyrics screen, the full screen one |
+| `Lyrics card background` | What is drawn behind the small lyrics card that peeks under the player. Not the same thing as `Lyrics background` |
+| `Lyrics size` | Text size on every lyrics surface: small, normal or large |
+| `Lyrics source` | Where lyrics are looked for. Its values are the three `Prefer…`/`Disable…` lines |
+| `Lyrics weight` | Thickness of text on every lyrics surface |
+| `Medium font weight` | A lyrics font weight: medium strokes and the default (500) |
+| `None` | One of the choices for the buttons next to play on the mini player: no button at all |
+| `Normal` | A lyrics size, the default one |
+| `Plain` | A value of `Background`: a flat colour behind the player, no picture |
+| `Prefer local lyrics` | A value of `Lyrics source`: use the ones that came with the file first |
+| `Prefer online search` | A value of `Lyrics source`: look them up on the internet first |
+| `Providers` |  |
+| `Regular font weight` | A lyrics font weight: regular strokes (400) |
+| `Semi-bold font weight` | A lyrics font weight: semi-bold strokes (600) |
+| `Show lyrics card` |  |
+| `Small` | A lyrics size |
 
 ## Settings › Lyrics providers
 
@@ -913,54 +983,23 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
-| `Always show the navigation bar` |  |
 | `Appearance` |  |
-| `At the top of Home, what is playing in your other apps and devices, ready to carry on here.` |  |
-| `Blur` | One of the values of “Navigation bar style” |
-| `Border radius` |  |
+| `Corners` |  |
 | `Cover corners` | The corners of every cover art picture in the app, whose choices are Square, Rounded and More rounded |
 | `Dark` | The appearance the app has always had, and what it uses unless the other is chosen. |
-| `Explore` | The tab holding everything the server has: all albums, artists, songs, genres, stations and folders |
-| `Explore sections` |  |
-| `Folder browsing` | Browsing the server's folders as folders, instead of by album and artist |
 | `Font` |  |
-| `Gradient` | One of the values of “Navigation bar style” |
-| `Greeting` | Home's "Good morning" line |
-| `Haptic feedback` | The small vibration when something is tapped |
-| `Home` | The first tab, and a folder in the car |
-| `Home buttons` | The icons at the top right of Home (search, history, settings), which of them show and in what order |
-| `Home chips` | The row of tappable category chips |
-| `Home sections` | Reorder which sections appear on Home |
-| `Interaction` | Section header grouping toggles |
-| `Interface` | Section header grouping toggles |
 | `Language` |  |
 | `Light` | The light appearance, in Settings › Theme |
+| `Lists & albums` | The screen of settings for what song lists and album and playlist pages show |
 | `More rounded` | Corners of the cover art: rounder than the usual |
-| `Navigation` | Section header: how you move around the app |
-| `Navigation bar` | Settings screen: which tabs are on the bar at the bottom, and in what order |
-| `Navigation bar style` |  |
-| `Off` | A setting value meaning disabled (crossfade, normalization…) |
-| `Open the app on` | Which tab the app opens on, and comes back to after a while away |
-| `Pill-shaped navigation bar` |  |
-| `Playing on other devices` |  |
-| `Pointier` | One of the values of “Border radius” |
-| `Quick grid` | The grid of shortcut tiles on Home |
-| `Radios` |  |
-| `Round` | One of the values of “Border radius” |
-| `Round corners everywhere, or flatter ones` | The line under “Border radius”, explaining it |
+| `Pointier` | One of the values of “Corners” |
+| `Round` | One of the values of “Corners” |
+| `Round corners everywhere, or flatter ones` | The line under “Corners”, explaining it |
 | `Rounded` | Corners of the cover art: slightly rounded, the usual look |
 | `Scheduled` | A theme mode: light from one hour of the day, dark from another |
-| `Show tab names` |  |
-| `Solid` | One of the values of “Navigation bar style” |
-| `Song lists` | The setting for how song lists look |
 | `Square` | Corners of the cover art: sharp, not rounded at all |
-| `Start on your playlists` | A switch: with it on, Your library with no chip pressed shows the Favorites entry and the playlists, the way it used to, instead of albums, artists and playlists mixed together |
-| `Swipe left` | What dragging a song to the left in a list does |
-| `Swipe right` | What dragging a song to the right in a list does. Its values are the actions listed under it |
 | `System` | Two places: a theme setting (use whichever appearance the phone itself is set to, light or dark), and `System::section`, the heading in Settings › Quality & playback over Keep screen on and the battery warning. Add `System::section` to your file if one word cannot do both |
 | `Theme` | The screen where the appearance and the accent colour are chosen, and the name of the row that opens it |
-| `With no chip pressed, Your library shows Favorites and your playlists instead of everything mixed together.` |  |
-| `Your library` | The tab with your albums, artists and playlists |
 
 ## Settings › Playback
 
@@ -968,6 +1007,7 @@ you are actually typing into, which is easier than reading it here.
 | --- | --- |
 | `Always` | A value of when a downloaded song is played from the file instead of streamed |
 | `Asks the file for frame-exact seeks and durations before playing. On a stream with no index that means scanning it first, which is the wait before a track starts. Off, tracks start at once: the clock still follows the audio, seeks may land a fraction of a second off.` |  |
+| `Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.` |  |
 | `At “Original” quality nothing is transcoded.` |  |
 | `Automatic` | A value of `Normalize volume`: let the app decide between per track and per album |
 | `Autoplay` | When the queue runs out, keep playing with similar songs instead of stopping |
@@ -1016,45 +1056,29 @@ you are actually typing into, which is easier than reading it here.
 | `30 fps` | One of the values of “Animated cover frame rate” |
 | `60 fps` | One of the values of “Animated cover frame rate” |
 | `Always previous track` | A value of `Previous button`: never restarts, always goes back a song |
-| `Animated artwork` |  |
-| `Animated artwork endpoint` |  |
 | `Animated cover frame rate` |  |
 | `Animated covers` | Section header of the player settings: covers that move, video clips from a server or animated GIF and WebP files |
+| `Animated covers server` |  |
 | `As the background` | A value of `Animated artwork`: the animated cover fills the whole player screen behind everything, instead of the square |
 | `Background` | Section header over what is drawn behind the player. Its two values are `Plain` and `Blurred cover` |
-| `Blur inactive lyrics` | A switch in the Lyrics section: progressively softens synchronized lyric rows away from the current line |
 | `Blurred cover` | A value of `Background`: the album art, blurred, behind the player |
-| `Bold font weight` | A lyrics font weight: bold strokes (700) |
 | `Bottom row` |  |
 | `Buttons` | Which player buttons to show |
 | `Buttons next to play` |  |
-| `Centered` | Lyrics alignment: each line centred |
 | `Clips in the app too` | iOS setting: the animated cover clip also plays inside the app, not only on the lock screen |
 | `Colored mini player` | Tint the mini player with the colour of the cover art |
 | `Cover art` | Three places, one word: a section header in Settings › Player, a line of the storage bar in Settings › Downloads, and what the screen reader calls the picture in the song information sheet |
 | `Cover color` | The colour taken from the cover art |
-| `Disable online search` | A value of `Lyrics source`: only ever use the ones that came with the file |
 | `Elements` | Which player elements to show |
 | `Favorite` | One of the choices for the button next to play on the mini player: the heart. Not a verb |
 | `Fit cover art` | Show the whole cover even if it is not square, instead of cropping it to fill |
 | `Go to album` | Leave this sheet and open the album the song is on |
 | `In the cover` | A value of `Animated artwork`: the animated cover plays inside the square where the cover is |
 | `Keep paused when skipping` |  |
-| `Large` | A lyrics size |
-| `Left` | Lyrics alignment: lines start at the left edge |
-| `Light font weight` | A lyrics font weight: thin strokes (300) |
-| `Lyrics alignment` |  |
-| `Lyrics background` | What is drawn behind the lyrics screen, the full screen one |
-| `Lyrics card background` | What is drawn behind the small lyrics card that peeks under the player. Not the same thing as `Lyrics background` |
-| `Lyrics size` | Text size on every lyrics surface: small, normal or large |
-| `Lyrics source` | Where lyrics are looked for. Its values are the three `Prefer…`/`Disable…` lines |
-| `Lyrics weight` | Thickness of text on every lyrics surface |
-| `Medium font weight` | A lyrics font weight: medium strokes and the default (500) |
 | `Mini player` |  |
 | `Mini player blur` |  |
 | `No` | A setting value meaning none or zero, not the answer to a question: no crossfade, no seek buttons |
 | `None` | One of the choices for the buttons next to play on the mini player: no button at all |
-| `Normal` | A lyrics size, the default one |
 | `Nothing` | A value of `On cover tap`: tapping the cover does nothing |
 | `On cover double tap` | Settings > Player: what tapping the album artwork twice does |
 | `On cover tap` | What tapping the cover art in the player does. One tap and two share the same values, listed below |
@@ -1064,28 +1088,22 @@ you are actually typing into, which is easier than reading it here.
 | `Play or pause` | One of its options: the same as the play button |
 | `Player` |  |
 | `Player background` | What is drawn behind the player: the blurred artwork, or a flat tint |
-| `Prefer local lyrics` | A value of `Lyrics source`: use the ones that came with the file first |
-| `Prefer online search` | A value of `Lyrics source`: look them up on the internet first |
 | `Previous and next` | One of the values of “Buttons next to play” |
 | `Previous button` | What the previous button does when a song is already playing. Its values are the two lines below it |
-| `Providers` |  |
 | `Queue` | The list of songs waiting to play. Not a playlist |
-| `Regular font weight` | A lyrics font weight: regular strokes (400) |
 | `Restart, then previous track` | A value of `Previous button`: the first press goes back to the start of this song, the second to the one before |
 | `Scroll long titles` | A title too long to fit slides sideways, over and over, instead of being cut off |
-| `Semi-bold font weight` | A lyrics font weight: semi-bold strokes (600) |
 | `Show album & year` |  |
 | `Show animated covers` | The switch for all of them: off, no cover moves anywhere in the app |
 | `Show artist card` |  |
-| `Show lyrics card` |  |
 | `Show lyrics on the cover` | A value of `On cover tap`: the lyrics take the cover's place, without leaving the player |
 | `Show previous tracks` | Whether the queue keeps the songs already played, dimmed, above the current one |
 | `Show progress bar` |  |
 | `Show quality label` |  |
 | `Show rating` |  |
 | `Skip buttons` | The seek forward / back buttons setting |
-| `Small` | A lyrics size |
 | `Swap favorite and menu` | Exchange the places of those two buttons in the player, for whichever hand you hold the phone in |
+| `Where animated covers play` |  |
 
 ## Settings › Player buttons
 
@@ -1140,6 +1158,7 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
+| `Lists & albums` | The screen of settings for what song lists and album and playlist pages show |
 | `Show artist photo` | Whether the artist's photo shows at the top of their screen |
 | `Show artwork` | Whether song rows carry the album's little picture |
 | `Show description` | A setting: whether playlist and album descriptions are drawn under their names on their screens |
@@ -1148,7 +1167,6 @@ you are actually typing into, which is easier than reading it here.
 | `Show genres` | Whether a song row says its genre |
 | `Show rating` |  |
 | `Show song duration` | Whether a song row says how long the song is |
-| `Song lists` | The setting for how song lists look |
 
 ## Settings › Theme
 

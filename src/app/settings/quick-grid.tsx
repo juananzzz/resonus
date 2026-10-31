@@ -1,5 +1,5 @@
 /**
- * Settings › Appearance › Quick grid: what feeds the shortcut card grid on
+ * Settings › Home & navigation › Quick grid: what feeds the shortcut card grid on
  * Home and how many tiles to show. The grid is dynamic (sorts by last play),
  * so here you don't reorder: you just pick sources and size.
  */
