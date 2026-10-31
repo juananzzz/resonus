@@ -9,6 +9,8 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+## [0.8.6] - 2026-10-31
+
 ### Added
 
 - Explore has a Downloads chip with your downloaded albums (#310).

@@ -1,0 +1,12 @@
+Added
+
+- Explore has a Downloads chip with your downloaded albums (#310).
+- Podcasts: mark episodes as played or unplayed.
+- Podcasts: new episodes of favorite shows can download by themselves over Wi-Fi.
+- Option to show album artwork across the full width (#289).
+- Option to show the player artwork across the full width (#290).
+- Option to keep motion artwork off mobile data, on by default (#294).
+
+Changed
+…
+https://github.com/juananzzz/resonus/releases/tag/v0.8.6
