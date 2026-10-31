@@ -985,6 +985,7 @@ const styles = themed((colors) => ({
   headerWrap: { justifyContent: 'flex-end' },
   headerImg: { ...StyleSheet.absoluteFill },
   name: {
+    textAlign: 'center',
     color: colors.text,
     fontSize: fontSize.xxl,
     letterSpacing: tracking.display,
