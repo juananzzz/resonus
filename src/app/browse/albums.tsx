@@ -20,6 +20,7 @@ import {
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
 import { getAlbumList, searchAlbums, type Album, type AlbumListType } from '@/api/data';
+import * as Local from '@/lib/localQueries';
 import { AlbumCard } from '@/components/AlbumCard';
 import { AlbumCardsSkeleton } from '@/components/AlbumCardsSkeleton';
 import { AlbumRow } from '@/components/AlbumRow';
@@ -91,7 +92,16 @@ export default function BrowseAlbumsScreen() {
   return <AlbumsBrowser />;
 }
 
-export function AlbumsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) {
+/**
+ * `downloaded` lists what the downloads catalog holds, online too (#310). An
+ * album with one song saved is in it, and opens whole.
+ */
+export function AlbumsBrowser({
+  embedded,
+  actionRef,
+  searchOpen,
+  downloaded,
+}: BrowserProps & { downloaded?: boolean }) {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
@@ -106,9 +116,9 @@ export function AlbumsBrowser({ embedded, actionRef, searchOpen }: BrowserProps)
    */
   const { sort: sortParam } = useLocalSearchParams<{ sort?: string }>();
   const [sort, setSort] = useBrowseSort<AlbumListType>(
-    'browseAlbums',
+    downloaded ? 'downloadedAlbums' : 'browseAlbums',
     SORTS.map((s) => s.key),
-    'recent',
+    downloaded ? 'newest' : 'recent',
     sortFromParam(sortParam),
   );
   const layout = useSettings((s) => s.browseAlbumsLayout);
@@ -123,8 +133,9 @@ export function AlbumsBrowser({ embedded, actionRef, searchOpen }: BrowserProps)
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ['browseAlbums', sort],
-      queryFn: ({ pageParam }) => getAlbumList(sort, PAGE, pageParam),
+      queryKey: [downloaded ? 'downloadedAlbums' : 'browseAlbums', sort],
+      queryFn: ({ pageParam }) =>
+        (downloaded ? Local.getAlbumList : getAlbumList)(sort, PAGE, pageParam),
       initialPageParam: 0,
       getNextPageParam: (last, pages) =>
         last.length === PAGE ? pages.length * PAGE : undefined,
@@ -132,7 +143,8 @@ export function AlbumsBrowser({ embedded, actionRef, searchOpen }: BrowserProps)
       // «Recently played» changes with every listen: refreshes on returning to
       // the screen so it feels alive (other orders change little and keep the
       // global staleTime of 5 min).
-      refetchOnMount: sort === 'recent' ? 'always' : undefined,
+      // Downloads change with no word to this list, and asking costs no network.
+      refetchOnMount: downloaded || sort === 'recent' ? 'always' : undefined,
     });
 
   // ── Pull-down search ───────────────────────────────────────────────────
@@ -159,8 +171,8 @@ export function AlbumsBrowser({ embedded, actionRef, searchOpen }: BrowserProps)
     isError: searchError,
     refetch: refetchSearch,
   } = useQuery({
-    queryKey: ['searchAlbums', debounced],
-    queryFn: () => searchAlbums(debounced, SEARCH_COUNT),
+    queryKey: [downloaded ? 'searchDownloadedAlbums' : 'searchAlbums', debounced],
+    queryFn: () => (downloaded ? Local.searchAlbums : searchAlbums)(debounced, SEARCH_COUNT),
     enabled: canFetch && debounced.length > 0,
   });
 
@@ -264,7 +276,8 @@ export function AlbumsBrowser({ embedded, actionRef, searchOpen }: BrowserProps)
           options={SORTS}
           value={sort}
           onChange={setSort}
-          play={{ source: t('Library'), href: '/browse/albums' }}
+          // It plays the server's library, which is not this list.
+          play={downloaded ? undefined : { source: t('Library'), href: '/browse/albums' }}
         />
       )}
 
@@ -312,6 +325,8 @@ export function AlbumsBrowser({ embedded, actionRef, searchOpen }: BrowserProps)
                 title={t('No results')}
                 subtitle={t('No results for “{q}”', { q: query.trim() })}
               />
+            ) : downloaded && sort !== 'frequent' && sort !== 'recent' ? (
+              <EmptyState icon="download-outline" title={t('Nothing here is downloaded')} />
             ) : sort === 'frequent' || sort === 'recent' ? (
               <EmptyState
                 icon="play-outline"

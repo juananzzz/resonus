@@ -11,6 +11,7 @@ Releases before 0.2.1 are only listed on the
 
 ### Added
 
+- Explore has a Downloads chip with your downloaded albums (#310).
 - Podcasts: mark episodes as played or unplayed.
 - Podcasts: new episodes of favorite shows can download by themselves over Wi-Fi.
 

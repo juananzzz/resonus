@@ -558,7 +558,8 @@ export type ExploreSectionKey =
   | 'genres'
   | 'radio'
   | 'podcasts'
-  | 'folders';
+  | 'folders'
+  | 'downloads';
 
 /** A section with its state, the shape the Home chips already have (order is
  *  its position in the list). */
@@ -576,6 +577,7 @@ const EXPLORE_SECTION_KEYS: ExploreSectionKey[] = [
   'radio',
   'podcasts',
   'folders',
+  'downloads',
 ];
 
 /**
