@@ -18,6 +18,7 @@ Releases before 0.2.1 are only listed on the
 
 ### Changed
 
+- Animated covers on Android stay in a 150 MB cache instead of downloading again (#293).
 - To reorder a playlist, choose Reorder in its ⋯ menu or hold a song, drag the rows, and press Save order (#279).
 - Holding a song to start a selection no longer marks that song (#279).
 - Add to a playlist marks the playlists a song is already in, and a tap adds or removes it without closing the sheet.

@@ -12,14 +12,31 @@ import { useSettings } from '@/store/settings';
 import { useArtworkMotionAllowed } from '@/hooks/useArtworkMotionAllowed';
 
 let VideoView: React.ComponentType<any> | null = null;
-let useVideoPlayer: ((source: string, setup?: (player: any) => void) => any) | null = null;
+let useVideoPlayer: ((source: { uri: string; useCaching: boolean }, setup?: (player: any) => void) => any) | null = null;
+// Configure the shared LRU before creating any players (an expo-video requirement).
+// Failure keeps streaming available without silently using its 1 GiB default.
+let cacheReady: Promise<boolean> = Promise.resolve(false);
 try {
   const mod = require('expo-video');
   VideoView = mod.VideoView ?? null;
   useVideoPlayer = mod.useVideoPlayer ?? null;
+  if (Platform.OS === 'android') {
+    cacheReady = mod.setVideoCacheSizeAsync(150 * 1024 * 1024).then(() => true, () => false);
+  }
 } catch {
   VideoView = null;
   useVideoPlayer = null;
+}
+
+/** null delays mounting until the cache can safely be configured. */
+function useArtworkCache(): boolean | null {
+  const [ready, setReady] = useState<boolean | null>(Platform.OS === 'android' ? null : false);
+  useEffect(() => {
+    let live = true;
+    void cacheReady.then((ok) => { if (live) setReady(ok); });
+    return () => { live = false; };
+  }, []);
+  return ready;
 }
 
 /**
@@ -87,8 +104,8 @@ function callPlayer(fn: () => void): void {
 
 /** A looping muted clip player that sleeps with the app: no decoding behind
  *  the lock screen, where only the audio keeps going. */
-function useClipPlayer(uri: string): any {
-  const player = useVideoPlayer!(uri, (p) => {
+function useClipPlayer(uri: string, useCaching: boolean): any {
+  const player = useVideoPlayer!({ uri, useCaching }, (p) => {
     p.loop = true;
     p.muted = true;
     // Never the music's audio focus: a clip that took it would pause the song
@@ -110,8 +127,8 @@ function useClipPlayer(uri: string): any {
   return player;
 }
 
-function ClipVideo({ uri, size, corner }: { uri: string; size: number; corner: number }) {
-  const player = useClipPlayer(uri);
+function ClipVideo({ uri, size, corner, useCaching }: { uri: string; size: number; corner: number; useCaching: boolean }) {
+  const player = useClipPlayer(uri, useCaching);
   if (!VideoView) return null;
   const VV = VideoView;
   return (
@@ -140,6 +157,7 @@ export function AnimatedArtworkView({
   const videoOn = useSettings((s) => s.animatedCoverVideo || Platform.OS !== 'ios');
   const bg = useIsBackground();
   const motionAllowed = useArtworkMotionAllowed();
+  const useCaching = useArtworkCache();
   if (!videoOn || !square || bg || !motionAllowed) return null;
   if (Platform.OS === 'ios') {
     if (!CoverClipNativeView) return null;
@@ -150,10 +168,10 @@ export function AnimatedArtworkView({
       </View>
     );
   }
-  if (!VideoView || !useVideoPlayer) return null;
+  if (!VideoView || !useVideoPlayer || useCaching === null) return null;
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}>
-      <ClipVideo uri={square} size={size} corner={corner} />
+      <ClipVideo uri={square} size={size} corner={corner} useCaching={useCaching} />
     </View>
   );
 }
@@ -167,6 +185,7 @@ export function AnimatedArtworkBackground({ square, fallbackUri, frame, enabled 
   const videoOn = useSettings((s) => s.animatedCoverVideo || Platform.OS !== 'ios');
   const bg = useIsBackground();
   const motionAllowed = useArtworkMotionAllowed();
+  const useCaching = useArtworkCache();
   if (!(enabled ?? videoOn) || !square || bg || !motionAllowed) return null;
   if (Platform.OS === 'ios') {
     if (!CoverClipNativeView) return null;
@@ -178,17 +197,17 @@ export function AnimatedArtworkBackground({ square, fallbackUri, frame, enabled 
       </View>
     );
   }
-  if (!VideoView || !useVideoPlayer) return null;
+  if (!VideoView || !useVideoPlayer || useCaching === null) return null;
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       {poster}
-      <BackgroundClip uri={square} fit={frame ? 'contain' : 'cover'} />
+      <BackgroundClip uri={square} fit={frame ? 'contain' : 'cover'} useCaching={useCaching} />
     </View>
   );
 }
 
-function BackgroundClip({ uri, fit }: { uri: string; fit: 'contain' | 'cover' }) {
-  const player = useClipPlayer(uri);
+function BackgroundClip({ uri, fit, useCaching }: { uri: string; fit: 'contain' | 'cover'; useCaching: boolean }) {
+  const player = useClipPlayer(uri, useCaching);
   const [opacity] = useState(() => new Animated.Value(0));
   useEffect(() => {
     opacity.setValue(0);
