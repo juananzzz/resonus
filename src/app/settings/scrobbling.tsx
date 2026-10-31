@@ -9,9 +9,9 @@
  * this server, which passes it on to Last.fm or ListenBrainz when it is set
  * up for that - the radios on Home read the play counts that come back.
  */
-import { ScrollView, Text } from 'react-native';
+import { Text } from 'react-native';
 
-import { SettingRow, SettingsPage, settingsStyles, SliderRow } from '@/components/SettingsUI';
+import { SettingsScroll, SettingRow, SettingsPage, settingsStyles, SliderRow } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { formatDuration } from '@/lib/format';
 import { SCROBBLE_SECONDS_MAX, useSettings } from '@/store/settings';
@@ -30,7 +30,7 @@ export default function ScrobblingSettings() {
 
   return (
     <SettingsPage title={t('Scrobbling')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         <Text style={settingsStyles.sectionDescription}>
           {t('How far into a song it counts as played. Whichever of the two comes first.')}
         </Text>
@@ -72,7 +72,7 @@ export default function ScrobblingSettings() {
           label={t('Restore defaults')}
           onPress={resetScrobbleRules}
         />
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

@@ -11,6 +11,7 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  type ScrollViewProps,
   StyleSheet,
   Switch,
   Text,
@@ -20,8 +21,9 @@ import {
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAccent } from '@/hooks/useAccent';
+import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { CONTENT_MAX_WIDTH } from '@/hooks/useScreenSize';
-import { colors, fontSize, radius, spacing, SCREEN_BOTTOM_PADDING, themed, tracking } from '@/theme';
+import { colors, fontSize, radius, spacing, themed, tracking } from '@/theme';
 import { BackChevron } from './BackChevron';
 
 /**
@@ -67,6 +69,16 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
       <ScreenHeader title={title} />
       <View style={settingsStyles.pane}>{children}</View>
     </SettingsSafeArea>
+  );
+}
+
+/** A settings screen's scroll: its last row clears the mini player, whatever the phone's own bar adds. */
+export function SettingsScroll({ children, ...props }: ScrollViewProps) {
+  const bottomPad = useScreenBottomPadding();
+  return (
+    <ScrollView {...props} contentContainerStyle={[settingsStyles.content, { paddingBottom: bottomPad }]}>
+      {children}
+    </ScrollView>
   );
 }
 
@@ -783,7 +795,7 @@ export const settingsStyles = themed((colors) => ({
     paddingVertical: spacing.md,
   },
   headerTitle: { color: colors.text, fontSize: fontSize.lg, letterSpacing: tracking.heading, fontWeight: '500' },
-  content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: SCREEN_BOTTOM_PADDING },
+  content: { padding: spacing.lg, gap: spacing.sm },
   /** Where the settings themselves live, centred once there is room to spare. */
   pane: { flex: 1, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' },
   // Small and grey, over the card it names: at the size of the screen's own

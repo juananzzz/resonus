@@ -8,9 +8,9 @@
  */
 import { useRootNavigationState } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Share, Text, View } from 'react-native';
+import { Share, Text, View } from 'react-native';
 
-import { SettingRow, SettingsPage, settingsStyles } from '@/components/SettingsUI';
+import { SettingsScroll, SettingRow, SettingsPage, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { eventLines, fullReport, profileLines, stateLines } from '@/lib/diagnosticsReport';
 import {
@@ -51,8 +51,7 @@ export default function DiagnosticsSettings() {
 
   return (
     <SettingsPage title={t('Diagnostics')}>
-      <ScrollView
-        contentContainerStyle={settingsStyles.content}
+      <SettingsScroll
         // Any scroll refreshes the numbers; no timer polling behind this.
         onScrollEndDrag={() => setTick(tick + 1)}
       >
@@ -203,7 +202,7 @@ export default function DiagnosticsSettings() {
             setTick(tick + 1);
           }}
         />
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

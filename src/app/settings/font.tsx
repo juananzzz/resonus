@@ -2,9 +2,9 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as Font from 'expo-font';
 import { useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { Alert } from 'react-native';
 
-import { SettingRow, SelectList, SettingsGroup, SettingsPage, settingsStyles } from '@/components/SettingsUI';
+import { SettingsScroll, SettingRow, SelectList, SettingsGroup, SettingsPage } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { importCustomFont, removeCustomFontFiles } from '@/lib/customFont';
 import { APP_FONT_LABELS, type AppFont, useSettings } from '@/store/settings';
@@ -62,7 +62,7 @@ export default function FontSettings() {
 
   return (
     <SettingsPage title={t('Font')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         <SelectList options={options} value={appFont} onChange={setAppFont} collapsible={false} />
         <SettingsGroup>
           <SettingRow
@@ -84,7 +84,7 @@ export default function FontSettings() {
             />
           ) : null}
         </SettingsGroup>
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

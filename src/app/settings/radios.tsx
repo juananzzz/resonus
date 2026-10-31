@@ -7,13 +7,12 @@
  * radios come with pulling Home to refresh, so there is no button for it.
  */
 import { useQueryClient } from '@tanstack/react-query';
-import { ScrollView } from 'react-native';
 
 import {
   SelectList,
   SettingsGroup,
   SettingsPage,
-  settingsStyles,
+  SettingsScroll,
   SwitchList,
 } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
@@ -34,7 +33,7 @@ export default function RadiosSettings() {
 
   return (
     <SettingsPage title={t('Radios')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         <SettingsGroup>
           <SwitchList
             options={[
@@ -67,7 +66,7 @@ export default function RadiosSettings() {
             />
           </SettingsGroup>
         ) : null}
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

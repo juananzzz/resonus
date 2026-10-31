@@ -1,12 +1,13 @@
 /** Settings › Appearance: language, theme, font, corners, and what lists and album pages show. */
 import { useRouter } from 'expo-router';
-import { ScrollView, Text } from 'react-native';
+import { Text } from 'react-native';
 
 import {
   SelectList,
   SettingRow,
   SettingsGroup,
   SettingsPage,
+  SettingsScroll,
   settingsStyles,
   SwitchList,
 } from '@/components/SettingsUI';
@@ -75,7 +76,7 @@ export default function AppearanceSettings() {
 
   return (
     <SettingsPage title={t('Appearance')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         <SettingsGroup>
           <SettingRow
             label={t('Language')}
@@ -194,7 +195,7 @@ export default function AppearanceSettings() {
             onChange={setSwipeLeftAction}
           />
         </SettingsGroup>
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

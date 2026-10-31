@@ -1,13 +1,13 @@
 /** Settings › Player › Lyrics: where lyrics come from and how they look. */
 import { useRouter } from 'expo-router';
-import { Platform, ScrollView } from 'react-native';
+import { Platform } from 'react-native';
 
 import {
   SelectList,
   SettingRow,
   SettingsGroup,
   SettingsPage,
-  settingsStyles,
+  SettingsScroll,
   SwitchList,
 } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
@@ -49,7 +49,7 @@ export default function LyricsSettings() {
 
   return (
     <SettingsPage title={t('Lyrics')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         <SettingsGroup>
           <SelectList<LyricsSource>
             label={t('Lyrics source')}
@@ -146,7 +146,7 @@ export default function LyricsSettings() {
             onChange={setLyricsBackground}
           />
         </SettingsGroup>
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

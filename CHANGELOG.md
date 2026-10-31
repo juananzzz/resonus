@@ -32,6 +32,7 @@ Releases before 0.2.1 are only listed on the
 
 ### Fixed
 
+- With on-screen navigation buttons, the mini player no longer covers the last option in Settings.
 - A playlist's page no longer freezes while songs are selected, and leaving the selection no longer jumps to the top (#279).
 - Casting: more cases where the queue stayed on a song after it ended are handled (#285).
 - The progress bar looks the same on every Android phone.

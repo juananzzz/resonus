@@ -5,13 +5,14 @@
  * immediately.
  */
 import { useState } from 'react';
-import { ScrollView, Text } from 'react-native';
+import { Text } from 'react-native';
 
 import {
   SelectList,
   SettingRow,
   SettingsGroup,
   SettingsPage,
+  SettingsScroll,
   settingsStyles,
   SliderRow,
   SwitchList,
@@ -55,18 +56,18 @@ export default function EqualizerSettings() {
   if (!supported) {
     return (
       <SettingsPage title={t('Equalizer')}>
-        <ScrollView contentContainerStyle={settingsStyles.content}>
+        <SettingsScroll>
           <Text style={settingsStyles.sectionDescription}>
             {t('This device does not offer an equalizer.')}
           </Text>
-        </ScrollView>
+        </SettingsScroll>
       </SettingsPage>
     );
   }
 
   return (
     <SettingsPage title={t('Equalizer')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         <SettingsGroup>
           <SwitchList
             options={[
@@ -122,7 +123,7 @@ export default function EqualizerSettings() {
             reset();
           }}
         />
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

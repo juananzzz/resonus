@@ -1,12 +1,13 @@
 /** Settings › Home & navigation: what the tabs hold and how you move around. */
 import { useRouter } from 'expo-router';
-import { ScrollView, Text } from 'react-native';
+import { Text } from 'react-native';
 
 import {
   SelectList,
   SettingRow,
   SettingsGroup,
   SettingsPage,
+  SettingsScroll,
   settingsStyles,
   SwitchList,
 } from '@/components/SettingsUI';
@@ -55,7 +56,7 @@ export default function HomeNavigationSettings() {
 
   return (
     <SettingsPage title={t('Home & navigation')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         {/* The first title sticks to the header (no section margin). */}
         <Text style={[settingsStyles.sectionTitle, { marginTop: 0 }]}>{t('Home')}</Text>
         <SettingsGroup>
@@ -212,7 +213,7 @@ export default function HomeNavigationSettings() {
             ]}
           />
         </SettingsGroup>
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

@@ -1,7 +1,7 @@
 /** Settings › Player: looks and extras for the playback screen. */
 import type { AnimatedArtworkMode } from '@/lib/artworkLayout';
 import { useRouter } from 'expo-router';
-import { Platform, ScrollView, Text } from 'react-native';
+import { Platform, Text } from 'react-native';
 
 import { canBlurBars } from '@/components/BarBlur';
 import {
@@ -9,6 +9,7 @@ import {
   SettingRow,
   SettingsGroup,
   SettingsPage,
+  SettingsScroll,
   settingsStyles,
   SwitchList,
   TextRow,
@@ -111,7 +112,7 @@ export default function PlayerSettings() {
 
   return (
     <SettingsPage title={t('Player')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         {/* The first title sticks to the header (no section margin). */}
         <Text style={[settingsStyles.sectionTitle, { marginTop: 0 }]}>{t('Background')}</Text>
         <SettingsGroup>
@@ -392,7 +393,7 @@ export default function PlayerSettings() {
           chevron
           onPress={() => router.push('/settings/lyrics')}
         />
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

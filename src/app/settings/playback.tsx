@@ -13,13 +13,14 @@
  * Settings › Player.
  */
 import { useRouter } from 'expo-router';
-import { Platform, ScrollView, Text } from 'react-native';
+import { Platform, Text } from 'react-native';
 
 import {
   SelectList,
   SettingRow,
   SettingsGroup,
   SettingsPage,
+  SettingsScroll,
   settingsStyles,
   SliderRow,
   SwitchList,
@@ -92,7 +93,7 @@ export default function PlaybackSettings() {
 
   return (
     <SettingsPage title={t('Quality & playback')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         {/* Nothing here exists without a server to stream from, so the local
             profile does not get the section at all: it is the one profile where
             these will never do anything (see `useLocalProfile`). Everything
@@ -342,7 +343,7 @@ export default function PlaybackSettings() {
             },
           ]}
         />
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

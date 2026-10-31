@@ -7,10 +7,10 @@
  */
 import Icon from '@/components/Icon';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { Dialog } from '@/components/Dialog';
-import { SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
+import { SettingsScroll, SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
 import { reachable } from '@/api/backend';
 import { isLanUrl } from '@/lib/serverUrls';
 import { useT } from '@/i18n';
@@ -86,7 +86,7 @@ export default function NetworkSettings() {
 
   return (
     <SettingsPage title={t('Network')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         <Text style={[settingsStyles.sectionTitle, { marginTop: 0 }]}>
           {t('Current server address')}
         </Text>
@@ -193,7 +193,7 @@ export default function NetworkSettings() {
             {t('Add address')}
           </Text>
         </Pressable>
-      </ScrollView>
+      </SettingsScroll>
 
       <Dialog
         visible={adding}

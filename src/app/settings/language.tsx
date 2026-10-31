@@ -1,7 +1,7 @@
 /** Language picker — list with a radio on the active language. */
-import { Linking, ScrollView, Text } from 'react-native';
+import { Linking, Text } from 'react-native';
 
-import { SelectList, SettingRow, SettingsPage, settingsStyles } from '@/components/SettingsUI';
+import { SettingsScroll, SelectList, SettingRow, SettingsPage, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { LANGUAGES } from '@/i18n/languages';
 import { useSettings } from '@/store/settings';
@@ -32,7 +32,7 @@ export default function LanguageSettings() {
 
   return (
     <SettingsPage title={t('Language')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         <SelectList
           options={LANGUAGE_OPTIONS}
           value={language}
@@ -51,7 +51,7 @@ export default function LanguageSettings() {
           label={t('Help translate')}
           onPress={() => Linking.openURL(TRANSLATIONS_URL)}
         />
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

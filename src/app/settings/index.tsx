@@ -6,9 +6,9 @@
  */
 import Icon from '@/components/Icon';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Pressable, Switch, Text, View } from 'react-native';
 
-import { ScreenHeader, SettingsSafeArea, settingsStyles } from '@/components/SettingsUI';
+import { SettingsScroll, ScreenHeader, SettingsSafeArea, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { anyDownloads, useDownloads } from '@/store/downloads';
@@ -113,7 +113,7 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
       {/* The same centred pane every other settings screen gets from
           `SettingsPage`; this one draws its own header, so it says it here. */}
       <View style={settingsStyles.pane}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         <View style={[settingsStyles.cardBox, styles.accountCard]}>
           <View style={[settingsStyles.row, styles.profileRow]}>
             <View style={styles.avatar}>
@@ -188,7 +188,7 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
           </Pressable>
         ))}
 
-      </ScrollView>
+      </SettingsScroll>
       </View>
     </SettingsSafeArea>
   );

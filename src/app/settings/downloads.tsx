@@ -9,7 +9,7 @@
 import { Paths } from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Dialog } from '@/components/Dialog';
 import {
@@ -17,6 +17,7 @@ import {
   SettingRow,
   SettingsGroup,
   SettingsPage,
+  SettingsScroll,
   settingsStyles,
   SwitchList,
 } from '@/components/SettingsUI';
@@ -157,7 +158,7 @@ export default function DownloadsSettings() {
 
   return (
     <SettingsPage title={t('Downloads & offline')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         {/* The first title sticks to the header (no section margin). */}
         <Text style={[settingsStyles.sectionTitle, { marginTop: 0 }]}>{t('Downloading')}</Text>
         {/* Nothing can be downloaded without a server, so a manual "use no
@@ -391,7 +392,7 @@ export default function DownloadsSettings() {
             onPress={() => setConfirmDelete(true)}
           />
         ) : null}
-      </ScrollView>
+      </SettingsScroll>
 
       <Dialog
         visible={confirmDelete}

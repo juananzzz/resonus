@@ -6,9 +6,9 @@
 import { ColorPickerDialog } from '@/components/ColorPickerDialog';
 import Icon from '@/components/Icon';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { SelectList, SettingsGroup, SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
+import { SettingsScroll, SelectList, SettingsGroup, SettingsPage, SwitchList } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { systemAccentAvailable } from '@/lib/materialYou';
 import { ACCENT_OPTIONS, useSettings } from '@/store/settings';
@@ -201,7 +201,7 @@ export default function ThemeSettings() {
 
   return (
     <SettingsPage title={t('Theme')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         {/* "Mode" and not "Appearance": Appearance is the screen this one hangs
             off, and two headings with the same word one level apart read as a
             mistake. */}
@@ -310,7 +310,7 @@ export default function ThemeSettings() {
             }}
           />
         ) : null}
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

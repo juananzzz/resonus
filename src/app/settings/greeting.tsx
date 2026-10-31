@@ -5,9 +5,8 @@
  * up a toggle plus a card with its text field, and that Home row was already
  * crowded.
  */
-import { ScrollView } from 'react-native';
 
-import { SettingsGroup, SettingsPage, settingsStyles, SwitchList, TextRow } from '@/components/SettingsUI';
+import { SettingsScroll, SettingsGroup, SettingsPage, SwitchList, TextRow } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { GREETING_MAX, useSettings } from '@/store/settings';
 import { useTheme } from '@/theme';
@@ -26,7 +25,7 @@ export default function GreetingSettings() {
     <SettingsPage title={t('Greeting')}>
       {/* `SettingsPage` renders its children as-is: the margin and spacing
           between cards are set by this ScrollView, like the rest of Settings. */}
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         <SettingsGroup>
           <SwitchList
             options={[
@@ -51,7 +50,7 @@ export default function GreetingSettings() {
             />
           ) : null}
         </SettingsGroup>
-      </ScrollView>
+      </SettingsScroll>
     </SettingsPage>
   );
 }

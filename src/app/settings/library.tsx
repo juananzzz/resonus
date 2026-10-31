@@ -2,12 +2,12 @@
 import Icon from '@/components/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { rescanLocal } from '@/api/data';
 import { getScanStatus, startScan } from '@/api/backend';
-import { Field, SettingRow, SettingsPage, SwitchList, settingsStyles } from '@/components/SettingsUI';
+import { SettingsScroll, Field, SettingRow, SettingsPage, SwitchList, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { clearTemporaryData } from '@/lib/clearCache';
 import { ensureAudioPermission, folderNameFromUri, pickFolder } from '@/lib/localLibrary';
@@ -140,7 +140,7 @@ export default function LibrarySettings() {
 
   return (
     <SettingsPage title={offline ? t('Local music') : t('Library')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         {offline ? (
           <>
             <Field
@@ -209,7 +209,7 @@ export default function LibrarySettings() {
             ) : null}
           </>
         )}
-      </ScrollView>
+      </SettingsScroll>
 
       <Modal
         transparent

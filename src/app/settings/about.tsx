@@ -3,10 +3,10 @@
 import Constants from 'expo-constants';
 import { useRootNavigationState, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, Share } from 'react-native';
+import { Linking, Pressable, Share } from 'react-native';
 
 import { Dialog } from '@/components/Dialog';
-import { Field, SettingRow, SettingsGroup, SettingsPage, SwitchList, settingsStyles } from '@/components/SettingsUI';
+import { SettingsScroll, Field, SettingRow, SettingsGroup, SettingsPage, SwitchList } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { fullReport } from '@/lib/diagnosticsReport';
 import { SELF_UPDATES } from '@/lib/distribution';
@@ -79,7 +79,7 @@ export default function AboutSettings() {
 
   return (
     <SettingsPage title={t('About::app')}>
-      <ScrollView contentContainerStyle={settingsStyles.content}>
+      <SettingsScroll>
         <SettingsGroup>
           <Pressable
             onPress={() => {
@@ -220,7 +220,7 @@ export default function AboutSettings() {
           destructive
           onPress={() => setConfirmReset(true)}
         />
-      </ScrollView>
+      </SettingsScroll>
 
       <Dialog
         visible={confirmReset}
