@@ -9,6 +9,7 @@ import {
   SettingsPage,
   settingsStyles,
   SwitchList,
+  TextRow,
 } from '@/components/SettingsUI';
 import { canBlurBars } from '@/components/BarBlur';
 import { useLocalProfile } from '@/hooks/useLocalProfile';
@@ -79,6 +80,10 @@ export default function AppearanceSettings() {
   const appFont = useSettings((s) => s.appFont);
   const coverCorners = useSettings((s) => s.coverCorners);
   const setCoverCorners = useSettings((s) => s.setCoverCorners);
+  const artistSignaturesEnabled = useSettings((s) => s.artistSignaturesEnabled);
+  const setArtistSignaturesEnabled = useSettings((s) => s.setArtistSignaturesEnabled);
+  const artistSignaturesApi = useSettings((s) => s.artistSignaturesApi);
+  const setArtistSignaturesApi = useSettings((s) => s.setArtistSignaturesApi);
   const borderStyle = useSettings((s) => s.borderStyle);
   const setBorderStyle = useSettings((s) => s.setBorderStyle);
 
@@ -324,6 +329,13 @@ export default function AppearanceSettings() {
               },
             ]}
           />
+        </SettingsGroup>
+        <Text style={settingsStyles.sectionTitle}>{t('Artist pages')}</Text>
+        <SettingsGroup>
+          <SwitchList options={[
+            { label: t('Artist signatures'), value: artistSignaturesEnabled, onChange: setArtistSignaturesEnabled },
+          ]} />
+          <TextRow label={t('Artist signatures API')} description={t('Optional HTTPS provider. Artist names are sent when signatures are enabled.')} value={artistSignaturesApi} onChange={setArtistSignaturesApi} maxLength={2048} keyboardType="url" autoCapitalize="none" />
         </SettingsGroup>
       </ScrollView>
     </SettingsPage>

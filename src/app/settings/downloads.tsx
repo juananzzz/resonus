@@ -350,6 +350,7 @@ export default function DownloadsSettings() {
                 ['localLibrary', t('Local library index')],
                 ['playlistCovers', t('Playlist covers')],
                 ['legacyRadioCovers', t('Radio station art')],
+                ['artistSignatures', t('Artist signatures')],
                 ['outbox', t('Pending changes')],
                 ['podcasts', t('Podcast subscriptions')],
               ] as [keyof StorageParts, string][]

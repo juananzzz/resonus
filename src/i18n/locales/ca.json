@@ -829,5 +829,14 @@
   "Lost the connection to {name}": "S'ha perdut la connexió amb {name}",
   "{name} is playing something else": "{name} està reproduint una altra cosa",
   "Pill-shaped navigation bar": "Barra de navegació en forma de píndola",
-  "Pill-shaped mini player": "Minireproductor en forma de píndola"
+  "Pill-shaped mini player": "Minireproductor en forma de píndola",
+  "Full-bleed album artwork": "Portada de l’àlbum de vora a vora",
+  "Full-bleed Now Playing artwork": "Portada de vora a vora a Ara sona",
+  "Full bleed": "A sang",
+  "For static covers. Choose animated artwork separately below.": "Per a portades estàtiques. Tria les animacions per separat més avall.",
+  "Artist pages": "Pàgines d’artistes",
+  "Artist signatures": "Signatures d’artistes",
+  "Artist signatures API": "API de signatures d’artistes",
+  "Show signature source": "Mostra la font de la signatura",
+  "Optional HTTPS provider. Artist names are sent when signatures are enabled.": "Proveïdor HTTPS opcional. S’envien els noms dels artistes en activar les signatures."
 }

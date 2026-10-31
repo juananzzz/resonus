@@ -1,0 +1,145 @@
+{
+  "artist": {
+    "id": "artist_042eb380c687a57df8",
+    "name": "Queen",
+    "musicbrainz_id": "0383dadf-2a4e-4d10-a46a-e9e041da8eb3",
+    "wikidata_id": null
+  },
+  "signatures": [
+    {
+      "id": "sig_d90e4151263c7905ec",
+      "artist": {
+        "name": "Queen",
+        "musicbrainz_id": "0383dadf-2a4e-4d10-a46a-e9e041da8eb3",
+        "wikidata_id": null
+      },
+      "asset": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/1/15/Olga_of_Greece_signature_Greek_1898.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "format": "svg",
+        "type": "handwritten",
+        "width": 1178,
+        "height": 401,
+        "sha256": null
+      },
+      "source": {
+        "provider": "wikimedia_commons",
+        "url": "https://commons.wikimedia.org/wiki/File:Olga_of_Greece_signature_Greek_1898.svg",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/1/15/Olga_of_Greece_signature_Greek_1898.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+      },
+      "license": {
+        "name": "Public Domain",
+        "url": "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+        "status": "known"
+      },
+      "verification": "unverified"
+    },
+    {
+      "id": "sig_b40ee375e0826eb5f9",
+      "artist": {
+        "name": "Queen",
+        "musicbrainz_id": "0383dadf-2a4e-4d10-a46a-e9e041da8eb3",
+        "wikidata_id": null
+      },
+      "asset": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Queen_Victoria%27s_signature_in_1900.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "format": "svg",
+        "type": "handwritten",
+        "width": 512,
+        "height": 127,
+        "sha256": null
+      },
+      "source": {
+        "provider": "wikimedia_commons",
+        "url": "https://commons.wikimedia.org/wiki/File:Queen_Victoria%27s_signature_in_1900.svg",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Queen_Victoria%27s_signature_in_1900.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+      },
+      "license": {
+        "name": "Public Domain",
+        "url": "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+        "status": "known"
+      },
+      "verification": "unverified"
+    },
+    {
+      "id": "sig_114d2d11640e379561",
+      "artist": {
+        "name": "Queen",
+        "musicbrainz_id": "0383dadf-2a4e-4d10-a46a-e9e041da8eb3",
+        "wikidata_id": null
+      },
+      "asset": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/5/50/Signature_of_Catherine_de%E2%80%99_Medici.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "format": "svg",
+        "type": "handwritten",
+        "width": 1179,
+        "height": 432,
+        "sha256": null
+      },
+      "source": {
+        "provider": "wikimedia_commons",
+        "url": "https://commons.wikimedia.org/wiki/File:Signature_of_Catherine_de%E2%80%99_Medici.svg",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/5/50/Signature_of_Catherine_de%E2%80%99_Medici.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+      },
+      "license": {
+        "name": "Public Domain",
+        "url": "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+        "status": "known"
+      },
+      "verification": "unverified"
+    },
+    {
+      "id": "sig_c1fd6aa1acafc2b917",
+      "artist": {
+        "name": "Queen",
+        "musicbrainz_id": "0383dadf-2a4e-4d10-a46a-e9e041da8eb3",
+        "wikidata_id": null
+      },
+      "asset": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/3/30/Signature_of_Elisabeth_of_Bavaria%2C_Queen_of_the_Belgians.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "format": "svg",
+        "type": "handwritten",
+        "width": 1442,
+        "height": 452,
+        "sha256": null
+      },
+      "source": {
+        "provider": "wikimedia_commons",
+        "url": "https://commons.wikimedia.org/wiki/File:Signature_of_Elisabeth_of_Bavaria,_Queen_of_the_Belgians.svg",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/3/30/Signature_of_Elisabeth_of_Bavaria%2C_Queen_of_the_Belgians.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+      },
+      "license": {
+        "name": "Public Domain",
+        "url": "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+        "status": "known"
+      },
+      "verification": "unverified"
+    },
+    {
+      "id": "sig_3ec8cfc3e99d7f52dc",
+      "artist": {
+        "name": "Queen",
+        "musicbrainz_id": "0383dadf-2a4e-4d10-a46a-e9e041da8eb3",
+        "wikidata_id": null
+      },
+      "asset": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Signature_of_Elizabeth_II.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "format": "svg",
+        "type": "handwritten",
+        "width": 453,
+        "height": 209,
+        "sha256": null
+      },
+      "source": {
+        "provider": "wikimedia_commons",
+        "url": "https://commons.wikimedia.org/wiki/File:Signature_of_Elizabeth_II.svg",
+        "original_url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Signature_of_Elizabeth_II.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+      },
+      "license": {
+        "name": "Public Domain",
+        "url": null,
+        "status": "known"
+      },
+      "verification": "unverified"
+    }
+  ]
+}
