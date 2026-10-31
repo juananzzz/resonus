@@ -4,6 +4,7 @@
  * cover seen before resolves without another request.
  */
 import { useEffect, useState } from 'react';
+import { useArtworkNetworkAllowed } from './useArtworkMotionAllowed';
 
 import { useAuthStore } from '@/store/auth';
 import type { Song } from '@/api/subsonic';
@@ -15,6 +16,7 @@ import {
 import { activeArtworkEndpoint, useSettings } from '@/store/settings';
 
 export function useAnimatedArtwork(song: Pick<Song, 'artist' | 'album'> | null | undefined): AnimatedArtworkUrls | null {
+  const networkAllowed = useArtworkNetworkAllowed();
   const offline = useAuthStore((s) => s.offline);
   const endpoint = useSettings(activeArtworkEndpoint);
   const customs = useSettings((s) => s.animatedArtworkUrls);
@@ -23,7 +25,7 @@ export function useAnimatedArtwork(song: Pick<Song, 'artist' | 'album'> | null |
   useEffect(() => {
     let live = true;
     setUrls(null);
-    if (offline || !endpoint || !song?.artist || !song?.album) return undefined;
+    if (!networkAllowed || offline || !endpoint || !song?.artist || !song?.album) return undefined;
     void fetchAnimatedArtwork(endpoint, song.artist, song.album, customUrl).then((out) => {
       if (live) setUrls(out);
     });
@@ -32,6 +34,6 @@ export function useAnimatedArtwork(song: Pick<Song, 'artist' | 'album'> | null |
     };
     // Not the song id: the next track of the same album has the same clips,
     // and starting over for it flashed the still cover between them.
-  }, [offline, endpoint, customUrl, song?.artist, song?.album]);
-  return urls;
+  }, [networkAllowed, offline, endpoint, customUrl, song?.artist, song?.album]);
+  return networkAllowed ? urls : null;
 }

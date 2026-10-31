@@ -1,6 +1,6 @@
 /** Full-screen player (modal): cover art, progress and controls. */
 import { playerArtworkLayout } from '@/lib/artworkLayout';
-import { useArtworkMotionAllowed } from '@/hooks/useArtworkMotionAllowed';
+import { useArtworkAnimationAllowed } from '@/hooks/useArtworkMotionAllowed';
 import Icon from '@/components/Icon';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
@@ -427,7 +427,7 @@ export default function PlayerScreen() {
   const [headerHeight, setHeaderHeight] = useState(64);
   const bottomEdge = useArtworkEdgeColor(mayBleed ? cover : undefined);
   const topEdge = useArtworkEdgeColor(mayBleed ? cover : undefined, 'top', true);
-  const motionAllowed = useArtworkMotionAllowed();
+  const motionAllowed = useArtworkAnimationAllowed();
   // An animated cover (GIF, animated WebP, APNG) can take the whole screen
   // instead of playing inside the square, with a still copy of itself next to
   // the title, when its background mode is selected. A cover only in the image cache

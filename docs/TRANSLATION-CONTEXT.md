@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 837 of them.
+Every string the app can show, under the screen it shows up on. 839 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -1056,6 +1056,7 @@ you are actually typing into, which is easier than reading it here.
 | `Medium font weight` | A lyrics font weight: medium strokes and the default (500) |
 | `Mini player` |  |
 | `Mini player blur` |  |
+| `Motion artwork on Wi-Fi only` | Persistent network rule for decorative album and artist motion, including cached videos. On by default. Does not affect music streaming. |
 | `No` | A setting value meaning none or zero, not the answer to a question: no crossfade, no seek buttons |
 | `None` | One of the choices for the buttons next to play on the mini player: no button at all |
 | `Normal` | A lyrics size, the default one |
@@ -1090,6 +1091,7 @@ you are actually typing into, which is easier than reading it here.
 | `Skip buttons` | The seek forward / back buttons setting |
 | `Small` | A lyrics size |
 | `Swap favorite and menu` | Exchange the places of those two buttons in the player, for whichever hand you hold the phone in |
+| `Use static covers and artist images on mobile data.` | Description of the motion Wi-Fi restriction. Turning it off permits videos on mobile data. |
 
 ## Settings › Player buttons
 

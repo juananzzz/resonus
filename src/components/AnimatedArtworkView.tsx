@@ -4,7 +4,11 @@
  * cover as before. Mounted only when a clip URL is known.
  */
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect, useNavigation } from 'expo-router';
+import { useNetworkType } from '@/store/networkType';
+import { useAuthStore } from '@/store/auth';
+import { artworkNetworkAllowed } from '@/lib/artworkMotionPolicy';
 import { Animated, AppState, Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Cover } from './Cover';
 
@@ -105,25 +109,40 @@ function callPlayer(fn: () => void): void {
 /** A looping muted clip player that sleeps with the app: no decoding behind
  *  the lock screen, where only the audio keeps going. */
 function useClipPlayer(uri: string, useCaching: boolean): any {
+  const navigation = useNavigation();
   const player = useVideoPlayer!({ uri, useCaching }, (p) => {
     p.loop = true;
     p.muted = true;
     // Never the music's audio focus: a clip that took it would pause the song
     // it decorates. Said outright rather than left to the muted default.
     p.audioMixingMode = 'mixWithOthers';
-    callPlayer(() => p.play());
   });
+  const syncPlayback = useCallback(() => {
+    const allowed = navigation.isFocused() && AppState.currentState === 'active'
+      && !useAuthStore.getState().offline
+      && artworkNetworkAllowed(useSettings.getState().motionArtworkWifiOnly, useNetworkType.getState());
+    callPlayer(() => { if (allowed) player.play(); else player.pause(); });
+  }, [navigation, player]);
+  // Pause imperatively: frozen/offscreen React trees may not render their
+  // conditional unmount until later. App activation must never revive them.
+  useFocusEffect(useCallback(() => {
+    syncPlayback();
+    return () => callPlayer(() => player.pause());
+  }, [syncPlayback, player]));
   useEffect(() => {
-    callPlayer(() => player.play());
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') callPlayer(() => player.play());
-      else callPlayer(() => player.pause());
-    });
+    const sub = AppState.addEventListener('change', syncPlayback);
+    const offNetwork = useNetworkType.subscribe(syncPlayback);
+    const offSettings = useSettings.subscribe(syncPlayback);
+    const offAuth = useAuthStore.subscribe(syncPlayback);
+    syncPlayback();
     return () => {
       sub.remove();
+      offNetwork();
+      offSettings();
+      offAuth();
       callPlayer(() => player.pause());
     };
-  }, [player]);
+  }, [player, syncPlayback]);
   return player;
 }
 

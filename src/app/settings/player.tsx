@@ -83,6 +83,8 @@ export default function PlayerSettings() {
   const animatedArtworkFps = useSettings((s) => s.animatedArtworkFps);
   const setAnimatedArtworkFps = useSettings((s) => s.setAnimatedArtworkFps);
   const animatedArtworkEndpoint = useSettings((s) => s.animatedArtworkEndpoint);
+  const motionArtworkWifiOnly = useSettings((s) => s.motionArtworkWifiOnly);
+  const setMotionArtworkWifiOnly = useSettings((s) => s.setMotionArtworkWifiOnly);
   const animatedCovers = useSettings((s) => s.animatedCovers);
   const setAnimatedCovers = useSettings((s) => s.setAnimatedCovers);
   const setAnimatedArtworkEndpoint = useSettings((s) => s.setAnimatedArtworkEndpoint);
@@ -240,6 +242,12 @@ export default function PlayerSettings() {
               server's address is not something to type again. */}
           <SwitchList
             options={[
+              {
+                label: t('Motion artwork on Wi-Fi only'),
+                description: t('Use static covers and artist images on mobile data.'),
+                value: motionArtworkWifiOnly,
+                onChange: setMotionArtworkWifiOnly,
+              },
               {
                 label: t('Show animated covers'),
                 value: animatedCovers,

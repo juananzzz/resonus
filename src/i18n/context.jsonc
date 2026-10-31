@@ -598,6 +598,8 @@
     "Always previous track": "A value of `Previous button`: never restarts, always goes back a song",
     "No": "A setting value meaning none or zero, not the answer to a question: no crossfade, no seek buttons",
     "Fit cover art": "Show the whole cover even if it is not square, instead of cropping it to fill",
+    "Motion artwork on Wi-Fi only": "Persistent network rule for decorative album and artist motion, including cached videos. On by default. Does not affect music streaming.",
+    "Use static covers and artist images on mobile data.": "Description of the motion Wi-Fi restriction. Turning it off permits videos on mobile data.",
     "Animated covers": "Section header of the player settings: covers that move, video clips from a server or animated GIF and WebP files",
     "Show animated covers": "The switch for all of them: off, no cover moves anywhere in the app",
     "In the cover": "A value of `Animated artwork`: the animated cover plays inside the square where the cover is",
