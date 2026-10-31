@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 845 of them.
+Every string the app can show, under the screen it shows up on. 844 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -908,37 +908,6 @@ you are actually typing into, which is easier than reading it here.
 | `We need permission to read your device music.` | Android has not granted access to the phone's files yet |
 | `Where should we get your music?` | Heading when choosing where the phone's own music is read from |
 
-## Settings › Lyrics
-
-| String | What it is |
-| --- | --- |
-| `Blur inactive lyrics` | A switch in the Lyrics section: progressively softens synchronized lyric rows away from the current line |
-| `Blurred cover` | A value of `Background`: the album art, blurred, behind the player |
-| `Bold font weight` | A lyrics font weight: bold strokes (700) |
-| `Centered` | Lyrics alignment: each line centred |
-| `Cover color` | The colour taken from the cover art |
-| `Disable online search` | A value of `Lyrics source`: only ever use the ones that came with the file |
-| `Large` | A lyrics size |
-| `Left` | Lyrics alignment: lines start at the left edge |
-| `Light font weight` | A lyrics font weight: thin strokes (300) |
-| `Lyrics alignment` |  |
-| `Lyrics background` | What is drawn behind the lyrics screen, the full screen one |
-| `Lyrics card background` | What is drawn behind the small lyrics card that peeks under the player. Not the same thing as `Lyrics background` |
-| `Lyrics size` | Text size on every lyrics surface: small, normal or large |
-| `Lyrics source` | Where lyrics are looked for. Its values are the three `Prefer…`/`Disable…` lines |
-| `Lyrics weight` | Thickness of text on every lyrics surface |
-| `Medium font weight` | A lyrics font weight: medium strokes and the default (500) |
-| `None` | One of the choices for the buttons next to play on the mini player: no button at all |
-| `Normal` | A lyrics size, the default one |
-| `Plain` | A value of `Background`: a flat colour behind the player, no picture |
-| `Prefer local lyrics` | A value of `Lyrics source`: use the ones that came with the file first |
-| `Prefer online search` | A value of `Lyrics source`: look them up on the internet first |
-| `Providers` |  |
-| `Regular font weight` | A lyrics font weight: regular strokes (400) |
-| `Semi-bold font weight` | A lyrics font weight: semi-bold strokes (600) |
-| `Show lyrics card` |  |
-| `Small` | A lyrics size |
-
 ## Settings › Lyrics providers
 
 | String | What it is |
@@ -1074,14 +1043,18 @@ you are actually typing into, which is easier than reading it here.
 | `Animated covers server` |  |
 | `As the background` | A value of `Animated artwork`: the animated cover fills the whole player screen behind everything, instead of the square |
 | `Background` | Section header over what is drawn behind the player. Its two values are `Plain` and `Blurred cover` |
+| `Blur inactive lyrics` | A switch in the Lyrics section: progressively softens synchronized lyric rows away from the current line |
 | `Blurred cover` | A value of `Background`: the album art, blurred, behind the player |
+| `Bold font weight` | A lyrics font weight: bold strokes (700) |
 | `Bottom row` |  |
 | `Buttons` | Which player buttons to show |
 | `Buttons next to play` |  |
+| `Centered` | Lyrics alignment: each line centred |
 | `Clips in the app too` | iOS setting: the animated cover clip also plays inside the app, not only on the lock screen |
 | `Colored mini player` | Tint the mini player with the colour of the cover art |
 | `Cover art` | Three places, one word: a section header in Settings › Player, a line of the storage bar in Settings › Downloads, and what the screen reader calls the picture in the song information sheet |
 | `Cover color` | The colour taken from the cover art |
+| `Disable online search` | A value of `Lyrics source`: only ever use the ones that came with the file |
 | `Elements` | Which player elements to show |
 | `Favorite` | One of the choices for the button next to play on the mini player: the heart. Not a verb |
 | `Fit cover art` | Show the whole cover even if it is not square, instead of cropping it to fill |
@@ -1090,11 +1063,22 @@ you are actually typing into, which is easier than reading it here.
 | `Go to album` | Leave this sheet and open the album the song is on |
 | `In the cover` | A value of `Animated artwork`: the animated cover plays inside the square where the cover is |
 | `Keep paused when skipping` |  |
+| `Large` | A lyrics size |
+| `Left` | Lyrics alignment: lines start at the left edge |
+| `Light font weight` | A lyrics font weight: thin strokes (300) |
+| `Lyrics alignment` |  |
+| `Lyrics background` | What is drawn behind the lyrics screen, the full screen one |
+| `Lyrics card background` | What is drawn behind the small lyrics card that peeks under the player. Not the same thing as `Lyrics background` |
+| `Lyrics size` | Text size on every lyrics surface: small, normal or large |
+| `Lyrics source` | Where lyrics are looked for. Its values are the three `Prefer…`/`Disable…` lines |
+| `Lyrics weight` | Thickness of text on every lyrics surface |
+| `Medium font weight` | A lyrics font weight: medium strokes and the default (500) |
 | `Mini player` |  |
 | `Mini player blur` |  |
 | `No` | A setting value meaning none or zero, not the answer to a question: no crossfade, no seek buttons |
 | `No animated covers on mobile data` | On, animated covers stay still on mobile data. Other connections are not affected, and neither is the music |
 | `None` | One of the choices for the buttons next to play on the mini player: no button at all |
+| `Normal` | A lyrics size, the default one |
 | `Nothing` | A value of `On cover tap`: tapping the cover does nothing |
 | `On cover double tap` | Settings > Player: what tapping the album artwork twice does |
 | `On cover tap` | What tapping the cover art in the player does. One tap and two share the same values, listed below |
@@ -1105,14 +1089,20 @@ you are actually typing into, which is easier than reading it here.
 | `Player` |  |
 | `Player background` | What is drawn behind the player: the blurred artwork, or a flat tint |
 | `Plays the clip inside the app, not only on the lock screen.` | The line under “Clips in the app too”, explaining it |
+| `Prefer local lyrics` | A value of `Lyrics source`: use the ones that came with the file first |
+| `Prefer online search` | A value of `Lyrics source`: look them up on the internet first |
 | `Previous and next` | One of the values of “Buttons next to play” |
 | `Previous button` | What the previous button does when a song is already playing. Its values are the two lines below it |
+| `Providers` |  |
 | `Queue` | The list of songs waiting to play. Not a playlist |
+| `Regular font weight` | A lyrics font weight: regular strokes (400) |
 | `Restart, then previous track` | A value of `Previous button`: the first press goes back to the start of this song, the second to the one before |
 | `Scroll long titles` | A title too long to fit slides sideways, over and over, instead of being cut off |
+| `Semi-bold font weight` | A lyrics font weight: semi-bold strokes (600) |
 | `Show album & year` |  |
 | `Show animated covers` | The switch for all of them: off, no cover moves anywhere in the app |
 | `Show artist card` |  |
+| `Show lyrics card` |  |
 | `Show lyrics on the cover` | A value of `On cover tap`: the lyrics take the cover's place, without leaving the player |
 | `Show previous tracks` | Whether the queue keeps the songs already played, dimmed, above the current one |
 | `Show progress bar` |  |
@@ -1120,6 +1110,7 @@ you are actually typing into, which is easier than reading it here.
 | `Show rating` |  |
 | `Shows the whole cover even when it is not square.` | The line under “Fit cover art”, explaining it |
 | `Skip buttons` | The seek forward / back buttons setting |
+| `Small` | A lyrics size |
 | `Static covers in portrait. Replaces the background below; animated covers are set further down.` | Description of the static full-bleed switch; animated artwork has a separate three-way selector. |
 | `Swap favorite and menu` | Exchange the places of those two buttons in the player, for whichever hand you hold the phone in |
 | `Where animated covers play` |  |
@@ -1299,7 +1290,6 @@ you are actually typing into, which is easier than reading it here.
 | `Reorder` | Verb. In a playlist's menu, it opens the mode to drag songs to another place; also the grip icon on a row whose hold moves it |
 | `Retry` | The button on an error message: try again. A verb |
 | `Save` | The confirm button of an edit sheet. A verb |
-| `Save order` | Button on a playlist's selection bar, lit once a row has been dragged to another place: it writes the new order of the songs back to the server |
 | `Search` | The search tab, and the action of searching |
 | `Select all` | Tick every song in the list at once |
 | `Server default` | Codec option meaning "let the server decide" what to transcode to |

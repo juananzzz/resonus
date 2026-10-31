@@ -401,7 +401,6 @@ export default function RootLayout() {
                 <Stack.Screen name="settings/library" />
                 <Stack.Screen name="settings/playback" />
                 <Stack.Screen name="settings/player" />
-                <Stack.Screen name="settings/lyrics" />
                 <Stack.Screen name="settings/language" />
                 <Stack.Screen name="settings/font" />
                 <Stack.Screen name="settings/personalization" />
