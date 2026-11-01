@@ -12,7 +12,7 @@ Releases before 0.2.1 are only listed on the
 ### Changed
 
 - Podcasts: shows you add stay in Explore, and the ones you favorite also appear in Your library.
-- Podcasts: auto-download of new episodes is now chosen per show, in its ⋯ menu.
+- Podcasts: Download new episodes is now chosen per show, in its ⋯ menu.
 
 ## [0.8.7] - 2026-11-01
 

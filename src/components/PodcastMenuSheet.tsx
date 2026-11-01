@@ -261,7 +261,7 @@ export function PodcastMenuSheet() {
             {/* The latest 3 of each new batch, over Wi-Fi only. */}
             {row(
               autoDownloadIds.has(ch.id) ? 'cloud-done' : 'cloud-download-outline',
-              t('Auto-download'),
+              t('Download new episodes'),
               () => {
                 const on = !autoDownloadIds.has(ch.id);
                 close();

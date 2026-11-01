@@ -788,6 +788,7 @@
     "Favorite a show to keep it here.": "The line under the Library's Podcasts shelf: hearts are how a show is kept. 'Here' means this phone",
     "You're offline": "Said when a manual 'use no network' refused an action that needs the network",
     "Remove from this device": "A show's ⋯ menu and the dialog it opens: takes the show, its episodes and its downloads off this phone. Nothing on any server",
+    "Download new episodes": "A show's menu: when on, the latest episodes it publishes from now on download by themselves. Never its back catalog",
     "Add podcast": "The Explore chip, the add-a-show sheet's title and the button that opens it: keeps a show on this phone from its feed. Not adding a song to a list",
     "Find a podcast": "The placeholder in the search box on the shows you keep: searches the iTunes directory, which answers with a show's feed address",
     "Recent episodes": "A section of Home, and its switch in settings: the newest episodes of the shows you keep, by the date the publisher gave them. Not episodes you listened to",
