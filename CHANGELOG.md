@@ -32,6 +32,7 @@ Releases before 0.2.1 are only listed on the
 - Your library: podcast search ignores accents and forgives typos, like the rest.
 - Your library: artists sort by their sort name, and "+" playlists stay on top in the mixed list.
 - Your library: every row and card responds to a press, and albums keep the explicit badge in the mixed list.
+- Casting: more cases where the queue stayed on a song after it ended are handled (#285).
 
 ## [0.8.6] - 2026-10-31
 
@@ -60,7 +61,6 @@ Releases before 0.2.1 are only listed on the
 
 - With on-screen navigation buttons, the mini player no longer covers the last option in Settings.
 - A playlist's page no longer freezes while songs are selected, and leaving the selection no longer jumps to the top (#279).
-- Casting: more cases where the queue stayed on a song after it ended are handled (#285).
 - The progress bar looks the same on every Android phone.
 - Next and previous from other apps and devices, like Garmin watches, should now work (#307).
 - Podcast episodes pick up where you left them, even after playing music or restarting the app.
