@@ -33,7 +33,7 @@ The Resonus Sonos integration enables seamless queue management and playback con
 │ - Deduplicates in-flight syncs, caches queue signature      │
 ├─────────────────────────────────────────────────────────────┤
 │ UPnP Native Bridge (Kotlin)                                 │
-│ - RendererSession.kt: syncQueue() — routes to correct path  │
+│ - RendererSession.kt: syncQueue(): routes to correct path  │
 ├─────────────────────────────────────────────────────────────┤
 │ UPnP Protocol (SOAP/HTTP)                                    │
 │ - AVTransport Service: SetAVTransportURI, Seek, Play, Pause │
@@ -59,11 +59,14 @@ The Resonus Sonos integration enables seamless queue management and playback con
 ```kotlin
 data class Track(
   val url: String,        // Stream URL (must be reachable by the Sonos device)
+  val mime: String,
   val title: String,
-  val artist: String,
-  val album: String,
-  val artworkUrl: String,
-  val duration: Long      // In milliseconds
+  val artist: String?,
+  val albumArtist: String?,
+  val album: String?,
+  val artworkUrl: String?,
+  val durationSeconds: Int,
+  val id: String? = null  // The song's id in the app
 )
 ```
 
@@ -98,7 +101,7 @@ moveTrack()
 
 **Scenario:** User adds, removes, or reorders tracks while playing, and the currently playing track has not moved.
 
-**Detection:** `lastQueueTrackUrls[selectedIndex] == tracks[selectedIndex].url` → current track is still at the same index.
+**Detection:** the current track's URL is at `selectedIndex` in `lastQueueTrackUrls`, or not in it at all (see the detection in Flow 4).
 
 **Execution Path:**
 ```
@@ -112,7 +115,7 @@ syncQueue()
         ├─ Pure deletion → RemoveTrackRange(s), back-to-front
         ├─ Insertion     → AddURI + ReorderTracks to insert in place
         ├─ Pure reorder  → ReorderTracks sweep (backward passes only)
-        └─ rememberQueueState() — update URL cache and updateId
+        └─ rememberQueueState(): update URL cache and updateId
 ```
 
 **Outcome:** Sonos tail updated with minimal SOAP calls; playback uninterrupted.
@@ -137,7 +140,7 @@ syncQueue()
 
 **UPnP-specific shuffle behaviour:** When shuffle is toggled via the player button and UPnP is active, `toggleShuffle` takes a special path that keeps the current track at its current index and only reorders the tail. This ensures `currentTrackMoved` stays `false` and only a tail-sync is needed.
 
-**Problem with `startSongs` + shuffle mode:** When shuffle mode is already on and the user taps a song in an album (`startSongs`), the tapped song goes to `index = 0` with `originalQueue = songs`. When shuffle is then turned off, the current track moves from index 0 to index `k` (its original position). `currentTrackMoved = true`. Without additional handling, only the current track position and tail are fixed — the **head** (positions 0..k-1) remains in shuffled order.
+**Problem with `playQueue` + shuffle mode:** When shuffle mode is already on and the user taps a song in an album (`playQueue`), the tapped song goes to `index = 0` with `originalQueue = songs`. When shuffle is then turned off, the current track moves from index 0 to index `k` (its original position). `currentTrackMoved = true`. Without additional handling, only the current track position and tail are fixed: the **head** (positions 0..k-1) remains in shuffled order.
 
 **Execution Path (unshuffle, current track moved):**
 ```
@@ -161,12 +164,12 @@ toggleShuffle()  [shuffle off, originalQueue exists]
 
 ---
 
-### Flow 3: Current Track Moved (Playing)
+### Flow 4: Current Track Moved (Playing)
 
 **Scenario:** User drags the currently playing track to a new position while Sonos is playing.
 
 **Why this is different:**
-Moving the current track does **not** change what is playing — the same song continues. Only the queue slot changes. The correct tool is `ReorderTracks`, not `RemoveAllTracks`+rebuild, because clearing the queue while Sonos streams from it kills the stream immediately.
+Moving the current track does **not** change what is playing: the same song continues. Only the queue slot changes. The correct tool is `ReorderTracks`, not `RemoveAllTracks`+rebuild, because clearing the queue while Sonos streams from it kills the stream immediately.
 
 **Detection:**
 ```kotlin
@@ -187,7 +190,7 @@ syncQueue()
 
   on ReorderTracks failure:
   └─ replaceQueueViaQueueService(applyTransport=true, autoplay=true)
-        ├─ livePositionMs = GetPositionInfo() — fresh position from device
+        ├─ livePositionMs = GetPositionInfo(), fresh position from device
         ├─ RemoveAllTracks + AddURI × N
         ├─ SetAVTransportURI + Seek TRACK_NR + Seek REL_TIME
         └─ Play  [brief audible pause, but no broken state]
@@ -199,62 +202,9 @@ syncQueue()
 
 ---
 
-## Critical: ReorderTracks InsertBefore Semantics
+### Flow 5: Track Skip (Queue Unchanged)
 
-This is the most important subtlety in the integration. Getting it wrong produces silently incorrect results — Sonos returns `ok=true` regardless.
-
-**Sonos spec (Queue Service):**
-> `InsertBefore` is based on the **current ordering of the queue before the operation**, not after the tracks are removed.
-
-This means the position counts tracks in the **original queue**, before the block at `StartingIndex..StartingIndex+N-1` is removed.
-
-### Forward vs. Backward Moves
-
-**Backward move** (`oldPos > newPos` — track moves toward front):
-- Removal is from a position **after** `InsertBefore`. Positions ≤ `InsertBefore` are unaffected.
-- `InsertBefore = newPos + 1` (1-based) is correct.
-
-**Forward move** (`oldPos < newPos` — track moves toward back):
-- Removal is from a position **before** `InsertBefore`. All positions above the removal shift left by one.
-- To land at 0-based index `newPos`, target the element that is **originally** at `newPos + 1` (which is `newPos + 2` in 1-based), because the element that will be at `newPos` after insertion is currently at `newPos + 1` before the removal shifts things.
-- `InsertBefore = newPos + 2` (1-based).
-
-**Implementation:**
-```kotlin
-val insertBefore = if (oldSelectedIndex < selectedIndex) selectedIndex + 2 else selectedIndex + 1
-```
-
-### Worked Examples
-
-**Forward move** — 8-track queue, current at 0-based index 3 → 6:
-```
-Before (1-based): [A, B, C, D*, E, F, G, H]
-StartingIndex = 4   (oldPos + 1)
-InsertBefore  = 8   (newPos + 2 = 6 + 2)
-
-Remove D* from pos 4: [A, B, C, E, F, G, H]
-Insert before original pos 8 = H (now at pos 7 after removal)
-Result: [A, B, C, E, F, G, D*, H]  →  D* at 0-based index 6  ✓
-```
-
-**Backward move** — 8-track queue, current at 0-based index 6 → 1:
-```
-Before (1-based): [A, B, C, D, E, F, G*, H]
-StartingIndex = 7   (oldPos + 1)
-InsertBefore  = 2   (newPos + 1 = 1 + 1)
-
-Remove G* from pos 7: [A, B, C, D, E, F, H]
-Insert before original pos 2 = B (unchanged — removal was after pos 2)
-Result: [A, G*, B, C, D, E, F, H]  →  G* at 0-based index 1  ✓
-```
-
-### Why the Existing Tail-Sync Is Unaffected
-
-`syncQueueTailWhilePlaying` uses `ReorderTracks` only for reordering within the tail, and its scan always moves elements **backward** (source > target, `InsertBefore < StartingIndex`). For backward moves the removal is after the insertion point, so the two interpretations of `InsertBefore` yield the same result. The ambiguity only surfaces for forward moves.
-
-### Flow 4: Track Skip (Queue Unchanged)
-
-**Scenario:** User taps next/previous or a specific queue entry — no tracks added, removed, or reordered.
+**Scenario:** User taps next/previous or a specific queue entry, with no tracks added, removed, or reordered.
 
 **Why naive behavior is wrong:** `loadUpnpRemoteTrack` always calls `upnpLoad` → `replaceQueueViaQueueService` → N+2 SOAP calls (clear + add × N + seek + play), even when the queue on Sonos is already identical.
 
@@ -282,7 +232,7 @@ jumpTo(index)
 
 ---
 
-### Flow 5: Crossfade Setting Change
+### Flow 6: Crossfade Setting Change
 
 **Scenario:** User enables or disables crossfade in Resonus settings while connected to Sonos, or connects to Sonos while crossfade is already set.
 
@@ -306,10 +256,66 @@ jumpTo(index)
 
 **Note:** Sonos returns error 800 if sent to a non-coordinator or for content that doesn't support crossfade (e.g. streams). Both are silently ignored.
 
+---
+
+## Critical: ReorderTracks InsertBefore Semantics
+
+This is the most important subtlety in the integration. Getting it wrong produces silently incorrect results: Sonos returns `ok=true` regardless.
+
+**Sonos spec (Queue Service):**
+> `InsertBefore` is based on the **current ordering of the queue before the operation**, not after the tracks are removed.
+
+This means the position counts tracks in the **original queue**, before the block at `StartingIndex..StartingIndex+N-1` is removed.
+
+### Forward vs. Backward Moves
+
+**Backward move** (`oldPos > newPos`, track moves toward front):
+- Removal is from a position **after** `InsertBefore`. Positions ≤ `InsertBefore` are unaffected.
+- `InsertBefore = newPos + 1` (1-based) is correct.
+
+**Forward move** (`oldPos < newPos`, track moves toward back):
+- Removal is from a position **before** `InsertBefore`. All positions above the removal shift left by one.
+- To land at 0-based index `newPos`, target the element that is **originally** at `newPos + 1` (which is `newPos + 2` in 1-based), because the element that will be at `newPos` after insertion is currently at `newPos + 1` before the removal shifts things.
+- `InsertBefore = newPos + 2` (1-based).
+
+**Implementation:**
+```kotlin
+val insertBefore = if (oldSelectedIndex < selectedIndex) selectedIndex + 2 else selectedIndex + 1
+```
+
+### Worked Examples
+
+**Forward move**, 8-track queue, current at 0-based index 3 → 6:
+```
+Before (1-based): [A, B, C, D*, E, F, G, H]
+StartingIndex = 4   (oldPos + 1)
+InsertBefore  = 8   (newPos + 2 = 6 + 2)
+
+Remove D* from pos 4: [A, B, C, E, F, G, H]
+Insert before original pos 8 = H (now at pos 7 after removal)
+Result: [A, B, C, E, F, G, D*, H]  →  D* at 0-based index 6  ✓
+```
+
+**Backward move**, 8-track queue, current at 0-based index 6 → 1:
+```
+Before (1-based): [A, B, C, D, E, F, G*, H]
+StartingIndex = 7   (oldPos + 1)
+InsertBefore  = 2   (newPos + 1 = 1 + 1)
+
+Remove G* from pos 7: [A, B, C, D, E, F, H]
+Insert before original pos 2 = B (unchanged: removal was after pos 2)
+Result: [A, G*, B, C, D, E, F, H]  →  G* at 0-based index 1  ✓
+```
+
+### Why the Existing Tail-Sync Is Unaffected
+
+`syncQueueTailWhilePlaying` uses `ReorderTracks` only for reordering within the tail, and its scan always moves elements **backward** (source > target, `InsertBefore < StartingIndex`). For backward moves the removal is after the insertion point, so the two interpretations of `InsertBefore` yield the same result. The ambiguity only surfaces for forward moves.
 
 ---
 
-### TypeScript: `upnpRemoteSync.ts`
+## Implementation
+
+### TypeScript: `src/store/upnpRemoteSync.ts`
 
 Bridges React state to native UPnP calls. Deduplicates syncs and caches the queue signature so unchanged queues don't trigger SOAP traffic.
 
@@ -331,7 +337,7 @@ The TS layer passes full state (queue, index, position) to native and lets nativ
 
 ---
 
-### Kotlin: `RendererSession.kt`
+### Kotlin: `modules/upnp-cast/.../RendererSession.kt`
 
 Owns the UPnP session state and all SOAP communication.
 
@@ -397,7 +403,7 @@ All SOAP operations abort immediately on failure. The Sonos queue is left in its
 - [ ] `queueSignature()` is stable for the same track list
 - [ ] `playModeForState()` maps all three repeat modes correctly
 - [ ] `moveTrack()` index adjustment keeps the same track as current after every move
-- [ ] `currentTrackMoved` detection: `true` when URL at `selectedIndex` changed, `false` otherwise
+- [ ] `currentTrackMoved` detection: `true` when the current track's URL is cached at another index, `false` otherwise
 - [ ] `insertBefore` formula: backward → `newPos+1`, forward → `newPos+2`
 
 ### Integration (with Sonos device)
@@ -502,7 +508,7 @@ This reference was the authoritative source for:
 | Tail-sync silently skips | `lastQueueOwnerUid` / `lastQueueId` mismatch | Ensure `rememberQueueState()` is called after every successful sync |
 | `UpdateID mismatch` error from Sonos | Stale `lastQueueUpdateId` | Parse `NewUpdateID` from every queue service response |
 | Deadlock / sync never completes | `inFlightSync` not cleared on error | JS bridge uses `try/finally` to always clear `inFlightSync` |
-| Sonos crossfade out of sync after reconnect | Not synced on `onConnected` | `upnpSetCrossfade` is now called in `onConnected` before queue load |
+| Sonos crossfade out of sync after reconnect | Not synced on `onConnected` | `upnpSetCrossfade` is called in `onConnected` before queue load |
 
 ---
 
@@ -521,10 +527,3 @@ This reference was the authoritative source for:
 | **inFlightSync** | Shared `Promise<boolean>` in the JS bridge; prevents overlapping syncs |
 | **RINCON** | Sonos device identifier embedded in the queue URI |
 | **CrossfadeMode** | Sonos boolean toggle for crossfade between tracks; mapped from Resonus `crossfadeSec > 0` |
-
----
-
-**Document Version:** 1.2
-**Last Updated:** 2026-08-20
-**Changes in 1.2:** Added Flow 3 (Shuffle/Unshuffle) covering head reorder after unshuffle. Added Flow 5 (Crossfade Setting). Updated protocol table, testing checklist, issues table, and glossary. Updated UPnP-specific shuffle behaviour note.
-**Changes in 1.1:** Replaced incorrect "full rebuild" as Flow 3 with correct `ReorderTracks` approach. Added dedicated section on `InsertBefore` semantics (pre-removal reference frame, forward/backward distinction, worked examples). Updated decision tree, edge cases, testing checklist, and issues table.

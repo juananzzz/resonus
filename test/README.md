@@ -25,11 +25,13 @@ every failure is silent.
 
 Everything the app is actually made of stays out of reach: the gestures, the
 animations, the player, SQLite, the offline mirror, anything that needs a
-server to answer. Except the queue rules, kept pure in `src/lib/queue.ts` so
-a queue fix can start with a failing test here. The native extractors have
-their own harness, `pnpm harness:extractor`. Those are verified on a phone, and an emulator is not a
-phone either (the scroll and mount costs it reports are not the ones a device
-has). A green run here is not evidence about any of that.
+server to answer. Those are verified on a phone, and an emulator is not a phone
+either (the scroll and mount costs it reports are not the ones a device has). A
+green run here is not evidence about any of that.
+
+The exception is the queue rules, kept pure in `src/lib/queue.ts` so a queue fix
+can start with a failing test here. The native extractors have their own
+harness, `pnpm harness:extractor`.
 
 ## No stubs
 

@@ -1,16 +1,19 @@
 # Contributing to Resonus
 
-Resonus is an Android music player built with Expo / React Native for
-Navidrome / OpenSubsonic / Ampache servers, plus a local offline mode. This
-guide gets you from zero to a running app and a pull request.
+Resonus is a music player built with Expo / React Native for Navidrome,
+OpenSubsonic, Jellyfin and Ampache servers, plus a local mode with no server.
+Android comes first, and there is an experimental iOS build. This guide gets
+you from zero to a running app on Android and a pull request.
 
 ## Prerequisites
 
-- **Node.js 22 or newer**: <https://nodejs.org>
+- **Node.js 24**: <https://nodejs.org>. It is what the checks run on. The app
+  also builds on 22, but `pnpm test` needs a Node that strips TypeScript types
+  on its own.
 - **pnpm**: `npm install -g pnpm`. Not optional and not interchangeable with
-  npm or yarn: this project patches one of its dependencies
-  (`patches/expo-audio.patch`, which adds the gapless, lock screen and
-  equalizer hooks the app is built on), and pnpm is what applies it. Install
+  npm or yarn: this project patches several of its dependencies (`patches/`,
+  above all `expo-audio.patch`, which adds the gapless, lock screen and
+  equalizer hooks the app is built on), and pnpm is what applies them. Install
   with anything else and the app will fail to compile in files you never
   touched.
 - **JDK 17**: what CI builds with. Android Studio ships one; if you have
@@ -77,15 +80,25 @@ logs. It is worth the twenty minutes it takes to get `pnpm android` running.
 
 ## Native code
 
-Five Expo Modules live in `modules/`, and they are ordinary Android Kotlin:
+The Expo Modules in `modules/` are ordinary Android Kotlin, plus Swift for the
+few that also run on iOS:
 
-| Module | What it does |
-| --- | --- |
-| `audio-eq` | The system equalizer over the app's audio |
-| `battery-opt` | Reads and opens Android's battery optimisation settings |
-| `car-auto` | Android Auto: the browse tree and the media session |
-| `cast-media` | The media session used while casting |
-| `upnp-cast` | Finding UPnP/DLNA renderers and playing to them |
+| Module | What it does | Platforms |
+| --- | --- | --- |
+| `alac-decoder` | FFmpeg ALAC decoder for devices that lack one ([README](modules/alac-decoder/README.md)) | Android |
+| `apk-install` | Hands a downloaded update to Android's installer | Android |
+| `app-locale` | The app's language in Android's per-app language setting | Android |
+| `audio-eq` | The system equalizer over the app's audio | Android |
+| `audio-route` | Which output the audio is going to | Android, iOS |
+| `battery-opt` | Reads and opens Android's battery optimisation settings | Android |
+| `car-auto` | Android Auto: the browse tree and the media session | Android |
+| `cast-media` | The media session used while casting | Android |
+| `cover-clip` | Animated album covers | iOS |
+| `home-widget` | The home screen widget | Android, iOS |
+| `local-http` | A local server, so renderers can stream music from the phone | Android |
+| `material-you` | Reads the accent color Android derives from the wallpaper | Android |
+| `radio-art` | Draws the cover image of the mixes started from a song or artist | Android, iOS |
+| `upnp-cast` | Finding UPnP/DLNA renderers and playing to them ([Sonos guide](docs/SONOS_INTEGRATION.md)) | Android |
 
 Changing any of them means a rebuild (`pnpm android`); Metro does not hot-reload
 native code. To compile just one while you iterate:
@@ -101,8 +114,8 @@ adb logcat -s CarAuto     # the Android Auto module
 adb logcat | grep -i resonus
 ```
 
-`modules/car-auto/.../CarAutoLog.kt` has a `verbose` flag, off by default. Turn
-it on while working on browse or playback from the car.
+`modules/car-auto/.../CarAutoLog.kt` has a `verbose` flag, on in debug builds
+and off in release builds. It traces browse and playback from the car.
 
 ## Android Auto
 
@@ -112,31 +125,46 @@ car is the **Desktop Head Unit**:
 
 1. Install "Android Auto Desktop Head Unit Emulator" from the Android Studio SDK
    Manager. It lands in `$ANDROID_HOME/extras/google/auto/`.
-2. On the phone, in the Android Auto settings, tap the version number seven
-   times to unlock developer mode, then from the overflow menu enable **Start
-   head unit server**, and **Unknown sources** so a locally built app shows up
-   in the car's list.
-3. On your machine:
+2. On your machine, with the phone connected by USB:
    ```sh
    adb forward tcp:5277 tcp:5277
-   $ANDROID_HOME/extras/google/auto/desktop-head-unit
    ```
+3. On the phone, in the Android Auto settings, tap the version number about ten
+   times to unlock developer mode. In **Developer settings** turn on **Unknown
+   sources**, so a locally built app shows up in the car's list. Then, from the
+   overflow menu, choose **Start head unit server**.
+4. Back on your machine, from a terminal in the foreground:
+   ```sh
+   cd $ANDROID_HOME/extras/google/auto && ./desktop-head-unit
+   ```
+
+The head unit server only lasts one session. If the head unit is stuck on
+`waiting for phone`, or after you reinstall the app, force stop Android Auto on
+the phone and repeat from step 3.
 
 The logcat ring buffer survives the car disconnecting, so a real drive can be
 read afterwards by plugging the phone in and running `adb logcat -d -s CarAuto`.
 
 ## Before you commit
 
-Both of these must pass. CI and reviewers expect them green:
+All of these run on every pull request and must pass:
 
 ```sh
 pnpm typecheck
-pnpm lint
+pnpm lint        # fails on errors; the warnings are known, leave them
+pnpm test
+pnpm i18n:check  # if the change touches src/
 ```
 
-There is no unit test runner. Nearly everything here is UI or device
+`pnpm i18n:check` reads strings and where they are used off the code, so moving
+a `t()` call can fail it even if you changed no text. If it says
+`docs/TRANSLATION-CONTEXT.md` is out of date, run `pnpm i18n:docs` and commit the
+result.
+
+`pnpm test` only reaches pure logic ([test/README.md](test/README.md) says what
+it can and cannot cover). Nearly everything else here is UI or device
 integration (the audio session, Android Auto, UPnP, the file system, a server on
-the other end), and those are checked by using the app rather than mocked. So a
+the other end), and that is checked by using the app rather than mocked. So a
 pull request says what was actually tried and what was not: "tested on a Pixel
 with Navidrome, not tested offline" is worth more than a green checkmark.
 

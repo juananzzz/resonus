@@ -1,7 +1,7 @@
 # Translating Resonus
 
-Thanks for helping translate Resonus. If anything here is unclear, open an issue
-or ask on [Discord](https://discord.gg/pecE8MTPVr).
+Thanks for helping translate Resonus. If anything here is unclear, say so in your
+pull request or ask on [Discord](https://discord.gg/pecE8MTPVr).
 
 ## How it works
 
@@ -91,21 +91,23 @@ else.
    `{ code: '<code>', name: '<native name>', dict: <import> }`. It is the single
    source of truth: the type, the settings picker and the persistence all come
    from it, so nothing else needs touching.
-3. Add your language's words for "song", "album" and "playlist" to `PLURALS`
-   in `src/i18n/index.ts`. Every language needs them, yours included: see
-   below.
+3. Add your language's words for "song", "album", "playlist", "artist" and
+   "episode" to `PLURALS` in `src/i18n/index.ts`. Every language needs them,
+   yours included: see below.
+4. Add your language to the list in `README.md`, and yourself to
+   [the table below](#translation-contributors).
 
-Prefer not to touch the code? Open the PR with just the `.json` and we'll add
-the rows.
+Prefer not to touch the code? Open the PR with just the `.json` and your words
+for those five, and we'll add the rows.
 
 ## Plurals
 
 Counted strings like "3 songs" are not in your `.json` file. The noun goes with
 the number, so each language keeps its own forms in `PLURALS`
-(`src/i18n/index.ts`), and **every language needs its three rows there**: one
-for `song`, one for `album` and one for `playlist`. Without them the counts
-under playlists, artists and downloads stay in English while the rest of the app
-is in your language.
+(`src/i18n/index.ts`), and **every language needs its five entries there**: one
+each under `song`, `album`, `playlist`, `artist` and `episode`. Without them the
+counts under playlists, artists and downloads stay in English while the rest of
+the app is in your language.
 
 What is already set up for you is the *rule*, which works out when each form is
 used. The *words* are the part you add:
@@ -118,8 +120,8 @@ Most languages need **2** forms, one and other, in that order. If yours does not
 change the noun at all, write the same word twice, the way German does:
 `de: ['Titel', 'Titel']`.
 
-Some need more: Russian needs **3**, and a language with more than 2 also
-registers its rule in `PLURAL_RULE`.
+Some need more: Russian, Ukrainian and Polish need **3**, and a language with
+more than 2 also registers its rule in `PLURAL_RULE`. Russian's looks like this:
 
 | Category | When | Example counts |
 | --- | --- | --- |
@@ -157,7 +159,7 @@ afternoon.
 By default the morning starts at 5, the afternoon at noon and the evening at
 6pm. Spanish and Catalan run later (6, 13, 21). It is three numbers rather than
 text, so you cannot set it from your `.json`: **tell us yours in the PR** and we
-add the line. If your language uses one word for two consecutive slots (Spanish
+add them to your row in `LANGUAGES`. If your language uses one word for two consecutive slots (Spanish
 says "Buenas noches" for both), just translate both keys the same way.
 
 ## Checking what's left
@@ -194,18 +196,17 @@ in your PR if you like:
 "Rate": "Verb: rate the song with stars. Not \"bitrate\"",
 ```
 
-That file also holds `keepEnglish`: a few strings meant to **stay in English**,
-the Diagnostics measurements, because they are read in issues by people who
-don't speak every language we ship. They aren't counted as missing.
+That file also holds `keepEnglish`, for any string meant to **stay in English**.
+Those aren't counted as missing. The list is empty today.
 
 ## If the English itself reads badly
 
 Say so. You are reading these sentences more carefully than anyone else does,
-and an awkward one in the source becomes an awkward one in six languages. It has
+and an awkward one in the source becomes an awkward one in every language. It has
 happened: "Show what a playlist says about itself, under its name" was flagged
 by a translator and is now "Show playlist and album descriptions under their names".
 
-Open an issue or say it in your pull request. You don't have to change it
+Say it in your pull request or on Discord. You don't have to change it
 yourself. When one is reworded its translations are dropped and turn up as
 missing, so it is much better said early than translated around.
 
