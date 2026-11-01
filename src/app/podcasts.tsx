@@ -16,7 +16,10 @@ import {
 } from 'react-native';
 
 import {
+  addChannel,
+  feedErrorMessage,
   listChannels,
+  refreshChannel,
   refreshAll,
   search as searchPodcasts,
   type PodcastChannel,
@@ -39,7 +42,7 @@ import { episodesLabel, useT } from '@/i18n';
 import type { Language } from '@/i18n/languages';
 import { listPerf } from '@/lib/listPerf';
 import { sortItems } from '@/lib/librarySort';
-import { usePodcastFavoriteIds } from '@/lib/podcastFavorites';
+import { usePodcastAddedIds, usePodcastFavoriteIds } from '@/lib/podcastFavorites';
 import { invalidatePodcastCaches } from '@/lib/query';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
@@ -100,6 +103,7 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
   // The hearts, so a row can light its own without asking per row. Invalidated
   // when a heart goes on or off, which is what re-lights the row and the filter.
   const favSet = usePodcastFavoriteIds();
+  const addedSet = usePodcastAddedIds();
 
   // Debounced so typing one letter does not fire a fresh search at the Store
   // each keystroke.
@@ -134,9 +138,8 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
 
   const channels = useMemo(() => {
     const q = query.trim().toLowerCase();
-    // Opening a show stores it too, so in Explore the heart is what says you
-    // added it.
-    const all = embedded ? (data ?? []).filter((c) => favSet.has(c.id)) : (data ?? []);
+    // Opening a show stores it too, so only the added ones are listed.
+    const all = (data ?? []).filter((c) => addedSet.has(c.id));
     const filtered = q
       ? all.filter(
           (c) =>
@@ -149,9 +152,9 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
       (c) => c.title,
       sort === 'recent' ? (c) => c.lastPublishedAt ?? 0 : (c) => c.refreshedAt ?? 0,
     );
-  }, [data, query, sort, embedded, favSet]);
+  }, [data, query, sort, addedSet]);
 
-  const showSearch = (data?.length ?? 0) > SEARCH_FROM;
+  const showSearch = addedSet.size > SEARCH_FROM;
   const boxOpen = useSearchBox(embedded, searchOpen, () => setQuery(''));
   // Explore lists your shows and only goes to the Store when you search.
   const discovering = !!embedded && term.length > 1;
@@ -164,6 +167,24 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
     staleTime: 1000 * 60 * 60 * 72,
   });
   const discoverList = discover.data ?? [];
+  const addedFeeds = useMemo(
+    () => new Set((data ?? []).filter((c) => addedSet.has(c.id)).map((c) => c.feedUrl)),
+    [data, addedSet],
+  );
+  const [addingFeed, setAddingFeed] = useState<string | null>(null);
+
+  async function addFromSearch(feed: string) {
+    setAddingFeed(feed);
+    try {
+      const channel = await refreshChannel(feed);
+      await addChannel(channel.id);
+      await reload();
+    } catch (e) {
+      toast(feedErrorMessage(t, e));
+    } finally {
+      setAddingFeed(null);
+    }
+  }
 
   // Embedded, Explore's header button opens the sheet.
   useEffect(() => {
@@ -259,6 +280,20 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
                     </Text>
                   ) : null}
                 </View>
+                {addingFeed === item.feedUrl ? (
+                  <ActivityIndicator color={colors.accent} />
+                ) : addedFeeds.has(item.feedUrl) ? (
+                  <Icon name="checkmark" size={24} color={colors.accent} />
+                ) : (
+                  <Pressable
+                    hitSlop={8}
+                    disabled={addingFeed !== null}
+                    onPress={() => void addFromSearch(item.feedUrl)}
+                    accessibilityLabel={t('Add podcast')}
+                  >
+                    <Icon name="add" size={24} color={colors.textSecondary} />
+                  </Pressable>
+                )}
               </Pressable>
             )}
             ListEmptyComponent={

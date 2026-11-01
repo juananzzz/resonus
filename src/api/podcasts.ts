@@ -337,6 +337,16 @@ export async function listChannels(): Promise<PodcastChannel[]> {
   return Db.listChannels(scope());
 }
 
+/** Keeps a show in Explore's list. */
+export async function addChannel(id: string): Promise<void> {
+  await Db.addChannel(scope(), id);
+  invalidatePodcastLists();
+}
+
+export async function addedChannelIds(): Promise<Set<string>> {
+  return Db.addedIds(scope());
+}
+
 /** The route id is either a stored channel id or a percent-encoded feed URL. */
 export function isFeedUrl(id: string): boolean {
   return /^https?:\/\//i.test(decodeURIComponent(id));
@@ -368,6 +378,8 @@ export async function togglePodcastHeart(
   channelId: string,
 ): Promise<boolean> {
   const added = await Db.toggleFavorite(scope(), id, kind, channelId);
+  // A favorite show is also one you keep.
+  if (added && kind === 'channel') await Db.addChannel(scope(), id);
   invalidatePodcastFavorites();
   return added;
 }

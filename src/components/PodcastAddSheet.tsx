@@ -16,13 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Icon from '@/components/Icon';
 import { COVER, coverArtUrl } from '@/api/data';
-import {
-  favoriteIds,
-  feedErrorMessage,
-  refreshChannel,
-  search as searchPodcasts,
-  togglePodcastHeart,
-} from '@/api/podcasts';
+import { addChannel, feedErrorMessage, refreshChannel, search as searchPodcasts } from '@/api/podcasts';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useT } from '@/i18n';
 import { colors, fontSize, radius, spacing, themed } from '@/theme';
@@ -58,10 +52,7 @@ export function PodcastAddSheet({ visible, onCancel, onAdded }: Props) {
     setError(null);
     try {
       const channel = await refreshChannel(feed);
-      // Adding is keeping: the heart is what lists a show as yours.
-      if (!(await favoriteIds()).has(channel.id)) {
-        await togglePodcastHeart(channel.id, 'channel', channel.id);
-      }
+      await addChannel(channel.id);
       onAdded();
       onCancel();
     } catch (e) {

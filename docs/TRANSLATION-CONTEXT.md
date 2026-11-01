@@ -278,7 +278,6 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
-| `Add podcast` | The Explore chip, the add-a-show sheet's title and the button that opens it: keeps a show on this phone from its feed. Not adding a song to a list |
 | `Add station` | Title of the sheet for adding an internet radio station |
 | `Couldn't load folders.` | Error on the screen, with a Retry button |
 | `Couldn't load playlists.` | Error on the screen, with a Retry button |
@@ -561,7 +560,6 @@ you are actually typing into, which is easier than reading it here.
 | --- | --- |
 | `{n} podcast feeds could not be read.` | After asking every kept show: how many feeds failed. The rest answered and still show |
 | `Add` | Podcasts › the add sheet's confirm button: keeps a show on this phone. Not adding a song to a list |
-| `Add podcast` | The Explore chip, the add-a-show sheet's title and the button that opens it: keeps a show on this phone from its feed. Not adding a song to a list |
 | `Couldn't load your podcasts.` | The list of kept shows would not read — the phone's own index, not a server. The Retry button reads it again |
 | `Couldn't reach any of your podcast feeds.` | Said after asking every kept show for new episodes: none of the feeds answered, so nothing new could be read |
 | `Couldn't read this feed` | Filed under a show whose feed would not load, so the reason is still there offline. One show, not the whole list |
@@ -1218,6 +1216,7 @@ you are actually typing into, which is easier than reading it here.
 | `{songs} need about {size}, but only {free} is free. The download may stop partway.` | The same line when the phone is nearly full |
 | `{songs} will be saved to this device (about {size}).` | The same line when the size is known. `{size}` is like "340 MB" |
 | `{songs} will be saved to this device.` | The line under that title. `{songs}` is already worded and inflected, "12 songs" |
+| `Add podcast` | The Explore chip, the add-a-show sheet's title and the button that opens it: keeps a show on this phone from its feed. Not adding a song to a list |
 | `Add to a playlist` | Menu action: put this song, album or selection into a playlist |
 | `Add to favorites` | Menu action and screen reader label for the heart. A verb |
 | `Add to queue` | Action: put this song at the end of the queue |

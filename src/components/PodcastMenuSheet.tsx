@@ -25,6 +25,7 @@ import {
   episodeToSong,
   feedErrorMessage,
   refreshChannel,
+  addChannel,
   removeChannel,
   listAllEpisodes,
   downloadedForChannel,
@@ -37,7 +38,7 @@ import { isManualOffline } from '@/api/netGate';
 import { useT } from '@/i18n';
 import { formatAge } from '@/lib/format';
 import { invalidatePodcastCaches, invalidatePodcastFavorites } from '@/lib/query';
-import { usePodcastFavoriteIds } from '@/lib/podcastFavorites';
+import { usePodcastAddedIds, usePodcastFavoriteIds } from '@/lib/podcastFavorites';
 import { useDownloads } from '@/store/downloads';
 import { usePlayerStore } from '@/store/player';
 import { useToast } from '@/store/toast';
@@ -55,6 +56,7 @@ export function PodcastMenuSheet() {
   const toast = useToast((s) => s.show);
   // The show's heart, read from the same SQLite set every surface asks for.
   const favIds = usePodcastFavoriteIds();
+  const addedIds = usePodcastAddedIds();
   // Playback too: a show in the Library has no play button, and this sheet is
   // the way into one (as the album's has Play for the same reason).
   const playQueue = usePlayerStore((s) => s.playQueue);
@@ -220,6 +222,13 @@ export function PodcastMenuSheet() {
               ? row('link-outline', t('Website'), () => {
                   close();
                   void Linking.openURL(siteUrl).catch(() => {});
+                })
+              : null}
+
+            {!addedIds.has(ch.id)
+              ? row('add', t('Add podcast'), () => {
+                  close();
+                  addChannel(ch.id).catch(() => toast(t("Couldn't complete the action")));
                 })
               : null}
 

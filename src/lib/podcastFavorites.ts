@@ -7,7 +7,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 
-import { favoriteIds, NO_FAVORITES } from '@/api/podcasts';
+import { addedChannelIds, favoriteIds, NO_FAVORITES } from '@/api/podcasts';
 
 export function usePodcastFavoriteIds(enabled = true): Set<string> {
   const q = useQuery({
@@ -15,5 +15,11 @@ export function usePodcastFavoriteIds(enabled = true): Set<string> {
     queryFn: favoriteIds,
     enabled,
   });
+  return q.data ?? NO_FAVORITES;
+}
+
+/** The shows added by hand. Under `podcastChannels` so its invalidation reaches it. */
+export function usePodcastAddedIds(): Set<string> {
+  const q = useQuery({ queryKey: ['podcastChannels', 'added'], queryFn: addedChannelIds });
   return q.data ?? NO_FAVORITES;
 }

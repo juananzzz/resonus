@@ -9,6 +9,10 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+### Changed
+
+- Podcasts: shows you add stay in Explore, and the ones you favorite also appear in Your library.
+
 ## [0.8.7] - 2026-11-01
 
 ### Added

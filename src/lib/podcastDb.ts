@@ -9,7 +9,8 @@
  * `podcast_favorites` the user's own hearts: a row is a favorited channel
  * (`kind = 'channel'`, `channel_id` its own id) or a favorited episode
  * (`kind = 'episode'`, `channel_id` the show it belongs to) — `channel_id`
- * names the show either way. A column only earns existing when SQL reads it;
+ * names the show either way. `podcast_added` is the shows the user asked to keep:
+ * opening one stores it too, and only this tells them apart. A column only earns existing when SQL reads it;
  * everything else is the `data` blob, which is what the getters hand back.
  */
 import * as FileSystem from 'expo-file-system/legacy';
@@ -47,6 +48,10 @@ CREATE TABLE IF NOT EXISTS podcast_favorites (
 );
 CREATE INDEX IF NOT EXISTS podcast_favorites_order
   ON podcast_favorites(kind, favorited_at DESC);
+CREATE TABLE IF NOT EXISTS podcast_added (
+  channel_id TEXT PRIMARY KEY NOT NULL,
+  added_at INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS podcast_downloads (
   episode_id TEXT PRIMARY KEY NOT NULL,
   channel_id TEXT NOT NULL,
@@ -111,7 +116,17 @@ export async function savePodcastArt(
 async function openDb(dir: string): Promise<SQLite.SQLiteDatabase> {
   await FileSystem.makeDirectoryAsync(dir, { intermediates: true }).catch(() => {});
   const db = await SQLite.openDatabaseAsync('podcasts.db', {}, dir.replace(/^file:\/\//, ''));
+  const hadAdded = await db.getFirstAsync(
+    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'podcast_added'",
+  );
   await db.execAsync(SCHEMA);
+  // Shows from before the table may have been added by hand: nothing says which.
+  if (!hadAdded) {
+    await db.runAsync(
+      'INSERT OR IGNORE INTO podcast_added (channel_id, added_at) SELECT id, ? FROM podcast_channels',
+      [Date.now()],
+    );
+  }
   return db;
 }
 
@@ -230,6 +245,22 @@ export async function listChannels(scope: string): Promise<PodcastChannel[]> {
      ORDER BY COALESCE(last_published_at, 0) DESC, title COLLATE NOCASE ASC`,
   );
   return rows.map((r) => JSON.parse(r.data) as PodcastChannel);
+}
+
+export async function addChannel(scope: string, id: string): Promise<void> {
+  const db = await podcastDb(scope);
+  await serialized(() =>
+    db.runAsync('INSERT OR IGNORE INTO podcast_added (channel_id, added_at) VALUES (?, ?)', [
+      id,
+      Date.now(),
+    ]),
+  );
+}
+
+export async function addedIds(scope: string): Promise<Set<string>> {
+  const db = await podcastDb(scope);
+  const rows = await db.getAllAsync<{ channel_id: string }>('SELECT channel_id FROM podcast_added');
+  return new Set(rows.map((r) => r.channel_id));
 }
 
 export async function getChannel(
@@ -470,6 +501,7 @@ export async function removeChannel(scope: string, id: string): Promise<void> {
       await db.runAsync('DELETE FROM podcast_channels WHERE id = ?', [id]);
       await db.runAsync('DELETE FROM podcast_episodes WHERE channel_id = ?', [id]);
       await db.runAsync('DELETE FROM podcast_favorites WHERE channel_id = ?', [id]);
+      await db.runAsync('DELETE FROM podcast_added WHERE channel_id = ?', [id]);
       await db.runAsync('DELETE FROM podcast_downloads WHERE channel_id = ?', [id]);
       await db.runAsync('DELETE FROM podcast_progress WHERE channel_id = ?', [id]);
     }),
