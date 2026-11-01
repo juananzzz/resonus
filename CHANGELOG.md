@@ -9,11 +9,28 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+### Added
+
+- Holding an artist opens a menu with Play, radio and favorite.
+- Your library: albums and playlists with nothing to play are dimmed or hidden offline, and downloaded albums show ↓.
+- Your library: the empty Podcasts list has a button to find one.
+
 ### Changed
 
 - Moving a song in a playlist saves the new order right away, and the selection bar has Add to playlist and Remove again (#279).
 - Holding a song to start a selection marks that song again (#279).
 - Lyrics settings are back in the Settings > Player page.
+- Your library: a new playlist opens as soon as it is created.
+- Your library: the search stays when you open a result and come back.
+- Your library: podcasts sort by when you favorited or last listened to them.
+
+### Fixed
+
+- Your library: Favorites no longer shows up in search results or under the playlist filters.
+- Your library: a failed refresh no longer replaces the list with an error.
+- Your library: podcast search ignores accents and forgives typos, like the rest.
+- Your library: artists sort by their sort name, and "+" playlists stay on top in the mixed list.
+- Your library: every row and card responds to a press, and albums keep the explicit badge in the mixed list.
 
 ## [0.8.6] - 2026-10-31
 

@@ -345,6 +345,8 @@ export interface Playlist {
   created?: string;
   /** Last modification (ISO). */
   changed?: string;
+  /** Offline only: whether any of its songs can play. Unset online. */
+  availableOffline?: boolean;
 }
 
 /** Generates a random salt in hexadecimal. */

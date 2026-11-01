@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 844 of them.
+Every string the app can show, under the screen it shows up on. 846 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -378,14 +378,20 @@ you are actually typing into, which is easier than reading it here.
 | String | What it is |
 | --- | --- |
 | `Artist` | In search results, the little word under a result saying what kind of thing it is |
+| `Couldn't load all of your library.` | Toast: playlists or favorites failed to load, the rest is shown |
 | `Couldn't load artists.` | Error on the screen, with a Retry button |
 | `Couldn't load playlists.` | Error on the screen, with a Retry button |
 | `Couldn't load your library.` |  |
 | `Couldn't load your podcasts.` | The list of kept shows would not read — the phone's own index, not a server. The Retry button reads it again |
 | `Couldn't read this feed` | Filed under a show whose feed would not load, so the reason is still there offline. One show, not the whole list |
+| `Couldn't refresh your library.` | Toast after a failed pull to refresh; the list on screen stays |
 | `Create your first playlist to get started.` | The line under an empty state |
 | `Episode` | The kind word for one episode, singular, where a row says what it is |
 | `Favorite a show to keep it here.` | The line under the Library's Podcasts shelf: hearts are how a show is kept. 'Here' means this phone |
+| `Favorite albums to see them here.` | The line under an empty state, saying how to fill it |
+| `Favorite artists to see them here.` | The line under an empty state, saying how to fill it |
+| `Find a podcast` | The placeholder in the search box on the shows you keep: searches the iTunes directory, which answers with a show's feed address |
+| `Go to artist radio` |  |
 | `Grid view` | Show the list as cards in a grid |
 | `List view` | Show it as rows, one under the other |
 | `No favorite albums` | Empty state heading on the favourites tab |
@@ -394,13 +400,10 @@ you are actually typing into, which is easier than reading it here.
 | `No podcasts` | Nothing kept on this phone yet: no show subscribed |
 | `Nothing here yet` |  |
 | `Playlist` | A list saved on the server. Not the queue |
-| `Playlist created` | The toast after making one |
 | `Podcast` | The kind word: a search result's type and a show's metadata line. A noun, not the verb 'to broadcast' |
 | `Public` |  |
-| `Star albums to see them here.` | The line under an empty state, saying how to fill it |
-| `Star artists to see them here.` | The line under an empty state, saying how to fill it |
 | `Your library` | The tab with your albums, artists and playlists |
-| `Your playlists and what you star show up here.` |  |
+| `Your playlists and favorites show up here.` |  |
 | `Yours` |  |
 
 ## Login

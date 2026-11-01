@@ -6,7 +6,7 @@
  * there are no pinned items to show.
  */
 import { Link } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import Icon from '@/components/Icon';
@@ -14,7 +14,7 @@ import { COVER, coverArtUrl, type Album } from '@/api/data';
 import { usePressFeedback } from '@/hooks/usePressFeedback';
 import { haptic } from '@/lib/haptics';
 import { useMediaMenu } from '@/store/mediaMenu';
-import { fontSize, spacing, themed, useTheme } from '@/theme';
+import { DIM_OPACITY, fontSize, spacing, themed, useTheme } from '@/theme';
 import { bump } from '@/lib/perfLog';
 import { Cover } from './Cover';
 import { ExplicitBadge, useExplicitBadge } from './ExplicitBadge';
@@ -23,9 +23,15 @@ interface Props {
   album: Album;
   /** Marks the album as pinned, with a pin next to the artist. */
   pinned?: boolean;
+  /** The line under the name, when the artist alone won't do. */
+  sub?: string;
+  /** Offline with nothing to play. */
+  dimmed?: boolean;
+  /** Every song on the phone: the same ↓ a song row gets. */
+  downloaded?: boolean;
 }
 
-export function AlbumRow({ album, pinned }: Props) {
+export function AlbumRow({ album, pinned, sub, dimmed, downloaded }: Props) {
   bump('render · AlbumRow');
   const openMenu = useMediaMenu((s) => s.open);
   // Subscribed, not read straight off `colors`: without it the pin would keep
@@ -33,6 +39,7 @@ export function AlbumRow({ album, pinned }: Props) {
   const { accent } = useTheme();
   const explicit = useExplicitBadge(album.explicitStatus);
   const press = usePressFeedback();
+  const line = sub ?? album.artist;
 
   // The fade sits outside the Link: its child is handed to a `Slot`, which
   // refuses an array of styles, and an animated one cannot be flattened into
@@ -41,7 +48,7 @@ export function AlbumRow({ album, pinned }: Props) {
     <Animated.View style={press.style}>
       <Link href={`/album/${album.id}`} asChild>
         <Pressable
-          style={styles.row}
+          style={StyleSheet.flatten([styles.row, dimmed && styles.dimmed])}
           onPressIn={press.onPressIn}
           onPressOut={press.onPressOut}
           onLongPress={() => {
@@ -54,15 +61,16 @@ export function AlbumRow({ album, pinned }: Props) {
             <Text style={styles.name} numberOfLines={1}>
               {album.name}
             </Text>
-            {album.artist || pinned || explicit ? (
+            {line || pinned || explicit || downloaded ? (
               <View style={styles.subLine}>
+                {downloaded ? <Icon name="arrow-down-circle" size={13} color={accent} /> : null}
                 {pinned ? (
                   <Icon name="pin" size={13} color={accent} />
                 ) : null}
                 <ExplicitBadge status={album.explicitStatus} />
-                {album.artist ? (
+                {line ? (
                   <Text style={styles.sub} numberOfLines={1}>
-                    {album.artist}
+                    {line}
                   </Text>
                 ) : null}
               </View>
@@ -80,5 +88,5 @@ const styles = themed((colors) => ({
   name: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
   subLine: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   sub: { color: colors.textSecondary, fontSize: fontSize.xs, flexShrink: 1 },
-  // The MCI pin icon is vertical; rotated 45° it looks like Spotify's.
+  dimmed: { opacity: DIM_OPACITY },
 }));

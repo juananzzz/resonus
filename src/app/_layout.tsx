@@ -24,6 +24,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FrameMeter } from '@/components/FrameMeter';
 import { GlobalMiniPlayer } from '@/components/GlobalMiniPlayer';
 import { GlobalTabBar } from '@/components/GlobalTabBar';
+import { ArtistMenuSheet } from '@/components/ArtistMenuSheet';
 import { MediaMenuSheet } from '@/components/MediaMenuSheet';
 import { PodcastMenuSheet } from '@/components/PodcastMenuSheet';
 import { GlobalPlaylistPicker } from '@/components/PlaylistPickerSheet';
@@ -470,6 +471,7 @@ export default function RootLayout() {
             {auth || offline ? <ArtistPickerSheet /> : null}
             {auth || offline ? <RadioMenuSheet /> : null}
             {auth || offline ? <MediaMenuSheet /> : null}
+            {auth || offline ? <ArtistMenuSheet /> : null}
             {/* Not behind the profile guard: a show has no server, so its menu
                 opens with no account and offline too, like the Library's shelf. */}
             <PodcastMenuSheet />

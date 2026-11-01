@@ -34,6 +34,18 @@ export function byCodepoint(a: string, b: string): number {
 }
 
 /**
+ * For a list that mixes playlists with everything else: names led by a symbol
+ * first and by code point (see byCodepoint), the rest locale-aware.
+ */
+export function byLibraryName(a: string, b: string): number {
+  const named = /^[\p{L}\p{N}]/u;
+  const x = named.test(a);
+  const y = named.test(b);
+  if (x !== y) return x ? 1 : -1;
+  return x ? byLocale(a, b) : byCodepoint(a, b);
+}
+
+/**
  * Sorts by the chosen criterion: alphabetical by name, or by descending score
  * (last play timestamp / added timestamp) with alphabetical tie-break — the
  * never-played ones end up last, in A-Z. `compare` picks the name ordering

@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { byArtistSortName, byCodepoint, matches, normQ, sortItems } from '@/lib/librarySort';
+import { byArtistSortName, byCodepoint, byLibraryName, matches, normQ, sortItems } from '@/lib/librarySort';
 
 interface Row {
   name: string;
@@ -63,6 +63,13 @@ describe('byCodepoint', () => {
   it('ignores case', () => {
     assert.equal(byCodepoint('ABC', 'abc'), 0);
     assert.ok(byCodepoint('abc', 'ABD') < 0);
+  });
+});
+
+describe('byLibraryName', () => {
+  it('keeps "+" playlists on top and accents among the letters', () => {
+    const out = ['Zoo', 'Álbum', '[x]', '+pin', 'Beta'].sort(byLibraryName);
+    assert.deepEqual(out, ['+pin', '[x]', 'Álbum', 'Beta', 'Zoo']);
   });
 });
 

@@ -9,7 +9,9 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { COVER, coverArtUrl, type Artist } from '@/api/data';
 import { fontSize, lineHeight, spacing, themed, useTheme } from '@/theme';
+import { haptic } from '@/lib/haptics';
 import { bump } from '@/lib/perfLog';
+import { openArtistMenu } from './ArtistMenuSheet';
 import { Cover } from './Cover';
 
 interface Props {
@@ -27,7 +29,13 @@ export const ArtistCard = memo(function ArtistCard({ artist, width = 150 }: Prop
     <Link href={`/artist/${artist.id}`} asChild>
       {/* expo-router merges the Link style into this child; it must be a
           single object, not an array, so we flatten it. */}
-      <Pressable style={StyleSheet.flatten([styles.container, { width }])}>
+      <Pressable
+        style={StyleSheet.flatten([styles.container, { width }])}
+        onLongPress={() => {
+          haptic('light');
+          openArtistMenu(artist);
+        }}
+      >
         <Cover uri={cover} size={width} rounded />
         <Text style={styles.name} numberOfLines={1}>
           {artist.name}

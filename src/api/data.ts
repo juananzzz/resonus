@@ -1134,6 +1134,7 @@ async function mirrorPlaylists(): Promise<Subsonic.Playlist[]> {
   // The ids are resolved in one go rather than one at a time inside the loop.
   const firstDownloaded = (songIds: string[]) => songIds.find((sid) => files[sid]);
   const firstShowable = (songIds: string[]) => firstDownloaded(songIds) ?? songIds[0];
+  const playable = (songIds: string[]) => songIds.some((sid) => files[sid] ?? cachedUri(sid));
   const wanted: string[] = [];
   for (const edit of Object.values(qpls)) {
     if (!edit.created || edit.deleted) continue;
@@ -1188,6 +1189,7 @@ async function mirrorPlaylists(): Promise<Subsonic.Playlist[]> {
       // downloaded album art is only a fallback for playlists without one,
       // where it's better than nothing.
       coverArt: p.coverArt ?? (firstDl ? covers.get(firstDl)?.albumId : undefined),
+      availableOffline: playable(songIds),
     });
   }
   return out;
