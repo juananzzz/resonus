@@ -20,6 +20,7 @@ Releases before 0.2.1 are only listed on the
 - Moving a song in a playlist saves the new order right away, and the selection bar has Add to playlist and Remove again (#279).
 - Holding a song to start a selection marks that song again (#279).
 - Lyrics settings are back in the Settings > Player page.
+- Explore > Podcasts lists only the shows you added, and its + finds a show or takes a feed address.
 - Your library: a new playlist opens as soon as it is created.
 - Your library: the search stays when you open a result and come back.
 - Your library: podcasts sort by when you favorited or last listened to them.

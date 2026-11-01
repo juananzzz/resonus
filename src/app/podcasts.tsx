@@ -16,7 +16,6 @@ import {
 } from 'react-native';
 
 import {
-  charts,
   listChannels,
   refreshAll,
   search as searchPodcasts,
@@ -88,8 +87,6 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
 
   const [adding, setAdding] = useState(false);
   const [query, setQuery] = useState('');
-  // The empty screen's way into the Store, until a show lands.
-  const [browsing, setBrowsing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -104,18 +101,9 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
   // when a heart goes on or off, which is what re-lights the row and the filter.
   const favSet = usePodcastFavoriteIds();
 
-  // Explore's Podcasts section is the Store: the top 100 chart until you type,
-  // then a live iTunes search for that term. Debounced so typing one letter
-  // does not fire a fresh search at the Store each keystroke.
+  // Debounced so typing one letter does not fire a fresh search at the Store
+  // each keystroke.
   const term = useDebounce(query.trim());
-  const discover = useQuery({
-    queryKey: ['podcastDiscover', term],
-    queryFn: () => (term.length > 1 ? searchPodcasts(term) : charts()),
-    enabled: !!embedded || browsing,
-    // iTunes answers are stable enough to hold for three days: the Store is not
-    // asked again on every visit, and a search you already ran stays put.
-    staleTime: 1000 * 60 * 60 * 72,
-  });
 
   // A Stop part way through a refresh-all: the header's action button flips to
   // this while `refreshing`, and it raises the flag `refreshAll` checks before
@@ -146,7 +134,9 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
 
   const channels = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const all = data ?? [];
+    // Opening a show stores it too, so in Explore the heart is what says you
+    // added it.
+    const all = embedded ? (data ?? []).filter((c) => favSet.has(c.id)) : (data ?? []);
     const filtered = q
       ? all.filter(
           (c) =>
@@ -159,12 +149,20 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
       (c) => c.title,
       sort === 'recent' ? (c) => c.lastPublishedAt ?? 0 : (c) => c.refreshedAt ?? 0,
     );
-  }, [data, query, sort]);
+  }, [data, query, sort, embedded, favSet]);
 
   const showSearch = (data?.length ?? 0) > SEARCH_FROM;
   const boxOpen = useSearchBox(embedded, searchOpen, () => setQuery(''));
-  const discovering = embedded || (browsing && !data?.length);
-
+  // Explore lists your shows and only goes to the Store when you search.
+  const discovering = !!embedded && term.length > 1;
+  const discover = useQuery({
+    queryKey: ['podcastDiscover', term],
+    queryFn: () => searchPodcasts(term),
+    enabled: discovering,
+    // iTunes answers are stable enough to hold for three days: the Store is not
+    // asked again on every visit, and a search you already ran stays put.
+    staleTime: 1000 * 60 * 60 * 72,
+  });
   const discoverList = discover.data ?? [];
 
   // Embedded, Explore's header button opens the sheet.
@@ -200,7 +198,7 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
         </View>
       )}
 
-      {(embedded ? boxOpen : showSearch || discovering) ? (
+      {(embedded ? boxOpen : showSearch) ? (
         <View style={styles.searchBar}>
           <Icon name="search" size={18} color={colors.textMuted} />
           <TextInput
@@ -346,7 +344,7 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
               icon="headset-outline"
               title={t('No podcasts')}
               subtitle={t('Find one, or add it with the address of its feed.')}
-              action={{ label: t('Find a podcast'), onPress: () => setBrowsing(true) }}
+              action={{ label: t('Find a podcast'), onPress: () => setAdding(true) }}
             />
           }
         />
