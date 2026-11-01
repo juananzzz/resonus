@@ -9,6 +9,8 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+## [0.8.7] - 2026-11-01
+
 ### Added
 
 - Holding an artist opens a menu with Play, radio and favorite.
