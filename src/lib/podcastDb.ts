@@ -52,6 +52,9 @@ CREATE TABLE IF NOT EXISTS podcast_added (
   channel_id TEXT PRIMARY KEY NOT NULL,
   added_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS podcast_auto_download (
+  channel_id TEXT PRIMARY KEY NOT NULL
+);
 CREATE TABLE IF NOT EXISTS podcast_downloads (
   episode_id TEXT PRIMARY KEY NOT NULL,
   channel_id TEXT NOT NULL,
@@ -261,6 +264,23 @@ export async function addedIds(scope: string): Promise<Set<string>> {
   const db = await podcastDb(scope);
   const rows = await db.getAllAsync<{ channel_id: string }>('SELECT channel_id FROM podcast_added');
   return new Set(rows.map((r) => r.channel_id));
+}
+
+export async function autoDownloadIds(scope: string): Promise<Set<string>> {
+  const db = await podcastDb(scope);
+  const rows = await db.getAllAsync<{ channel_id: string }>(
+    'SELECT channel_id FROM podcast_auto_download',
+  );
+  return new Set(rows.map((r) => r.channel_id));
+}
+
+export async function setAutoDownload(scope: string, id: string, on: boolean): Promise<void> {
+  const db = await podcastDb(scope);
+  await serialized(() =>
+    on
+      ? db.runAsync('INSERT OR IGNORE INTO podcast_auto_download (channel_id) VALUES (?)', [id])
+      : db.runAsync('DELETE FROM podcast_auto_download WHERE channel_id = ?', [id]),
+  );
 }
 
 export async function getChannel(
@@ -502,6 +522,7 @@ export async function removeChannel(scope: string, id: string): Promise<void> {
       await db.runAsync('DELETE FROM podcast_episodes WHERE channel_id = ?', [id]);
       await db.runAsync('DELETE FROM podcast_favorites WHERE channel_id = ?', [id]);
       await db.runAsync('DELETE FROM podcast_added WHERE channel_id = ?', [id]);
+      await db.runAsync('DELETE FROM podcast_auto_download WHERE channel_id = ?', [id]);
       await db.runAsync('DELETE FROM podcast_downloads WHERE channel_id = ?', [id]);
       await db.runAsync('DELETE FROM podcast_progress WHERE channel_id = ?', [id]);
     }),

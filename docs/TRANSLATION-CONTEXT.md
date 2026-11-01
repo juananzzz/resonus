@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 846 of them.
+Every string the app can show, under the screen it shows up on. 844 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -290,9 +290,6 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
-| `Auto-download` | Keep this playlist downloaded by itself as songs are added to it |
-| `Auto-download off` | The toast that says it was turned off |
-| `Auto-download on` | The toast that says it was turned on |
 | `Couldn't load favorites.` | Error on the screen, with a Retry button |
 | `Find in favorites` | Placeholder of the search box that narrows the favourites already shown |
 | `No favorites yet` | Empty state heading |
@@ -512,9 +509,6 @@ you are actually typing into, which is easier than reading it here.
 | `Add songs from the ⋯ menu of any song.` | The line under an empty playlist, saying how to fill it |
 | `Added to “{name}”` | Toast. `{name}` is the playlist's name |
 | `Artwork upload is disabled on the server` | The server can do it but has it turned off |
-| `Auto-download` | Keep this playlist downloaded by itself as songs are added to it |
-| `Auto-download off` | The toast that says it was turned off |
-| `Auto-download on` | The toast that says it was turned on |
 | `Based on the tracks in this playlist` | Subtitle under the suggested tracks heading |
 | `Change cover` | Replace the cover image of a playlist or station |
 | `Confirm your password` | Changing a cover on the server needs the password again. It is not a new password being set |
@@ -735,7 +729,6 @@ you are actually typing into, which is easier than reading it here.
 | `Delete all downloads` |  |
 | `Delete all downloads?` |  |
 | `Download codec` |  |
-| `Download new episodes of favorite podcasts` |  |
 | `Download over Wi-Fi only` |  |
 | `Download quality` |  |
 | `Downloading` | Section header over the download settings. A heading, not something happening right now |
@@ -760,7 +753,6 @@ you are actually typing into, which is easier than reading it here.
 | `Songs you stream are kept on this phone and play from it next time, with or without a connection. The next song in the queue is fetched ahead, so it is not streamed at all. When the cache is full, the songs played longest ago make room.` |  |
 | `Storage used` | Section header over the bar showing what is taking up room on the phone |
 | `Temporary data cleared` | Toast: what was remembered from the server was thrown away. Downloads are untouched |
-| `The latest 3 of each new batch, over Wi-Fi only.` | The line under “Download new episodes of favorite podcasts”, explaining it |
 | `Transcode lossless files only` |  |
 | `Your server must support it.` |  |
 
@@ -1226,6 +1218,9 @@ you are actually typing into, which is easier than reading it here.
 | `Albums` | A heading over a list of them, never a count |
 | `Alphabetical` | Sort option: the order of a list |
 | `Ascending` | Sort option: the order of a list |
+| `Auto-download` | Keep this playlist downloaded by itself as songs are added to it |
+| `Auto-download off` | The toast that says it was turned off |
+| `Auto-download on` | The toast that says it was turned on |
 | `Back` | Screen reader label for the back arrow. A direction, not a verb |
 | `Cancel` | The button that closes a dialog without doing anything, and the one beside a search box |
 | `Clear` | Read out by the screen reader for the small x that empties a search box. A verb |

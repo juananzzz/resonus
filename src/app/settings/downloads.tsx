@@ -100,8 +100,6 @@ export default function DownloadsSettings() {
   const downloadConcurrency = useSettings((s) => s.downloadConcurrency);
   const setDownloadConcurrency = useSettings((s) => s.setDownloadConcurrency);
   const downloadWifiOnly = useSettings((s) => s.downloadWifiOnly);
-  const podcastAutoDownload = useSettings((s) => s.podcastAutoDownload);
-  const setPodcastAutoDownload = useSettings((s) => s.setPodcastAutoDownload);
   const setDownloadWifiOnly = useSettings((s) => s.setDownloadWifiOnly);
   const autoOfflineSwitch = useSettings((s) => s.autoOfflineSwitch);
   const setAutoOfflineSwitch = useSettings((s) => s.setAutoOfflineSwitch);
@@ -225,13 +223,6 @@ export default function DownloadsSettings() {
                 label: t('Download over Wi-Fi only'),
                 value: downloadWifiOnly,
                 onChange: setDownloadWifiOnly,
-                disabled: !downloadsLive,
-              },
-              {
-                label: t('Download new episodes of favorite podcasts'),
-                description: t('The latest 3 of each new batch, over Wi-Fi only.'),
-                value: podcastAutoDownload,
-                onChange: setPodcastAutoDownload,
                 disabled: !downloadsLive,
               },
             ]}

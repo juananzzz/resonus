@@ -1042,6 +1042,7 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
    */
   hideUnavailableOffline: boolean;
   /** New episodes of favorite shows download by themselves, on Wi-Fi. */
+  /** The old switch for every favorite, read once by `refreshAutoDownloadShows`. */
   podcastAutoDownload: boolean;
   /** Volume normalization (ReplayGain): off, per track, or per album. */
   replayGain: ReplayGainMode;

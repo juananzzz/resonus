@@ -13,7 +13,7 @@ import { AppState } from 'react-native';
 import { mark } from '@/lib/perfLog';
 import { useAutoDownloads } from '@/store/autoDownloads';
 import { useSettings, type DefaultTab } from '@/store/settings';
-import { refreshFavoritesForAutoDownload } from '@/api/podcasts';
+import { refreshAutoDownloadShows } from '@/api/podcasts';
 
 const TAB_HREF: Record<DefaultTab, '/' | '/search' | '/library' | '/explore'> = {
   index: '/',
@@ -79,10 +79,10 @@ export function AppStartupTab() {
       // another client while the app was in the background).
       if (state === 'active') {
         void useAutoDownloads.getState().reconcileAll();
-        void refreshFavoritesForAutoDownload().catch(() => {});
+        void refreshAutoDownloadShows().catch(() => {});
       }
     });
-    void refreshFavoritesForAutoDownload().catch(() => {});
+    void refreshAutoDownloadShows().catch(() => {});
     return () => sub.remove();
   }, []);
 

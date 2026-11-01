@@ -27,6 +27,7 @@ import {
   refreshChannel,
   addChannel,
   removeChannel,
+  setChannelAutoDownload,
   listAllEpisodes,
   downloadedForChannel,
   podcastCover,
@@ -38,7 +39,11 @@ import { isManualOffline } from '@/api/netGate';
 import { useT } from '@/i18n';
 import { formatAge } from '@/lib/format';
 import { invalidatePodcastCaches, invalidatePodcastFavorites } from '@/lib/query';
-import { usePodcastAddedIds, usePodcastFavoriteIds } from '@/lib/podcastFavorites';
+import {
+  usePodcastAddedIds,
+  usePodcastAutoDownloadIds,
+  usePodcastFavoriteIds,
+} from '@/lib/podcastFavorites';
 import { useDownloads } from '@/store/downloads';
 import { usePlayerStore } from '@/store/player';
 import { useToast } from '@/store/toast';
@@ -57,6 +62,7 @@ export function PodcastMenuSheet() {
   // The show's heart, read from the same SQLite set every surface asks for.
   const favIds = usePodcastFavoriteIds();
   const addedIds = usePodcastAddedIds();
+  const autoDownloadIds = usePodcastAutoDownloadIds();
   // Playback too: a show in the Library has no play button, and this sheet is
   // the way into one (as the album's has Play for the same reason).
   const playQueue = usePlayerStore((s) => s.playQueue);
@@ -249,6 +255,19 @@ export function PodcastMenuSheet() {
                     toast(t("Couldn't complete the action"));
                   }
                 })();
+              },
+            )}
+
+            {/* The latest 3 of each new batch, over Wi-Fi only. */}
+            {row(
+              autoDownloadIds.has(ch.id) ? 'cloud-done' : 'cloud-download-outline',
+              t('Auto-download'),
+              () => {
+                const on = !autoDownloadIds.has(ch.id);
+                close();
+                setChannelAutoDownload(ch.id, on)
+                  .then(() => toast(on ? t('Auto-download on') : t('Auto-download off')))
+                  .catch(() => toast(t("Couldn't complete the action")));
               },
             )}
 
