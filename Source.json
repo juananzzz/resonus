@@ -29,6 +29,14 @@
             ],
             "versions": [
                 {
+                    "version": "0.8.7",
+                    "date": "2026-11-01T19:09:17Z",
+                    "size": 20781344,
+                    "downloadURL": "https://github.com/juananzzz/resonus/releases/download/v0.8.7/resonus-v0.8.7.ipa",
+                    "localizedDescription": "Added\nHolding an artist opens a menu with Play, radio and favorite.\nYour library: albums and playlists with nothing to play are dimmed or hidden offline, and downloaded albums show ↓.\nYour library: the empty Podcasts list has a button to find one.\nChanged\nMoving a song in a playlist saves the new order right away, and the selection bar has Add to playlist and Remove again (#279).\nHolding a song to start a selection marks that song again (#279).\nLyrics settings are back in the Settings > Player page.\nExplore > Podcasts lists only the shows you added, and its + finds a show or takes a feed address.\nYour library: a new playlist opens as soon as it is created.\nYour library: the search stays when you open a result and come back.\nYour library: podcasts sort by when you favorited or last listened to them.\nFixed\nYour library: Favorites no longer shows up in search results or under the playlist filters.\nYour library: a failed refresh no longer replaces the list with an error.\nYour library: podcast search ignores accents and forgives typos, like the rest.\nYour library: artists sort by their sort name, and \"+\" playlists stay on top in the mixed list.\nYour library: every row and card responds to a press, and albums keep the explicit badge in the mixed list.\nCasting: more cases where the queue stayed on a song after it ended are handled (#285).",
+                    "minOSVersion": "16.4"
+                },
+                {
                     "version": "0.8.6",
                     "date": "2026-10-31T21:08:46Z",
                     "size": 20773272,
