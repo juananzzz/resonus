@@ -1195,6 +1195,21 @@ async function mirrorPlaylists(): Promise<Subsonic.Playlist[]> {
   return out;
 }
 
+/** The playlists with every song on disk. One whose tracklist isn't stored yet isn't among them. */
+export async function downloadedPlaylistIds(): Promise<Set<string>> {
+  await loadMirror();
+  const tracklists = new Map(await useLibraryMirror.getState().playlistSongIds());
+  for (const [id, edit] of Object.entries(useOfflineQueue.getState().data.playlists ?? {})) {
+    if (edit.songIds) tracklists.set(id, edit.songIds);
+  }
+  const files = useDownloads.getState().files;
+  const out = new Set<string>();
+  for (const [id, songIds] of tracklists) {
+    if (songIds.length > 0 && songIds.every((sid) => files[sid])) out.add(id);
+  }
+  return out;
+}
+
 /**
  * Whether the favorites arrive newest-favorited first, which decides what the
  * Favorites screen calls its first order.

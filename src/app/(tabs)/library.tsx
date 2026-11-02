@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   coverArtUrl,
   createPlaylist,
+  downloadedPlaylistIds,
   getPlaylists,
   getStarred,
   type Album,
@@ -266,6 +267,15 @@ function useAlbumAvailability() {
   );
 }
 
+function useDownloadedPlaylists() {
+  const fileCount = useDownloads((s) => Object.keys(s.files).length);
+  const { data } = useQuery({
+    queryKey: ['downloadedPlaylists', profileScopeId(), fileCount],
+    queryFn: downloadedPlaylistIds,
+  });
+  return data;
+}
+
 /** The hearted shows and episodes, read again on focus: listening moves their order. */
 function useFavoritePodcasts() {
   const channels = useQuery({
@@ -342,6 +352,7 @@ function PlaylistsTab({
   const times = useLastPlayed((s) => s.times);
   const pins = usePins((s) => s.pins);
   const hideUnavailable = useSettings((s) => s.hideUnavailableOffline);
+  const downloaded = useDownloadedPlaylists();
   const openMenu = useMediaMenu((s) => s.open);
   const grid = useSettings((s) => s.libraryLayout) === 'grid';
   const bottomPad = useScreenBottomPadding();
@@ -428,6 +439,7 @@ function PlaylistsTab({
             subtitle={songsLabel(item.songCount ?? 0, lang)}
             pinned={!!pins[`playlist:${item.id}`]}
             dimmed={item.availableOffline === false}
+            badge={downloaded?.has(item.id)}
             onLongPress={() => { haptic('light'); openMenu({ kind: 'playlist', playlist: item }); }}
           />
         ) : (
@@ -436,6 +448,7 @@ function PlaylistsTab({
             sub={songsLabel(item.songCount ?? 0, lang)}
             pinned={!!pins[`playlist:${item.id}`]}
             dimmed={item.availableOffline === false}
+            downloaded={downloaded?.has(item.id)}
           />
         )
       }
@@ -858,6 +871,7 @@ function AllTab({ query, onNew }: { query: string; onNew?: () => void }) {
   const files = useDownloads((s) => s.files);
   const hideUnavailable = useSettings((s) => s.hideUnavailableOffline);
   const availability = useAlbumAvailability();
+  const downloadedPlaylists = useDownloadedPlaylists();
   const toast = useToast((s) => s.show);
   const unavailable = (id: string) => episodeUnavailable(offline, files, id);
   const lists = useQuery({
@@ -1061,7 +1075,9 @@ function AllTab({ query, onNew }: { query: string; onNew?: () => void }) {
             badge={
               item.kind === 'episode'
                 ? !!files[item.id]
-                : !!item.album && availability.downloaded(item.album)
+                : item.album
+                  ? availability.downloaded(item.album)
+                  : !!item.playlist && downloadedPlaylists?.has(item.playlist.id)
             }
             onLongPress={
               item.kind === 'episode' && unavailable(item.id)
@@ -1099,6 +1115,7 @@ function AllTab({ query, onNew }: { query: string; onNew?: () => void }) {
               sub={label(item)}
               pinned={!!pins[`${item.kind}:${item.id}`]}
               dimmed={item.playlist.availableOffline === false}
+              downloaded={downloadedPlaylists?.has(item.playlist.id)}
             />
           ) : null
         )

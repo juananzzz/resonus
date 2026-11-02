@@ -13,6 +13,7 @@ Releases before 0.2.1 are only listed on the
 
 - Podcasts: shows you add stay in Explore, and the ones you favorite also appear in Your library.
 - Podcasts: Download new episodes is now chosen per show, in its ⋯ menu.
+- Your library: fully downloaded playlists show ↓, as albums do.
 
 ## [0.8.7] - 2026-11-01
 

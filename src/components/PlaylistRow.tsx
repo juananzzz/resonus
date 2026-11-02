@@ -21,9 +21,11 @@ interface Props {
   pinned?: boolean;
   /** Offline with nothing to play. */
   dimmed?: boolean;
+  /** Every song on disk: the same ↓ a song row gets. */
+  downloaded?: boolean;
 }
 
-export function PlaylistRow({ playlist, sub, pinned, dimmed }: Props) {
+export function PlaylistRow({ playlist, sub, pinned, dimmed, downloaded }: Props) {
   bump('render · PlaylistRow');
   const openMenu = useMediaMenu((s) => s.open);
   const { accent } = useTheme();
@@ -46,6 +48,7 @@ export function PlaylistRow({ playlist, sub, pinned, dimmed }: Props) {
               {playlist.name}
             </Text>
             <View style={styles.subLine}>
+              {downloaded ? <Icon name="arrow-down-circle" size={13} color={accent} /> : null}
               {pinned ? <Icon name="pin" size={13} color={accent} /> : null}
               <Text style={styles.sub} numberOfLines={1}>
                 {sub}
