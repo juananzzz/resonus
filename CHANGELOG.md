@@ -15,6 +15,10 @@ Releases before 0.2.1 are only listed on the
 - Podcasts: Download new episodes is now chosen per show, in its ⋯ menu.
 - Your library: fully downloaded playlists show ↓, as albums do.
 
+### Fixed
+
+- Jellyfin: Recently played and Most played albums follow your plays instead of the alphabet.
+
 ## [0.8.7] - 2026-11-01
 
 ### Added

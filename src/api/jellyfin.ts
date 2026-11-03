@@ -447,6 +447,7 @@ function toPlaylist(it: JfItem): Playlist {
 const ALBUM_SORT: Record<AlbumListType, { SortBy: string; SortOrder?: string; Filters?: string }> =
   {
     newest: { SortBy: 'DateCreated', SortOrder: 'Descending' },
+    // Albums carry no plays: `getAlbumList` ranks these by their songs instead.
     recent: { SortBy: 'DatePlayed', SortOrder: 'Descending' },
     frequent: { SortBy: 'PlayCount', SortOrder: 'Descending' },
     random: { SortBy: 'Random' },
@@ -463,6 +464,78 @@ export async function getMusicFolders(_auth: SubsonicAuth): Promise<MusicFolder[
   return [];
 }
 
+const PLAYED_PAGE = 500;
+const PLAYED_MAX = 5000;
+const PLAYS_TTL_MS = 2 * 60 * 1000;
+let playsCache:
+  | { key: string; at: number; stats: Map<string, { played: string; count: number }> }
+  | undefined;
+
+/**
+ * Plays per album, added up from its songs: Jellyfin keeps them per track
+ * only, so sorting albums by `DatePlayed` or `PlayCount` tied them all and
+ * fell back to the name (#316, #317). In the order of the last play.
+ */
+async function albumPlays(
+  auth: SubsonicAuth,
+  enough: number,
+  all: boolean,
+): Promise<Map<string, { played: string; count: number }>> {
+  const key = `${auth.jfUserId}|${all}`;
+  const c = playsCache;
+  if (c?.key === key && Date.now() - c.at < PLAYS_TTL_MS && (all || c.stats.size > enough)) {
+    return c.stats;
+  }
+  const stats = new Map<string, { played: string; count: number }>();
+  for (let start = 0; start < PLAYED_MAX; start += PLAYED_PAGE) {
+    const res = await request<JfItems>(auth, `/Users/${auth.jfUserId}/Items`, {
+      IncludeItemTypes: 'Audio',
+      Recursive: true,
+      Filters: 'IsPlayed',
+      SortBy: 'DatePlayed',
+      SortOrder: 'Descending',
+      Limit: PLAYED_PAGE,
+      StartIndex: start,
+      EnableImages: false,
+    });
+    const items = res.Items ?? [];
+    for (const it of items) {
+      if (!it.AlbumId) continue;
+      const s = stats.get(it.AlbumId) ?? { played: it.UserData?.LastPlayedDate ?? '', count: 0 };
+      s.count += it.UserData?.PlayCount ?? 0;
+      stats.set(it.AlbumId, s);
+    }
+    // By last play, an album's first song is its latest: later pages can't move it.
+    if (items.length < PLAYED_PAGE || (!all && stats.size > enough)) break;
+  }
+  playsCache = { key, at: Date.now(), stats };
+  return stats;
+}
+
+async function albumsByPlays(
+  auth: SubsonicAuth,
+  type: 'recent' | 'frequent',
+  size: number,
+  offset: number,
+): Promise<Album[]> {
+  const stats = await albumPlays(auth, offset + size, type === 'frequent');
+  const ranked = [...stats.keys()];
+  if (type === 'frequent') ranked.sort((a, b) => stats.get(b)!.count - stats.get(a)!.count);
+  const ids = ranked.slice(offset, offset + size);
+  if (ids.length === 0) return [];
+  const res = await request<JfItems>(auth, `/Users/${auth.jfUserId}/Items`, {
+    Ids: ids.join(','),
+    Fields: ALBUM_FIELDS,
+  });
+  const byId = new Map((res.Items ?? []).map((it) => [it.Id, toAlbum(it)]));
+  return ids.flatMap((id) => {
+    const album = byId.get(id);
+    if (!album) return [];
+    const s = stats.get(id)!;
+    return [{ ...album, played: s.played || undefined, playCount: s.count }];
+  });
+}
+
 export async function getAlbumList(
   auth: SubsonicAuth,
   type: AlbumListType = 'newest',
@@ -470,6 +543,7 @@ export async function getAlbumList(
   offset = 0,
   _musicFolderId?: string,
 ): Promise<Album[]> {
+  if (type === 'recent' || type === 'frequent') return albumsByPlays(auth, type, size, offset);
   const res = await request<JfItems>(auth, `/Users/${auth.jfUserId}/Items`, {
     IncludeItemTypes: 'MusicAlbum',
     Recursive: true,
