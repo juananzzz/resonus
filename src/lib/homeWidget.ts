@@ -12,6 +12,7 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
 
 import { CACHED_COVER } from '@/api/data';
+import type { Song } from '@/api/subsonic';
 import { dominantColorOf } from '@/hooks/useDominantColor';
 import { tg } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
@@ -91,8 +92,38 @@ export async function runPlaybackToggle(): Promise<boolean> {
   return true;
 }
 
-/** A jump this big is a seek, not the clock: worth telling the widget about. */
+/**
+ * How far the playhead can be from where the widget's own bar has got to
+ * before the widget is told again. Measured against what the widget was last
+ * sent, not against the store's previous beat: in the background the position
+ * only lands every 5 s, and a plain jump of 4 read every one of those beats as
+ * a seek and rewrote the widget all night.
+ */
 const SEEK_JUMP_SEC = 4;
+
+/**
+ * The widget's timeline walks the bar twenty minutes past each write; a long
+ * track playing straight through gets a fresh one before that runs out.
+ */
+const REWRITE_MS = 15 * 60 * 1000;
+
+/** What the widget was last told, and when: where its bar starts walking from. */
+let sent: { position: number; at: number; playing: boolean } | null = null;
+/** A write that threw: the next change tries again rather than waiting for a seek. */
+let unsent = false;
+
+/**
+ * Whether the widget's bar has drifted off the playhead. It walks at 1× from
+ * its last write whatever the speed (WidgetData.progress), so a track at 2×
+ * or a stalled stream drift, and a seek lands somewhere it never walked to.
+ */
+function drifted(positionSec: number): boolean {
+  if (!sent) return false;
+  const now = Date.now();
+  const shown = sent.position + (sent.playing ? (now - sent.at) / 1000 : 0);
+  if (Math.abs(positionSec - shown) >= SEEK_JUMP_SEC) return true;
+  return sent.playing && now - sent.at >= REWRITE_MS;
+}
 
 /**
  * The cover's colour for the widget's background, resolved out here because
@@ -178,20 +209,29 @@ export function widgetStatus(): string {
   }
 }
 
-function push() {
+/** A radio station: what `nowPlaying` also reads its title from the stream for. */
+function isStation(song: Song | undefined): boolean {
+  return !!song?.url && !song.vod;
+}
+
+/** `force` for a drifted bar: the same state again still restarts its walk. */
+function push(force = false) {
   if (!native) return;
   const state = nowPlaying();
   // Kicks the read for a new cover; when it lands, this runs again with the
   // colour in the state.
   refreshAccent(state.artworkUrl);
   const key = JSON.stringify(state);
-  if (key === last) return;
+  if (key === last && !force) return;
   try {
     native.update(state);
     last = key;
+    sent = state.active ? { position: state.position, at: Date.now(), playing: state.playing } : null;
+    unsent = false;
   } catch {
     // A widget that misses one update catches the next - and this one is
     // not marked as sent, so the next write sends it again.
+    unsent = true;
   }
 }
 
@@ -229,9 +269,14 @@ export function initHomeWidget() {
       st.index !== prev.index ||
       st.isPlaying !== prev.isPlaying ||
       st.streamInfo !== prev.streamInfo ||
-      Math.abs(st.positionSec - prev.positionSec) >= SEEK_JUMP_SEC
+      // The length the player reports once it has the file: the widget's bar
+      // is empty until it knows it. Not a station's: a live window grows with
+      // every beat, and the widget has no bar to show for one anyway.
+      (st.durationSec !== prev.durationSec && !isStation(st.queue[st.index]))
     ) {
       push();
+    } else if (unsent || (st.positionSec !== prev.positionSec && drifted(st.positionSec))) {
+      push(true);
     }
   });
   // The widget's play button: an intent writes the press into the group and
