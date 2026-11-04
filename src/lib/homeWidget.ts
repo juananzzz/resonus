@@ -10,6 +10,7 @@
  * does nothing.
  */
 import { requireOptionalNativeModule } from 'expo-modules-core';
+import { Platform } from 'react-native';
 
 import { CACHED_COVER } from '@/api/data';
 import type { Song } from '@/api/subsonic';
@@ -118,7 +119,8 @@ let unsent = false;
  * or a stalled stream drift, and a seek lands somewhere it never walked to.
  */
 function drifted(positionSec: number): boolean {
-  if (!sent) return false;
+  // Android's widget and tile show no position: a seek there is nothing to redraw.
+  if (!sent || Platform.OS !== 'ios') return false;
   const now = Date.now();
   const shown = sent.position + (sent.playing ? (now - sent.at) / 1000 : 0);
   if (Math.abs(positionSec - shown) >= SEEK_JUMP_SEC) return true;

@@ -26,6 +26,7 @@ Releases before 0.2.1 are only listed on the
 - Lyrics: a word synced by syllables no longer splits across two lines.
 - Spanish and Catalan: one selected song no longer reads as plural.
 - Podcasts: downloading a whole show asks first, with how many episodes and how long they run.
+- Home widget: no longer rewritten every few seconds while music plays in the background.
 
 ## [0.8.7] - 2026-11-01
 
