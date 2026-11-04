@@ -93,6 +93,9 @@ private const val RECENT_URIS = 8
 /** After a load, how long a renderer that has not started yet reads as starting. */
 private const val LOAD_GRACE_MS = 15_000L
 
+/** How long past a track's length, counted from its load, before it is noted as overdue. */
+private const val OVERDUE_NOTE_MS = 60_000L
+
 /**
  * Expo bridge to UPnPCast (DLNA/UPnP). Finds renderers on the local network and
  * drives playback over AVTransport. UPnP has no reliable way of pushing events,
@@ -160,6 +163,10 @@ class UpnpCastModule : Module() {
    */
   private val recentUris = ArrayDeque<String>()
   private var loadedAtMs = 0L
+  /** The renderer has been seen playing what it was last handed. */
+  private var playedSinceLoad = false
+  /** A track over by the clock with nothing decided has been noted. */
+  private var overdueNoted = false
   /** Stopped halfway by nobody here; Play picks it up where it stopped. */
   private var interrupted = false
   /** The last track of the queue ended; Play starts it again. */
@@ -403,7 +410,9 @@ class UpnpCastModule : Module() {
         val current = session ?: return@withLock false
         // A stopped renderer that is told Play starts its track over, or
         // has nothing left to play: it is handed the track again instead.
-        if (!current.isSonos && nativeQueueManaged && lastPlaybackState == TrackWatch.STOPPED) {
+        // Not one just loaded and still starting (#285): handed it again, it
+        // went to where the last song had been left.
+        if (!current.isSonos && nativeQueueManaged && lastPlaybackState == TrackWatch.STOPPED && playedSinceLoad) {
           resumeLocked(current)
         } else {
           current.play()
@@ -635,6 +644,8 @@ class UpnpCastModule : Module() {
     foreignPolls = 0
     recentUris.clear()
     loadedAtMs = 0
+    playedSinceLoad = false
+    overdueNoted = false
     interrupted = false
     endedAtQueueEnd = false
     lossReason = null
@@ -649,6 +660,8 @@ class UpnpCastModule : Module() {
     foreignPolls = 0
     rememberUri(track.url)
     loadedAtMs = System.currentTimeMillis()
+    playedSinceLoad = false
+    overdueNoted = false
     interrupted = false
     endedAtQueueEnd = false
   }
@@ -809,10 +822,21 @@ class UpnpCastModule : Module() {
     if (playback == TrackWatch.PLAYING) {
       stoppedByUs = false
       interrupted = false
+      playedSinceLoad = true
     }
 
     val expectedMs = (nativeQueue.getOrNull(nativeQueueIndex)?.durationSeconds ?: 0) * 1_000L
-    when (watch.verdict(playback, expectedMs, stoppedByUs)) {
+    val verdict = watch.verdict(playback, expectedMs, stoppedByUs)
+    // What the renderer says once the song should be long over and nothing
+    // has been made of it: the one thing a report needs to tell why (#285).
+    if (verdict == TrackWatch.Verdict.NONE && !overdueNoted && expectedMs > 0 &&
+      !stoppedByUs && !interrupted && !endedAtQueueEnd &&
+      System.currentTimeMillis() - loadedAtMs > expectedMs + OVERDUE_NOTE_MS
+    ) {
+      overdueNoted = true
+      note("track overdue: ${describe(state, playback, uri)}")
+    }
+    when (verdict) {
       TrackWatch.Verdict.ENDED -> {
         if (stagedNextIndex != null) {
           // Its chance to start the next track by itself first.
@@ -827,9 +851,7 @@ class UpnpCastModule : Module() {
           stagedNextUrl = null
           note("renderer did not start the next track it was handed; each track is loaded at the end of the last")
         }
-        if (playback != TrackWatch.STOPPED) {
-          Log.d(Soap.TAG, "Track end read off a clock stuck at ${watch.lastPositionMs} ms ($playback)")
-        }
+        if (playback != TrackWatch.STOPPED) note("track end read off the ${watch.endReason}: ${describe(state, playback, uri)}")
         val advanced = advanceNativeQueueLocked(current, playback)
         // The STOPPED that triggered the load must not count against the new track.
         lastPlaybackState = if (advanced) TrackWatch.TRANSITIONING else playback
@@ -847,6 +869,19 @@ class UpnpCastModule : Module() {
     }
     lastPlaybackState = playback
     return displayFor(playback)
+  }
+
+  /** One poll as a report line: state, clock, length, and which address it says it plays. */
+  private fun describe(state: RendererSession.State, playback: String, uri: String?): String {
+    val playing = when {
+      uri == null -> "none"
+      GenericQueueProgression.sameUri(uri, nativeQueue.getOrNull(nativeQueueIndex)?.url) -> "current"
+      GenericQueueProgression.sameUri(uri, stagedNextUrl) -> "staged next"
+      else -> "other"
+    }
+    val expectedS = nativeQueue.getOrNull(nativeQueueIndex)?.durationSeconds ?: 0
+    return "${state.playbackState} ($playback) at ${state.positionMs / 1000}/${state.durationMs / 1000} s of $expectedS s, " +
+      "uri $playing, trust $uriTrust, next $nextUriCapability${if (stagedNextIndex != null) " staged" else ""}"
   }
 
   /** What the player shows for a managed renderer in this state. */
@@ -884,6 +919,9 @@ class UpnpCastModule : Module() {
     stagedNextIndex = null
     stagedNextUrl = null
     watch.reset(positionMs)
+    loadedAtMs = System.currentTimeMillis() - positionMs
+    playedSinceLoad = true
+    overdueNoted = false
     stoppedByUs = false
     interrupted = false
     endedAtQueueEnd = false

@@ -89,6 +89,43 @@ class TrackWatchTest {
     assertEquals(TrackWatch.Verdict.NONE, verdict("PLAYING"))
   }
 
+  @Test fun aClockStuckShortOfTheEndForLongerThanWasLeftIsTheEnd() {
+    poll("PLAYING", 189_000)
+    repeat(10) { poll("PLAYING", 190_000) }
+    assertEquals(TrackWatch.Verdict.NONE, verdict("PLAYING"))
+    repeat(25) { poll("PLAYING", 190_000) }
+    assertEquals(TrackWatch.Verdict.ENDED, verdict("PLAYING"))
+  }
+
+  @Test fun aPauseFromTheRemoteShortOfTheEndIsNotAnEnd() {
+    poll("PLAYING", 190_000)
+    repeat(60) { poll("PAUSED", 190_000) }
+    assertEquals(TrackWatch.Verdict.NONE, verdict("PAUSED"))
+  }
+
+  @Test fun aClockRunningOnPastTheEndIsTheEnd() {
+    var position = 205_000L
+    repeat(4) { poll("PLAYING", position); position += 1_000 }
+    assertEquals(TrackWatch.Verdict.NONE, verdict("PLAYING"))
+    repeat(4) { poll("PLAYING", position); position += 1_000 }
+    assertEquals(TrackWatch.Verdict.NONE, verdict("PLAYING"))
+    repeat(10) {
+      poll("PLAYING", position)
+      position += 1_000
+      verdict("PLAYING")
+    }
+    assertEquals(TrackWatch.Verdict.ENDED, verdict("PLAYING"))
+  }
+
+  @Test fun theLastSongsClockForAMomentIsNothing() {
+    // A renderer still reporting the song before for a poll or two.
+    watch.reset()
+    poll("PLAYING", 290_000, 300_000)
+    verdict("PLAYING", expectedMs = 120_000)
+    poll("PLAYING", 1_000, 120_000)
+    assertEquals(TrackWatch.Verdict.NONE, verdict("PLAYING", expectedMs = 120_000))
+  }
+
   @Test fun aStuckClockWithNoLengthIsBuffering() {
     poll("PLAYING", 50_000, 0)
     repeat(20) { poll("PLAYING", 60_000, 0) }
