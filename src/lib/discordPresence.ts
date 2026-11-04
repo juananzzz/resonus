@@ -33,9 +33,9 @@ const native =
       }>('DiscordPresence')
     : null;
 
-/** Whether this build can show presence at all. */
+/** Whether this build has the switch: Android, with the native module. */
 export function discordPresenceSupported(): boolean {
-  return !!native && !!DISCORD_APP_ID;
+  return !!native;
 }
 
 export function discordInstalled(): boolean {
@@ -101,7 +101,7 @@ async function coverFor(song: Song): Promise<string | undefined> {
  * song, on play and pause, and on a seek; the position ticking on is not news.
  */
 export function startDiscordPresence(): () => void {
-  if (!discordPresenceSupported()) return () => {};
+  if (!discordPresenceSupported() || !DISCORD_APP_ID) return () => {};
   let sentKey: string | null = null;
   let sentStart = 0;
   let seq = 0;
