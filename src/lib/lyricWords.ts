@@ -265,3 +265,26 @@ function inTimeOrder(lines: LyricLine[]): LyricLine[] {
   keyed.sort((a, b) => a.at - b.at || a.i - b.i);
   return keyed.map((k) => k.line);
 }
+
+/** Scripts written without spaces, where a line may break between any two timed words. */
+const UNSPACED_RE = /[\u0E00-\u0EFF\u1000-\u109F\u1780-\u17FF\u3000-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uFF00-\uFFEF]/;
+
+/**
+ * Word indices grouped into what a line may not break inside: syllables of
+ * one word come as separate timed words with no space between them (#312).
+ */
+export function wordGroups(words: LyricWord[]): number[][] {
+  const groups: number[][] = [];
+  words.forEach((word, i) => {
+    const prev = words[i - 1]?.value;
+    const joined =
+      prev != null &&
+      !/\s$/.test(prev) &&
+      !/^\s/.test(word.value) &&
+      !UNSPACED_RE.test(prev.slice(-1)) &&
+      !UNSPACED_RE.test(word.value.charAt(0));
+    if (joined) groups[groups.length - 1].push(i);
+    else groups.push([i]);
+  });
+  return groups;
+}

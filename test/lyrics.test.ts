@@ -8,7 +8,7 @@ import { describe, it } from 'node:test';
 
 import { parseLrc, serializeLrc } from '@/lib/lrc';
 import { activeIndex } from '@/lib/lyricSweep';
-import { indexOfByte, structuredSongLyrics, wordEnds, wordsFromCues } from '@/lib/lyricWords';
+import { indexOfByte, structuredSongLyrics, wordEnds, wordGroups, wordsFromCues } from '@/lib/lyricWords';
 import { parseTtml, ttmlTime } from '@/lib/ttml';
 
 /** The start of the file attached to #165, and one line from its end. */
@@ -390,5 +390,23 @@ describe('parseLrc blank lines in plain text', () => {
 
   it('is no lyrics when there are only blank lines', () => {
     assert.equal(parseLrc('\n\n  \n'), null);
+  });
+});
+
+describe('wordGroups (#312)', () => {
+  const words = (values: string[]) => values.map((value, i) => ({ start: i * 100, value }));
+
+  it('keeps the syllables of one word together', () => {
+    const line = parseLrc("[00:01.00]<00:01.00>L'A<00:01.30>MOUR <00:01.80>DE <00:02.40>VI<00:02.70>E")!;
+    const timed = line.lines.find((l) => l.words)!.words!;
+    assert.deepEqual(wordGroups(timed), [[0, 1], [2], [3, 4]]);
+  });
+
+  it('breaks anywhere in scripts written without spaces', () => {
+    assert.deepEqual(wordGroups(words(['君', 'の', '声'])), [[0], [1], [2]]);
+  });
+
+  it('breaks where the space sits at the start of the next word', () => {
+    assert.deepEqual(wordGroups(words(['one', ' two'])), [[0], [1]]);
   });
 });

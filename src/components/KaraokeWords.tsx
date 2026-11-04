@@ -7,7 +7,7 @@
  */
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
-import { memo, useEffect } from 'react';
+import { memo, useEffect, type ReactNode } from 'react';
 import { Platform, StyleSheet, Text, View, type StyleProp, type TextStyle } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -29,6 +29,7 @@ import {
   WORD_SWEEP_LEAD_MS,
 } from '@/lib/lyricMotion';
 import { clamp01 } from '@/lib/lyricSweep';
+import { wordGroups } from '@/lib/lyricWords';
 import { usePlayerStore } from '@/store/player';
 
 const CLOCK_RUNWAY_MS = 1200;
@@ -70,15 +71,18 @@ export const KaraokeWords = memo(function KaraokeWords({
   paddingVertical,
 }: KaraokeWordsProps) {
   const label = words.map((word) => word.value).join('');
+  const groups = wordGroups(words);
   const content = active ? (
     <ActiveWordFlow
       words={words}
+      groups={groups}
       textStyle={textStyle}
       activeColor={activeColor}
       inactiveColor={inactiveColor}
     />
   ) : (
-    words.map((word, index) => {
+    inGroups(groups, (index) => {
+      const word = words[index];
       const chars = splitChars(word.value);
       if (!chars) {
         return (
@@ -114,6 +118,19 @@ export const KaraokeWords = memo(function KaraokeWords({
     </View>
   );
 });
+
+/** Each group as one unbreakable box, a lone word as itself. */
+function inGroups(groups: number[][], render: (index: number) => ReactNode) {
+  return groups.map((group) =>
+    group.length === 1 ? (
+      render(group[0])
+    ) : (
+      <View key={`g${group[0]}`} style={styles.charRow}>
+        {group.map(render)}
+      </View>
+    ),
+  );
+}
 
 /** How far a letter rises at the peak of its wave. */
 const CHAR_RISE_PX = 2;
@@ -163,10 +180,11 @@ WordChar.displayName = 'WordChar';
 
 function ActiveWordFlow({
   words,
+  groups,
   textStyle,
   activeColor,
   inactiveColor,
-}: Omit<KaraokeWordsProps, 'active' | 'centered' | 'paddingVertical'>) {
+}: Omit<KaraokeWordsProps, 'active' | 'centered' | 'paddingVertical'> & { groups: number[][] }) {
   const positionSec = usePlayerStore((s) => s.positionSec);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const speed = usePlayerStore((s) => s.speed);
@@ -194,10 +212,10 @@ function ActiveWordFlow({
     return Math.max(latest, end);
   }, 0);
 
-  return words.map((word, index) => (
+  return inGroups(groups, (index) => (
     <TimedWord
       key={index}
-      word={word}
+      word={words[index]}
       durationMs={lyricWordDurationMs(words, index)}
       lineEndMs={lineEndMs}
       clockMs={clockMs}
