@@ -844,5 +844,7 @@
   "Gestures": "Gestures",
   "The cover takes the full width and fades into the page.": "The cover takes the full width and fades into the page.",
   "Show on Discord": "Show on Discord",
-  "What you play appears on your Discord profile. Needs the Discord app on this phone.": "What you play appears on your Discord profile. Needs the Discord app on this phone."
+  "What you play appears on your Discord profile. Needs the Discord app on this phone.": "What you play appears on your Discord profile. Needs the Discord app on this phone.",
+  "{episodes} will be saved to this device ({duration}).": "{episodes} will be saved to this device ({duration}).",
+  "{episodes} will be saved to this device.": "{episodes} will be saved to this device."
 }

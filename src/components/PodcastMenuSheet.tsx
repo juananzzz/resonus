@@ -19,6 +19,7 @@ import { router, usePathname } from 'expo-router';
 import Icon from '@/components/Icon';
 import { Cover } from '@/components/Cover';
 import { Dialog } from './Dialog';
+import { PodcastDownloadDialog } from './PodcastDownloadDialog';
 import { SheetModal } from './SheetModal';
 import { COVER, coverArtUrl, type Song } from '@/api/data';
 import {
@@ -67,7 +68,6 @@ export function PodcastMenuSheet() {
   // the way into one (as the album's has Play for the same reason).
   const playQueue = usePlayerStore((s) => s.playQueue);
   const queueMany = usePlayerStore((s) => s.queueMany);
-  const downloadPodcast = useDownloads((s) => s.downloadPodcast);
   const deletePodcastChannelDownloads = useDownloads(
     (s) => s.deletePodcastChannelDownloads,
   );
@@ -75,6 +75,7 @@ export function PodcastMenuSheet() {
   const openRef = useRef<() => void>(() => {});
   const [target, setTarget] = useState<PodcastChannel | null>(null);
   const [removing, setRemoving] = useState<PodcastChannel | null>(null);
+  const [confirming, setConfirming] = useState<PodcastChannel | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -196,13 +197,7 @@ export function PodcastMenuSheet() {
                 toast(t("You're offline"));
                 return;
               }
-              void (async () => {
-                try {
-                  await downloadPodcast(ch.id);
-                } catch {
-                  toast(t("Couldn't complete the action"));
-                }
-              })();
+              setConfirming(ch);
             })}
 
             {row(
@@ -305,6 +300,7 @@ export function PodcastMenuSheet() {
         );
       }}
       </SheetModal>
+      <PodcastDownloadDialog channel={confirming} onClose={() => setConfirming(null)} />
       <Dialog
         visible={!!removing}
         title={t('Remove from this device')}

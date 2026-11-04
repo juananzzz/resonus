@@ -8,7 +8,7 @@
  * A show whose last write is older than three days is re-read in the background
  * and the surface updated once it lands. Nothing is subscribed: opening lands it.
  */
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
@@ -28,6 +28,7 @@ import { isManualOffline } from '@/api/netGate';
 import { BackButton } from '@/components/BackButton';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
+import { PodcastDownloadDialog } from '@/components/PodcastDownloadDialog';
 import { TrackListSkeleton } from '@/components/TrackListSkeleton';
 import { TrackListView } from '@/components/TrackListView';
 import { openPodcastMenu } from '@/components/PodcastMenuSheet';
@@ -101,7 +102,7 @@ export default function PodcastScreen() {
   const download = useDownloads(
     useShallow((s) => groupDownloadState(s, `podcast:${data.data?.channel?.id ?? id}`, episodeIds)),
   );
-  const downloadPodcast = useDownloads((s) => s.downloadPodcast);
+  const [confirming, setConfirming] = useState<PodcastChannel | null>(null);
   const cancelDownload = useDownloads((s) => s.cancelDownload);
   const deletePodcastChannelDownloads = useDownloads(
     (s) => s.deletePodcastChannelDownloads,
@@ -155,7 +156,7 @@ export default function PodcastScreen() {
     if (!ch) return;
     if (download.status === 'done') void deletePodcastChannelDownloads(ch.id);
     else if (download.status === 'active') cancelDownload(`podcast:${ch.id}`);
-    else void downloadPodcast(ch.id);
+    else setConfirming(ch);
   }, [download.status, data.data]);
 
   if (data.isLoading) {
@@ -184,7 +185,8 @@ export default function PodcastScreen() {
   };
 
   return (
-    <TrackListView
+    <>
+      <TrackListView
         title={ch.title}
         subtitle={ch.author}
         description={showDescription ? ch.description : undefined}
@@ -225,5 +227,7 @@ export default function PodcastScreen() {
         }
         onPlay={play}
       />
+      <PodcastDownloadDialog channel={confirming} onClose={() => setConfirming(null)} />
+    </>
   );
 }

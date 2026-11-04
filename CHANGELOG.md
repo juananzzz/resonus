@@ -21,6 +21,7 @@ Releases before 0.2.1 are only listed on the
 - Jellyfin: Recently played and Most played albums follow your plays instead of the alphabet.
 - Lyrics: a word synced by syllables no longer splits across two lines.
 - Spanish and Catalan: one selected song no longer reads as plural.
+- Podcasts: downloading a whole show asks first, with how many episodes and how long they run.
 
 ## [0.8.7] - 2026-11-01
 
