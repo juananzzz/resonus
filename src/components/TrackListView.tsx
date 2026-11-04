@@ -1609,7 +1609,7 @@ export function TrackListView({
               <Icon name="close" size={26} color={colors.text} />
             </Pressable>
             <Text style={styles.barTitle} numberOfLines={1}>
-              {t('{n} selected', { n: selectedIds.size })}
+              {t(selectedIds.size === 1 ? '{n} selected::one' : '{n} selected', { n: selectedIds.size })}
             </Text>
             <Pressable
               hitSlop={12}

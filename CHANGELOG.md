@@ -14,11 +14,13 @@ Releases before 0.2.1 are only listed on the
 - Podcasts: shows you add stay in Explore, and the ones you favorite also appear in Your library.
 - Podcasts: Download new episodes is now chosen per show, in its ⋯ menu.
 - Your library: fully downloaded playlists show ↓, as albums do.
+- Settings: Home & navigation is now called Navigation.
 
 ### Fixed
 
 - Jellyfin: Recently played and Most played albums follow your plays instead of the alphabet.
 - Lyrics: a word synced by syllables no longer splits across two lines.
+- Spanish and Catalan: one selected song no longer reads as plural.
 
 ## [0.8.7] - 2026-11-01
 

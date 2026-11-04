@@ -238,7 +238,7 @@ export default function ArtistSongsScreen() {
           <BackChevron />
         )}
         <Text style={styles.title} numberOfLines={1}>
-          {selecting ? t('{n} selected', { n: selectedIds.size }) : (name ?? '')}
+          {selecting ? t(selectedIds.size === 1 ? '{n} selected::one' : '{n} selected', { n: selectedIds.size }) : (name ?? '')}
         </Text>
         {selecting ? (
           <Pressable

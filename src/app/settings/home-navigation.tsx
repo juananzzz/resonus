@@ -1,4 +1,4 @@
-/** Settings › Home & navigation: what the tabs hold and how you move around. */
+/** Settings › Navigation: what the tabs hold and how you move around. */
 import { useRouter } from 'expo-router';
 import { Text } from 'react-native';
 
@@ -55,7 +55,7 @@ export default function HomeNavigationSettings() {
   const setHapticsEnabled = useSettings((s) => s.setHapticsEnabled);
 
   return (
-    <SettingsPage title={t('Home & navigation')}>
+    <SettingsPage title={t('Navigation')}>
       <SettingsScroll>
         {/* The first title sticks to the header (no section margin). */}
         <Text style={[settingsStyles.sectionTitle, { marginTop: 0 }]}>{t('Home')}</Text>

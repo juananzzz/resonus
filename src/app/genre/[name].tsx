@@ -352,7 +352,7 @@ export default function GenreScreen() {
           <BackChevron />
         )}
         <Text style={styles.title} numberOfLines={1}>
-          {selecting ? t('{n} selected', { n: selectedIds.size }) : genre}
+          {selecting ? t(selectedIds.size === 1 ? '{n} selected::one' : '{n} selected', { n: selectedIds.size }) : genre}
         </Text>
         {selecting ? (
           <Pressable

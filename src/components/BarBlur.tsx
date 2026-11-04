@@ -1,6 +1,6 @@
 /**
  * The blur behind the navigation bar and the mini player (a switch each, in
- * Settings › Home & navigation and Settings › Player).
+ * Settings › Navigation and Settings › Player).
  *
  * On Android a BlurView can only blur what sits inside a `BlurTargetView`, and
  * never itself: the root layout wraps the Stack in one (`BarBlurTarget`) and

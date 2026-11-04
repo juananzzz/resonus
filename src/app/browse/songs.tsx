@@ -309,7 +309,7 @@ export function SongsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
             <BackChevron />
           )}
           <Text style={styles.title} numberOfLines={1}>
-            {selecting ? t('{n} selected', { n: selectedIds.size }) : t('Songs')}
+            {selecting ? t(selectedIds.size === 1 ? '{n} selected::one' : '{n} selected', { n: selectedIds.size }) : t('Songs')}
           </Text>
           {/* Embedded, the view menu is drawn by the Explore tab and this slot
               only carries the select-all. It keeps its width either way, so the
