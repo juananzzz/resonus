@@ -847,5 +847,6 @@
   "Show on Discord": "Mostra a Discord",
   "What you play appears on your Discord profile. Needs the Discord app on this phone.": "El que escoltes apareix al teu perfil de Discord. Cal l'app de Discord en aquest mòbil.",
   "{episodes} will be saved to this device ({duration}).": "{episodes} es guardaran en aquest dispositiu ({duration}).",
-  "{episodes} will be saved to this device.": "{episodes} es guardaran en aquest dispositiu."
+  "{episodes} will be saved to this device.": "{episodes} es guardaran en aquest dispositiu.",
+  "Your library chips": "Xips de La teva biblioteca"
 }

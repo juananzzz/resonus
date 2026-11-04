@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 848 of them.
+Every string the app can show, under the screen it shows up on. 849 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -850,6 +850,7 @@ you are actually typing into, which is easier than reading it here.
 | `Start on your playlists` | A switch: with it on, Your library with no chip pressed shows the Favorites entry and the playlists, the way it used to, instead of albums, artists and playlists mixed together |
 | `With no chip pressed, Your library shows Favorites and your playlists instead of everything mixed together.` |  |
 | `Your library` | The tab with your albums, artists and playlists |
+| `Your library chips` |  |
 
 ## Settings › Home sections
 
@@ -906,6 +907,12 @@ you are actually typing into, which is easier than reading it here.
 | `That folder is already there` | The folder just picked is already in the local profile's list |
 | `We need permission to read your device music.` | Android has not granted access to the phone's files yet |
 | `Where should we get your music?` | Heading when choosing where the phone's own music is read from |
+
+## Settings › Library chips
+
+| String | What it is |
+| --- | --- |
+| `Your library chips` |  |
 
 ## Settings › Lyrics providers
 

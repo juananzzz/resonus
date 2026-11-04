@@ -178,6 +178,27 @@ export default function HomeNavigationSettings() {
           ) : null}
         </SettingsGroup>
 
+        <Text style={settingsStyles.sectionTitle}>{t('Your library')}</Text>
+        <SettingsGroup>
+          <SettingRow
+            label={t('Your library chips')}
+            chevron
+            onPress={() => router.push('/settings/library-chips')}
+          />
+          <SwitchList
+            options={[
+              {
+                label: t('Start on your playlists'),
+                description: t(
+                  'With no chip pressed, Your library shows Favorites and your playlists instead of everything mixed together.',
+                ),
+                value: libraryShowsPlaylists,
+                onChange: setLibraryShowsPlaylists,
+              },
+            ]}
+          />
+        </SettingsGroup>
+
         <Text style={settingsStyles.sectionTitle}>{t('Interface')}</Text>
         <SettingsGroup>
           <SelectList<DefaultTab>
@@ -193,14 +214,6 @@ export default function HomeNavigationSettings() {
           />
           <SwitchList
             options={[
-              {
-                label: t('Start on your playlists'),
-                description: t(
-                  'With no chip pressed, Your library shows Favorites and your playlists instead of everything mixed together.',
-                ),
-                value: libraryShowsPlaylists,
-                onChange: setLibraryShowsPlaylists,
-              },
               {
                 label: t('Haptic feedback'),
                 value: hapticsEnabled,

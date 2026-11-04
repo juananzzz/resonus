@@ -847,5 +847,6 @@
   "Show on Discord": "Mostrar en Discord",
   "What you play appears on your Discord profile. Needs the Discord app on this phone.": "Lo que escuchas aparece en tu perfil de Discord. Necesita la app de Discord en este móvil.",
   "{episodes} will be saved to this device ({duration}).": "{episodes} se guardarán en este dispositivo ({duration}).",
-  "{episodes} will be saved to this device.": "{episodes} se guardarán en este dispositivo."
+  "{episodes} will be saved to this device.": "{episodes} se guardarán en este dispositivo.",
+  "Your library chips": "Chips de Tu biblioteca"
 }

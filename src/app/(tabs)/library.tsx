@@ -1255,7 +1255,14 @@ export default function LibraryScreen() {
    * open on the playlists, which put your albums and your artists behind a tap
    * nobody had asked for; that is now a setting (#217).
    */
-  const [segment, setSegment] = useState<Segment | null>(null);
+  const [picked, setSegment] = useState<Segment | null>(null);
+  /** The chips in the order Settings keeps them, without the hidden ones. */
+  const libraryChips = useSettings((s) => s.libraryChips);
+  const segments = libraryChips.flatMap((c) =>
+    c.enabled ? SEGMENTS.filter((x) => x.key === c.key) : [],
+  );
+  /** A chip turned off in Settings takes its filter with it. */
+  const segment = picked && segments.some((x) => x.key === picked) ? picked : null;
   const showsPlaylists = useSettings((s) => s.libraryShowsPlaylists);
   /** And which playlists, once that chip is the one pressed. */
   const [owner, setOwner] = useState<Owner | null>(null);
@@ -1281,7 +1288,7 @@ export default function LibraryScreen() {
     Keyboard.dismiss();
     setQuery('');
     setSearchOpen(false);
-  }, []);
+  }, [setQuery]);
 
   // Going to another tab puts the bar away; opening a result and coming back
   // finds the filter as you left it.
@@ -1370,7 +1377,7 @@ export default function LibraryScreen() {
   // inset by then, which makes the first frame the right one.
   const insets = useSafeAreaInsets();
 
-  const segmentChipRow = (segment ? SEGMENTS.filter((s) => s.key === segment) : SEGMENTS).map(
+  const segmentChipRow = (segment ? segments.filter((s) => s.key === segment) : segments).map(
     (s) => {
       const active = s.key === segment;
       return (
@@ -1489,52 +1496,54 @@ export default function LibraryScreen() {
       {/* With a chip pressed the row is that chip and what narrows it further,
           behind an X that gives you the whole library back. The other two are
           not greyed out but gone: they are not narrower, they are elsewhere. */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.segments}
-        contentContainerStyle={[styles.segmentsContent, { paddingHorizontal: headerPad }]}
-      >
-        {segment ? (
-          <Pressable
-            style={[
-              styles.segment,
-              styles.segmentIcon,
-              chipHeight ? { width: chipHeight + X_OVERSIZE, height: chipHeight + X_OVERSIZE } : null,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={t('Clear')}
-            onPress={clearSegment}
-          >
-            <Icon name="close" size={18} color={colors.text} />
-          </Pressable>
-        ) : null}
-
-        {/* Once one of the pair is picked the other goes and the two that are
-            left become one pill: "playlists, yours" is one answer in two words,
-            not two chips that happen to both be on. The second slides under the
-            first by its own corner, so the join is one curve and the outline
-            has no pinch in it.
-
-            Written backwards and laid out backwards (`segmentGroupJoined`) so
-            the first one is drawn last and its ring of background lands over
-            the second: what paints over what is the order they are written in,
-            and `zIndex` does not change it here. */}
-        <View
-          style={[styles.segmentGroup, shownOwner ? styles.segmentGroupJoined : null]}
-          // Read while they are apart. Joined, the first one carries its ring
-          // and the row is two points taller, which is not the chip's height
-          // and would have the X grow every time you narrow the answer.
-          onLayout={(e) => {
-            const h = Math.round(e.nativeEvent.layout.height);
-            if (!shownOwner && h && h !== chipHeight) setChipHeight(h);
-          }}
+      {segments.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.segments}
+          contentContainerStyle={[styles.segmentsContent, { paddingHorizontal: headerPad }]}
         >
-          {shownOwner ? ownerChipRow : segmentChipRow}
-          {shownOwner ? segmentChipRow : ownerChipRow}
-        </View>
+          {segment ? (
+            <Pressable
+              style={[
+                styles.segment,
+                styles.segmentIcon,
+                chipHeight ? { width: chipHeight + X_OVERSIZE, height: chipHeight + X_OVERSIZE } : null,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={t('Clear')}
+              onPress={clearSegment}
+            >
+              <Icon name="close" size={18} color={colors.text} />
+            </Pressable>
+          ) : null}
 
-      </ScrollView>
+          {/* Once one of the pair is picked the other goes and the two that are
+              left become one pill: "playlists, yours" is one answer in two words,
+              not two chips that happen to both be on. The second slides under the
+              first by its own corner, so the join is one curve and the outline
+              has no pinch in it.
+
+              Written backwards and laid out backwards (`segmentGroupJoined`) so
+              the first one is drawn last and its ring of background lands over
+              the second: what paints over what is the order they are written in,
+              and `zIndex` does not change it here. */}
+          <View
+            style={[styles.segmentGroup, shownOwner ? styles.segmentGroupJoined : null]}
+            // Read while they are apart. Joined, the first one carries its ring
+            // and the row is two points taller, which is not the chip's height
+            // and would have the X grow every time you narrow the answer.
+            onLayout={(e) => {
+              const h = Math.round(e.nativeEvent.layout.height);
+              if (!shownOwner && h && h !== chipHeight) setChipHeight(h);
+            }}
+          >
+            {shownOwner ? ownerChipRow : segmentChipRow}
+            {shownOwner ? segmentChipRow : ownerChipRow}
+          </View>
+
+        </ScrollView>
+      ) : null}
 
       <View style={[styles.controls, { paddingHorizontal: headerPad }]}>
         <SortBar onPress={() => setSortOpen(true)} />

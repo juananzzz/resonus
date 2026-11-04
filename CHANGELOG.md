@@ -9,6 +9,10 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+### Added
+
+- Your library: its chips can be reordered and hidden, in Settings › Navigation.
+
 ### Changed
 
 - Podcasts: shows you add stay in Explore, and the ones you favorite also appear in Your library.

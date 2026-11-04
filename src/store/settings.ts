@@ -596,6 +596,39 @@ export const DEFAULT_EXPLORE_SECTIONS: ExploreSection[] = EXPLORE_SECTION_KEYS.m
   enabled: true,
 }));
 
+/** One of the chips at the top of Your library. */
+export type LibraryChipKey = 'playlists' | 'albums' | 'artists' | 'podcasts';
+
+export interface LibraryChip {
+  key: LibraryChipKey;
+  enabled: boolean;
+}
+
+const LIBRARY_CHIP_KEYS: LibraryChipKey[] = ['playlists', 'albums', 'artists', 'podcasts'];
+
+/** All on. Unlike Explore they can all go: with no chip the tab is still everything you keep. */
+export const DEFAULT_LIBRARY_CHIPS: LibraryChip[] = LIBRARY_CHIP_KEYS.map((key) => ({
+  key,
+  enabled: true,
+}));
+
+/** Same as the Explore sections. */
+function normalizeLibraryChips(raw: unknown): LibraryChip[] {
+  if (!Array.isArray(raw)) return DEFAULT_LIBRARY_CHIPS.map((c) => ({ ...c }));
+  const seen = new Set<LibraryChipKey>();
+  const out: LibraryChip[] = [];
+  for (const item of raw) {
+    const key = item?.key as LibraryChipKey;
+    if (!LIBRARY_CHIP_KEYS.includes(key) || seen.has(key)) continue;
+    seen.add(key);
+    out.push({ key, enabled: typeof item.enabled === 'boolean' ? item.enabled : true });
+  }
+  for (const def of DEFAULT_LIBRARY_CHIPS) {
+    if (!seen.has(def.key)) out.push({ ...def });
+  }
+  return out;
+}
+
 /**
  * The bar at the bottom: which tabs are on it and in what order.
  *
@@ -865,6 +898,7 @@ type Reshaped =
   | 'homeSections'
   | 'homeChips'
   | 'exploreSections'
+  | 'libraryChips'
   | 'bottomTabs'
   | 'homeButtons'
   | 'playerButtons'
@@ -1219,6 +1253,7 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   homeChips: HomeChip[];
   /** The order of the pills at the top of Explore. */
   exploreSections: ExploreSection[];
+  libraryChips: LibraryChip[];
   bottomTabs: BottomTab[];
   /** Whether those chips carry their icon, or are their name and nothing else. */
   homeChipIcons: boolean;
@@ -1319,6 +1354,7 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   setHomeChip: (key: HomeChipKey, value: boolean) => void;
   /** One section on or off, by key, the way the Home chips do it. */
   setExploreSection: (key: ExploreSectionKey, value: boolean) => void;
+  setLibraryChip: (key: LibraryChipKey, value: boolean) => void;
   setBottomTab: (key: TabSegment, value: boolean) => void;
   setHomeButton: (key: HomeButtonKey, value: boolean) => void;
   setPlayerButton: (key: PlayerButtonKey, value: boolean) => void;
@@ -1502,6 +1538,7 @@ const DEFAULTS = {
   customGreeting: '',
   homeChips: DEFAULT_HOME_CHIPS.map((c) => ({ ...c })),
   exploreSections: DEFAULT_EXPLORE_SECTIONS.map((s) => ({ ...s })),
+  libraryChips: DEFAULT_LIBRARY_CHIPS.map((c) => ({ ...c })),
   bottomTabs: DEFAULT_BOTTOM_TABS.map((t) => ({ ...t })),
   homeChipIcons: true,
   showFolderBrowser: false,
@@ -1621,6 +1658,7 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
     homeSections?: unknown;
     homeChips?: unknown;
     exploreSections?: unknown;
+    libraryChips?: unknown;
     bottomTabs?: unknown;
     homeButtons?: unknown;
     playerButtons?: unknown;
@@ -1886,6 +1924,9 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
   if (Array.isArray(parsed.exploreSections)) {
     set({ exploreSections: normalizeExploreSections(parsed.exploreSections) });
   }
+  if (Array.isArray(parsed.libraryChips)) {
+    set({ libraryChips: normalizeLibraryChips(parsed.libraryChips) });
+  }
   if (Array.isArray(parsed.homeButtons)) {
     set({ homeButtons: normalizeHomeButtons(parsed.homeButtons) });
   } else if (parsed.showHistoryButton === false) {
@@ -2128,6 +2169,13 @@ export const useSettings = create<SettingsState>((set, get) => ({
       exploreSections: get().exploreSections.map((s) =>
         s.key === key ? { ...s, enabled: value } : s,
       ),
+    });
+    persist(snapshot(get));
+  },
+
+  setLibraryChip: (key, value) => {
+    set({
+      libraryChips: get().libraryChips.map((c) => (c.key === key ? { ...c, enabled: value } : c)),
     });
     persist(snapshot(get));
   },
