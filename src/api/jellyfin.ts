@@ -719,6 +719,11 @@ export async function getAppearsOn(
   return (res.Items ?? []).map((i) => ({ ...toAlbum(i), confirmed: true }));
 }
 
+/** Jellyfin serves item images without a token, so the plain path is already public. */
+export function getPublicAlbumArt(auth: SubsonicAuth, id: string): Promise<string | undefined> {
+  return Promise.resolve(`${auth.serverUrl}/Items/${encodeURIComponent(id)}/Images/Primary?maxHeight=512`);
+}
+
 export async function getArtistInfo(auth: SubsonicAuth, id: string): Promise<ArtistInfo> {
   const [item, similar] = await Promise.all([
     request<JfItem>(auth, `/Users/${auth.jfUserId}/Items/${id}`),

@@ -843,5 +843,7 @@
   "The cover takes the full width and fades into the page.": "La portada ocupa todo el ancho y se funde con la página.",
   "No animated covers on mobile data": "Sin carátulas animadas con datos móviles",
   "Full-bleed artwork": "Portada de borde a borde",
-  "Static covers in portrait. Replaces the background below; animated covers are set further down.": "Portadas estáticas en vertical. Sustituye al fondo de abajo; las animadas se eligen más adelante."
+  "Static covers in portrait. Replaces the background below; animated covers are set further down.": "Portadas estáticas en vertical. Sustituye al fondo de abajo; las animadas se eligen más adelante.",
+  "Show on Discord": "Mostrar en Discord",
+  "What you play appears on your Discord profile. Needs the Discord app on this phone.": "Lo que escuchas aparece en tu perfil de Discord. Necesita la app de Discord en este móvil."
 }

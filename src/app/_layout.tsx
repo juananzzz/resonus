@@ -36,6 +36,7 @@ import { UpdatePrompt } from '@/components/UpdatePrompt';
 import { SELF_UPDATES } from '@/lib/distribution';
 import { installAppFont, setAppFont } from '@/lib/appFont';
 import { initAppLocale } from '@/lib/appLocale';
+import { startDiscordPresence } from '@/lib/discordPresence';
 import { initHomeWidget } from '@/lib/homeWidget';
 import { loadCustomFont } from '@/lib/customFont';
 import { removeLegacyRadioCovers } from '@/lib/legacyRadioCovers';
@@ -336,6 +337,9 @@ export default function RootLayout() {
       void deactivateKeepAwake('setting');
     };
   }, [keepScreenAwake]);
+
+  const discordPresence = useSettings((s) => s.discordPresence);
+  useEffect(() => (discordPresence ? startDiscordPresence() : undefined), [discordPresence]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>

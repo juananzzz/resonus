@@ -1,0 +1,7 @@
+{
+  "name": "discord-presence",
+  "version": "0.0.1",
+  "description": "What is playing, as Discord rich presence through the Discord app (local Expo module)",
+  "main": "index.ts",
+  "private": true
+}

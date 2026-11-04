@@ -150,6 +150,9 @@ export const getArtist = (auth: SubsonicAuth, id: string) => api(auth).getArtist
 
 export const getArtistInfo = (auth: SubsonicAuth, id: string) => api(auth).getArtistInfo(auth, id);
 
+export const getPublicAlbumArt = (auth: SubsonicAuth, id: string) =>
+  api(auth).getPublicAlbumArt(auth, id);
+
 export const getAppearsOn = (
   auth: SubsonicAuth,
   artistId: string,

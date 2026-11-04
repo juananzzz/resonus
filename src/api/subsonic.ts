@@ -457,7 +457,12 @@ const REQUEST_TIMEOUT_MS = 15000;
  * also ran out their timeout before leaving the phone. Two at a time leaves the
  * others free, and the timeout starts when the request does.
  */
-const AGENT_ENDPOINTS = new Set(['getSimilarSongs2.view', 'getTopSongs.view', 'getArtistInfo2.view']);
+const AGENT_ENDPOINTS = new Set([
+  'getSimilarSongs2.view',
+  'getTopSongs.view',
+  'getArtistInfo2.view',
+  'getAlbumInfo2.view',
+]);
 const agentSlots = createSlots(2);
 
 /** Makes a request and unwraps the Subsonic response. */
@@ -1302,6 +1307,19 @@ export interface ArtistInfo {
   biography?: string;
   imageUrl?: string;
   similarArtists: Artist[];
+}
+
+/**
+ * An address for the album's cover that carries no credentials: Navidrome
+ * answers `getAlbumInfo2` with a signed `/share/img` link, the one Feishin
+ * hands to Discord too. Other servers may send an outside image or nothing.
+ */
+export async function getPublicAlbumArt(auth: SubsonicAuth, id: string): Promise<string | undefined> {
+  const res = await request<{
+    albumInfo?: { largeImageUrl?: string; mediumImageUrl?: string; smallImageUrl?: string };
+  }>(auth, 'getAlbumInfo2.view', { id });
+  const info = res.albumInfo ?? {};
+  return [info.largeImageUrl, info.mediumImageUrl, info.smallImageUrl].find((u) => u?.startsWith('http'));
 }
 
 /** Extended artist info (bio, photo and similars) from getArtistInfo2. */

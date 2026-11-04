@@ -27,6 +27,7 @@ import {
 } from '@/components/SettingsUI';
 import { useLocalProfile } from '@/hooks/useLocalProfile';
 import { useT } from '@/i18n';
+import { discordPresenceSupported } from '@/lib/discordPresence';
 import { useAuthStore } from '@/store/auth';
 import { useTheme } from '@/theme';
 import {
@@ -79,6 +80,8 @@ export default function PlaybackSettings() {
   const batteryWarning = useSettings((s) => s.batteryWarning);
   const setBatteryWarning = useSettings((s) => s.setBatteryWarning);
   const setKeepScreenAwake = useSettings((s) => s.setKeepScreenAwake);
+  const discordPresence = useSettings((s) => s.discordPresence);
+  const setDiscordPresence = useSettings((s) => s.setDiscordPresence);
 
   // Only "Original" is a word; the rest are a number and a unit that read the
   // same in every language.
@@ -326,6 +329,18 @@ export default function PlaybackSettings() {
             chevron
             onPress={() => router.push('/settings/scrobbling')}
           />
+          {discordPresenceSupported() ? (
+            <SwitchList
+              options={[
+                {
+                  label: t('Show on Discord'),
+                  description: t('What you play appears on your Discord profile. Needs the Discord app on this phone.'),
+                  value: discordPresence,
+                  onChange: setDiscordPresence,
+                },
+              ]}
+            />
+          ) : null}
         </SettingsGroup>
 
         <Text style={settingsStyles.sectionTitle}>{t('System::section')}</Text>

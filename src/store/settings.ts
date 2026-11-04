@@ -1041,7 +1041,6 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
    * offline library only shows playable content.
    */
   hideUnavailableOffline: boolean;
-  /** New episodes of favorite shows download by themselves, on Wi-Fi. */
   /** The old switch for every favorite, read once by `refreshAutoDownloadShows`. */
   podcastAutoDownload: boolean;
   /** Volume normalization (ReplayGain): off, per track, or per album. */
@@ -1055,6 +1054,8 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   replayGainPreampDb: number;
   /** Keep screen on while the app is in the foreground. */
   keepScreenAwake: boolean;
+  /** The song playing on the Discord profile, through the Discord app (Android). */
+  discordPresence: boolean;
   /** Subtle vibration on key actions (favorite, long-press, drag…). */
   hapticsEnabled: boolean;
   /** Lyrics screen background: flat, cover color, or blurred cover art. */
@@ -1426,6 +1427,7 @@ const DEFAULTS = {
   replayGain: 'off' as ReplayGainMode,
   replayGainPreampDb: 0,
   keepScreenAwake: false,
+  discordPresence: false,
   hapticsEnabled: false,
   // Same as the player's: the blurred artwork, which is what the screen it
   // opens from is already showing.

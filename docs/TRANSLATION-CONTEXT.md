@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 844 of them.
+Every string the app can show, under the screen it shows up on. 846 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -1016,6 +1016,7 @@ you are actually typing into, which is easier than reading it here.
 | `Preload upcoming tracks` |  |
 | `Quality & playback` |  |
 | `Scrobbling` | Reporting a song as played, to the user's own server and from there to Last.fm or ListenBrainz. The title of its own screen and the row that opens it. The word comes from Last.fm and most languages keep it; use whatever those services call it in yours if they do |
+| `Show on Discord` |  |
 | `Sound` | Section header: normalization and the pre-amp |
 | `Streaming` | Section header: everything about music coming from the server as it plays |
 | `Streaming codec (mobile data)` |  |
@@ -1025,6 +1026,7 @@ you are actually typing into, which is easier than reading it here.
 | `Transcode lossless files only` |  |
 | `Uses your files' ReplayGain tags.` | The line under “Normalize volume”, explaining it |
 | `Warn about battery optimization` |  |
+| `What you play appears on your Discord profile. Needs the Discord app on this phone.` | The line under “Show on Discord”, explaining it |
 | `When its songs run out, another round from the same artists.` | The line under “Keep playing when a radio ends”, explaining it |
 | `Your server must support it.` |  |
 

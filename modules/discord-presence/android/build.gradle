@@ -1,0 +1,25 @@
+// See the note in modules/audio-eq/android/build.gradle: the plugin is what
+// brings the compiler plugin the module DSL needs from SDK 56 on.
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.discordpresence'
+version = '0.0.1'
+
+android {
+  namespace "expo.modules.discordpresence"
+  defaultConfig {
+    versionCode 1
+    versionName "0.0.1"
+  }
+  // The Discord app's binder interfaces, in src/main/aidl.
+  buildFeatures {
+    aidl true
+  }
+}
+
+dependencies {
+  // Binder and org.json are the framework's: nothing else.
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Android 11+ hides other apps' services unless they are declared here. -->
+  <queries>
+    <intent>
+      <action android:name="com.discord.socialsdk.rpc.IDiscordRpcService" />
+    </intent>
+    <package android:name="com.discord" />
+    <package android:name="app.revenge" />
+    <package android:name="cocobo1.pupu.app" />
+  </queries>
+</manifest>
