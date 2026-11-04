@@ -47,7 +47,7 @@ const LABEL: Record<ExploreSectionKey, string> = {
   radio: 'Radio',
   podcasts: 'Podcasts',
   folders: 'Folders',
-  downloads: 'Downloads',
+  downloaded: 'Downloaded',
 };
 
 function SectionRow({
@@ -97,11 +97,12 @@ export default function ExploreSectionsSettings() {
   const setSections = useSettings((s) => s.setExploreSections);
   const setSection = useSettings((s) => s.setExploreSection);
   const toast = useToast((s) => s.show);
-  const enabledCount = sections.filter((s) => s.enabled).length;
+  // The Downloaded pill is a filter, not a section to land on.
+  const enabledCount = sections.filter((s) => s.enabled && s.key !== 'downloaded').length;
 
   /** The last one on stays on: see the note at the top of the file. */
   function toggle(key: ExploreSectionKey, value: boolean) {
-    if (!value && enabledCount <= 1) {
+    if (!value && key !== 'downloaded' && enabledCount <= 1) {
       toast(t('Keep at least one section on'));
       return;
     }

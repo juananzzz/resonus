@@ -477,7 +477,10 @@ function normalizeExploreSections(raw: unknown): ExploreSection[] {
     out.push({ key, enabled: typeof enabled === 'boolean' ? enabled : true });
   }
   for (const def of DEFAULT_EXPLORE_SECTIONS) {
-    if (!seen.has(def.key)) out.push({ ...def });
+    // The filter pill goes ahead of the sections, where it starts out.
+    if (seen.has(def.key)) continue;
+    if (def.key === 'downloaded') out.unshift({ ...def });
+    else out.push({ ...def });
   }
   return out;
 }
@@ -560,7 +563,8 @@ export type ExploreSectionKey =
   | 'radio'
   | 'podcasts'
   | 'folders'
-  | 'downloads';
+  /** Not a section: the pill that keeps the others to what is downloaded (#310). */
+  | 'downloaded';
 
 /** A section with its state, the shape the Home chips already have (order is
  *  its position in the list). */
@@ -570,6 +574,7 @@ export interface ExploreSection {
 }
 
 const EXPLORE_SECTION_KEYS: ExploreSectionKey[] = [
+  'downloaded',
   'playlists',
   'albums',
   'artists',
@@ -578,7 +583,6 @@ const EXPLORE_SECTION_KEYS: ExploreSectionKey[] = [
   'radio',
   'podcasts',
   'folders',
-  'downloads',
 ];
 
 /**

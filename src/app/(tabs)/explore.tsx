@@ -28,6 +28,10 @@
  * That box used to be open in every section: a band of chrome under the chips
  * for something you do now and then. It is the one "Your library" has, in the
  * same place and with the same two ways out of it, Back included.
+ *
+ * The Downloaded pill among the chips, online and with something downloaded,
+ * keeps every list to what is on the phone (#310). It is a filter and not a
+ * section, and hides the sections the downloads cannot answer for.
  */
 import Icon from '@/components/Icon';
 import { useFocusEffect } from 'expo-router';
@@ -51,7 +55,7 @@ import { anyDownloads, useDownloads } from '@/store/downloads';
 import { useSettings, type ExploreSectionKey, type ListLayout } from '@/store/settings';
 import { colors, fontSize, radius, spacing, themed, useTheme, tracking } from '@/theme';
 
-type Section = ExploreSectionKey;
+type Section = Exclude<ExploreSectionKey, 'downloaded'>;
 
 /** The label each goes by. The order is the saved one (Settings › Explore
  *  sections), which starts as the order they are declared in. */
@@ -64,8 +68,10 @@ const LABEL: Record<Section, string> = {
   radio: 'Radio',
   podcasts: 'Podcasts',
   folders: 'Folders',
-  downloads: 'Downloads',
 };
+
+/** What the downloads can answer for: the rest only the server knows (#310). */
+const DOWNLOADABLE: Section[] = ['playlists', 'albums', 'artists', 'songs'];
 
 export default function ExploreScreen() {
   // Repaints on a change of appearance or accent: a tab stays mounted while
@@ -79,6 +85,19 @@ export default function ExploreScreen() {
   const hasDownloads = useDownloads(anyDownloads);
   const order = useSettings((s) => s.exploreSections);
   const [section, setSection] = useState<Section>('albums');
+  /**
+   * Only what is on the phone, while online: offline that is all there is
+   * anyway. A filter over the sections rather than a section of its own, so
+   * each keeps its orders, its search and its view.
+   */
+  const [downloadedOnly, setDownloadedOnly] = useState(false);
+  const pillOn = order.some((s) => s.key === 'downloaded' && s.enabled);
+  const canFilter = !!auth && !offline && hasDownloads && pillOn;
+  const filtering = downloadedOnly && canFilter;
+  const toggleFilter = () => {
+    setSearchFor(null);
+    setDownloadedOnly(!filtering);
+  };
   /** Filled in by whichever section is on screen (see `BrowserProps`). */
   const sectionAction = useRef<() => void>(() => {});
   /**
@@ -117,9 +136,6 @@ export default function ExploreScreen() {
         return !!auth && !offline;
       case 'folders':
         return subsonic && !offline && showFolderBrowser;
-      case 'downloads':
-        // Offline, Albums already is this list.
-        return !!auth && !offline && hasDownloads;
       case 'playlists':
         // Jellyfin answers for them too, and offline the mirror does; it is
         // the one server-side section the local profile has nothing for.
@@ -129,7 +145,15 @@ export default function ExploreScreen() {
     }
   };
   // What the chips are: turned on, and something this profile can answer for.
-  const sections = order.filter((s) => s.enabled && available(s.key)).map((s) => s.key);
+  // The Downloaded pill sits among them, where the settings put it.
+  const chips = order
+    .filter((s) =>
+      s.key === 'downloaded'
+        ? canFilter
+        : s.enabled && available(s.key) && (!filtering || DOWNLOADABLE.includes(s.key as Section)),
+    )
+    .map((s) => s.key);
+  const sections = chips.filter((k): k is Section => k !== 'downloaded');
   /**
    * Going offline can take the section you were on with it, and so can turning
    * it off in the settings.
@@ -172,14 +196,7 @@ export default function ExploreScreen() {
       ? { icon: 'add' as const, label: t('Add station'), size: 28, color: colors.text }
       : current === 'podcasts'
         ? { icon: 'add' as const, label: t('Add podcast'), size: 28, color: colors.text }
-        : current === 'downloads'
-          ? {
-              icon: layouts.albums === 'grid' ? ('grid-outline' as const) : ('list' as const),
-              label: t('View'),
-              size: 22,
-              color: colors.textSecondary,
-            }
-          : current === 'playlists' ||
+        : current === 'playlists' ||
             current === 'albums' ||
             current === 'artists' ||
             current === 'songs'
@@ -242,7 +259,24 @@ export default function ExploreScreen() {
         style={styles.segments}
         contentContainerStyle={styles.segmentsContent}
       >
-        {sections.map((key) => {
+        {chips.map((key) => {
+          if (key === 'downloaded') {
+            return (
+              <Pressable
+                key={key}
+                style={[styles.filterPill, filtering && { borderColor: accent, backgroundColor: accent }]}
+                accessibilityRole="switch"
+                accessibilityLabel={t('Only downloaded')}
+                accessibilityState={{ checked: filtering }}
+                onPress={toggleFilter}
+              >
+                {filtering ? <Icon name="checkmark" size={14} color={colors.onAccent} /> : null}
+                <Text style={[styles.segmentText, filtering && styles.segmentTextActive]}>
+                  {t('Downloaded')}
+                </Text>
+              </Pressable>
+            );
+          }
           const active = key === current;
           return (
             <Pressable
@@ -272,15 +306,37 @@ export default function ExploreScreen() {
           once, which on a big library is what the app spent #50 undoing. */}
       <View style={styles.body}>
         {current === 'playlists' ? (
-          <PlaylistsBrowser embedded actionRef={sectionAction} searchOpen={searchOpen} />
+          <PlaylistsBrowser
+            key={String(filtering)}
+            embedded
+            downloaded={filtering}
+            actionRef={sectionAction}
+            searchOpen={searchOpen}
+          />
         ) : current === 'albums' ? (
-          <AlbumsBrowser embedded actionRef={sectionAction} searchOpen={searchOpen} />
-        ) : current === 'downloads' ? (
-          <AlbumsBrowser key="downloads" embedded downloaded actionRef={sectionAction} searchOpen={searchOpen} />
+          <AlbumsBrowser
+            key={String(filtering)}
+            embedded
+            downloaded={filtering}
+            actionRef={sectionAction}
+            searchOpen={searchOpen}
+          />
         ) : current === 'artists' ? (
-          <ArtistsBrowser embedded actionRef={sectionAction} searchOpen={searchOpen} />
+          <ArtistsBrowser
+            key={String(filtering)}
+            embedded
+            downloaded={filtering}
+            actionRef={sectionAction}
+            searchOpen={searchOpen}
+          />
         ) : current === 'songs' ? (
-          <SongsBrowser embedded actionRef={sectionAction} searchOpen={searchOpen} />
+          <SongsBrowser
+            key={String(filtering)}
+            embedded
+            downloaded={filtering}
+            actionRef={sectionAction}
+            searchOpen={searchOpen}
+          />
         ) : current === 'genres' ? (
           <GenresBrowser embedded searchOpen={searchOpen} />
         ) : current === 'radio' ? (
@@ -316,6 +372,16 @@ const styles = themed((colors) => ({
     paddingHorizontal: spacing.md,
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceHighlight,
+  },
+  filterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: spacing.xs - 1,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.textMuted,
   },
   segmentText: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '500' },
   segmentTextActive: { color: colors.onAccent },

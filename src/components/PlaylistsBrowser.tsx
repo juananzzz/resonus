@@ -36,6 +36,7 @@ import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { PlaylistCard } from '@/components/PlaylistCard';
+import { useDownloadedPlaylists } from '@/hooks/useDownloadedPlaylists';
 import { useGridColumns } from '@/hooks/useGridColumns';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useListPadding } from '@/hooks/useScreenSize';
@@ -61,7 +62,13 @@ const SORTS: { key: LibrarySort; label: string }[] = (
   Object.keys(SORT_LABELS) as LibrarySort[]
 ).map((key) => ({ key, label: SORT_LABELS[key] }));
 
-export function PlaylistsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) {
+/** `downloaded` keeps the playlists with every song on the phone (#310). */
+export function PlaylistsBrowser({
+  embedded,
+  actionRef,
+  searchOpen,
+  downloaded,
+}: BrowserProps & { downloaded?: boolean }) {
   const t = useT();
   const lang = useSettings((s) => s.language);
   const listPad = useListPadding(spacing.lg);
@@ -81,6 +88,7 @@ export function PlaylistsBrowser({ embedded, actionRef, searchOpen }: BrowserPro
     set: setLayout,
   });
   const card = cardWidth(columns);
+  const saved = useDownloadedPlaylists();
 
   // Assigned in an effect and not while rendering: the React compiler's lint
   // rule marks a ref written during render (see the Explore tab).
@@ -103,7 +111,7 @@ export function PlaylistsBrowser({ embedded, actionRef, searchOpen }: BrowserPro
   const shown = useMemo(() => {
     const q = normQ(query.trim());
     return sortItems(
-      (data ?? []).filter((p) => matches(q, p.name)),
+      (data ?? []).filter((p) => matches(q, p.name) && (!downloaded || !!saved?.has(p.id))),
       sort,
       (p) => p.name,
       sort === 'recent'
@@ -112,14 +120,23 @@ export function PlaylistsBrowser({ embedded, actionRef, searchOpen }: BrowserPro
       // Code point so "+"-prefixed playlists pin to the top like on the server.
       byCodepoint,
     );
-  }, [data, query, sort, times]);
+  }, [data, query, sort, times, downloaded, saved]);
 
-  const body = isLoading ? (
+  const body = isLoading || (downloaded && !saved) ? (
     <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
   ) : isError ? (
     <Message text={t("Couldn't load playlists.")} onRetry={() => refetch()} />
   ) : shown.length === 0 ? (
-    <EmptyState icon="list-outline" title={query.trim() ? t('No results') : t('No playlists yet')} />
+    <EmptyState
+      icon={downloaded && !query.trim() ? 'download-outline' : 'list-outline'}
+      title={
+        query.trim()
+          ? t('No results')
+          : downloaded
+            ? t('Nothing here is downloaded')
+            : t('No playlists yet')
+      }
+    />
   ) : (
     <FlatList
       {...listPerf}

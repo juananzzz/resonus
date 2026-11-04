@@ -24,7 +24,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   coverArtUrl,
   createPlaylist,
-  downloadedPlaylistIds,
   getPlaylists,
   getStarred,
   type Album,
@@ -38,6 +37,7 @@ import { ArtistRow } from '@/components/ArtistRow';
 import { PlaylistRow } from '@/components/PlaylistRow';
 import { PodcastRow } from '@/components/PodcastRow';
 import { Cover } from '@/components/Cover';
+import { useDownloadedPlaylists } from '@/hooks/useDownloadedPlaylists';
 import { useHistoryTimes } from '@/hooks/useHistoryTimes';
 import { Dialog } from '@/components/Dialog';
 import { EmptyState } from '@/components/EmptyState';
@@ -265,15 +265,6 @@ function useAlbumAvailability() {
     }),
     [shelf, offline],
   );
-}
-
-function useDownloadedPlaylists() {
-  const fileCount = useDownloads((s) => Object.keys(s.files).length);
-  const { data } = useQuery({
-    queryKey: ['downloadedPlaylists', profileScopeId(), fileCount],
-    queryFn: downloadedPlaylistIds,
-  });
-  return data;
 }
 
 /** The hearted shows and episodes, read again on focus: listening moves their order. */

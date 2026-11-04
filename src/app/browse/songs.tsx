@@ -32,6 +32,7 @@ import {
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
 import { getSongList, searchSongs, songListSorts } from '@/api/data';
+import * as Local from '@/lib/localQueries';
 import { type Song, type SongListSort } from '@/api/subsonic';
 import { AlbumCardsSkeleton } from '@/components/AlbumCardsSkeleton';
 import { AlbumRowsSkeleton } from '@/components/AlbumRowsSkeleton';
@@ -105,11 +106,19 @@ const SORT_LABEL: Record<SongListSort, string> = {
   random: 'Shuffle',
 };
 
+const DOWNLOADED_SORTS: SongListSort[] = ['recent', 'frequent', 'added', 'alpha', 'random'];
+
 export default function BrowseSongsScreen() {
   return <SongsBrowser />;
 }
 
-export function SongsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) {
+/** `downloaded` lists the songs on the phone, online too (#310). */
+export function SongsBrowser({
+  embedded,
+  actionRef,
+  searchOpen,
+  downloaded,
+}: BrowserProps & { downloaded?: boolean }) {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
@@ -141,7 +150,8 @@ export function SongsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
   });
   const card = cardWidth(columns);
   // What this server can actually order by; the first one is what it opens on.
-  const sorts = canFetch ? songListSorts() : [];
+  // The downloads answer every order, whatever the server can.
+  const sorts = !canFetch ? [] : downloaded ? DOWNLOADED_SORTS : songListSorts();
   /**
    * Arrived at from a Home shelf, this says which one. Only the value it opens
    * on: each visit is its own screen, so there is nothing to keep in step. An
@@ -150,7 +160,7 @@ export function SongsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
    */
   const { sort: sortParam } = useLocalSearchParams<{ sort?: string }>();
   const [sort, setSort] = useBrowseSort<SongListSort>(
-    'browseSongs',
+    downloaded ? 'downloadedSongs' : 'browseSongs',
     sorts,
     sorts[0] ?? 'server',
     sorts.find((s) => s === sortParam),
@@ -166,8 +176,8 @@ export function SongsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ['browseSongs', sort, recentKey],
-      queryFn: ({ pageParam }) => getSongList(sort, PAGE, pageParam),
+      queryKey: [downloaded ? 'downloadedSongs' : 'browseSongs', sort, recentKey],
+      queryFn: ({ pageParam }) => (downloaded ? Local.getSongList : getSongList)(sort, PAGE, pageParam),
       initialPageParam: 0,
       getNextPageParam: (last, pages) => (last.length === PAGE ? pages.length * PAGE : undefined),
       enabled: canFetch,
@@ -177,7 +187,7 @@ export function SongsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
       // and asking for them again on every visit was most of the traffic of a
       // session. It goes back to the ordinary five minutes, and the album
       // details behind it are shared with the album screens now.
-      refetchOnMount: sort === 'recent' ? 'always' : undefined,
+      refetchOnMount: downloaded || sort === 'recent' ? 'always' : undefined,
     });
 
   // ── Search ─────────────────────────────────────────────────────────────
@@ -198,8 +208,8 @@ export function SongsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
     isError: searchError,
     refetch: refetchSearch,
   } = useQuery({
-    queryKey: ['searchSongs', debounced, SEARCH_COUNT],
-    queryFn: () => searchSongs(debounced, SEARCH_COUNT),
+    queryKey: [downloaded ? 'searchDownloadedSongs' : 'searchSongs', debounced, SEARCH_COUNT],
+    queryFn: () => (downloaded ? Local.searchSongs : searchSongs)(debounced, SEARCH_COUNT),
     enabled: canFetch && debounced.length > 0,
   });
 
@@ -370,7 +380,8 @@ export function SongsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
             setSort(key);
             setSelectedIds(null);
           }}
-          play={{ sort, source: t('Songs'), href: '/browse/songs' }}
+          // It plays the server's library, which is not this list.
+          play={downloaded ? undefined : { sort, source: t('Songs'), href: '/browse/songs' }}
         />
       )}
 
@@ -472,6 +483,8 @@ export function SongsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
                 title={t('No results')}
                 subtitle={t('No results for “{q}”', { q: query.trim() })}
               />
+            ) : downloaded && sort !== 'recent' && sort !== 'frequent' ? (
+              <EmptyState icon="download-outline" title={t('Nothing here is downloaded')} />
             ) : sort === 'recent' || sort === 'frequent' ? (
               // These two only hold what has been played, so on a fresh account
               // they are empty and that is not the library being empty.

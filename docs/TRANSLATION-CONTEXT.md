@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 849 of them.
+Every string the app can show, under the screen it shows up on. 850 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -283,10 +283,12 @@ you are actually typing into, which is easier than reading it here.
 | `Add station` | Title of the sheet for adding an internet radio station |
 | `Couldn't load folders.` | Error on the screen, with a Retry button |
 | `Couldn't load playlists.` | Error on the screen, with a Retry button |
+| `Downloaded` | Badge on something whose files are on the phone |
 | `Explore` | The tab holding everything the server has: all albums, artists, songs, genres, stations and folders |
 | `Find a playlist` | The search box's placeholder on that screen |
 | `Music` | The name given to the server's folder when it does not have one of its own, browsing by folder |
 | `No playlists yet` | Empty state heading |
+| `Only downloaded` |  |
 
 ## Favorites
 

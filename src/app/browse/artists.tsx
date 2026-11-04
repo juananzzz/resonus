@@ -15,6 +15,7 @@ import {
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
 import { getAlbumList, getArtists, type Album, type Artist } from '@/api/data';
+import * as Local from '@/lib/localQueries';
 import { byArtistSortName } from '@/lib/librarySort';
 import { ArtistCard } from '@/components/ArtistCard';
 import { ArtistGridSkeleton } from '@/components/ArtistGridSkeleton';
@@ -88,7 +89,13 @@ export default function BrowseArtistsScreen() {
   return <ArtistsBrowser />;
 }
 
-export function ArtistsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) {
+/** `downloaded` lists the artists with music on the phone, online too (#310). */
+export function ArtistsBrowser({
+  embedded,
+  actionRef,
+  searchOpen,
+  downloaded,
+}: BrowserProps & { downloaded?: boolean }) {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
@@ -100,7 +107,7 @@ export function ArtistsBrowser({ embedded, actionRef, searchOpen }: BrowserProps
    *  was showing, and anything unrecognised is ignored. */
   const { sort: sortParam } = useLocalSearchParams<{ sort?: string }>();
   const [sort, setSort] = useBrowseSort<ArtistSort>(
-    'browseArtists',
+    downloaded ? 'downloadedArtists' : 'browseArtists',
     SORTS.map((s) => s.key),
     'recent',
     SORTS.some((s) => s.key === sortParam) ? (sortParam as ArtistSort) : undefined,
@@ -123,9 +130,11 @@ export function ArtistsBrowser({ embedded, actionRef, searchOpen }: BrowserProps
   const { byArtist } = useHistoryTimes();
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['allArtists'],
-    queryFn: () => getArtists(),
+    queryKey: [downloaded ? 'downloadedArtists' : 'allArtists'],
+    queryFn: () => (downloaded ? Local.getArtists : getArtists)(),
     enabled: canFetch,
+    // Downloads change with no word to this list, and asking costs no network.
+    refetchOnMount: downloaded ? 'always' : undefined,
   });
 
   // The filter bar sits above the toolbar, outside the scroll: both stay put
@@ -152,8 +161,8 @@ export function ArtistsBrowser({ embedded, actionRef, searchOpen }: BrowserProps
    * choosing this order.
    */
   const { data: frequentAlbums } = useQuery({
-    queryKey: ['albumList', 'frequent', FREQUENT_POOL],
-    queryFn: () => getAlbumList('frequent', FREQUENT_POOL),
+    queryKey: [downloaded ? 'downloadedAlbumList' : 'albumList', 'frequent', FREQUENT_POOL],
+    queryFn: () => (downloaded ? Local.getAlbumList : getAlbumList)('frequent', FREQUENT_POOL),
     enabled: canFetch && sort === 'frequent',
   });
 
@@ -161,8 +170,8 @@ export function ArtistsBrowser({ embedded, actionRef, searchOpen }: BrowserProps
   // creation date, so they're sorted by how recent their newest album is
   // (getAlbumList 'newest'). Approximate, but it's the only signal available.
   const { data: newestAlbums } = useQuery({
-    queryKey: ['albumList', 'newest', FREQUENT_POOL],
-    queryFn: () => getAlbumList('newest', FREQUENT_POOL),
+    queryKey: [downloaded ? 'downloadedAlbumList' : 'albumList', 'newest', FREQUENT_POOL],
+    queryFn: () => (downloaded ? Local.getAlbumList : getAlbumList)('newest', FREQUENT_POOL),
     enabled: canFetch && sort === 'newest',
   });
 
@@ -323,6 +332,8 @@ export function ArtistsBrowser({ embedded, actionRef, searchOpen }: BrowserProps
                 title={t('No results')}
                 subtitle={t('No results for “{q}”', { q: query.trim() })}
               />
+            ) : downloaded ? (
+              <EmptyState icon="download-outline" title={t('Nothing here is downloaded')} />
             ) : (
               <EmptyState
                 icon="people-outline"
