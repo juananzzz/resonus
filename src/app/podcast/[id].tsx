@@ -32,6 +32,7 @@ import { PodcastDownloadDialog } from '@/components/PodcastDownloadDialog';
 import { TrackListSkeleton } from '@/components/TrackListSkeleton';
 import { TrackListView } from '@/components/TrackListView';
 import { openPodcastMenu } from '@/components/PodcastMenuSheet';
+import { useSongSort } from '@/hooks/useSongSort';
 import { episodesLabel, useT } from '@/i18n';
 import { formatTotalDuration } from '@/lib/format';
 import { usePodcastFavoriteIds } from '@/lib/podcastFavorites';
@@ -148,6 +149,18 @@ export default function PodcastScreen() {
     return { songs: shown, meta: line, episodeInfo: info };
   }, [data.data, hideUnavailable, playedIds, lang]);
 
+  // The feed comes newest first; 'added' is that list turned round. Kept per
+  // show: a course is listened to from the start, a news show from the top.
+  const { songs: sorted, openSort, sortSheet } = useSongSort(
+    songs,
+    `podcast:${data.data?.channel.id ?? id}`,
+    {
+      fields: ['recent', 'added', 'alpha'],
+      labels: { recent: 'Newest first', added: 'Oldest first' },
+      noDirection: true,
+    },
+  );
+
   // Stable between progress ticks (only changes with status): if its identity
   // changed on every % update, the Pressable would lose its touch and you'd
   // have to press multiple times — the album screen answers the same way.
@@ -174,14 +187,14 @@ export default function PodcastScreen() {
 
   const ch = data.data.channel;
 
-  // The play button hands the show over in feed order (newest first); the
+  // The play button hands the show over in the order it is shown; the
   // shuffle button asks for the same list dealt (`shuffled`), which playQueue
   // honors without turning the shuffle mode on.
   const play = (start: number, opts?: { shuffled?: boolean }) => {
     // The show's own id, never the route param: opened straight from a feed
     // that param is an address with slashes, and a route id with slashes is
     // one no `Link` can come back to — the Home tile would be dead.
-    void playQueue(songs, start, ch.title, `/podcast/${ch.id}`, opts);
+    void playQueue(sorted, start, ch.title, `/podcast/${ch.id}`, opts);
   };
 
   return (
@@ -197,7 +210,7 @@ export default function PodcastScreen() {
         // a number is either the row's place, which is a lie, or the feed's own,
         // which most feeds get wrong or leave out altogether. What orders the
         // rows is the publish date the row already prints under its title.
-        songs={songs}
+        songs={sorted}
         currentId={playingId}
         // The heart marks the show as a favorite — the user's own heart, kept on
         // the device (SQLite), which is what puts it in the Library's shelf.
@@ -222,11 +235,13 @@ export default function PodcastScreen() {
         }
         // The ⋯ opens the show's own sheet (store-driven, mounted globally).
         onMenu={() => openPodcastMenu(ch)}
+        onSort={sorted.length > 1 ? openSort : undefined}
         emptyState={
           <EmptyState icon="headset-outline" title={t('No episodes')} />
         }
         onPlay={play}
       />
+      {sortSheet}
       <PodcastDownloadDialog channel={confirming} onClose={() => setConfirming(null)} />
     </>
   );

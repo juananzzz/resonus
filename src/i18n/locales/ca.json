@@ -849,5 +849,7 @@
   "{episodes} will be saved to this device ({duration}).": "{episodes} es guardaran en aquest dispositiu ({duration}).",
   "{episodes} will be saved to this device.": "{episodes} es guardaran en aquest dispositiu.",
   "Your library chips": "Xips de La teva biblioteca",
-  "Only downloaded": "Només el que s'ha baixat"
+  "Only downloaded": "Només el que s'ha baixat",
+  "Newest first": "Més recents primer",
+  "Oldest first": "Més antics primer"
 }

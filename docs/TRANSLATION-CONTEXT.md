@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 850 of them.
+Every string the app can show, under the screen it shows up on. 852 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -554,7 +554,9 @@ you are actually typing into, which is easier than reading it here.
 | `{episodes} will be saved to this device ({duration}).` |  |
 | `{episodes} will be saved to this device.` |  |
 | `Couldn't load this podcast.` | One show's own screen: its episodes would not read. The Retry button reads its feed again |
+| `Newest first` |  |
 | `No episodes` | A show whose feed lists no items at all: the publisher has nothing published |
+| `Oldest first` |  |
 | `Podcast` | The kind word: a search result's type and a show's metadata line. A noun, not the verb 'to broadcast' |
 
 ## Podcasts

@@ -39,6 +39,8 @@ interface SortOptions {
   labels?: Partial<Record<SongSortField, string>>;
   /** Default sort if the user hasn't chosen one. */
   defaultSort?: SortPref;
+  /** Every field already says which way it runs, so the sheet asks no direction. */
+  noDirection?: boolean;
 }
 
 interface SortResult {
@@ -72,7 +74,9 @@ export function useSongSort(
   const [local, setLocal] = useState<SortPref>(fallback);
   const openRef = useRef<() => void>(() => {});
 
-  const { field, dir } = persistKey ? (stored ?? fallback) : local;
+  const pref = persistKey ? (stored ?? fallback) : local;
+  const field = pref.field;
+  const dir = options?.noDirection ? 'asc' : pref.dir;
   // For the 'downloaded' sort (group downloaded songs together), and ONLY for
   // it. The map is replaced with every song that finishes downloading, and it
   // feeds the memo below, so subscribing to it always meant re-mapping and
@@ -121,7 +125,7 @@ export function useSongSort(
     <SortSheet
       options={fields.map((f) => ({ key: f, label: options?.labels?.[f] ?? SORT_LABEL[f] }))}
       field={field}
-      dir={dir}
+      dir={options?.noDirection ? undefined : dir}
       onPick={(next, d) => update({ field: next as SongSortField, dir: d })}
       openRef={openRef}
     />

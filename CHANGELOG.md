@@ -12,6 +12,7 @@ Releases before 0.2.1 are only listed on the
 ### Added
 
 - Your library: its chips can be reordered and hidden, in Settings › Navigation.
+- Podcasts: a show's episodes can be sorted newest first, oldest first or A to Z, and play in that order.
 
 ### Changed
 

@@ -848,5 +848,7 @@
   "{episodes} will be saved to this device ({duration}).": "{episodes} will be saved to this device ({duration}).",
   "{episodes} will be saved to this device.": "{episodes} will be saved to this device.",
   "Your library chips": "Your library chips",
-  "Only downloaded": "Only downloaded"
+  "Only downloaded": "Only downloaded",
+  "Newest first": "Newest first",
+  "Oldest first": "Oldest first"
 }
