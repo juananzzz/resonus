@@ -9,3 +9,11 @@
 import { makeMutable } from 'react-native-reanimated';
 
 export const revealOffset = makeMutable(-1);
+
+/**
+ * Whether the player is the screen on top. A pull let go of closes the player
+ * with a back, and a back with anything else on top closes that instead: the
+ * push the pull asked for may not have landed yet, or was dropped by
+ * `pushOnce` (#324).
+ */
+export const playerOnTop = { current: false };

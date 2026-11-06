@@ -26,6 +26,7 @@ Releases before 0.2.1 are only listed on the
 
 ### Fixed
 
+- The screen could stop answering taps after letting go of the mini player halfway up.
 - Jellyfin: Recently played and Most played albums follow your plays instead of the alphabet.
 - Lyrics: a word synced by syllables no longer splits across two lines.
 - Spanish and Catalan: one selected song no longer reads as plural.

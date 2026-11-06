@@ -24,7 +24,7 @@ import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { useT } from '@/i18n';
 import { haptic } from '@/lib/haptics';
 import { router } from 'expo-router';
-import { revealOffset } from '@/lib/playerReveal';
+import { playerOnTop, revealOffset } from '@/lib/playerReveal';
 import { pushOnce } from '@/lib/pushOnce';
 import { currentSong, useLiveInfo, usePlayerStore } from '@/store/player';
 import { usePlaylistPicker } from '@/store/playlistPicker';
@@ -93,7 +93,7 @@ export function MiniPlayer({ active = true }: { active?: boolean }) {
   // Down at the bottom, out of sight: it is let go of (`revealOffset` back to
   // -1) by the player as it unmounts, or it would flash back up for a frame.
   const cancelReveal = () => {
-    if (router.canGoBack()) router.back();
+    if (playerOnTop.current) router.back();
     else revealOffset.value = -1;
   };
   const pan = Gesture.Pan()

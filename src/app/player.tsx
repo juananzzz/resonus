@@ -5,8 +5,8 @@ import Icon from '@/components/Icon';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useIsFocused, useRouter } from 'expo-router';
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   AppState,
@@ -62,7 +62,7 @@ import { useLocalProfile } from '@/hooks/useLocalProfile';
 import { useLyrics } from '@/hooks/useLyrics';
 import { useScreenSize } from '@/hooks/useScreenSize';
 import { useT } from '@/i18n';
-import { revealOffset } from '@/lib/playerReveal';
+import { playerOnTop, revealOffset } from '@/lib/playerReveal';
 import { artistTargets } from '@/lib/artistNav';
 import { routeLook } from '@/lib/audioRouteTypes';
 import { formatGroupedDeviceLabel } from '@/lib/format';
@@ -277,6 +277,19 @@ export default function PlayerScreen() {
   useSettings((s) => s.appFont); // re-render when font changes
   const router = useRouter();
   const isFocused = useIsFocused();
+  const { reveal } = useLocalSearchParams<{ reveal?: string }>();
+  // Only a pull out of the mini player places it. A value left over from a
+  // pull that never got its player would open this one off the screen: an
+  // invisible sheet over the app taking every touch (#324).
+  useLayoutEffect(() => {
+    if (!reveal) revealOffset.value = -1;
+  }, [reveal]);
+  useEffect(() => {
+    playerOnTop.current = isFocused;
+    return () => {
+      playerOnTop.current = false;
+    };
+  }, [isFocused]);
   const song = usePlayerStore(currentSong);
   const live = useLiveInfo(song);
   const source = usePlayerStore((s) => s.source);
