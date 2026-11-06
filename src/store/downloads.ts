@@ -48,7 +48,7 @@ import { serializeLrc } from '@/lib/lrc';
 import { siblingLrcUri } from '@/lib/localLyrics';
 import * as Db from '@/lib/downloadsDb';
 import type { DlAlbum } from '@/lib/downloadsDb';
-import { netTally, timed } from '@/lib/perfLog';
+import { netTally, note, timed } from '@/lib/perfLog';
 import { queryClient } from '@/lib/query';
 import { primaryUrl } from '@/lib/serverUrls';
 import { isManualOffline } from '@/api/netGate';
@@ -551,6 +551,14 @@ function songFileUrl(
     s.downloadLosslessOnly,
   );
   return fileUrlFor(auth, song, bitRate, format);
+}
+
+/** Why a song did not download, for the Diagnostics report. No URL: it carries credentials. */
+function noteFailure(auth: SubsonicAuth, song: Song, e: unknown) {
+  const why = (e instanceof Error ? e.message : String(e)).replace(/https?:\/\/\S*/g, '<url>').slice(0, 120);
+  const { ext, bitRate } = songFileUrl(auth, song);
+  const as = bitRate ? ` as ${ext} ${bitRate}k` : '';
+  note(`download failed: ${why} (${song.suffix ?? '?'}${as})`);
 }
 
 /** Where to fetch a song's file from at this quality, and what it will be. */
@@ -1175,6 +1183,8 @@ export const useDownloads = create<DownloadsState>((set, get) => {
               const status = e instanceof TransferError ? e.status : undefined;
               if (attempt === ATTEMPTS || !worthRetrying(status)) {
                 failed++;
+                // The first few only: the report keeps 30 events (#328).
+                if (failed <= 3) noteFailure(auth, song, e);
                 break;
               }
             } finally {
