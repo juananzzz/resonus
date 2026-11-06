@@ -22,6 +22,7 @@ Releases before 0.2.1 are only listed on the
 - Your library: fully downloaded playlists show ↓, as albums do.
 - Settings: Home & navigation is now called Navigation.
 - Explore: the Downloads chip is now a Downloaded filter that keeps Playlists, Albums, Artists and Songs to what is on your phone.
+- Player: the playback speed and Preserve pitch are kept when the app is closed.
 
 ### Fixed
 

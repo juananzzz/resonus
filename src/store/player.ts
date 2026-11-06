@@ -2361,6 +2361,13 @@ function speedFor(song: Song | null | undefined): number {
   return usePlayerStore.getState().speed;
 }
 
+/** The speed a saved queue carries, within what `setSpeed` allows. */
+function savedSpeed(saved: StoredQueue): { speed: number; varispeed: boolean } {
+  const v = saved.speed;
+  const speed = typeof v === 'number' && Number.isFinite(v) ? Math.min(2, Math.max(0.5, v)) : 1;
+  return { speed, varispeed: saved.varispeed === true };
+}
+
 /** Applies the speed of `song` to the player holding it. */
 function applySpeed(p: AudioPlayer | null, song: Song | null | undefined) {
   if (!p) return;
@@ -3339,6 +3346,9 @@ interface StoredQueue {
    */
   shuffle?: boolean;
   repeat?: RepeatMode;
+  /** Speed and varispeed as they were left (#325). */
+  speed?: number;
+  varispeed?: boolean;
   /** The queue was dealt when it was started (see `queueDealt`). */
   dealt?: boolean;
   /**
@@ -3417,6 +3427,8 @@ function saveQueueLocal(force = false) {
     shuffle,
     queueDealt,
     repeat,
+    speed,
+    varispeed,
   } = usePlayerStore.getState();
   if (queue.length === 0) return;
   if (!force && !queueDirty && AppState.currentState === 'active') return;
@@ -3436,6 +3448,8 @@ function saveQueueLocal(force = false) {
     shuffle,
     dealt: queueDealt,
     repeat,
+    speed,
+    varispeed,
     savedAt: Date.now(),
   };
   localSavedAt = payload.savedAt ?? 0;
@@ -3458,7 +3472,7 @@ function clearQueueLocal() {
   // cold start read them as off. Kept on while the app is open and gone after
   // a restart is the kind of difference nobody can explain to themselves
   // (reported by @ztx-lyghters).
-  const { shuffle, repeat } = usePlayerStore.getState();
+  const { shuffle, repeat, speed, varispeed } = usePlayerStore.getState();
   // Dated like any other write: emptying the queue is this device's last word
   // on it, and what decides whether another player's is newer.
   const empty: StoredQueue = {
@@ -3467,6 +3481,8 @@ function clearQueueLocal() {
     positionSec: 0,
     shuffle,
     repeat,
+    speed,
+    varispeed,
     savedAt: Date.now(),
   };
   localSavedAt = empty.savedAt ?? 0;
@@ -4058,17 +4074,14 @@ interface PlayerState {
    * to the next, which is the point of it (#151): you set it once and practise
    * over a whole album.
    *
-   * It does NOT survive closing the app, unlike shuffle and repeat. Those are
-   * how somebody listens; this one belongs to an afternoon with an instrument,
-   * and a library that quietly comes back at three quarters months later is a
-   * bug report, not a preference. While it is not 1 the player says so.
+   * Survives closing the app with the saved queue, like shuffle and repeat
+   * (#325). While it is not 1 the player says so.
    */
   speed: number;
   /**
    * Varispeed (#277): the pitch moves with the speed, the way a record does on
    * a turntable running fast or slow. Off by default, which keeps the pitch
-   * where it is (#151). Lives as long as the speed does, and for the same
-   * reason: it belongs to a session, not to how somebody listens.
+   * where it is (#151). Saved with the speed.
    */
   varispeed: boolean;
   shuffle: boolean;
@@ -4984,6 +4997,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         shuffle: saved.shuffle === true,
         queueDealt: false,
         repeat: isRepeatMode(saved.repeat) ? saved.repeat : 'off',
+        ...savedSpeed(saved),
       });
       return true;
     }
@@ -5020,6 +5034,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       shuffle: saved.shuffle === true,
       queueDealt: saved.dealt === true,
       repeat: isRepeatMode(saved.repeat) ? saved.repeat : 'off',
+      ...savedSpeed(saved),
     });
     await loadIndex(index, false);
     // Same as the server restore above: only if this queue is still the one.
@@ -5121,8 +5136,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       // Changing account is the real exception, since the mode being restored
       // belongs with the other profile's queue.
       // The speed goes with them, and for the same reason: it is about
-      // listening, not about this queue. It does not outlive the run either
-      // way (see `speed`).
+      // listening, not about this queue.
       ...(forProfile ? { shuffle: false, repeat: 'off' as const, speed: 1, varispeed: false } : {}),
       // Not one of those two: this is about the queue that is going away, not
       // about how somebody listens.
@@ -5190,7 +5204,9 @@ usePlayerStore.subscribe((st, prev) => {
     st.radioMode !== prev.radioMode ||
     st.radioSeed !== prev.radioSeed ||
     st.shuffle !== prev.shuffle ||
-    st.repeat !== prev.repeat
+    st.repeat !== prev.repeat ||
+    st.speed !== prev.speed ||
+    st.varispeed !== prev.varispeed
   ) {
     queueDirty = true;
   }
