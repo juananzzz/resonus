@@ -70,16 +70,15 @@ const SEARCH_COUNT = 50;
 /** Delay before querying the server: without this it'd be one request per keystroke. */
 const DEBOUNCE_MS = 300;
 
-// Same orders, in the same order, as Artists: they're sibling screens and
-// seeing them listed differently felt jarring. 'alphabeticalByArtist' was dropped
-// for this reason, by symmetry: it has no equivalent in Artists, where sorting
-// by artist is exactly what A-Z already does.
+// The same orders as Artists, plus album artist, which Artists has no use for
+// (its A-Z is that) and other clients offer (#327).
 const SORTS: { key: AlbumListType; label: string }[] = [
   { key: 'recent', label: 'Recently played' },
   { key: 'frequent', label: 'Most played::albums' },
   { key: 'newest', label: 'Recently added' },
   { key: 'byYear', label: 'New releases' },
   { key: 'alphabeticalByName', label: 'A-Z' },
+  { key: 'alphabeticalByArtist', label: 'Album artist' },
   { key: 'random', label: 'Shuffle' },
 ];
 
