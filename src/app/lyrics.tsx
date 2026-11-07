@@ -9,8 +9,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COVER, songCoverUrl } from '@/api/data';
@@ -43,31 +43,42 @@ export default function LyricsScreen() {
   // The screen is frozen by then and cannot render again, so the masked
   // lyrics are hidden from the UI thread instead, the moment it starts.
   const navigation = useNavigation();
+  // Starts at 0 on Android: the screen has no native open animation (animation:
+  // 'none' in the route config), so we drive the fade-in ourselves. iOS keeps
+  // the system fade, so it starts at 1 there and nothing changes.
   const maskedOpacity = useSharedValue(1);
   const maskedStyle = useAnimatedStyle(() => ({ opacity: maskedOpacity.value }));
+  useEffect(() => {
+    if (Platform.OS !== 'ios') {
+      maskedOpacity.value = 0;
+      maskedOpacity.value = withTiming(1, { duration: 220 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(
     () => navigation.addListener('beforeRemove', (e) => {
-      // Already fading: the action dispatched below triggers a second beforeRemove;
-      // the value is 0 by then, so we let it proceed without another prevention.
+      // Already fading out: the dispatch below fires a second beforeRemove;
+      // by then the value is 0 so we let navigation proceed.
       if (maskedOpacity.value === 0) return;
       e.preventDefault();
-      maskedOpacity.value = 0;
-      // Two frames: first for the UI thread to apply opacity=0, second for it
-      // to composite that frame. Only then start the transition — otherwise the
-      // native slide-down captures a frame of the visible screen and the gray
-      // shell is visible for the duration of the animation.
+      // Fade the whole screen out (220 ms), then navigate with no native
+      // animation — the player is already visible through the transparent surface.
       const action = e.data.action;
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => navigation.dispatch(action))
-      );
+      const dispatch = () => navigation.dispatch(action);
+      maskedOpacity.value = withTiming(0, { duration: 220 }, (finished) => {
+        'worklet';
+        if (finished) runOnJS(dispatch)();
+      });
     }),
     [navigation, maskedOpacity],
   );
   const close = () => {
-    maskedOpacity.value = 0;
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => router.back())
-    );
+    if (maskedOpacity.value === 0) return;
+    const goBack = () => router.back();
+    maskedOpacity.value = withTiming(0, { duration: 220 }, (finished) => {
+      'worklet';
+      if (finished) runOnJS(goBack)();
+    });
   };
   const plainLineStyle = useLyricsLineStyle(true);
   // Same iOS rule as the lyrics rows: a custom font file and an explicit

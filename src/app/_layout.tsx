@@ -78,6 +78,17 @@ const FULL_MODAL = {
   animation: Platform.OS === 'ios' ? 'fade' : 'fade_from_bottom',
 } as const;
 
+/**
+ * Lyrics screen on Android: no native animation. The screen fades in and out
+ * entirely via maskedOpacity in lyrics.tsx, so there is no native modal
+ * background painted during the close transition — which is what caused the
+ * gray flash visible between the lyrics and the player.
+ */
+const LYRICS_MODAL = {
+  ...FULL_MODAL,
+  animation: Platform.OS === 'ios' ? 'fade' : 'none',
+} as const;
+
 /* The detail screens take the ordinary push, like every other screen here.
  * They were `fullScreenModal` for a while: iOS presents a full screen modal
  * over everything the app draws, and `GlobalTabBar` and `GlobalMiniPlayer`
@@ -457,7 +468,7 @@ export default function RootLayout() {
               />
               <Stack.Screen
                 name="lyrics"
-                options={FULL_MODAL}
+                options={LYRICS_MODAL}
               />
             </Stack>
             </BarBlurTarget>
