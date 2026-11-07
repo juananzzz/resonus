@@ -6,7 +6,6 @@
 import Icon from '@/components/Icon';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { Image } from 'expo-image';
-import * as Font from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -47,16 +46,28 @@ export default function LyricsScreen() {
   const maskedOpacity = useSharedValue(1);
   const maskedStyle = useAnimatedStyle(() => ({ opacity: maskedOpacity.value }));
   useEffect(
-    () => navigation.addListener('beforeRemove', () => {
+    () => navigation.addListener('beforeRemove', (e) => {
+      // Already fading: the action dispatched below triggers a second beforeRemove;
+      // the value is 0 by then, so we let it proceed without another prevention.
+      if (maskedOpacity.value === 0) return;
+      e.preventDefault();
       maskedOpacity.value = 0;
+      // Two frames: first for the UI thread to apply opacity=0, second for it
+      // to composite that frame. Only then start the transition — otherwise the
+      // native slide-down captures a frame of the visible screen and the gray
+      // shell is visible for the duration of the animation.
+      const action = e.data.action;
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => navigation.dispatch(action))
+      );
     }),
     [navigation, maskedOpacity],
   );
-  // The close button gets there late: by the time its press reaches
-  // `beforeRemove` the fade has begun. It hides them a frame ahead instead.
   const close = () => {
     maskedOpacity.value = 0;
-    requestAnimationFrame(() => router.back());
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => router.back())
+    );
   };
   const plainLineStyle = useLyricsLineStyle(true);
   // Same iOS rule as the lyrics rows: a custom font file and an explicit

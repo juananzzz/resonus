@@ -7,7 +7,10 @@ export const listPerf = {
   removeClippedSubviews: true,
   initialNumToRender: 10,
   maxToRenderPerBatch: 10,
-  windowSize: 11,
+  // 21 screens keeps ~315 rows mounted on a typical phone — enough to cover a
+  // 316-song playlist entirely, so ReanimatedSwipeable rows never unmount during
+  // fast-scroll and re-mount blank.
+  windowSize: 21,
   // 100ms between render batches (default 50ms): halves the render frequency
   // during fast-flings, keeping frames smooth at the cost of blanks on
   // very fast scrolls through completely un-rendered regions.
