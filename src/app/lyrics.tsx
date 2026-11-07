@@ -99,7 +99,10 @@ export default function LyricsScreen() {
   return (
     <View style={[styles.root, { backgroundColor: bg }]}>
       {background === 'cover' && cover ? (
-        <>
+        // The blur and its scrim share `maskedStyle`: when the screen starts
+        // closing, both hide at the same instant as the lyrics content, so
+        // neither lingers as a blurred panel after the content is gone.
+        <Animated.View style={[StyleSheet.absoluteFill, maskedStyle]}>
           {/* Same as the player: no `recyclingKey`, or the change of song
               blanks this to black before the next cover arrives. */}
           <Image
@@ -113,7 +116,7 @@ export default function LyricsScreen() {
               stay readable over a bright cover, and which way it washes
               follows the appearance. */}
           <View style={styles.coverScrim} />
-        </>
+        </Animated.View>
       ) : null}
       <View style={[styles.safe, { paddingTop: topPad, paddingBottom: insets.bottom }]}>
       <View style={styles.header}>

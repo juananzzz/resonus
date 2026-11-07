@@ -7,7 +7,11 @@ export const listPerf = {
   removeClippedSubviews: true,
   initialNumToRender: 10,
   maxToRenderPerBatch: 10,
-  windowSize: 11,
+  windowSize: 7,
+  // 100ms between render batches (default 50ms): halves the render frequency
+  // during fast-flings, keeping frames smooth at the cost of blanks on
+  // very fast scrolls through completely un-rendered regions.
+  updateCellsBatchingPeriod: 100,
 };
 
 /**
