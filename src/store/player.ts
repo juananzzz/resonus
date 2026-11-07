@@ -67,6 +67,7 @@ import { episodePlayed, episodeResumeAt } from '@/lib/episodeResume';
 import { hashKey } from '@/lib/localLibrary';
 import { getEpisodeProgress, saveEpisodeProgress } from '@/lib/podcastDb';
 import { holdSpeculation, releaseSpeculation, speculationOpen } from '@/lib/speculation';
+import { whenIdle } from '@/lib/idle';
 import { favoriteLabel, favoriteState, onFavoritesChange, toggleFavorite } from '@/lib/remoteFavorite';
 import type { Remap } from '@/lib/navidromeRemap';
 import { remapSong } from '@/lib/navidromeRemap';
@@ -3844,7 +3845,7 @@ function attachAppState() {
     // cold, so leaving this to the opening would mean it almost never ran.
     // Not for a trip to another app and back, though: changing players takes
     // longer than that, and this is a request.
-    if (Date.now() - wentAway > 30_000) void adoptNewerServerQueue();
+    if (Date.now() - wentAway > 30_000) whenIdle(() => void adoptNewerServerQueue());
     // Still waiting out a dead connection: it did not come back while nobody
     // was watching, so the stop becomes final now that somebody is — with
     // the toast the background never showed.

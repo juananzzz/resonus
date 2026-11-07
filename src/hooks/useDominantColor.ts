@@ -216,7 +216,7 @@ export async function coverColorOf(
   try {
     const { getColors, cache } = await import('react-native-image-colors');
     const fallback = theme.surfaceHighlight;
-    const res = await getColors(src, { fallback, cache: true, key: src, quality: 'high' });
+    const res = await getColors(src, { fallback, cache: true, key: src, quality: 'low' });
     if (!res) return null;
     const swatches = Object.entries(res).filter(
       ([k]) => k !== 'platform' && k !== 'quality' && k !== 'average',

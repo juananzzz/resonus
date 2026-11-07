@@ -49,6 +49,7 @@ import { siblingLrcUri } from '@/lib/localLyrics';
 import * as Db from '@/lib/downloadsDb';
 import type { DlAlbum } from '@/lib/downloadsDb';
 import { netTally, note, timed } from '@/lib/perfLog';
+import { speculationOpen } from '@/lib/speculation';
 import { queryClient } from '@/lib/query';
 import { primaryUrl } from '@/lib/serverUrls';
 import { isManualOffline } from '@/api/netGate';
@@ -1445,7 +1446,7 @@ export const useDownloads = create<DownloadsState>((set, get) => {
       if (run !== hydrateRun) return;
       set({ files, hydrated: true });
       // Not on the way in: it may fetch pictures, though only ever once.
-      if (active) setTimeout(() => void sweepTrackCovers(), 20_000);
+      if (active) setTimeout(() => void speculationOpen().then(() => sweepTrackCovers()), 20_000);
       // The bitrates come after, on their own: nothing on the way in reads
       // them, and digging them out of the rows' JSON is the expensive half of
       // what this used to ask for (see `downloadedBitRates`).
