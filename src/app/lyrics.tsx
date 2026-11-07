@@ -96,13 +96,14 @@ export default function LyricsScreen() {
     </View>
   );
 
+  // The whole screen fades to transparent on close so the player underneath
+  // shows through immediately: no gray shell left behind, no blur ghost.
+  // maskedStyle (opacity 0 on beforeRemove) also pre-empts the MaskedView
+  // solid-black Android bug — the surface is gone before the transition paints.
   return (
-    <View style={[styles.root, { backgroundColor: bg }]}>
+    <Animated.View style={[styles.root, { backgroundColor: bg }, maskedStyle]}>
       {background === 'cover' && cover ? (
-        // The blur and its scrim share `maskedStyle`: when the screen starts
-        // closing, both hide at the same instant as the lyrics content, so
-        // neither lingers as a blurred panel after the content is gone.
-        <Animated.View style={[StyleSheet.absoluteFill, maskedStyle]}>
+        <>
           {/* Same as the player: no `recyclingKey`, or the change of song
               blanks this to black before the next cover arrives. */}
           <Image
@@ -116,7 +117,7 @@ export default function LyricsScreen() {
               stay readable over a bright cover, and which way it washes
               follows the appearance. */}
           <View style={styles.coverScrim} />
-        </Animated.View>
+        </>
       ) : null}
       <View style={[styles.safe, { paddingTop: topPad, paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
@@ -140,7 +141,6 @@ export default function LyricsScreen() {
           width and the eye loses the next one on the way back (#131). Cover
           mode fades the content's alpha rather than painting over the art. */}
       {background === 'cover' ? (
-        <Animated.View style={[styles.body, maskedStyle]}>
         <MaskedView
           style={styles.body}
           maskElement={(
@@ -155,7 +155,6 @@ export default function LyricsScreen() {
         >
           {lyricsContent}
         </MaskedView>
-        </Animated.View>
       ) : (
         <View style={styles.body}>{lyricsContent}</View>
       )}
@@ -194,7 +193,7 @@ export default function LyricsScreen() {
         </View>
       </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
