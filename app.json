@@ -44,6 +44,7 @@
       "./plugins/withReleaseSigning",
       "./plugins/withAbiVersionCode",
       "./plugins/withGradleMemory",
+      "./plugins/withExpoAudioProguard",
       "./plugins/withoutFontWeightAdjustment",
       "./plugins/withTrimmedPermissions",
       "./plugins/withAppLocales",
