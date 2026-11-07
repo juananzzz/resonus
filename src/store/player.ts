@@ -3323,8 +3323,42 @@ function queueStorageKey(): string | null {
   return queueKeyFor(auth, offline);
 }
 
+/**
+ * Fields saved to SecureStore per song. Detail-sheet-only fields (comment,
+ * contributors, genres, moods, isrc, musicBrainzId, bpm, channelCount,
+ * bitDepth, samplingRate, dlBytes) are stripped before writing to keep the
+ * encrypted payload small. All omitted fields are optional on Song, so the
+ * restored object is still assignment-compatible with Song[].
+ */
+type StoredSong = Pick<
+  Song,
+  | 'id' | 'title' | 'artist' | 'album' | 'albumId' | 'artistId'
+  | 'artists' | 'albumArtists' | 'coverArt' | 'duration' | 'track'
+  | 'discNumber' | 'starred' | 'playCount' | 'userRating' | 'url'
+  | 'vod' | 'podcastChannelId' | 'genre' | 'suffix' | 'bitRate'
+  | 'dlBitRate' | 'coverBase64' | 'coverMime' | 'localUri'
+  | 'replayGain' | 'fromMix' | 'queued' | 'addedAt' | 'unavailable'
+  | 'explicitStatus'
+>;
+
+function trimSong(s: Song): StoredSong {
+  return {
+    id: s.id, title: s.title, artist: s.artist, album: s.album,
+    albumId: s.albumId, artistId: s.artistId, artists: s.artists,
+    albumArtists: s.albumArtists, coverArt: s.coverArt, duration: s.duration,
+    track: s.track, discNumber: s.discNumber, starred: s.starred,
+    playCount: s.playCount, userRating: s.userRating, url: s.url,
+    vod: s.vod, podcastChannelId: s.podcastChannelId, genre: s.genre,
+    suffix: s.suffix, bitRate: s.bitRate, dlBitRate: s.dlBitRate,
+    coverBase64: s.coverBase64, coverMime: s.coverMime, localUri: s.localUri,
+    replayGain: s.replayGain, fromMix: s.fromMix, queued: s.queued,
+    addedAt: s.addedAt, unavailable: s.unavailable,
+    explicitStatus: s.explicitStatus,
+  };
+}
+
 interface StoredQueue {
-  queue: Song[];
+  queue: StoredSong[];
   index: number;
   positionSec: number;
   /** The queue was a radio: when restoring it must keep extending itself. */
@@ -3332,7 +3366,7 @@ interface StoredQueue {
   /** Track the radio was started from, so it keeps extending from the same
    *  place after a restart. Absent in queues saved by older versions: those
    *  fall back to seeding off the tail. */
-  radioSeed?: Song | null;
+  radioSeed?: StoredSong | null;
   /** Where the queue came from, for the player's "playing from" header. */
   source?: string | null;
   /** Route of that origin, so tapping the header still navigates there. */
@@ -3439,11 +3473,11 @@ function saveQueueLocal(force = false) {
   queueDirty = false;
   // Size cap as a precaution for SecureStore; 500 songs is more than enough.
   const payload: StoredQueue = {
-    queue: queue.slice(0, 500),
+    queue: queue.slice(0, 500).map(trimSong),
     index: Math.min(index, 499),
     positionSec,
     radioMode,
-    radioSeed,
+    radioSeed: radioSeed ? trimSong(radioSeed) : radioSeed,
     source,
     sourceHref,
     shuffle,
