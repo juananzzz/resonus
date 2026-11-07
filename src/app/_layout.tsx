@@ -79,15 +79,17 @@ const FULL_MODAL = {
 } as const;
 
 /**
- * Lyrics screen on Android: no native animation. The screen fades in and out
- * entirely via maskedOpacity in lyrics.tsx, so there is no native modal
- * background painted during the close transition — which is what caused the
- * gray flash visible between the lyrics and the player.
+ * Lyrics screen on Android: containedTransparentModal (same as the player)
+ * with no native animation. containedTransparentModal keeps the player
+ * composited in the same native container so it shows through when
+ * maskedOpacity fades to 0 on close — a plain transparentModal is a separate
+ * Android window and only shows black behind. The transparent contentStyle
+ * overrides the global opaque fill for the same reason. The fade in/out is
+ * driven entirely by maskedOpacity in lyrics.tsx.
  */
-const LYRICS_MODAL = {
-  ...FULL_MODAL,
-  animation: Platform.OS === 'ios' ? 'fade' : 'none',
-} as const;
+const LYRICS_MODAL = Platform.OS === 'ios'
+  ? ({ presentation: 'fullScreenModal', animation: 'fade' } as const)
+  : ({ presentation: 'containedTransparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } } as const);
 
 /* The detail screens take the ordinary push, like every other screen here.
  * They were `fullScreenModal` for a while: iOS presents a full screen modal

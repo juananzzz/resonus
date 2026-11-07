@@ -46,11 +46,10 @@ export default function LyricsScreen() {
   // Starts at 0 on Android: the screen has no native open animation (animation:
   // 'none' in the route config), so we drive the fade-in ourselves. iOS keeps
   // the system fade, so it starts at 1 there and nothing changes.
-  const maskedOpacity = useSharedValue(1);
+  const maskedOpacity = useSharedValue(Platform.OS === 'ios' ? 1 : 0);
   const maskedStyle = useAnimatedStyle(() => ({ opacity: maskedOpacity.value }));
   useEffect(() => {
     if (Platform.OS !== 'ios') {
-      maskedOpacity.value = 0;
       maskedOpacity.value = withTiming(1, { duration: 220 });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
