@@ -5,17 +5,14 @@
  */
 export const listPerf = {
   removeClippedSubviews: true,
-  // Render 20 items per batch (doubled from default 10) so the full buffer fills
-  // twice as fast on first open — a fast fling before all rows are rendered shows
-  // blank cells, and larger batches halve the time to cover a 316-song playlist.
   initialNumToRender: 10,
+  // 20 items per batch: cells fill in quickly during a fast fling so blank rows
+  // don't appear, while the reduced windowSize keeps the total mounted count low.
   maxToRenderPerBatch: 20,
-  // 21 screens keeps ~315 rows mounted on a typical phone — enough to cover a
-  // 316-song playlist entirely, so ReanimatedSwipeable rows never unmount during
-  // fast-scroll and re-mount blank.
-  windowSize: 21,
-  // 50ms (the default): reverted from 100ms. Faster batching means un-rendered
-  // rows fill in sooner during fast-scroll, at the cost of slightly more JS work.
+  // 11 viewports keeps ~130 rows mounted — roughly half what windowSize: 21
+  // mounted. Fewer live ReanimatedSwipeable gesture handlers = less lag. The
+  // higher maxToRenderPerBatch compensates by filling newly-visible rows fast.
+  windowSize: 11,
   updateCellsBatchingPeriod: 50,
 };
 

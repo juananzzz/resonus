@@ -38,8 +38,10 @@ export function usePressFeedback(): {
   const dim = useSharedValue(1);
 
   const onPressIn = useCallback(() => {
+    // 20 ms is enough to avoid false positives during a scroll flick, but
+    // short enough that a deliberate tap feels instant.
     dim.value = withDelay(
-      motion.duration.press,
+      20,
       withTiming(PRESSED, { duration: motion.duration.press }),
     );
   }, [dim]);

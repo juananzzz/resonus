@@ -25,13 +25,13 @@ export const motion = {
    */
   duration: {
     /** Appearing or going without moving: the mini player, the tab bar. */
-    fade: 200,
+    fade: 180,
     /** Arriving: a sheet up from the bottom, a panel in from the side. */
-    enter: 240,
+    enter: 200,
     /** Going, by the same road. */
-    exit: 160,
+    exit: 140,
     /** Travelling somewhere the eye follows across the screen. */
-    move: 220,
+    move: 190,
     /** A line of lyrics walking up to its place, which is further than it
      *  looks and reads as a jump if it is hurried. */
     scroll: 540,
