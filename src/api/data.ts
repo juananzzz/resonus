@@ -883,9 +883,53 @@ async function mirrorArtist(
   return Local.getArtist(id);
 }
 
-export function getArtistInfo(id: string): Promise<Subsonic.ArtistInfo> {
-  if (isOffline()) return Promise.resolve(Local.getArtistInfo(id));
-  return Subsonic.getArtistInfo(auth(), id);
+/** How long the set of listed artists is trusted before it is read again. */
+const LISTED_ARTISTS_TTL_MS = 10 * 60 * 1000;
+let listedArtists: { key: string; at: number; ids: Promise<Set<string>> } | null = null;
+
+/**
+ * The ids `getArtists` lists, shared between callers. That list is the one the
+ * server itself calls its artists (Navidrome: album artists only), which is
+ * what a "similar artist" has to be to have anything to open. Read once per
+ * profile and then reused, as it is a whole-library call.
+ */
+function listedArtistIds(a: Subsonic.SubsonicAuth): Promise<Set<string>> {
+  const key = profileKeyOf(a) ?? 'none';
+  if (listedArtists && listedArtists.key === key && Date.now() - listedArtists.at < LISTED_ARTISTS_TTL_MS) {
+    return listedArtists.ids;
+  }
+  const ids = getArtists().then((list) => new Set(list.map((x) => x.id)));
+  const entry = { key, at: Date.now(), ids };
+  listedArtists = entry;
+  // A failed read must not be remembered for the whole TTL.
+  ids.catch(() => {
+    if (listedArtists === entry) listedArtists = null;
+  });
+  return ids;
+}
+
+/**
+ * Artist info with the similar artists cut down to ones the library lists.
+ *
+ * Navidrome matches Last.fm's neighbours against every artist row it has,
+ * credit-only ones included (a composer or producer who never made a track of
+ * their own). They have no albums, so they showed up as cards that open an
+ * empty artist, and in radios as a slot with no tracks. Their `albumCount`
+ * cannot tell them apart (it adds up every role), the listed artists can.
+ * If the list can't be read the similar artists are left as they came.
+ */
+export async function getArtistInfo(id: string): Promise<Subsonic.ArtistInfo> {
+  if (isOffline()) return Local.getArtistInfo(id);
+  const a = auth();
+  const info = await Subsonic.getArtistInfo(a, id);
+  if (info.similarArtists.length === 0) return info;
+  try {
+    const listed = await listedArtistIds(a);
+    if (listed.size === 0) return info;
+    return { ...info, similarArtists: info.similarArtists.filter((s) => listed.has(s.id)) };
+  } catch {
+    return info;
+  }
 }
 
 /** Albums where the artist appears without being the album artist. */
