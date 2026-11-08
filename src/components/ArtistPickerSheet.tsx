@@ -2,7 +2,7 @@
  * Bottom sheet for choosing which artist to go to when a song or album has
  * multiple artists (collaborations). Opened from the `artistPicker` store.
  */
-import { useSegments } from 'expo-router';
+import { useNavState } from '@/store/navState';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -21,7 +21,7 @@ export function ArtistPickerSheet() {
   const insets = useSafeAreaInsets();
   // What is on top decides whether the artist pushes or replaces the modal
   // (see `pushOrReplace`); read before the early return below.
-  const top = useSegments()[0];
+  const top = useNavState((s) => s.rootSegment);
   const t = useT();
   const artists = useArtistPicker((s) => s.artists);
   const closeNow = useArtistPicker((s) => s.close);

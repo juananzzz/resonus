@@ -200,12 +200,13 @@ function TrackRowBase({
   // Memoized below, and with its own `propsEqual` at that: the list repainting
   // does not reach the rows, so each one asks for the appearance itself.
   useTheme();
-  const { showDuration, showRating, swipeAction, swipeLeftAction } = useSettings(
+  const { showDuration, showRating, swipeAction, swipeLeftAction, lang } = useSettings(
     useShallow((s) => ({
       showDuration: s.showSongDuration,
       showRating: s.showListRating,
       swipeAction: s.swipeAction,
       swipeLeftAction: s.swipeLeftAction,
+      lang: s.language,
     })),
   );
   const addToQueue = usePlayerStore((s) => s.addToQueue);
@@ -250,9 +251,6 @@ function TrackRowBase({
     ? !song.localUri && !downloaded && !streamReachable(song)
     : !!song.unavailable;
   const explicit = useExplicitBadge(song.explicitStatus);
-  // The language, so an episode's publish date reads the way the rest of the
-  // screen does (see `formatEpisodeDate`).
-  const lang = useSettings((s) => s.language);
   // An episode's "how long · when": the two facts a listener needs to tell
   // episodes apart. The duration leaves the row's right edge for episodes and
   // comes up here instead, so the date has a home and the two read together.

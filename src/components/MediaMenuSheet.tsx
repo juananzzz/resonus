@@ -5,7 +5,7 @@
  * is chosen (same query the screen uses, so cache is shared).
  */
 import Icon from '@/components/Icon';
-import { useSegments } from 'expo-router';
+import { useNavState } from '@/store/navState';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -93,7 +93,7 @@ export function MediaMenuSheet() {
   const queueMany = usePlayerStore((s) => s.queueMany);
   // What is on top decides whether detail screens push or replace the modal
   // (see `pushOrReplace`); read before the early return below.
-  const top = useSegments()[0];
+  const top = useNavState((s) => s.rootSegment);
   const openArtistPicker = useArtistPicker((s) => s.open);
   const [confirmDelete, setConfirmDelete] = useState(false);
   // The stars take over the sheet instead of sitting among the actions, as in
