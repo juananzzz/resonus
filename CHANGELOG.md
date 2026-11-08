@@ -34,6 +34,7 @@ Releases before 0.2.1 are only listed on the
 - Home widget: no longer rewritten every few seconds while music plays in the background.
 - Casting: a song no longer starts halfway through when you start a new list.
 - Casting: more renderers move on to the next song when one ends.
+- Garmin watches and other devices: Next works every time (#307).
 
 ## [0.8.7] - 2026-11-01
 

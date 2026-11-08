@@ -1177,7 +1177,7 @@ index 0000000000000000000000000000000000000000..a4e9d208d0fa8f34440bc355de02f811
 +  }
 +}
 diff --git a/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt b/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt
-index 196a5d57f887c2667a88543bd2f6a80044a044f2..4e093dc6d2dea7acb919a41f694db6bf04772752 100644
+index 196a5d57f887c2667a88543bd2f6a80044a044f2..f795ace73af25b6c19bf74f3a0664a24fab904c1 100644
 --- a/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt
 +++ b/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt
 @@ -27,6 +27,7 @@ import expo.modules.audio.AudioLockScreenOptions
@@ -1362,7 +1362,7 @@ index 196a5d57f887c2667a88543bd2f6a80044a044f2..4e093dc6d2dea7acb919a41f694db6bf
    private fun postOrStartForegroundNotification(startInForeground: Boolean) {
      if (startInForeground) {
        postOrStartForegroundNotificationNow(startInForeground = true)
-@@ -321,12 +429,21 @@ class AudioControlsService : MediaSessionService() {
+@@ -321,17 +429,36 @@ class AudioControlsService : MediaSessionService() {
    }
  
    private fun resolveSessionPlayer(player: AudioPlayer, options: AudioLockScreenOptions?): Player {
@@ -1376,17 +1376,37 @@ index 196a5d57f887c2667a88543bd2f6a80044a044f2..4e093dc6d2dea7acb919a41f694db6bf
 +      { positionMs -> player.emitRemoteSeek(positionMs) }
 +    )
      val isLive = options?.isLiveStream ?: player.isLive
-     if (!isLive) {
+-    if (!isLive) {
 -      return player.ref
-+      return base
-     }
+-    }
  
 -    return object : ForwardingPlayer(player.ref) {
 +    return object : ForwardingPlayer(base) {
++      // The player only offers "next" while gapless has the next track loaded,
++      // and media3 drops a command the player does not offer before
++      // AudioMediaSessionCallback.onPlayerCommandRequest sees it: Garmin's next
++      // worked some of the time (#307). Previous never had the problem, a
++      // single track can always go back to its start. The callback runs all
++      // four in JS, so the player is never asked to.
        override fun getAvailableCommands(): Player.Commands {
-         return super.getAvailableCommands().buildUpon()
-           .remove(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
-@@ -371,7 +488,14 @@ class AudioControlsService : MediaSessionService() {
+-        return super.getAvailableCommands().buildUpon()
+-          .remove(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+-          .build()
++        val commands = super.getAvailableCommands().buildUpon()
++          .add(Player.COMMAND_SEEK_TO_NEXT)
++          .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
++          .add(Player.COMMAND_SEEK_TO_PREVIOUS)
++          .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
++        if (isLive) commands.remove(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
++        return commands.build()
+       }
++
++      override fun isCommandAvailable(command: Int): Boolean =
++        getAvailableCommands().contains(command)
+     }
+   }
+ 
+@@ -371,7 +498,14 @@ class AudioControlsService : MediaSessionService() {
            updateMetadata(metadata)
          }
          val session = MediaSession.Builder(context, sessionPlayer)
@@ -1402,7 +1422,7 @@ index 196a5d57f887c2667a88543bd2f6a80044a044f2..4e093dc6d2dea7acb919a41f694db6bf
            .build()
  
          // Replace the basic media session with a session connected to our playback service.
-@@ -452,7 +576,14 @@ class AudioControlsService : MediaSessionService() {
+@@ -452,7 +586,14 @@ class AudioControlsService : MediaSessionService() {
            updateMetadata(metadata)
          }
          val session = MediaSession.Builder(context, sessionPlayer)
@@ -1418,7 +1438,7 @@ index 196a5d57f887c2667a88543bd2f6a80044a044f2..4e093dc6d2dea7acb919a41f694db6bf
            .build()
  
          player.mediaSession.release()
-@@ -558,6 +689,9 @@ class AudioControlsService : MediaSessionService() {
+@@ -558,6 +699,9 @@ class AudioControlsService : MediaSessionService() {
  
      const val ACTION_SEEK_FORWARD = "expo.modules.audio.action.SEEK_FORWARD"
      const val ACTION_SEEK_BACKWARD = "expo.modules.audio.action.SEEK_BACKWARD"
@@ -3262,7 +3282,7 @@ index d26560627c2dfa97370440ad28304617f3f9f0f7..31a715beb88474b4029784074070a0c1
          player.ref.pause()
          if !player.keepAudioSessionActive {
 diff --git a/ios/AudioPlayer.swift b/ios/AudioPlayer.swift
-index 074294321e872bb53c0b2d41044dac3c612f14f0..0b6786139c65a55568e4f886c7f82130f8ed7f1b 100644
+index 074294321e872bb53c0b2d41044dac3c612f14f0..10a9ec0ce086f81072bdbc6ded1aadae41fc687d 100644
 --- a/ios/AudioPlayer.swift
 +++ b/ios/AudioPlayer.swift
 @@ -4,6 +4,7 @@ import Combine
@@ -3411,11 +3431,13 @@ index 074294321e872bb53c0b2d41044dac3c612f14f0..0b6786139c65a55568e4f886c7f82130
      let wasPlaying = ref.timeControlStatus == .playing
      let wasSamplingEnabled = samplingEnabled
      removeQueuedLoopItems()
-@@ -310,4 +375,5 @@ public class AudioPlayer: SharedRef<AVPlayer>, Playable {
+@@ -308,6 +373,7 @@ public class AudioPlayer: SharedRef<AVPlayer>, Playable {
+   }
+ 
    private func replacePlayer(with source: AudioSource, restoreSampling: Bool) {
 +    MediaController.shared.removeSession(for: ref)
      teardownPlayer()
-
+ 
      ref = AudioUtils.createAVPlayer(from: source)
 @@ -319,6 +385,7 @@ public class AudioPlayer: SharedRef<AVPlayer>, Playable {
    }
@@ -3537,17 +3559,14 @@ index 074294321e872bb53c0b2d41044dac3c612f14f0..0b6786139c65a55568e4f886c7f82130
          let currentTime = finishedItem.duration.seconds
          self.updateStatus(with: [
            "playing": false,
-@@ -506,9 +647,10 @@ public class AudioPlayer: SharedRef<AVPlayer>, Playable {
-   public override func sharedObjectWillRelease() {
-     ref.currentItem?.cancelPendingSeeks()
-     owningRegistry?.remove(self)
-
-     if isActiveForLockScreen {
+@@ -511,6 +652,7 @@ public class AudioPlayer: SharedRef<AVPlayer>, Playable {
        MediaController.shared.setActivePlayer(nil)
      }
-
+ 
 +    MediaController.shared.removeSession(for: ref)
      teardownPlayer()
+ 
+     audioProcessor?.invalidate()
 diff --git a/ios/AudioRecords.swift b/ios/AudioRecords.swift
 index 33db27c3b8fb40fa9db6659a0787c6b2b503d1ab..a5c41356f93d3d4a45bf14020af1cb1943731751 100644
 --- a/ios/AudioRecords.swift
@@ -3619,10 +3638,12 @@ index 79c7c0b256581a768c42a0291bf84bdff4c4b142..13bbad46de02ac1b42a05877e510f905
  
      let asset = AVURLAsset(url: finalUrl, options: options)
 diff --git a/ios/MediaController.swift b/ios/MediaController.swift
-index e977f577cd2e16b194b56537ad76b423f40d2496..9100d311443441581fcb4c3b5e33b428771bdc95 100644
+index e977f577cd2e16b194b56537ad76b423f40d2496..a3ea966cf083987ff78169e5c3edde173b9f6377 100644
 --- a/ios/MediaController.swift
 +++ b/ios/MediaController.swift
-@@ -8,12 +8,77 @@ class MediaController {
+@@ -6,11 +6,76 @@ class MediaController {
+   static let shared = MediaController()
+ 
    private var activePlayer: AudioPlayer?
 -  private var remoteCommandCenter = MPRemoteCommandCenter.shared()
 -  private var nowPlayingInfoCenter = MPNowPlayingInfoCenter.default()
@@ -3699,20 +3720,21 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..9100d311443441581fcb4c3b5e33b428
    private var artworkLoadToken: UUID?
    private var currentArtworkItemIdentifier: ObjectIdentifier?
    private var isLiveStream = false
+@@ -39,8 +104,11 @@ class MediaController {
+     isLiveStream = options?.isLiveStream ?? player?.isLive ?? false
  
-   func setActivePlayer(_ player: AudioPlayer?, options: LockScreenOptions? = nil) {
-     performOnMain {
-@@ -41,3 +106,6 @@ class MediaController {
      if let player {
+-      enableRemoteCommands(options: options)
+-      updateNowPlayingInfoOnMain(for: player)
 +      activateSession(for: player) { [weak self] isActive in
 +        guard let self, isActive, self.activePlayer?.id == player.id, self.activeSession === self.session(for: player) else { return }
 +        self.enableRemoteCommands(options: options)
 +        self.updateNowPlayingInfoOnMain(for: player)
 +      }
--      enableRemoteCommands(options: options)
--      updateNowPlayingInfoOnMain(for: player)
-@@ -50,5 +119,14 @@ class MediaController {
-   private func updateNowPlayingInfoOnMain(for player: AudioPlayer) {
+     } else {
+       disableRemoteCommands()
+       clearNowPlayingInfoOnMain()
+@@ -51,6 +119,15 @@ class MediaController {
      guard player.id == activePlayer?.id else {
        return
      }
@@ -3725,7 +3747,9 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..9100d311443441581fcb4c3b5e33b428
 +      return
 +    }
 +    guard let nowPlayingInfoCenter else { return }
-
+ 
+     let nextArtworkItemIdentifier = player.ref.currentItem.map { ObjectIdentifier($0) }
+     if currentArtworkItemIdentifier != nextArtworkItemIdentifier {
 @@ -68,10 +145,16 @@ class MediaController {
      } else {
        resetArtworkState()
@@ -3791,14 +3815,11 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..9100d311443441581fcb4c3b5e33b428
 +      self.cachedArtwork = still
 +      self.cachedAnimatedSquareArtwork = artwork.square
 +      self.cachedAnimatedTallArtwork = artwork.tall
- 
++
 +      guard let nowPlayingInfoCenter = self.nowPlayingInfoCenter else { return }
--      var latestNowPlayingInfo = self.nowPlayingInfoCenter.nowPlayingInfo ?? [String: Any]()
 +      var latestNowPlayingInfo = nowPlayingInfoCenter.nowPlayingInfo ?? [String: Any]()
--      latestNowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
 +      latestNowPlayingInfo[MPMediaItemPropertyArtwork] = still
 +      self.applyAnimatedArtwork(&latestNowPlayingInfo)
--      self.nowPlayingInfoCenter.nowPlayingInfo = latestNowPlayingInfo
 +      nowPlayingInfoCenter.nowPlayingInfo = latestNowPlayingInfo
 +
 +      // A clip that was still encoding goes up as soon as it is on disk. The
@@ -3811,7 +3832,10 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..9100d311443441581fcb4c3b5e33b428
 +      self.publishAnimatedWhenReady(artwork.tall, url: artworkUrl, player: player, item: currentItemIdentifier)
 +    }
 +  }
-+
+ 
+-      var latestNowPlayingInfo = self.nowPlayingInfoCenter.nowPlayingInfo ?? [String: Any]()
+-      latestNowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
+-      self.nowPlayingInfoCenter.nowPlayingInfo = latestNowPlayingInfo
 +  /**
 +   * Publishes the animated artwork keys once `clip` is on disk, and only if
 +   * this is still the artwork on screen. Every variant is written each time
@@ -3864,7 +3888,7 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..9100d311443441581fcb4c3b5e33b428
      activePlayer = nil
      isLiveStream = false
      resetArtworkState()
-@@ -204,34 +354,179 @@ class MediaController {
+@@ -204,35 +354,180 @@ class MediaController {
    private func resetArtworkState() {
      currentArtworkUrl = nil
      cachedArtwork = nil
@@ -4045,6 +4069,7 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..9100d311443441581fcb4c3b5e33b428
    }
  
    private func enableRemoteCommands(options: LockScreenOptions?) {
+-    remoteCommandCenter.playCommand.addTarget { [weak self] _ in
 +    guard let remoteCommandCenter else { return }
 +    updateRemoteCommandAvailability(options: options)
 +
@@ -4053,23 +4078,37 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..9100d311443441581fcb4c3b5e33b428
 +    guard remoteCommandTargets[playerKey] == nil else { return }
 +    remoteCommandTargets[playerKey] = []
 +
--    remoteCommandCenter.playCommand.addTarget { [weak self] _ in
 +    registerCommandTarget(for: playerKey, command: remoteCommandCenter.playCommand) { [weak self] _ in
        guard let player = self?.activePlayer else {
          return .commandFailed
-@@ -243,2 +538,2 @@ class MediaController {
+       }
+@@ -241,7 +536,7 @@ class MediaController {
+       return .success
+     }
+ 
 -    remoteCommandCenter.pauseCommand.addTarget { [weak self] _ in
 +    registerCommandTarget(for: playerKey, command: remoteCommandCenter.pauseCommand) { [weak self] _ in
        guard let player = self?.activePlayer else {
-@@ -252,2 +547,2 @@ class MediaController {
+         return .commandFailed
+       }
+@@ -250,7 +545,7 @@ class MediaController {
+       return .success
+     }
+ 
 -    remoteCommandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
 +    registerCommandTarget(for: playerKey, command: remoteCommandCenter.togglePlayPauseCommand) { [weak self] _ in
        guard let player = self?.activePlayer else {
-@@ -265,2 +560,2 @@ class MediaController {
+         return .commandFailed
+       }
+@@ -263,20 +558,20 @@ class MediaController {
+       return .success
+     }
+ 
 -    remoteCommandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
 +    registerCommandTarget(for: playerKey, command: remoteCommandCenter.changePlaybackPositionCommand) { [weak self] event in
        guard let player = self?.activePlayer,
-@@ -270,7 +565,7 @@ class MediaController {
+       let event = event as? MPChangePlaybackPositionCommandEvent else {
+         return .commandFailed
        }
  
        let seekTime = CMTime(seconds: event.positionTime, preferredTimescale: 1)
@@ -4078,15 +4117,23 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..9100d311443441581fcb4c3b5e33b428
  
        return .success
      }
-@@ -278,2 +575,2 @@ class MediaController {
+ 
+     remoteCommandCenter.skipForwardCommand.preferredIntervals = [10.0]
 -    remoteCommandCenter.skipForwardCommand.addTarget { [weak self] event in
 +    registerCommandTarget(for: playerKey, command: remoteCommandCenter.skipForwardCommand) { [weak self] event in
        guard let player = self?.activePlayer,
-@@ -292,2 +589,2 @@ class MediaController {
+       let event = event as? MPSkipIntervalCommandEvent else {
+         return .commandFailed
+@@ -290,7 +585,7 @@ class MediaController {
+     }
+ 
+     remoteCommandCenter.skipBackwardCommand.preferredIntervals = [10.0]
 -    remoteCommandCenter.skipBackwardCommand.addTarget { [weak self] event in
 +    registerCommandTarget(for: playerKey, command: remoteCommandCenter.skipBackwardCommand) { [weak self] event in
        guard let player = self?.activePlayer,
-@@ -303,13 +598,44 @@ class MediaController {
+       let event = event as? MPSkipIntervalCommandEvent else {
+         return .commandFailed
+@@ -303,28 +598,69 @@ class MediaController {
        return .success
      }
  
@@ -4131,13 +4178,12 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..9100d311443441581fcb4c3b5e33b428
 +    remoteCommandCenter: MPRemoteCommandCenter
 +  ) {
      remoteCommandCenter.playCommand.isEnabled = false
-@@ -318,13 +644,23 @@ class MediaController {
+     remoteCommandCenter.pauseCommand.isEnabled = false
+     remoteCommandCenter.togglePlayPauseCommand.isEnabled = false
      remoteCommandCenter.changePlaybackPositionCommand.isEnabled = false
      remoteCommandCenter.skipForwardCommand.isEnabled = false
      remoteCommandCenter.skipBackwardCommand.isEnabled = false
-+    remoteCommandCenter.nextTrackCommand.isEnabled = false
-+    remoteCommandCenter.previousTrackCommand.isEnabled = false
- 
+-
 -    // Remove event targets
 -    remoteCommandCenter.playCommand.removeTarget(self)
 -    remoteCommandCenter.pauseCommand.removeTarget(self)
@@ -4145,6 +4191,9 @@ index e977f577cd2e16b194b56537ad76b423f40d2496..9100d311443441581fcb4c3b5e33b428
 -    remoteCommandCenter.changePlaybackPositionCommand.removeTarget(self)
 -    remoteCommandCenter.skipForwardCommand.removeTarget(self)
 -    remoteCommandCenter.skipBackwardCommand.removeTarget(self)
++    remoteCommandCenter.nextTrackCommand.isEnabled = false
++    remoteCommandCenter.previousTrackCommand.isEnabled = false
++
 +    if let targets = remoteCommandTargets.removeValue(forKey: playerKey) {
 +      let commands = [
 +        remoteCommandCenter.playCommand,
