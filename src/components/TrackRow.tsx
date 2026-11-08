@@ -21,6 +21,7 @@ import { useDownloads } from '@/store/downloads';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu, type SongMenuContext } from '@/store/songMenu';
 import { useSettings, type SwipeAction } from '@/store/settings';
+import { useShallow } from 'zustand/react/shallow';
 import { haptic } from '@/lib/haptics';
 import { useToast } from '@/store/toast';
 import { useT } from '@/i18n';
@@ -199,10 +200,14 @@ function TrackRowBase({
   // Memoized below, and with its own `propsEqual` at that: the list repainting
   // does not reach the rows, so each one asks for the appearance itself.
   useTheme();
-  const showDuration = useSettings((s) => s.showSongDuration);
-  const showRating = useSettings((s) => s.showListRating);
-  const swipeAction = useSettings((s) => s.swipeAction);
-  const swipeLeftAction = useSettings((s) => s.swipeLeftAction);
+  const { showDuration, showRating, swipeAction, swipeLeftAction } = useSettings(
+    useShallow((s) => ({
+      showDuration: s.showSongDuration,
+      showRating: s.showListRating,
+      swipeAction: s.swipeAction,
+      swipeLeftAction: s.swipeLeftAction,
+    })),
+  );
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const playNext = usePlayerStore((s) => s.playNext);
   const toast = useToast((s) => s.show);

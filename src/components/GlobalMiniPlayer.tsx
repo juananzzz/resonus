@@ -4,21 +4,20 @@
  * other screens. On full-screen modals (player, queue, lyrics) it fades out
  * instead of disappearing instantly, to avoid flickering while the modal slides up.
  */
-import { useSegments } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NO_MINI_PLAYER, useTabBarBottom, useTabBarHeight, useTabBarShown } from '@/hooks/useTabBar';
 import { dismissProgress } from '@/lib/playerReveal';
+import { useNavState } from '@/store/navState';
 import { motion } from '@/theme/motion';
 import { MINI_PLAYER_GAP, spacing } from '@/theme';
 import { MiniPlayer } from './MiniPlayer';
 
 export function GlobalMiniPlayer() {
   const insets = useSafeAreaInsets();
-  const segments = useSegments();
-  const root = segments[0];
+  const root = useNavState((s) => s.rootSegment);
   // Above the navigation bar wherever there is one, which with the setting on
   // is nearly everywhere and not only inside the tabs (see `useTabBarShown`).
   const withBar = useTabBarShown();

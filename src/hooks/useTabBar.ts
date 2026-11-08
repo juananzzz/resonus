@@ -9,12 +9,12 @@
  * Full-screen modals are the exception: the player, the queue and the lyrics
  * cover everything, and the song picker keeps its own search bar down there.
  */
-import { useSegments } from 'expo-router';
 import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
+import { useNavState } from '@/store/navState';
 import { PILL_MARGIN, TAB_BAR_HEIGHT, TAB_BAR_HEIGHT_COMPACT } from '@/theme';
 
 /** Screens that never take the bar, whatever the setting says. */
@@ -25,8 +25,7 @@ export const NO_MINI_PLAYER = ['player', 'queue', 'lyrics', 'favorites-add'];
 
 export function useTabBarShown(): boolean {
   const always = useSettings((s) => s.alwaysShowTabs);
-  const segments = useSegments();
-  const root = segments[0];
+  const root = useNavState((s) => s.rootSegment);
   // `undefined` is the root route resolving to the tabs on the first frame.
   const inTabs = root === '(tabs)' || root === undefined;
   if (inTabs) return true;
@@ -40,9 +39,9 @@ export function useTabBarShown(): boolean {
  * anything floating at the bottom has to clear only while they both hold.
  */
 export function useMiniPlayerShown(): boolean {
-  const segments = useSegments();
+  const root = useNavState((s) => s.rootSegment);
   const hasSong = usePlayerStore((s) => currentSong(s) !== null);
-  return hasSong && !NO_MINI_PLAYER.includes(segments[0] as string);
+  return hasSong && !NO_MINI_PLAYER.includes(root as string);
 }
 
 /**

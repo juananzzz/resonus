@@ -5,7 +5,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Font from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useSegments } from 'expo-router';
 import { NavigationBar } from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
@@ -62,6 +62,7 @@ import { useRecentSearches } from '@/store/recentSearches';
 import { APP_FONT_FAMILY, useSettings } from '@/store/settings';
 import { useSongCache } from '@/store/songCache';
 import { useSortPrefs } from '@/store/sortPrefs';
+import { useNavState } from '@/store/navState';
 import { colors, themeMode, useTheme } from '@/theme';
 
 // Patches Text/TextInput once, before the first render.
@@ -139,6 +140,22 @@ const LYRICS_MODAL = Platform.OS === 'ios'
  * the position, here for everything). Frozen, the screen is rendered once on
  * the way back, with what is true then.
  */
+/**
+ * Reads `segments[0]` once and writes it to the NavState store only when it
+ * changes (e.g. entering or leaving the player/queue/lyrics). This prevents
+ * the 63+ consumers of `useTabBarShown` and `useScreenBottomPadding` from
+ * re-rendering on every tab switch (where `segments[1]` changes but `[0]` stays
+ * `'(tabs)'`).
+ */
+function NavSync() {
+  const root = useSegments()[0] as string | undefined;
+  const setRoot = useNavState((s) => s._setRootSegment);
+  useEffect(() => {
+    setRoot(root);
+  }, [root, setRoot]);
+  return null;
+}
+
 function useAway(): boolean {
   const [away, setAway] = useState(false);
   useEffect(() => {
@@ -376,6 +393,7 @@ export default function RootLayout() {
         ) : (
           <ErrorBoundary>
           <View style={{ flex: 1 }}>
+            <NavSync />
             <Freeze freeze={away}>
             <BarBlurTarget>
             <Stack
