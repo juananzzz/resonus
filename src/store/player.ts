@@ -81,6 +81,7 @@ import {
   insertNext,
   moveIn,
   nextPlayable,
+  prioritizeInQueue,
   queuedAfterMove,
   queueKeyFor,
   removeFrom,
@@ -4189,6 +4190,13 @@ interface PlayerState {
   /** Straight after the current song, at the front of the "queued" block. */
   playNext: (song: Song) => void;
   /**
+   * Move the song at `at` to the END of the "queued" block (after any songs
+   * already prioritized but before the source). A second call stacks below the
+   * first rather than leapfrogging it. No-op for the current song or previous
+   * songs. Used by the queue screen's swipe-to-prioritize gesture.
+   */
+  prioritizeAt: (at: number) => void;
+  /**
    * A whole record's worth at once, in the order given.
    *
    * Not the same as calling the two above in a loop: `playNext` puts each song
@@ -4539,6 +4547,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return;
     }
     set(insertNext(st, [song]));
+    scheduleSync();
+  },
+
+  prioritizeAt: (at) => {
+    const st = get();
+    const next = prioritizeInQueue(st, at);
+    if (!next) return;
+    set(next);
     scheduleSync();
   },
 

@@ -117,6 +117,36 @@ export function moveIn(st: QueueState, from: number, to: number): QueueState | n
   return { queue: next, index: newIndex, queuedCount: newQueuedCount };
 }
 
+/**
+ * Move a song from `at` to the END of the "queued" block (the last slot that
+ * will play before the source picks up again). This is "Prioritize": not
+ * "play next" (which inserts at the front of the block), but "insert after all
+ * currently prioritized songs". A second Prioritize therefore stacks below the
+ * first rather than leapfrogging it.
+ *
+ * Returns null for the current song, previous songs, out-of-range positions,
+ * or a song already at the end of the block (nothing to do).
+ */
+export function prioritizeInQueue(st: QueueState, at: number): QueueState | null {
+  const { queue, index, queuedCount } = st;
+  if (at <= index || at >= queue.length) return null;
+  const wasInBlock = at <= index + queuedCount;
+  if (wasInBlock && at === index + queuedCount) return null; // already last in block
+  const markedSong = handAdded(queue[at]);
+  const newQueue = queue.filter((_, i) => i !== at);
+  if (wasInBlock) {
+    // Song moves from somewhere inside the block to its end. Removing it
+    // shrinks the block by 1, so the insertion point shifts down by 1 too.
+    const insertAt = index + queuedCount - 1 + 1; // = index + queuedCount (adjusted)
+    newQueue.splice(insertAt, 0, markedSong);
+    return { queue: newQueue, index, queuedCount };
+  }
+  // Song is in the source section; insert after the last queued song.
+  // Removing `at` (which is > index + queuedCount) does not shift the target.
+  newQueue.splice(index + queuedCount + 1, 0, markedSong);
+  return { queue: newQueue, index, queuedCount: queuedCount + 1 };
+}
+
 /** Advancing by one consumes one of the block; any other jump dissolves it. */
 export function queuedAfterMove(st: Pick<QueueState, 'index' | 'queuedCount'>, next: number): number {
   if (next === st.index || st.queuedCount === 0) return st.queuedCount;

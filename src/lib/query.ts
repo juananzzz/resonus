@@ -4,6 +4,13 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 min: a library changes little
+      // 2 min GC window: once a screen unmounts (stack pop), its queries
+      // become inactive and are evicted after this delay, keeping peak memory
+      // low on deep navigation stacks.
+      gcTime: 1000 * 60 * 2,
+      // Frozen screens (freezeOnBlur) keep their observers alive, so without
+      // this they would re-fetch on every app foreground even while invisible.
+      refetchOnWindowFocus: false,
       retry: 1,
     },
   },
