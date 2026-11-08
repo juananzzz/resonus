@@ -5,11 +5,12 @@
  */
 import Icon from '@/components/Icon';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link, useRouter } from 'expo-router';
+import { Link, useNavigation, useRouter } from 'expo-router';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   type FlatList,
   Keyboard,
   Platform,
@@ -299,6 +300,7 @@ export function TrackListView({
   onPlay,
 }: Props) {
   const router = useRouter();
+  const navigation = useNavigation();
   const t = useT();
   const insets = useInsets();
   const { width: screenW, height: screenH } = useScreenSize();
@@ -409,24 +411,48 @@ export function TrackListView({
     revealedRef.current = true;
     haptic('light');
     setRevealed(true);
-    Animated.timing(searchH, {
+    Animated.spring(searchH, {
       toValue: SEARCH_H,
-      duration: motion.duration.fade,
+      damping: 22,
+      stiffness: 380,
+      mass: 0.7,
       useNativeDriver: false,
-      // The header (and the play button in it) moves down as this runs, and
-      // nothing re-renders when it lands: the measure below is told here.
     }).start(() => setMeasureTick((v) => v + 1));
   }
 
   function collapseSearchBar() {
     revealedRef.current = false;
-    setRevealed(false);
     Animated.timing(searchH, {
       toValue: 0,
-      duration: motion.duration.fade,
+      duration: 120,
       useNativeDriver: false,
-    }).start(() => setMeasureTick((v) => v + 1));
+    }).start(() => {
+      setRevealed(false);
+      setMeasureTick((v) => v + 1);
+    });
   }
+
+  // While the search bar is open, back should close it rather than navigate.
+  // The app's Stack uses expo-router's fork NativeStackView, which does not
+  // forward `preventNativeDismiss` to the native screen, so `usePreventRemove`
+  // cannot block the gesture at the native layer. Instead:
+  //   • `gestureEnabled: false` disables the swipe-from-edge predictive back
+  //     gesture entirely while the bar is open (the fork does pass this prop).
+  //   • `BackHandler` intercepts the hardware back button on the same render.
+  useEffect(() => {
+    if (!revealed) return;
+    navigation.setOptions({ gestureEnabled: false });
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      collapseSearchBar();
+      setQuery('');
+      return true; // consumed — do not navigate
+    });
+    return () => {
+      navigation.setOptions({ gestureEnabled: true });
+      sub.remove();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealed]);
 
   /**
    * The half of the reveal a worklet cannot answer for: a pan this list owns is
@@ -450,11 +476,11 @@ export function TrackListView({
     .withRef(revealPanRef)
     .runOnJS(true)
     // Only downward drags: upward ones (normal scroll) cancel it.
-    .activeOffsetY(10)
-    .failOffsetY(-10)
+    .activeOffsetY(5)
+    .failOffsetY(-5)
     .onChange((e) => {
       if (!searchBar || searching || revealed) return;
-      if (lastOffsetY.current <= 1 && e.translationY > 60) revealSearchBar();
+      if (lastOffsetY.current <= 1 && e.translationY > 15) revealSearchBar();
     });
 
   /**
@@ -480,7 +506,7 @@ export function TrackListView({
   const revealPanList = Gesture.Pan()
     .onChange((e) => {
       'worklet';
-      if (e.translationY > 60) {
+      if (e.translationY > 15) {
         scheduleOnRN(revealIfAtTop);
       }
     });
@@ -631,7 +657,9 @@ export function TrackListView({
   const gradientTop = wideCover ? wideH : -band;
   const coverOpacity = scrollY.interpolate({
     inputRange: [0, collapse * 0.7],
-    outputRange: [1, 0],
+    // Never reach exact 0: Android discards the texture at opacity=0 and
+    // needs a full redecode on fast scroll-back, causing a visible blank flash.
+    outputRange: [1, 0.01],
     extrapolate: 'clamp',
   });
   const barContentOpacity = scrollY.interpolate({
@@ -1057,6 +1085,8 @@ export function TrackListView({
               onFocus={() => setSearching(true)}
               returnKeyType="search"
               autoCorrect={false}
+              autoCapitalize="none"
+              underlineColorAndroid="transparent"
             />
             {query.length > 0 ? (
               <Pressable
@@ -1720,8 +1750,10 @@ const styles = themed((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    // Translucent to let the header's dominant color through (Spotify).
-    backgroundColor: colors.highlight,
+    // Opaque surface so text is legible against the dominant colour gradient.
+    // A translucent highlight (rgba 14 %) gives only ~1.5:1 contrast for the
+    // placeholder, which fails on every gradient shade the cover produces.
+    backgroundColor: colors.surface,
     // A capsule with Round, a rounded rectangle with Pointier.
     borderRadius: restyled(radius.pill, radius.md),
     paddingHorizontal: spacing.lg,
