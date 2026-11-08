@@ -14,7 +14,7 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { COVER, coverArtUrl } from '@/api/data';
-import { radioIconPath, RADIO_DIR, useRadios, type RadioDef } from '@/store/radios';
+import { radioCast, radioIconPath, RADIO_DIR, useRadios, type RadioDef } from '@/store/radios';
 
 interface RadioArtModule {
   /** The options as one JSON string (the same shape as `GenerateOptions`),
@@ -43,7 +43,7 @@ export function collageCovers(def: RadioDef): (string | undefined)[] {
   const seed = def.seed.coverArt || album || def.seed.id;
   return [
     coverArtUrl(seed, COVER.card),
-    ...def.similar.slice(0, 2).map((a) => coverArtUrl(a.coverArt ?? a.id, COVER.card)),
+    ...radioCast(def).slice(0, 2).map((a) => coverArtUrl(a.coverArt ?? a.id, COVER.card)),
   ];
 }
 

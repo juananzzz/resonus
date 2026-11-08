@@ -18,6 +18,7 @@ import { getArtist } from '@/api/data';
 import { AlbumRowsSkeleton } from '@/components/AlbumRowsSkeleton';
 import { Message } from '@/components/Message';
 import { RadioArt } from '@/components/RadioCard';
+import { ensureRadioIcons } from '@/lib/radioArt';
 import { openRadioMenu } from '@/components/RadioMenuSheet';
 import { SuggestedTracks } from '@/components/SuggestedTracks';
 import { TOPBAR_H, TrackListView } from '@/components/TrackListView';
@@ -28,7 +29,7 @@ import { songsLabel, useT } from '@/i18n';
 import { haptic } from '@/lib/haptics';
 import { buildRadioDef, radioTracks } from '@/lib/radioBuild';
 import { currentSong, usePlayerStore } from '@/store/player';
-import { useRadios, type RadioDef } from '@/store/radios';
+import { radioCast, useRadios, type RadioDef } from '@/store/radios';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { themed, useTheme, useThemeMode } from '@/theme';
@@ -95,6 +96,9 @@ export default function ArtistRadioScreen() {
       const { defs, setDefs } = useRadios.getState();
       if (defs.some((d) => d.seed.id === radioId)) {
         await setDefs(defs.map((d) => (d.seed.id === radioId ? { ...d, tracks } : d)));
+        // Its icon was drawn with the saved neighbours; draw it again with
+        // the artists the list turned out to have.
+        void ensureRadioIcons(useRadios.getState().defs.filter((d) => d.seed.id === radioId));
       }
       return tracks;
     },
@@ -109,10 +113,11 @@ export default function ArtistRadioScreen() {
 
   const title = def ? t('{artist} Radio', { artist: def.seed.name }) : '';
   const href = `/artist-radio/${radioId}`;
-  const similarNames = def?.similar
-    .slice(0, 3)
-    .map((a) => a.name)
-    .join(', ');
+  const similarNames = def
+    ? radioCast({ ...def, tracks: tracks.length > 0 ? tracks : undefined })
+        .map((a) => a.name)
+        .join(', ')
+    : undefined;
   // The picture takes the top of the display: 80% of its width, which the
   // list clamps so it always ends a little above where a square cover would
   // have, on any screen there is.
