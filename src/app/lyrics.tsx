@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COVER, songCoverUrl } from '@/api/data';
@@ -50,7 +50,7 @@ export default function LyricsScreen() {
   const maskedStyle = useAnimatedStyle(() => ({ opacity: maskedOpacity.value }));
   useEffect(() => {
     if (Platform.OS !== 'ios') {
-      maskedOpacity.value = withTiming(1, { duration: 220 });
+      maskedOpacity.value = withTiming(1, { duration: 160, easing: Easing.out(Easing.cubic) });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
