@@ -253,7 +253,7 @@ function activePlayer(): AudioPlayer | null {
 function ensurePlayer(idx: number): AudioPlayer {
   const existing = players[idx];
   if (existing) return existing;
-  const p = createAudioPlayer(null, { updateInterval: 500 });
+  const p = createAudioPlayer(null, { updateInterval: 1000 });
   // Listeners live for the whole session (players are singletons).
   // Only the active player feeds state: events from the one that is powering
   // down during a crossfade (including its didJustFinish) are ignored.

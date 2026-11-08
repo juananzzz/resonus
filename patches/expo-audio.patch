@@ -352,6 +352,33 @@ index c76a9fd2a53743a691782e0f67d0d71401df58f6..7c9025af6a1645f79f9964b67e040764
      .setSeekForwardIncrementMs(SEEK_JUMP_INTERVAL_MS)
      .setSeekBackIncrementMs(SEEK_JUMP_INTERVAL_MS)
      .apply {
+@@ -42,15 +84,13 @@ class AudioPlayer(
+     .apply {
+-      if (bufferDurationMs > 0) {
+-        setLoadControl(
+-          DefaultLoadControl.Builder()
+-            .setBufferDurationsMs(
+-              DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
+-              bufferDurationMs.toInt().coerceAtLeast(DefaultLoadControl.DEFAULT_MIN_BUFFER_MS),
+-              DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
+-              DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
+-            )
+-            .build()
+-        )
+-      }
+-    }
++      setLoadControl(
++        DefaultLoadControl.Builder()
++          .setBufferDurationsMs(
++            DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
++            if (bufferDurationMs > 0) bufferDurationMs.toInt().coerceAtLeast(DefaultLoadControl.DEFAULT_MIN_BUFFER_MS) else DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
++            DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
++            10_000
++          )
++          .build()
++      )
++    }
+     .build(),
 @@ -64,7 +106,20 @@ class AudioPlayer(
    var isActiveForLockScreen = false
    internal var metadata: Metadata? = null
