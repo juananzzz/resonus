@@ -1040,6 +1040,10 @@ export interface SearchResult {
   songs: Song[];
 }
 
+/** Artists asked for per search: twice what is shown, since the caller may
+ *  drop some (see `search` in data.ts) and still has to fill the section. */
+export const SEARCH_ARTIST_COUNT = 40;
+
 export async function search(
   auth: SubsonicAuth,
   query: string,
@@ -1051,7 +1055,7 @@ export async function search(
     query,
     songCount: 20,
     albumCount: 20,
-    artistCount: 20,
+    artistCount: SEARCH_ARTIST_COUNT,
     ...(musicFolderId ? { musicFolderId } : {}),
   });
   const r = res.searchResult3 ?? {};

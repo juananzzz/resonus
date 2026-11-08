@@ -1606,17 +1606,41 @@ export function searchSongs(query: string, count?: number): Promise<Subsonic.Son
   );
 }
 
-export function search(query: string): Promise<Subsonic.SearchResult> {
+/** Artists shown per search; more are asked for, so dropping some still fills it. */
+const SEARCH_ARTISTS_SHOWN = 20;
+
+/**
+ * The search with its artists cut down to ones that have songs.
+ *
+ * Navidrome searches every artist row it has, credit-only ones included (a
+ * composer or producer who never made a track of their own), and the result
+ * opens an artist with nothing in it. Artists who are the main artist of a
+ * song or an album are kept (see `listedArtistIds`). Elsewhere, or if that
+ * can't be read, the artists are left as they came.
+ */
+export async function search(query: string): Promise<Subsonic.SearchResult> {
   if (isOffline()) return Local.search(query);
   const a = auth();
   const ids = enabledFolderIds(a);
-  if (!ids) return Subsonic.search(a, query);
-  if (ids.length === 1) return Subsonic.search(a, query, ids[0]);
-  return Promise.all(ids.map((id) => Subsonic.search(a, query, id))).then((parts) => ({
-    artists: dedupeById(parts.flatMap((p) => p.artists)),
-    albums: dedupeById(parts.flatMap((p) => p.albums)),
-    songs: dedupeById(parts.flatMap((p) => p.songs)),
-  }));
+  let result: Subsonic.SearchResult;
+  if (!ids) result = await Subsonic.search(a, query);
+  else if (ids.length === 1) result = await Subsonic.search(a, query, ids[0]);
+  else {
+    const parts = await Promise.all(ids.map((id) => Subsonic.search(a, query, id)));
+    result = {
+      artists: dedupeById(parts.flatMap((p) => p.artists)),
+      albums: dedupeById(parts.flatMap((p) => p.albums)),
+      songs: dedupeById(parts.flatMap((p) => p.songs)),
+    };
+  }
+  let artists = result.artists;
+  try {
+    const listed = await listedArtistIds(a);
+    if (listed && listed.size > 0) artists = artists.filter((x) => listed.has(x.id));
+  } catch {
+    // Left as they came.
+  }
+  return { ...result, artists: artists.slice(0, SEARCH_ARTISTS_SHOWN) };
 }
 
 /**
