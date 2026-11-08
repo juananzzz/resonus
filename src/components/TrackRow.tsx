@@ -556,8 +556,8 @@ function TrackRowBase({
           <SwipeActionPanel progress={progress} icon={SWIPE_ICON[swipeLeftAction]} label={SWIPE_LABEL[swipeLeftAction]} side="right" />
         )
       }
-      dragOffsetFromLeftEdge={10}
-      dragOffsetFromRightEdge={10}
+      dragOffsetFromLeftEdge={20}
+      dragOffsetFromRightEdge={20}
       leftThreshold={60}
       rightThreshold={60}
       friction={2}
@@ -668,6 +668,8 @@ const styles = themed((colors) => ({
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.accent,
     minWidth: 72,
+    borderRadius: radius.md,
+    overflow: 'hidden' as const,
   },
   swipeActionContent: {
     alignItems: 'center',

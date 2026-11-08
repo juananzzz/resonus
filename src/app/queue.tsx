@@ -68,6 +68,8 @@ const queueSwipeStyles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: colors.accent,
     minWidth: 72,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   content: { alignItems: 'center', gap: 4 },
   label: { color: colors.onAccent, fontSize: 11, fontWeight: '600' },
@@ -173,7 +175,7 @@ const QueueRow = memo(function QueueRow({
     <ReanimatedSwipeable
       ref={swipeRef}
       renderLeftActions={(progress) => <PrioritizePanel progress={progress} />}
-      dragOffsetFromLeftEdge={10}
+      dragOffsetFromLeftEdge={20}
       leftThreshold={60}
       friction={2}
       overshootLeft={false}

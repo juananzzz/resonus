@@ -1566,7 +1566,7 @@ export function TrackListView({
               paddingHorizontal: centredPadding(screenW, spacing.lg),
             },
           ]}
-          scrollEventThrottle={16}
+          scrollEventThrottle={32}
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
             // The listener still runs on this side: a native event is delivered to
             // JS as well, it just no longer has to be for the animation to move.

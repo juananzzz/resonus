@@ -12,7 +12,7 @@ export const listPerf = {
   // 11 viewports keeps ~130 rows mounted — roughly half what windowSize: 21
   // mounted. Fewer live ReanimatedSwipeable gesture handlers = less lag. The
   // higher maxToRenderPerBatch compensates by filling newly-visible rows fast.
-  windowSize: 11,
+  windowSize: 7,
   updateCellsBatchingPeriod: 50,
 };
 
