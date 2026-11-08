@@ -1606,7 +1606,7 @@ export function searchSongs(query: string, count?: number): Promise<Subsonic.Son
   );
 }
 
-/** Artists shown per search; more are asked for, so dropping some still fills it. */
+/** Artists shown per search and library; more are asked for, so dropping some still fills it. */
 const SEARCH_ARTISTS_SHOWN = 20;
 
 /**
@@ -1622,25 +1622,30 @@ export async function search(query: string): Promise<Subsonic.SearchResult> {
   if (isOffline()) return Local.search(query);
   const a = auth();
   const ids = enabledFolderIds(a);
-  let result: Subsonic.SearchResult;
-  if (!ids) result = await Subsonic.search(a, query);
-  else if (ids.length === 1) result = await Subsonic.search(a, query, ids[0]);
-  else {
-    const parts = await Promise.all(ids.map((id) => Subsonic.search(a, query, id)));
-    result = {
-      artists: dedupeById(parts.flatMap((p) => p.artists)),
-      albums: dedupeById(parts.flatMap((p) => p.albums)),
-      songs: dedupeById(parts.flatMap((p) => p.songs)),
-    };
-  }
-  let artists = result.artists;
+  let listed: Set<string> | null = null;
   try {
-    const listed = await listedArtistIds(a);
-    if (listed && listed.size > 0) artists = artists.filter((x) => listed.has(x.id));
+    listed = await listedArtistIds(a);
   } catch {
     // Left as they came.
   }
-  return { ...result, artists: artists.slice(0, SEARCH_ARTISTS_SHOWN) };
+  // Per library, as the server answers: each is asked for more than it shows,
+  // so dropping some still fills it, and several libraries still show what
+  // each of them has.
+  const shown = (r: Subsonic.SearchResult): Subsonic.SearchResult => ({
+    ...r,
+    artists: (listed && listed.size > 0 ? r.artists.filter((x) => listed.has(x.id)) : r.artists).slice(
+      0,
+      SEARCH_ARTISTS_SHOWN,
+    ),
+  });
+  if (!ids) return shown(await Subsonic.search(a, query));
+  if (ids.length === 1) return shown(await Subsonic.search(a, query, ids[0]));
+  const parts = (await Promise.all(ids.map((id) => Subsonic.search(a, query, id)))).map(shown);
+  return {
+    artists: dedupeById(parts.flatMap((p) => p.artists)),
+    albums: dedupeById(parts.flatMap((p) => p.albums)),
+    songs: dedupeById(parts.flatMap((p) => p.songs)),
+  };
 }
 
 /**
