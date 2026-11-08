@@ -556,8 +556,8 @@ function TrackRowBase({
           <SwipeActionPanel progress={progress} icon={SWIPE_ICON[swipeLeftAction]} label={SWIPE_LABEL[swipeLeftAction]} side="right" />
         )
       }
-      dragOffsetFromLeftEdge={20}
-      dragOffsetFromRightEdge={20}
+      dragOffsetFromLeftEdge={10}
+      dragOffsetFromRightEdge={10}
       leftThreshold={60}
       rightThreshold={60}
       friction={2}

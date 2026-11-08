@@ -7,7 +7,7 @@ index 551ab92bf58db0b79d428dcd2f2df898ef686493..aeb4b48841f34f41f325b052db2639cf
    }, [close, relationProps, rowState, shouldEnableTap]);
    const panGesture = (0, _react.useMemo)(() => {
 -    const pan = _.Gesture.Pan().enabled(enabled !== false).hitSlop(hitSlop).enableTrackpadTwoFingerGesture(enableTrackpadTwoFingerGesture).activeOffsetX([-dragOffsetFromRightEdge, dragOffsetFromLeftEdge]).onStart(updateElementWidths).onUpdate(event => {
-+    const pan = _.Gesture.Pan().enabled(enabled !== false).hitSlop(hitSlop).enableTrackpadTwoFingerGesture(enableTrackpadTwoFingerGesture).activeOffsetX([-dragOffsetFromRightEdge, dragOffsetFromLeftEdge]).failOffsetY([-5, 5]).onStart(updateElementWidths).onUpdate(event => {
++    const pan = _.Gesture.Pan().enabled(enabled !== false).hitSlop(hitSlop).enableTrackpadTwoFingerGesture(enableTrackpadTwoFingerGesture).activeOffsetX([-dragOffsetFromRightEdge, dragOffsetFromLeftEdge]).failOffsetY([-10, 10]).onStart(updateElementWidths).onUpdate(event => {
        userDrag.value = event.translationX;
        const direction = rowState.value === -1 ? _ReanimatedSwipeableProps.SwipeDirection.RIGHT : rowState.value === 1 ? _ReanimatedSwipeableProps.SwipeDirection.LEFT : event.translationX > 0 ? _ReanimatedSwipeableProps.SwipeDirection.RIGHT : _ReanimatedSwipeableProps.SwipeDirection.LEFT;
        if (!dragStarted.value) {
@@ -20,7 +20,7 @@ index a2835d5416ffd5cf9a04e98774516b9e6569691e..c29b9bb2cba86353e1a00969b4b69762
    }, [close, relationProps, rowState, shouldEnableTap]);
    const panGesture = useMemo(() => {
 -    const pan = Gesture.Pan().enabled(enabled !== false).hitSlop(hitSlop).enableTrackpadTwoFingerGesture(enableTrackpadTwoFingerGesture).activeOffsetX([-dragOffsetFromRightEdge, dragOffsetFromLeftEdge]).onStart(updateElementWidths).onUpdate(event => {
-+    const pan = Gesture.Pan().enabled(enabled !== false).hitSlop(hitSlop).enableTrackpadTwoFingerGesture(enableTrackpadTwoFingerGesture).activeOffsetX([-dragOffsetFromRightEdge, dragOffsetFromLeftEdge]).failOffsetY([-5, 5]).onStart(updateElementWidths).onUpdate(event => {
++    const pan = Gesture.Pan().enabled(enabled !== false).hitSlop(hitSlop).enableTrackpadTwoFingerGesture(enableTrackpadTwoFingerGesture).activeOffsetX([-dragOffsetFromRightEdge, dragOffsetFromLeftEdge]).failOffsetY([-10, 10]).onStart(updateElementWidths).onUpdate(event => {
        userDrag.value = event.translationX;
        const direction = rowState.value === -1 ? SwipeDirection.RIGHT : rowState.value === 1 ? SwipeDirection.LEFT : event.translationX > 0 ? SwipeDirection.RIGHT : SwipeDirection.LEFT;
        if (!dragStarted.value) {

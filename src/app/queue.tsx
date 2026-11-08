@@ -175,7 +175,7 @@ const QueueRow = memo(function QueueRow({
     <ReanimatedSwipeable
       ref={swipeRef}
       renderLeftActions={(progress) => <PrioritizePanel progress={progress} />}
-      dragOffsetFromLeftEdge={20}
+      dragOffsetFromLeftEdge={10}
       leftThreshold={60}
       friction={2}
       overshootLeft={false}
