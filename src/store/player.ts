@@ -103,6 +103,7 @@ import {
   jukeboxPlay,
   jukeboxSeek,
   jukeboxSetVolume,
+  jukeboxSyncUpcoming,
 } from './jukebox';
 import { useLastPlayed } from './lastPlayed';
 import { offLocalNetwork, useNetworkType } from './networkType';
@@ -991,6 +992,23 @@ function syncCastMedia(): void {
   castSetVolumeLevel(st.volume);
 }
 
+/**
+ * What the jukebox may go on to by itself after the song at `index`. Nothing
+ * when the song is meant to end there: repeat one and "end of song" are the
+ * app's to answer in `onFinished`.
+ */
+function jukeboxUpcoming(index: number): Song[] {
+  const st = usePlayerStore.getState();
+  if (st.repeat === 'one' || st.sleepAtSongEnd) return [];
+  return st.queue.slice(index + 1);
+}
+
+function syncJukeboxUpcoming() {
+  if (remoteKind() !== 'jukebox') return;
+  const { queue, index } = usePlayerStore.getState();
+  if (queue[index]) void jukeboxSyncUpcoming(queue[index], jukeboxUpcoming(index));
+}
+
 /** Loads the track at `index` into the remote output and syncs state. */
 async function remoteLoadIndex(index: number, autoplay: boolean, startSec = 0) {
   const state = usePlayerStore.getState();
@@ -998,7 +1016,7 @@ async function remoteLoadIndex(index: number, autoplay: boolean, startSec = 0) {
   if (!song) return;
   resetListen();
   const ok = isJukeboxActive()
-    ? await jukeboxLoad(song, autoplay, startSec)
+    ? await jukeboxLoad(song, autoplay, startSec, jukeboxUpcoming(index))
     : await loadUpnpRemoteTrack(
         {
           queue: state.queue,
@@ -3697,6 +3715,7 @@ function syncQueueNow(force = false, syncRemote = true) {
       }
     }
   }
+  if (syncRemote) syncJukeboxUpcoming();
   if (syncRemote && remoteKind() === 'upnp') {
     void syncUpnpRemoteQueue(
       {
@@ -4911,6 +4930,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     abortSleepFade();
     if (remoteKind() === 'upnp') void upnpSetSleepTimer(null);
     set({ sleepEndsAt: null, sleepAtSongEnd: true });
+    syncJukeboxUpcoming();
   },
 
   cancelSleepTimer: () => {
@@ -4919,6 +4939,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     abortSleepFade();
     if (remoteKind() === 'upnp') void upnpSetSleepTimer(null);
     set({ sleepEndsAt: null, sleepAtSongEnd: false });
+    syncJukeboxUpcoming();
   },
 
   restoreFromServer: async (replace = false) => {

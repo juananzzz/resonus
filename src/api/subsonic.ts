@@ -436,11 +436,12 @@ function authParams(auth: SubsonicAuth): URLSearchParams {
 function buildUrl(
   auth: SubsonicAuth,
   endpoint: string,
-  extra: Record<string, string | number | undefined> = {},
+  extra: Record<string, string | number | string[] | undefined> = {},
 ): string {
   const params = authParams(auth);
   for (const [key, value] of Object.entries(extra)) {
-    if (value !== undefined) params.set(key, String(value));
+    if (Array.isArray(value)) for (const v of value) params.append(key, v);
+    else if (value !== undefined) params.set(key, String(value));
   }
   return `${auth.serverUrl}/rest/${endpoint}?${params.toString()}`;
 }
@@ -513,7 +514,7 @@ export const ERR_NOT_FOUND = 70;
 async function retryWithCanonicalId<T>(
   auth: SubsonicAuth,
   endpoint: string,
-  extra: Record<string, string | number | undefined>,
+  extra: Record<string, string | number | string[] | undefined>,
   allowOffline: boolean,
 ): Promise<T | null> {
   const id = extra.id;
@@ -536,7 +537,7 @@ async function retryWithCanonicalId<T>(
 async function request<T>(
   auth: SubsonicAuth,
   endpoint: string,
-  extra: Record<string, string | number | undefined> = {},
+  extra: Record<string, string | number | string[] | undefined> = {},
   allowOffline = false,
   /** Set on the retry itself, so one failure is never retried twice. */
   retried = false,
@@ -1882,7 +1883,7 @@ function parseJukeboxStatus(raw: unknown): JukeboxStatus {
 async function jukeboxControl(
   auth: SubsonicAuth,
   action: string,
-  extra: Record<string, string | number | undefined> = {},
+  extra: Record<string, string | number | string[] | undefined> = {},
 ): Promise<JukeboxStatus> {
   const res = await request<{ jukeboxStatus?: unknown; jukeboxPlaylist?: unknown }>(
     auth,
@@ -1894,8 +1895,13 @@ async function jukeboxControl(
 }
 
 export const jukeboxStatus = (auth: SubsonicAuth) => jukeboxControl(auth, 'status');
-/** Replaces the server's playlist with a single track (library id). */
-export const jukeboxSet = (auth: SubsonicAuth, id: string) => jukeboxControl(auth, 'set', { id });
+/** Replaces the server's playlist with these tracks (library ids), in order. */
+export const jukeboxSet = (auth: SubsonicAuth, ids: string[]) => jukeboxControl(auth, 'set', { id: ids });
+/** Appends tracks to the end of the server's playlist. */
+export const jukeboxAdd = (auth: SubsonicAuth, ids: string[]) => jukeboxControl(auth, 'add', { id: ids });
+/** Removes one entry of the server's playlist; the current one keeps playing. */
+export const jukeboxRemove = (auth: SubsonicAuth, index: number) =>
+  jukeboxControl(auth, 'remove', { index });
 export const jukeboxStart = (auth: SubsonicAuth) => jukeboxControl(auth, 'start');
 export const jukeboxStop = (auth: SubsonicAuth) => jukeboxControl(auth, 'stop');
 /** Skips to the given index (with optional offset in seconds within the track). */
