@@ -51,7 +51,9 @@ const INDEX_PATH = RADIO_DIR + 'index.json';
  * its saved neighbours until then.
  */
 export function radioCast(def: RadioDef): RadioArtist[] {
-  if (!def.tracks) return def.similar.slice(0, 3);
+  // No list yet, or one from a server that names no artist ids on its songs
+  // (there is nobody to draw): the saved neighbours.
+  if (!def.tracks?.some((s) => s.artistId)) return def.similar.slice(0, 3);
   const out: RadioArtist[] = [];
   for (const s of def.tracks) {
     if (out.length >= 3) break;
