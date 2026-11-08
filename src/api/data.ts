@@ -885,20 +885,24 @@ async function mirrorArtist(
 
 /** How long the set of listed artists is trusted before it is read again. */
 const LISTED_ARTISTS_TTL_MS = 10 * 60 * 1000;
-let listedArtists: { key: string; at: number; ids: Promise<Set<string>> } | null = null;
+let listedArtists: { key: string; at: number; ids: Promise<Set<string> | null> } | null = null;
 
 /**
- * The ids `getArtists` lists, shared between callers. That list is the one the
- * server itself calls its artists (Navidrome: album artists only), which is
- * what a "similar artist" has to be to have anything to open. Read once per
- * profile and then reused, as it is a whole-library call.
+ * The ids of the artists that have songs of their own (the main artist of a
+ * song or an album), shared between callers; null where the server can't say,
+ * which means nothing is filtered. Navidrome only: its artist table also holds
+ * credit-only people, which is what this exists to keep out, and its native
+ * API can ask for the role. Other servers have no such rows to drop, and
+ * `getArtists` would wrongly drop artists who only appear on others' albums.
+ * Read once per profile and then reused.
  */
-function listedArtistIds(a: Subsonic.SubsonicAuth): Promise<Set<string>> {
+function listedArtistIds(a: Subsonic.SubsonicAuth): Promise<Set<string> | null> {
+  if (!canListNative(a)) return Promise.resolve(null);
   const key = profileKeyOf(a) ?? 'none';
   if (listedArtists && listedArtists.key === key && Date.now() - listedArtists.at < LISTED_ARTISTS_TTL_MS) {
     return listedArtists.ids;
   }
-  const ids = getArtists().then((list) => new Set(list.map((x) => x.id)));
+  const ids = Navidrome.listMainCreditArtistIds(a, enabledFolderIds(a) ?? undefined);
   const entry = { key, at: Date.now(), ids };
   listedArtists = entry;
   // A failed read must not be remembered for the whole TTL.
@@ -909,14 +913,15 @@ function listedArtistIds(a: Subsonic.SubsonicAuth): Promise<Set<string>> {
 }
 
 /**
- * Artist info with the similar artists cut down to ones the library lists.
+ * Artist info with the similar artists cut down to ones that have songs.
  *
  * Navidrome matches Last.fm's neighbours against every artist row it has,
  * credit-only ones included (a composer or producer who never made a track of
  * their own). They have no albums, so they showed up as cards that open an
  * empty artist, and in radios as a slot with no tracks. Their `albumCount`
- * cannot tell them apart (it adds up every role), the listed artists can.
- * If the list can't be read the similar artists are left as they came.
+ * cannot tell them apart (it adds up every role), the artist role can.
+ * Elsewhere, or if the ids can't be read, the similar artists are left as
+ * they came.
  */
 export async function getArtistInfo(id: string): Promise<Subsonic.ArtistInfo> {
   if (isOffline()) return Local.getArtistInfo(id);
@@ -925,7 +930,7 @@ export async function getArtistInfo(id: string): Promise<Subsonic.ArtistInfo> {
   if (info.similarArtists.length === 0) return info;
   try {
     const listed = await listedArtistIds(a);
-    if (listed.size === 0) return info;
+    if (!listed || listed.size === 0) return info;
     return { ...info, similarArtists: info.similarArtists.filter((s) => listed.has(s.id)) };
   } catch {
     return info;
