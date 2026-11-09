@@ -34,7 +34,7 @@ import { cachedUri } from '@/store/songCache';
 import * as Navidrome from './navidrome';
 import * as Subsonic from './backend';
 import * as Local from '@/lib/localQueries';
-import { streamReachable } from './subsonic';
+import { ERR_NOT_FOUND, streamReachable } from './subsonic';
 import type { Song } from './subsonic';
 
 function isOffline() { return useAuthStore.getState().offline; }
@@ -1370,6 +1370,11 @@ export function flushOfflineQueue(auth: Subsonic.SubsonicAuth): Promise<void> {
   return run;
 }
 
+/** The server no longer has what this was about: trying again changes nothing. */
+function goneFromServer(e: unknown): boolean {
+  return e instanceof Subsonic.SubsonicRequestError && e.code === ERR_NOT_FOUND;
+}
+
 async function flushOutbox(auth: Subsonic.SubsonicAuth, file: string): Promise<void> {
   const q = useOfflineQueue.getState();
   await q.load();
@@ -1413,8 +1418,8 @@ async function flushOutbox(auth: Subsonic.SubsonicAuth, file: string): Promise<v
     try {
       if (op.starred) await Subsonic.star(auth, id, op.type);
       else await Subsonic.unstar(auth, id, op.type);
-    } catch {
-      favFailed.push([id, op]);
+    } catch (e) {
+      if (!goneFromServer(e)) favFailed.push([id, op]);
     }
   }
   if (!ours()) return;
@@ -1429,8 +1434,8 @@ async function flushOutbox(auth: Subsonic.SubsonicAuth, file: string): Promise<v
   for (const [id, rating] of Object.entries(ratings)) {
     try {
       await Subsonic.setRating(auth, id, rating);
-    } catch {
-      ratingFailed.push([id, rating]);
+    } catch (e) {
+      if (!goneFromServer(e)) ratingFailed.push([id, rating]);
     }
   }
   if (!ours()) return;
@@ -1477,10 +1482,14 @@ async function flushOutbox(auth: Subsonic.SubsonicAuth, file: string): Promise<v
   const playlists = data().playlists ?? {};
   const plFailed: [string, QueuePlaylist][] = [];
   for (const [id, edit] of Object.entries(playlists)) {
+    // What to try again: once created, the rest under its real id, or the next
+    // flush would create it a second time.
+    let retry: [string, QueuePlaylist] = [id, edit];
     try {
       if (edit.created) {
         if (edit.deleted) continue; // created and deleted offline: nothing to upload
         const realId = await Subsonic.createPlaylist(auth, edit.name ?? '');
+        retry = [realId, { ...edit, created: false }];
         if (edit.songIds?.length) await Subsonic.reorderPlaylist(auth, realId, edit.songIds);
         if (edit.comment !== undefined || edit.public !== undefined) {
           await Subsonic.updatePlaylist(auth, realId, {
@@ -1501,7 +1510,7 @@ async function flushOutbox(auth: Subsonic.SubsonicAuth, file: string): Promise<v
         if (edit.songIds) await Subsonic.reorderPlaylist(auth, id, edit.songIds);
       }
     } catch {
-      plFailed.push([id, edit]);
+      plFailed.push(retry);
     }
   }
   if (!ours()) return;

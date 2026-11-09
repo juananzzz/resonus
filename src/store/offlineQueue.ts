@@ -165,8 +165,15 @@ export const useOfflineQueue = create<QueueState>((set, get) => {
     // nothing at all, silently (#126).
     const file = get().loadedFile ?? activeFile();
     if (!file) return;
-    const data = get().data;
+    let data = get().data;
     writeLock = writeLock.then(async () => {
+      // Not read yet: writing now would replace what the file holds with only
+      // what this session added. `load` merges the two.
+      if (get().loadedFile === null) {
+        await get().load();
+        if (get().loadedFile !== file) return;
+        data = get().data;
+      }
       try {
         await FileSystem.makeDirectoryAsync(DIR, { intermediates: true }).catch(() => {});
         await FileSystem.writeAsStringAsync(file, JSON.stringify(data));

@@ -36,6 +36,11 @@ Releases before 0.2.1 are only listed on the
 - Casting: more renderers move on to the next song when one ends.
 - Jukebox: the whole queue plays, also with the screen off (#333).
 - Garmin watches and other devices: Next works every time (#307).
+- Turning shuffle off keeps the songs added to the queue while it was on, and the ones removed stay removed.
+- UPnP and jukebox: every song the speaker moves on to by itself is scrobbled, not only the first.
+- A playlist created offline is no longer created twice when part of its upload fails.
+- Favorites and ratings of songs deleted from the server are no longer retried forever.
+- A listen recorded right after opening the app no longer replaces the ones waiting to be sent.
 
 ## [0.8.7] - 2026-11-01
 
