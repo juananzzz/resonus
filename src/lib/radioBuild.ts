@@ -52,19 +52,6 @@ const MIN_RADIO_TRACKS = 12;
 /** Similar artists kept per radio: the pool the track mix draws from. */
 const SIMILAR_PER_RADIO = 8;
 
-/** How long a build waits for the radios' lists before putting the radios on
- *  the shelf without them. */
-const RADIO_LIST_MS = 8000;
-
-/** The promise's value, or undefined if it takes longer than `ms`. */
-function within<T>(ms: number, p: Promise<T>): Promise<T | undefined> {
-  let timer: ReturnType<typeof setTimeout>;
-  const late = new Promise<undefined>((resolve) => {
-    timer = setTimeout(() => resolve(undefined), ms);
-  });
-  return Promise.race([p, late]).finally(() => clearTimeout(timer));
-}
-
 /** Fisher–Yates (Home's own `shuffled`, for the fallback tiers). */
 function shuffled<T>(arr: T[]): T[] {
   const a = arr.slice();
@@ -232,11 +219,7 @@ async function recolor(defs: RadioDef[]): Promise<RadioDef[] | null> {
  * filler) so nobody takes the list over, the same rule the player's own
  * radio extension works by (see `radioCandidates` in player.ts).
  */
-export async function radioTracks(
-  def: RadioDef,
-  ownSongs?: Song[],
-  randomPool?: Song[],
-): Promise<Song[]> {
+export async function radioTracks(def: RadioDef, ownSongs?: Song[]): Promise<Song[]> {
   const [seedTop, similarLists] = await Promise.all([
     ownSongs ?? seedSongs(def.seed),
     Promise.all(
@@ -248,7 +231,7 @@ export async function radioTracks(
   const extras = seedTop[0]
     ? await getSimilarSongs(seedTop[0].id, 30).catch(() => [] as Song[])
     : [];
-  const random = randomPool ?? (await getRandomSongs(100).catch(() => [] as Song[]));
+  const random = await getRandomSongs(100).catch(() => [] as Song[]);
   // An artist Last.fm has few neighbours for gets its genre instead: songs
   // of the same style, rather than the last resort's strangers.
   const genre = few(def.similar) ? mainGenre(seedTop) : undefined;
@@ -453,20 +436,10 @@ export function refreshRadios(opts: { force?: boolean } = {}): Promise<RadioDef[
       if (seeds.length >= count) break;
       if (!seeds.includes(c) && (own.get(c.id)?.length ?? 0) > 0) seeds.push(c);
     }
-    const built = (await Promise.all(seeds.map((s) => buildRadioDef(s, own.get(s.id))))).filter(
+    // Only the cards: the artist, its neighbours and its colour. The list of
+    // songs is the expensive part, and it is made when a radio is opened.
+    const defs = (await Promise.all(seeds.map((s) => buildRadioDef(s, own.get(s.id))))).filter(
       (d): d is RadioDef => d !== null,
-    );
-    // The lists too, so the card already names who plays and is drawn with
-    // them (what a list shows is decided by the list, not by the saved
-    // neighbours). One draw of random songs serves every radio. A radio whose
-    // list is not ready in time goes on the shelf without one: it is made
-    // when the radio is opened, as it always was.
-    const random = await getRandomSongs(100).catch(() => [] as Song[]);
-    const defs = await Promise.all(
-      built.map(async (d) => {
-        const tracks = await within(RADIO_LIST_MS, radioTracks(d, own.get(d.seed.id), random).catch(() => []));
-        return tracks && tracks.length > 0 ? { ...d, tracks } : d;
-      }),
     );
     // All at once, so the shelf swaps whole rather than one card at a time.
     await useRadios.getState().setDefs(defs);

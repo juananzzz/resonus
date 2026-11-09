@@ -34,9 +34,8 @@ export interface RadioDef {
   /** The icon's background colour, read from the seed's cover at build time. */
   color: string;
   createdAt: number;
-  /** Its list, made with the radios (or the first time it is opened, if it
-   *  was not ready in time) and kept from then on, so the radio is the same
-   *  radio until it is replaced. */
+  /** Its list, made the first time it is opened and kept from then on, so
+   *  the radio is the same radio until it is replaced. */
   tracks?: Song[];
 }
 

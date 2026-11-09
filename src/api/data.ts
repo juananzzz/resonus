@@ -1646,12 +1646,12 @@ export async function search(query: string): Promise<Subsonic.SearchResult> {
   if (isOffline()) return Local.search(query);
   const a = auth();
   const ids = enabledFolderIds(a);
-  let listed: Set<string> | null = null;
-  try {
-    listed = await listedArtistIds(a);
-  } catch {
-    // Left as they came.
-  }
+  // Asked for alongside the search, not before it. Left as they came if it fails.
+  const listedP = listedArtistIds(a).catch(() => null);
+  const raw = await Promise.all(
+    ids ? ids.map((id) => Subsonic.search(a, query, id)) : [Subsonic.search(a, query)],
+  );
+  const listed = await listedP;
   // Per library, as the server answers: each is asked for more than it shows,
   // so dropping some still fills it, and several libraries still show what
   // each of them has.
@@ -1662,9 +1662,8 @@ export async function search(query: string): Promise<Subsonic.SearchResult> {
       SEARCH_ARTISTS_SHOWN,
     ),
   });
-  if (!ids) return shown(await Subsonic.search(a, query));
-  if (ids.length === 1) return shown(await Subsonic.search(a, query, ids[0]));
-  const parts = (await Promise.all(ids.map((id) => Subsonic.search(a, query, id)))).map(shown);
+  const parts = raw.map(shown);
+  if (parts.length === 1) return parts[0];
   return {
     artists: dedupeById(parts.flatMap((p) => p.artists)),
     albums: dedupeById(parts.flatMap((p) => p.albums)),
