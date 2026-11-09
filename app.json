@@ -30,6 +30,15 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "MAIN",
+          "category": [
+            "APP_MUSIC",
+            "DEFAULT"
+          ]
+        }
+      ],
       "permissions": [
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
