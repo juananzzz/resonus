@@ -309,7 +309,7 @@ export async function jukeboxSeek(sec: number): Promise<void> {
   if (!a) return;
   lastPositionSec = sec;
   try {
-    await jukeboxSkip(a, 0, sec);
+    await jukeboxSkip(a, serverIndex, sec);
   } catch {
     // ignore
   }

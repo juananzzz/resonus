@@ -156,6 +156,31 @@ export function indexInOriginal(original: Song[], current: Song): number {
   return Math.max(0, original.findIndex((s) => s.id === current.id));
 }
 
+/**
+ * Shuffle off: the order from before, without what was removed since, and with
+ * what was added since at the end, in the order it has now.
+ */
+export function unshuffled(queue: Song[], original: Song[], current: Song): { queue: Song[]; index: number } {
+  const left = new Map<string, number>();
+  for (const s of queue) left.set(s.id, (left.get(s.id) ?? 0) + 1);
+  const kept = original.filter((s) => {
+    const n = left.get(s.id) ?? 0;
+    if (n > 0) left.set(s.id, n - 1);
+    return n > 0;
+  });
+  // The last copies of an id are the added ones: the first were in `original`.
+  const added: Song[] = [];
+  for (let i = queue.length - 1; i >= 0; i--) {
+    const n = left.get(queue[i].id) ?? 0;
+    if (n === 0) continue;
+    left.set(queue[i].id, n - 1);
+    added.unshift(queue[i]);
+  }
+  const out = kept.concat(added);
+  const at = out.indexOf(current);
+  return { queue: out, index: at >= 0 ? at : indexInOriginal(out, current) };
+}
+
 /** SecureStore only accepts keys with [A-Za-z0-9._-]; the URL has `:` and `/`. */
 function safeKey(s: string): string {
   return s.replace(/[^A-Za-z0-9._-]/g, '_');

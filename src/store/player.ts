@@ -76,7 +76,6 @@ import { queryClient } from '@/lib/query';
 import {
   appendEnd,
   dealt,
-  indexInOriginal,
   insertNext,
   moveIn,
   nextPlayable,
@@ -85,6 +84,7 @@ import {
   removeFrom,
   restoreRemoved,
   shuffleOn,
+  unshuffled,
   type RepeatMode,
 } from '@/lib/queue';
 import { moreRadioTracks } from '@/lib/radioBuild';
@@ -3912,6 +3912,10 @@ export function initRemoteIntegration() {
       }
       const song = state.queue[index];
       if (!song) return;
+      // The same a local track change does: the renderer moved on by itself.
+      pushHistory();
+      consumeQueuedOnIndexChange(index);
+      resetListen();
       usePlayerStore.setState({
         index,
         positionSec,
@@ -4891,8 +4895,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       set({
         shuffle: false,
         queueDealt: false,
-        queue: originalQueue,
-        index: indexInOriginal(originalQueue, current),
+        ...unshuffled(queue, originalQueue, current),
         originalQueue: null,
         queuedCount: 0,
       });

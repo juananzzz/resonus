@@ -15,6 +15,7 @@ import {
   removeFrom,
   restoreRemoved,
   shuffleOn,
+  unshuffled,
   type QueueState,
 } from '@/lib/queue';
 
@@ -193,6 +194,22 @@ describe('shuffle', () => {
     const original = list('a b c d');
     assert.equal(indexInOriginal(original, song('c')), 2);
     assert.equal(indexInOriginal(original, song('zz')), 0);
+  });
+
+  it('shuffle off keeps what was added since and leaves out what was removed', () => {
+    const original = list('a b c d');
+    const x = song('x');
+    // Shuffled, `b` removed, `x` added by hand and now playing.
+    const st = unshuffled([song('c'), song('a'), x, song('d')], original, x);
+    assert.equal(ids(st.queue), 'a c d x');
+    assert.equal(st.index, 3);
+    assert.equal(unshuffled(list('d c a'), original, song('c')).index, 1);
+  });
+
+  it('shuffle off with a second copy of a song added keeps both', () => {
+    const st = unshuffled(list('b a b'), list('a b'), song('a'));
+    assert.equal(ids(st.queue), 'a b b');
+    assert.equal(st.index, 0);
   });
 
   it('deals every song exactly once, without touching the list', () => {
