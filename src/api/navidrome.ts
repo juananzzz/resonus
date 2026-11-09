@@ -509,41 +509,6 @@ export async function listAlbums(
   return Array.isArray(rows) ? rows.map(toAlbum) : [];
 }
 
-/**
- * The ids of the artists credited as the artist of a song or an album.
- *
- * Subsonic's `getArtists` lists album artists only, so a person who is the
- * main artist of a song on someone else's album (a guest, a compilation) is
- * missing from it. Navidrome keeps a role of its own for exactly this
- * (`maincredit`: album artist or artist), and leaves out the credit-only ones
- * (composer, producer and so on). Only the ids come back, a page at a time.
- *
- * A server too old to have roles may ignore the filter and answer with every
- * artist, which only means nothing gets filtered out.
- */
-export async function listMainCreditArtistIds(
-  auth: SubsonicAuth,
-  libraryIds?: string[],
-): Promise<Set<string>> {
-  const PAGE = 1000;
-  const ids = new Set<string>();
-  for (let start = 0; ; start += PAGE) {
-    const q = new URLSearchParams({
-      role: 'maincredit',
-      _sort: 'name',
-      _order: 'ASC',
-      _start: String(start),
-      _end: String(start + PAGE),
-    });
-    for (const id of libraryIds ?? []) q.append('library_id', id);
-    const rows = await ndJson<{ id?: string }[]>(auth, `/api/artist?${q.toString()}`);
-    if (!Array.isArray(rows)) break;
-    for (const r of rows) if (r?.id) ids.add(r.id);
-    if (rows.length < PAGE) break;
-  }
-  return ids;
-}
-
 /** A genre as this server names it. The id is what its own filters take. */
 export interface NdGenre {
   id: string;
