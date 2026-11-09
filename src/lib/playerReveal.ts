@@ -17,3 +17,12 @@ export const revealOffset = makeMutable(-1);
  * `pushOnce` (#324).
  */
 export const playerOnTop = { current: false };
+
+/**
+ * How far the player has been pulled down during a dismiss swipe, as a 0→1
+ * fraction of the screen height. 0 when the player is fully open or not being
+ * dismissed; grows toward 1 as the finger drags down. GlobalMiniPlayer reads
+ * this to fade back in while the player is still on screen, so there is no
+ * blank gap before navigation completes.
+ */
+export const dismissProgress = makeMutable(0);

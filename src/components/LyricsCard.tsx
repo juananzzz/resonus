@@ -551,22 +551,37 @@ const GAP_CLOCK_RUNWAY_MS = 1200;
 
 /** List-level song clock for the gap leaders, mirroring the karaoke words. */
 function useGapClock(): SharedValue<number> {
-  const positionSec = usePlayerStore((s) => s.positionSec);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const speed = usePlayerStore((s) => s.speed);
-  const clockMs = useSharedValue(positionSec * 1000);
+  // Driven by usePlayerStore.subscribe rather than reactive selectors so that
+  // positionSec beats (every ~500ms) do not trigger re-renders in LyricList
+  // and all its row children. The SharedValue is updated directly on each beat
+  // and Reanimated worklets read it on the UI thread with no React involvement.
+  const clockMs = useSharedValue(usePlayerStore.getState().positionSec * 1000);
   useEffect(() => {
-    cancelAnimation(clockMs);
-    const start = positionSec * 1000;
-    clockMs.value = start;
-    if (isPlaying) {
-      clockMs.value = withTiming(start + GAP_CLOCK_RUNWAY_MS * (speed || 1), {
-        duration: GAP_CLOCK_RUNWAY_MS,
-        easing: Easing.linear,
-        reduceMotion: ReduceMotion.Never,
-      });
-    }
-  }, [clockMs, isPlaying, positionSec, speed]);
+    const advanceClock = (positionSec: number, playing: boolean, speed: number) => {
+      cancelAnimation(clockMs);
+      const start = positionSec * 1000;
+      clockMs.value = start;
+      if (playing) {
+        clockMs.value = withTiming(start + GAP_CLOCK_RUNWAY_MS * (speed || 1), {
+          duration: GAP_CLOCK_RUNWAY_MS,
+          easing: Easing.linear,
+          reduceMotion: ReduceMotion.Never,
+        });
+      }
+    };
+
+    const { positionSec, isPlaying, speed } = usePlayerStore.getState();
+    advanceClock(positionSec, isPlaying, speed);
+
+    let prevPos = positionSec, prevPlaying = isPlaying, prevSpeed = speed;
+    return usePlayerStore.subscribe((s) => {
+      if (s.positionSec === prevPos && s.isPlaying === prevPlaying && s.speed === prevSpeed) return;
+      prevPos = s.positionSec;
+      prevPlaying = s.isPlaying;
+      prevSpeed = s.speed;
+      advanceClock(s.positionSec, s.isPlaying, s.speed);
+    });
+  }, [clockMs]);
   return clockMs;
 }
 

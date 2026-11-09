@@ -62,7 +62,8 @@ import { useLocalProfile } from '@/hooks/useLocalProfile';
 import { useLyrics } from '@/hooks/useLyrics';
 import { useScreenSize } from '@/hooks/useScreenSize';
 import { useT } from '@/i18n';
-import { playerOnTop, revealOffset } from '@/lib/playerReveal';
+import { useTabBarBottom, useTabBarHeight, useTabBarShown } from '@/hooks/useTabBar';
+import { dismissProgress, playerOnTop, revealOffset } from '@/lib/playerReveal';
 import { artistTargets } from '@/lib/artistNav';
 import { routeLook } from '@/lib/audioRouteTypes';
 import { formatGroupedDeviceLabel } from '@/lib/format';
@@ -94,6 +95,8 @@ import {
   BACKGROUND_TINTS,
   colors,
   fontSize,
+  MINI_PLAYER_GAP,
+  MINI_PLAYER_HEIGHT,
   radius,
   spacing,
   themed,
@@ -435,6 +438,9 @@ export default function PlayerScreen() {
   // change: a flat color is animated and the gradient toward the background is
   // a fixed overlay (same look as animating the gradient, which can't be done).
   const { width: screenW, height: screenH, landscape } = useScreenSize();
+  const withBar = useTabBarShown();
+  const barHeight = useTabBarHeight();
+  const barBottom = useTabBarBottom();
   const background = useSettings((s) => s.playerBackground);
   const colorBackground = background === 'color';
   const [headerHeight, setHeaderHeight] = useState(64);
@@ -928,26 +934,40 @@ export default function PlayerScreen() {
   // doesn't support it on Android).
   const transY = useSharedValue(0);
   const closePlayer = () => router.back();
+  // The Y distance the player slides to appear "inside" the mini player:
+  // slide until the player top aligns with the mini player top. At that point
+  // only the mini-player-height portion of the player is visible at the bottom
+  // of the screen, with the mini player fading in on top. Pure translate —
+  // no scale, so the motion feels solid and linear.
+  const miniBottom = withBar ? barHeight + MINI_PLAYER_GAP + barBottom : insets.bottom + spacing.sm;
+  const miniTopY = screenH - miniBottom - MINI_PLAYER_HEIGHT;
   const dismissPan = Gesture.Pan()
     .enabled(atTop)
     .activeOffsetY(15)
     .failOffsetX([-25, 25])
     .onUpdate((e) => {
-      transY.value = Math.max(0, e.translationY);
+      const dy = Math.max(0, e.translationY);
+      transY.value = dy;
+      // dismissProgress reaches 1 when the player reaches the mini player's
+      // top — the mini player is fully visible before the player slides off.
+      dismissProgress.value = Math.min(1, dy / miniTopY);
     })
     .onEnd((e) => {
       if (e.translationY > DISMISS_THRESHOLD || e.velocityY > 800) {
-        transY.value = withTiming(screenH, { duration: motion.duration.move }, (f) => {
+        // Slide all the way off screen so no ghost remains after navigation.
+        // dismissProgress finishes proportionally sooner so the mini player is
+        // at full opacity by the time the player passes its position.
+        const dur = motion.duration.move;
+        const progressDur = Math.round(dur * miniTopY / screenH);
+        transY.value = withTiming(screenH, { duration: dur }, (f) => {
           if (f) scheduleOnRN(closePlayer);
         });
+        dismissProgress.value = withTiming(1, { duration: progressDur });
       } else {
-        transY.value = withSpring(0, { damping: 20, stiffness: 200 });
+        transY.value = withSpring(0, { damping: 25, stiffness: 300 });
+        dismissProgress.value = withSpring(0, { damping: 25, stiffness: 300 });
       }
     });
-  // While it is being pulled up out of the mini player, the finger places it
-  // (see `playerReveal`); otherwise its own drag down does.
-  // A pull that was let go of ends with the player closing while still held
-  // at the bottom; it is released here, once it is off the screen for good.
   useEffect(() => () => {
     revealOffset.value = -1;
   }, []);

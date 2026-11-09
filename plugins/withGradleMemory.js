@@ -13,14 +13,27 @@
  */
 const { withGradleProperties } = require('@expo/config-plugins');
 
-const JVM_ARGS = '-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8';
+// --add-opens: required when building with JDK 25 (JEP 486 "Integrity by
+// Default" restricts System methods that expo-sqlite and react-native-worklets
+// CMake tasks call during configuration).
+// kotlin.jvm.target.validation.mode=warning: suppresses the fatal mismatch
+// between Java (17) and Kotlin (21) JVM targets in react-native-image-colors
+// when building with JDK 21+.
+const JVM_ARGS =
+  '-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' +
+  ' --add-opens java.base/java.lang=ALL-UNNAMED' +
+  ' --add-opens java.base/java.io=ALL-UNNAMED' +
+  ' --add-opens java.base/java.util=ALL-UNNAMED';
 
 module.exports = function withGradleMemory(config) {
   return withGradleProperties(config, (cfg) => {
     const props = cfg.modResults.filter(
-      (item) => !(item.type === 'property' && item.key === 'org.gradle.jvmargs'),
+      (item) =>
+        !(item.type === 'property' && item.key === 'org.gradle.jvmargs') &&
+        !(item.type === 'property' && item.key === 'kotlin.jvm.target.validation.mode'),
     );
     props.push({ type: 'property', key: 'org.gradle.jvmargs', value: JVM_ARGS });
+    props.push({ type: 'property', key: 'kotlin.jvm.target.validation.mode', value: 'warning' });
     cfg.modResults = props;
     return cfg;
   });

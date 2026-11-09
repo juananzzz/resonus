@@ -185,26 +185,42 @@ function ActiveWordFlow({
   activeColor,
   inactiveColor,
 }: Omit<KaraokeWordsProps, 'active' | 'centered' | 'paddingVertical'> & { groups: number[][] }) {
-  const positionSec = usePlayerStore((s) => s.positionSec);
+  // isPlaying is kept reactive: it determines animateBounce on TimedWord and
+  // must update the render. positionSec and speed are NOT reactive here —
+  // they drive clockMs via usePlayerStore.subscribe so position beats (500ms)
+  // never trigger a React re-render of this component or its word children.
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const speed = usePlayerStore((s) => s.speed);
   const reduceMotion = useReducedMotion();
-  const clockMs = useSharedValue(positionSec * 1000);
+  const clockMs = useSharedValue(usePlayerStore.getState().positionSec * 1000);
 
   useEffect(() => {
-    cancelAnimation(clockMs);
-    const start = positionSec * 1000;
-    clockMs.value = start;
-    if (isPlaying) {
-      clockMs.value = withTiming(start + CLOCK_RUNWAY_MS * (speed || 1), {
-        duration: CLOCK_RUNWAY_MS,
-        easing: Easing.linear,
-        // Highlight progress carries timing information and must not jump even
-        // when decorative motion is disabled at the system level.
-        reduceMotion: ReduceMotion.Never,
-      });
-    }
-  }, [clockMs, isPlaying, positionSec, speed]);
+    const advanceClock = (positionSec: number, playing: boolean, speed: number) => {
+      cancelAnimation(clockMs);
+      const start = positionSec * 1000;
+      clockMs.value = start;
+      if (playing) {
+        clockMs.value = withTiming(start + CLOCK_RUNWAY_MS * (speed || 1), {
+          duration: CLOCK_RUNWAY_MS,
+          easing: Easing.linear,
+          // Highlight progress carries timing information and must not jump even
+          // when decorative motion is disabled at the system level.
+          reduceMotion: ReduceMotion.Never,
+        });
+      }
+    };
+
+    const { positionSec, isPlaying: ip, speed } = usePlayerStore.getState();
+    advanceClock(positionSec, ip, speed);
+
+    let prevPos = positionSec, prevPlaying = ip, prevSpeed = speed;
+    return usePlayerStore.subscribe((s) => {
+      if (s.positionSec === prevPos && s.isPlaying === prevPlaying && s.speed === prevSpeed) return;
+      prevPos = s.positionSec;
+      prevPlaying = s.isPlaying;
+      prevSpeed = s.speed;
+      advanceClock(s.positionSec, s.isPlaying, s.speed);
+    });
+  }, [clockMs]);
 
   // The row lets go all at once: the latest word end in the line.
   const lineEndMs = words.reduce((latest, word, index) => {

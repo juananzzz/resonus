@@ -10,7 +10,7 @@
  * fourteen dashes next to them is harder to read than the six lines that were
  * really filled in.
  */
-import { useSegments } from 'expo-router';
+import { useNavState } from '@/store/navState';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -78,7 +78,7 @@ export function SongInfoSheet() {
   const t = useT();
   // What is on top decides whether detail screens push or replace the modal
   // (see `pushOrReplace`); read before the early return below.
-  const top = useSegments()[0];
+  const top = useNavState((s) => s.rootSegment);
   const insets = useSafeAreaInsets();
   const [coverOpen, setCoverOpen] = useState(false);
   // The list is scrolled to the top: only then does a downward drag belong to

@@ -50,18 +50,38 @@ const REVEAL_START = 12;
 const REVEAL_COMMIT = 0.2;
 
 /**
- * Isolated progress bar: the only thing that subscribes to `positionSec`
- * (updated every 500ms), so the whole MiniPlayer (cover, title, favorite,
- * play) doesn't re-render 2×/sec while something is playing — only this bar.
+ * Isolated progress bar driven by a SharedValue so position beats (every
+ * ~500ms) never cause a React re-render — only the Reanimated UI-thread
+ * worklet reruns to update the fill width.
  */
 function MiniProgress({ song }: { song: Song }) {
-  const positionSec = usePlayerStore((s) => s.positionSec);
-  const durationSec = usePlayerStore((s) => s.durationSec);
-  const duration = durationSec || song.duration || 0;
-  const progress = duration > 0 ? Math.min(1, positionSec / duration) : 0;
+  const trackWidth = useSharedValue(0);
+  const fraction = useSharedValue(0);
+
+  useEffect(() => {
+    const { positionSec, durationSec } = usePlayerStore.getState();
+    const dur = durationSec || song.duration || 0;
+    fraction.value = dur > 0 ? Math.min(1, positionSec / dur) : 0;
+
+    let prevPos = positionSec, prevDur = durationSec;
+    return usePlayerStore.subscribe((s) => {
+      if (s.positionSec === prevPos && s.durationSec === prevDur) return;
+      prevPos = s.positionSec;
+      prevDur = s.durationSec;
+      const duration = s.durationSec || song.duration || 0;
+      fraction.value = duration > 0 ? Math.min(1, s.positionSec / duration) : 0;
+    });
+  }, [fraction, song.duration]);
+
+  const fillStyle = useAnimatedStyle(() => ({ width: trackWidth.value * fraction.value }));
+
   return (
-    <View style={styles.progressTrack} pointerEvents="none">
-      <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+    <View
+      style={styles.progressTrack}
+      pointerEvents="none"
+      onLayout={(e) => { trackWidth.value = e.nativeEvent.layout.width; }}
+    >
+      <Animated.View style={[styles.progressFill, fillStyle]} />
     </View>
   );
 }

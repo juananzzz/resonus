@@ -32,7 +32,7 @@ async function sampleEdge(uri: string, edge: 'top' | 'bottom'): Promise<string |
       try {
         file = (await strip.saveAsync({ format: SaveFormat.PNG })).uri;
         const { getColors } = await import('react-native-image-colors');
-        const palette = await getColors(file, { fallback: colors.background, cache: false, quality: 'highest' });
+        const palette = await getColors(file, { fallback: colors.background, cache: false, quality: 'low' });
         return palette.platform === 'ios' ? palette.background : palette.dominant;
       } finally { strip.release(); }
     } finally { stripContext.release(); small.release(); }

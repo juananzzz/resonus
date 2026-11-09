@@ -5,4 +5,5 @@ patchedDependencies:
   expo-audio: patches/expo-audio.patch
   expo-navigation-bar: patches/expo-navigation-bar.patch
   expo-network: patches/expo-network.patch
+  react-native-gesture-handler@2.32.0: patches/react-native-gesture-handler@2.32.0.patch
   react-native-image-colors: patches/react-native-image-colors.patch

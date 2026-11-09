@@ -1,7 +1,8 @@
 /** Bottom sheet with actions for a song (⋯ menu). */
 import Icon from '@/components/Icon';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter, useSegments } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { useNavState } from '@/store/navState';
 import { useEffect, useState } from 'react';
 import {
   Modal,
@@ -116,7 +117,7 @@ export function SongMenuSheet() {
   const router = useRouter();
   // Read here, before the early return below: what is on top decides whether
   // detail screens push or replace the modal (see `goDetail`).
-  const top = useSegments()[0];
+  const top = useNavState((s) => s.rootSegment);
   const auth = useAuthStore((s) => s.auth);
   const offline = useAuthStore((s) => s.offline);
   const radiosEnabled = useSettings((s) => s.radiosEnabled);

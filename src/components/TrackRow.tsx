@@ -21,6 +21,7 @@ import { useDownloads } from '@/store/downloads';
 import { usePlayerStore } from '@/store/player';
 import { useSongMenu, type SongMenuContext } from '@/store/songMenu';
 import { useSettings, type SwipeAction } from '@/store/settings';
+import { useShallow } from 'zustand/react/shallow';
 import { haptic } from '@/lib/haptics';
 import { useToast } from '@/store/toast';
 import { useT } from '@/i18n';
@@ -110,6 +111,14 @@ const SWIPE_ICON: Record<Exclude<SwipeAction, 'off'>, keyof typeof Icon.glyphMap
   menu: 'ellipsis-horizontal',
 };
 
+/** Short label shown on the strip alongside the icon. */
+const SWIPE_LABEL: Record<Exclude<SwipeAction, 'off'>, string> = {
+  queue: 'Queue',
+  next: 'Next',
+  favorite: 'Favorite',
+  menu: 'More',
+};
+
 /** Lines of an episode's show notes before "Show more" takes over (see `TrackRow`). */
 const EPISODE_DESCRIPTION_LINES = 2;
 /** Characters of the notes measured for that: far more than two lines hold
@@ -117,30 +126,48 @@ const EPISODE_DESCRIPTION_LINES = 2;
 const EPISODE_MEASURE_CHARS = 600;
 
 /**
- * Action strip that peeks out behind the row during swipe. Invisible at rest:
- * the row is transparent (lets the header gradient through, Spotify style),
- * so the strip can only exist while the gesture lasts.
+ * Action strip that peeks out behind the row during swipe. Fades in as the
+ * user drags, scales the icon once the threshold is crossed so the user knows
+ * the action is confirmed, and shows a short label alongside the icon.
  */
 function SwipeActionPanel({
   progress,
   icon,
+  label,
   side,
 }: {
   progress: SharedValue<number>;
   icon: keyof typeof Icon.glyphMap;
+  label: string;
   /** Side where the strip peeks out: the icon sticks to the edge it enters from. */
   side: 'left' | 'right';
 }) {
-  const visible = useAnimatedStyle(() => ({ opacity: progress.value > 0.01 ? 1 : 0 }));
+  // The strip fades in gradually as the finger moves (0→1 over first 30% of
+  // travel) and the icon+label pop at 1.1× scale once fully confirmed (>0.9).
+  const stripStyle = useAnimatedStyle(() => {
+    const p = progress.value;
+    return {
+      opacity: Math.min(1, p / 0.3),
+    };
+  });
+  const contentStyle = useAnimatedStyle(() => {
+    const confirmed = progress.value >= 0.9;
+    return {
+      transform: [{ scale: confirmed ? 1.1 : 1 }],
+    };
+  });
   return (
     <Reanimated.View
       style={[
-        styles.queueAction,
-        { backgroundColor: colors.accent, alignItems: side === 'left' ? 'flex-start' : 'flex-end' },
-        visible,
+        styles.swipeAction,
+        { alignItems: side === 'left' ? 'flex-start' : 'flex-end' },
+        stripStyle,
       ]}
     >
-      <Icon name={icon} size={22} color={colors.onAccent} />
+      <Reanimated.View style={[styles.swipeActionContent, contentStyle]}>
+        <Icon name={icon} size={20} color={colors.onAccent} />
+        <Text style={styles.swipeActionLabel}>{label}</Text>
+      </Reanimated.View>
     </Reanimated.View>
   );
 }
@@ -173,10 +200,15 @@ function TrackRowBase({
   // Memoized below, and with its own `propsEqual` at that: the list repainting
   // does not reach the rows, so each one asks for the appearance itself.
   useTheme();
-  const showDuration = useSettings((s) => s.showSongDuration);
-  const showRating = useSettings((s) => s.showListRating);
-  const swipeAction = useSettings((s) => s.swipeAction);
-  const swipeLeftAction = useSettings((s) => s.swipeLeftAction);
+  const { showDuration, showRating, swipeAction, swipeLeftAction, lang } = useSettings(
+    useShallow((s) => ({
+      showDuration: s.showSongDuration,
+      showRating: s.showListRating,
+      swipeAction: s.swipeAction,
+      swipeLeftAction: s.swipeLeftAction,
+      lang: s.language,
+    })),
+  );
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const playNext = usePlayerStore((s) => s.playNext);
   const toast = useToast((s) => s.show);
@@ -219,9 +251,6 @@ function TrackRowBase({
     ? !song.localUri && !downloaded && !streamReachable(song)
     : !!song.unavailable;
   const explicit = useExplicitBadge(song.explicitStatus);
-  // The language, so an episode's publish date reads the way the rest of the
-  // screen does (see `formatEpisodeDate`).
-  const lang = useSettings((s) => s.language);
   // An episode's "how long · when": the two facts a listener needs to tell
   // episodes apart. The duration leaves the row's right edge for episodes and
   // comes up here instead, so the date has a home and the two read together.
@@ -519,23 +548,19 @@ function TrackRowBase({
       // The left strip is opened by swiping RIGHT (and vice versa).
       renderLeftActions={(progress) =>
         swipeAction === 'off' ? null : (
-          <SwipeActionPanel progress={progress} icon={SWIPE_ICON[swipeAction]} side="left" />
+          <SwipeActionPanel progress={progress} icon={SWIPE_ICON[swipeAction]} label={SWIPE_LABEL[swipeAction]} side="left" />
         )
       }
       renderRightActions={(progress) =>
         swipeLeftAction === 'off' ? null : (
-          <SwipeActionPanel progress={progress} icon={SWIPE_ICON[swipeLeftAction]} side="right" />
+          <SwipeActionPanel progress={progress} icon={SWIPE_ICON[swipeLeftAction]} label={SWIPE_LABEL[swipeLeftAction]} side="right" />
         )
       }
-      // Intentionally less sensitive: `dragOffsetFrom…Edge` requires a clear
-      // horizontal path before activating (so a vertical scroll with some
-      // lateral movement no longer triggers it accidentally), and the
-      // `threshold` requires a substantial drag to confirm the action.
-      dragOffsetFromLeftEdge={30}
-      dragOffsetFromRightEdge={30}
-      leftThreshold={90}
-      rightThreshold={90}
-      friction={1}
+      dragOffsetFromLeftEdge={10}
+      dragOffsetFromRightEdge={10}
+      leftThreshold={60}
+      rightThreshold={60}
+      friction={2}
       overshootLeft={false}
       overshootRight={false}
       enabled={swipeable && !selecting && !unavailable && (swipeAction !== 'off' || swipeLeftAction !== 'off')}
@@ -638,11 +663,22 @@ const styles = themed((colors) => ({
     // the first rows, like Spotify. The swipe action no longer needs to be
     // covered: it hides on its own at rest (see QueueAction).
   },
-  queueAction: {
+  swipeAction: {
     justifyContent: 'center',
-    alignItems: 'flex-start',
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.accent,
+    minWidth: 72,
+    borderRadius: radius.md,
+    overflow: 'hidden' as const,
+  },
+  swipeActionContent: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  swipeActionLabel: {
+    color: colors.onAccent,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
   },
   position: {
     color: colors.textMuted,

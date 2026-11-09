@@ -6,8 +6,14 @@
 export const listPerf = {
   removeClippedSubviews: true,
   initialNumToRender: 10,
-  maxToRenderPerBatch: 10,
-  windowSize: 11,
+  // 20 items per batch: cells fill in quickly during a fast fling so blank rows
+  // don't appear, while the reduced windowSize keeps the total mounted count low.
+  maxToRenderPerBatch: 20,
+  // 11 viewports keeps ~130 rows mounted — roughly half what windowSize: 21
+  // mounted. Fewer live ReanimatedSwipeable gesture handlers = less lag. The
+  // higher maxToRenderPerBatch compensates by filling newly-visible rows fast.
+  windowSize: 7,
+  updateCellsBatchingPeriod: 50,
 };
 
 /**

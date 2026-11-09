@@ -18,11 +18,13 @@
 import Icon from '@/components/Icon';
 import { useRouter } from 'expo-router';
 import { memo, useMemo, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import ReorderableList, {
   useReorderableDrag,
   type ReorderableListReorderEvent,
 } from 'react-native-reorderable-list';
+import ReanimatedSwipeable, { SwipeDirection, type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Reanimated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COVER, canGoIntoPlaylist, songCoverUrl } from '@/api/data';
@@ -40,6 +42,38 @@ import { haptic } from '@/lib/haptics';
 import { reorderListPerf } from '@/lib/listPerf';
 import { useAuthStore } from '@/store/auth';
 import { mixSeedOf, SOURCE_FAVORITES, SOURCE_HISTORY, usePlayerStore } from '@/store/player';
+
+/** Strip revealed behind a queue row on right-swipe (prioritize). */
+function PrioritizePanel({ progress }: { progress: SharedValue<number> }) {
+  const stripStyle = useAnimatedStyle(() => ({
+    opacity: Math.min(1, progress.value / 0.3),
+  }));
+  const contentStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: progress.value >= 0.9 ? 1.1 : 1 }],
+  }));
+  return (
+    <Reanimated.View style={[queueSwipeStyles.strip, stripStyle]}>
+      <Reanimated.View style={[queueSwipeStyles.content, contentStyle]}>
+        <Icon name="arrow-up-circle" size={20} color={colors.onAccent} />
+        <Text style={queueSwipeStyles.label}>{'Priority'}</Text>
+      </Reanimated.View>
+    </Reanimated.View>
+  );
+}
+
+const queueSwipeStyles = StyleSheet.create({
+  strip: {
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: 16,
+    backgroundColor: colors.accent,
+    minWidth: 72,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  content: { alignItems: 'center', gap: 4 },
+  label: { color: colors.onAccent, fontSize: 11, fontWeight: '600' },
+});
 import { usePlaylistPicker } from '@/store/playlistPicker';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
@@ -87,22 +121,22 @@ const QueueRow = memo(function QueueRow({
 }) {
   const jumpTo = usePlayerStore((s) => s.jumpTo);
   const removeAt = usePlayerStore((s) => s.removeAt);
+  const prioritizeAt = usePlayerStore((s) => s.prioritizeAt);
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const toast = useToast((s) => s.show);
   const t = useT();
   const drag = useReorderableDrag();
+  const swipeRef = useRef<SwipeableMethods>(null);
   // Memoised, so it has to ask for a repaint on a theme change itself.
   useTheme();
   const current = state === 'current';
 
   const remove = async () => {
-    // Removing the one playing moves on to the next, which is loud enough on
-    // its own and cannot be undone: `removeAt` returns nothing there.
     const undo = await removeAt(absIndex);
     if (undo) toast(t('Removed from queue'), { label: t('Undo'), run: undo });
   };
 
-  return (
+  const inner = (
     <View style={[styles.row, state === 'previous' && styles.previous]}>
       <Pressable
         style={styles.main}
@@ -132,6 +166,31 @@ const QueueRow = memo(function QueueRow({
         </Pressable>
       </View>
     </View>
+  );
+
+  // Only upcoming songs can be prioritized (not the current song or previous).
+  if (state !== 'upcoming') return inner;
+
+  return (
+    <ReanimatedSwipeable
+      ref={swipeRef}
+      renderLeftActions={(progress) => <PrioritizePanel progress={progress} />}
+      dragOffsetFromLeftEdge={10}
+      leftThreshold={60}
+      friction={2}
+      overshootLeft={false}
+      overshootRight={false}
+      onSwipeableWillOpen={(direction) => {
+        if (direction === SwipeDirection.RIGHT) {
+          haptic('light');
+          swipeRef.current?.close();
+          prioritizeAt(absIndex);
+          toast(t('Moved up in queue'));
+        }
+      }}
+    >
+      {inner}
+    </ReanimatedSwipeable>
   );
 });
 

@@ -21,6 +21,8 @@ import { useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -31,6 +33,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { BarBlur, useBarBlur } from '@/components/BarBlur';
 
 import { useCompactTabBar, useTabBarHeight, useTabBarShown } from '@/hooks/useTabBar';
+import { dismissProgress } from '@/lib/playerReveal';
 import { motion } from '@/theme/motion';
 import { useT } from '@/i18n';
 import { rememberTab, reselectTab, tabOrigin, TABS } from '@/lib/tabOrigin';
@@ -141,7 +144,22 @@ export function GlobalTabBar() {
           if (done) scheduleOnRN(setBlurOn, false);
         });
   }, [shown, fade]);
-  const fadeStyle = useAnimatedStyle(() => ({ opacity: fade.value }));
+  // During a swipe-down dismiss the player slides away from the top of the
+  // screen, so the bar only becomes visible once most of the player has gone.
+  // Gate to the last 25 % of the gesture to avoid the bar overlapping the
+  // player content that is still on screen. Turn blur back on before the bar
+  // first appears so its background is ready.
+  useAnimatedReaction(
+    () => dismissProgress.value > 0.75,
+    (active, prev) => {
+      if (active && !prev) runOnJS(setBlurOn)(true);
+    },
+  );
+  const fadeStyle = useAnimatedStyle(() => {
+    const dp = dismissProgress.value;
+    const dProgress = dp > 0.75 ? (dp - 0.75) / 0.25 : 0;
+    return { opacity: Math.max(fade.value, dProgress) };
+  });
 
   /** Leaves for a tab, dropping the screens piled on top of it. */
   const go = (href: string) => {

@@ -5,7 +5,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Font from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useSegments } from 'expo-router';
 import { NavigationBar } from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
@@ -62,6 +62,7 @@ import { useRecentSearches } from '@/store/recentSearches';
 import { APP_FONT_FAMILY, useSettings } from '@/store/settings';
 import { useSongCache } from '@/store/songCache';
 import { useSortPrefs } from '@/store/sortPrefs';
+import { useNavState } from '@/store/navState';
 import { colors, themeMode, useTheme } from '@/theme';
 
 // Patches Text/TextInput once, before the first render.
@@ -77,6 +78,19 @@ const FULL_MODAL = {
   presentation: Platform.OS === 'ios' ? 'fullScreenModal' : 'modal',
   animation: Platform.OS === 'ios' ? 'fade' : 'fade_from_bottom',
 } as const;
+
+/**
+ * Lyrics screen on Android: containedTransparentModal (same as the player)
+ * with no native animation. containedTransparentModal keeps the player
+ * composited in the same native container so it shows through when
+ * maskedOpacity fades to 0 on close — a plain transparentModal is a separate
+ * Android window and only shows black behind. The transparent contentStyle
+ * overrides the global opaque fill for the same reason. The fade in/out is
+ * driven entirely by maskedOpacity in lyrics.tsx.
+ */
+const LYRICS_MODAL = Platform.OS === 'ios'
+  ? ({ presentation: 'fullScreenModal', animation: 'fade' } as const)
+  : ({ presentation: 'containedTransparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } } as const);
 
 /* The detail screens take the ordinary push, like every other screen here.
  * They were `fullScreenModal` for a while: iOS presents a full screen modal
@@ -126,6 +140,22 @@ const FULL_MODAL = {
  * the position, here for everything). Frozen, the screen is rendered once on
  * the way back, with what is true then.
  */
+/**
+ * Reads `segments[0]` once and writes it to the NavState store only when it
+ * changes (e.g. entering or leaving the player/queue/lyrics). This prevents
+ * the 63+ consumers of `useTabBarShown` and `useScreenBottomPadding` from
+ * re-rendering on every tab switch (where `segments[1]` changes but `[0]` stays
+ * `'(tabs)'`).
+ */
+function NavSync() {
+  const root = useSegments()[0] as string | undefined;
+  const setRoot = useNavState((s) => s._setRootSegment);
+  useEffect(() => {
+    setRoot(root);
+  }, [root, setRoot]);
+  return null;
+}
+
 function useAway(): boolean {
   const [away, setAway] = useState(false);
   useEffect(() => {
@@ -363,6 +393,7 @@ export default function RootLayout() {
         ) : (
           <ErrorBoundary>
           <View style={{ flex: 1 }}>
+            <NavSync />
             <Freeze freeze={away}>
             <BarBlurTarget>
             <Stack
@@ -457,7 +488,7 @@ export default function RootLayout() {
               />
               <Stack.Screen
                 name="lyrics"
-                options={FULL_MODAL}
+                options={LYRICS_MODAL}
               />
             </Stack>
             </BarBlurTarget>

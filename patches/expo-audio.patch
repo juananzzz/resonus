@@ -40,7 +40,36 @@ index 992239ba7631ce0c97c0b41c5fbf61cc842386fe..4ab89564158370534b36e9ceb73ca61c
    private var focusAcquired = false
    private var interruptionMode: InterruptionMode? = null
    private var allowsBackgroundRecording = false
-@@ -140,6 +144,17 @@ class AudioModule : Module() {
+@@ -100,20 +104,14 @@ class AudioModule : Module() {
+         }
+ 
+         AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+-          if (interruptionMode == InterruptionMode.DUCK_OTHERS) {
+-            allPlayables.forEach { playable ->
+-              if (playable.previousVolume != playable.volume) {
+-                playable.previousVolume = playable.volume
+-              }
+-              playable.setVolume(playable.previousVolume * 0.5f)
+-            }
+-          } else {
+-            allPlayables.forEach { playable ->
+-              if (playable.isPlaying) {
+-                playable.isPaused = true
+-                playable.pause()
+-              }
++          // CAN_DUCK means "keep playing at lower volume" — never pause here,
++          // regardless of interruption mode. Pausing on CAN_DUCK causes the
++          // music to freeze for 1–4 s every time a notification plays a sound.
++          allPlayables.forEach { playable ->
++            if (playable.previousVolume != playable.volume) {
++              playable.previousVolume = playable.volume
+             }
++            playable.setVolume(playable.previousVolume * 0.5f)
+           }
+         }
+ 
+         AudioManager.AUDIOFOCUS_GAIN -> {
+@@ -140,6 +138,17 @@ class AudioModule : Module() {
      return playsInSilentMode || audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL
    }
  
@@ -58,7 +87,7 @@ index 992239ba7631ce0c97c0b41c5fbf61cc842386fe..4ab89564158370534b36e9ceb73ca61c
    private fun requestAudioFocus() {
      if (focusAcquired || !audioEnabled || interruptionMode == InterruptionMode.MIX_WITH_OTHERS) {
        return
-@@ -148,14 +163,23 @@ class AudioModule : Module() {
+@@ -148,14 +157,23 @@ class AudioModule : Module() {
      val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
        val requestType = interruptionMode?.let {
          if (it == InterruptionMode.DO_NOT_MIX) {
@@ -84,7 +113,7 @@ index 992239ba7631ce0c97c0b41c5fbf61cc842386fe..4ab89564158370534b36e9ceb73ca61c
              .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
              .build()
          )
-@@ -169,7 +193,7 @@ class AudioModule : Module() {
+@@ -169,7 +187,7 @@ class AudioModule : Module() {
      } else {
        @Suppress("DEPRECATION")
        val requestType = if (interruptionMode == InterruptionMode.DO_NOT_MIX) {
@@ -93,7 +122,7 @@ index 992239ba7631ce0c97c0b41c5fbf61cc842386fe..4ab89564158370534b36e9ceb73ca61c
        } else {
          AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
        }
-@@ -363,7 +387,16 @@ class AudioModule : Module() {
+@@ -363,7 +381,16 @@ class AudioModule : Module() {
              bufferDurationMs
            )
            player.onPlaybackStateChange = { isPlaying ->
@@ -111,7 +140,7 @@ index 992239ba7631ce0c97c0b41c5fbf61cc842386fe..4ab89564158370534b36e9ceb73ca61c
                releaseAudioFocus()
              }
            }
-@@ -376,6 +409,15 @@ class AudioModule : Module() {
+@@ -376,6 +403,15 @@ class AudioModule : Module() {
          player.id
        }
  
@@ -127,7 +156,7 @@ index 992239ba7631ce0c97c0b41c5fbf61cc842386fe..4ab89564158370534b36e9ceb73ca61c
        Property("isBuffering") { player ->
          runOnMain {
            player.ref.playbackState == Player.STATE_BUFFERING
-@@ -507,6 +549,27 @@ class AudioModule : Module() {
+@@ -507,6 +543,27 @@ class AudioModule : Module() {
          }
        }
  
@@ -155,7 +184,7 @@ index 992239ba7631ce0c97c0b41c5fbf61cc842386fe..4ab89564158370534b36e9ceb73ca61c
        Function("setActiveForLockScreen") { ref: AudioPlayer, active: Boolean, metadata: Metadata?, options: AudioLockScreenOptions? ->
          runOnMain {
            ref.setActiveForLockScreen(active, metadata, options)
-@@ -519,12 +582,26 @@ class AudioModule : Module() {
+@@ -519,12 +576,26 @@ class AudioModule : Module() {
          }
        }
  
@@ -182,7 +211,7 @@ index 992239ba7631ce0c97c0b41c5fbf61cc842386fe..4ab89564158370534b36e9ceb73ca61c
        Function("setAudioSamplingEnabled") { player: AudioPlayer, enabled: Boolean ->
          runOnMain {
            player.setSamplingEnabled(enabled)
-@@ -685,7 +762,16 @@ class AudioModule : Module() {
+@@ -685,7 +756,16 @@ class AudioModule : Module() {
            }
            playlist.loadInitialPlaylist()
            playlist.onPlaybackStateChange = { isPlaying ->
@@ -200,7 +229,7 @@ index 992239ba7631ce0c97c0b41c5fbf61cc842386fe..4ab89564158370534b36e9ceb73ca61c
                releaseAudioFocus()
              }
            }
-@@ -860,13 +946,29 @@ class AudioModule : Module() {
+@@ -860,13 +940,29 @@ class AudioModule : Module() {
  
    private fun createMediaItem(source: AudioSource?): MediaSource? = source?.uri?.let { uriString ->
      val uri = uriString.toUri()
@@ -231,7 +260,7 @@ index 992239ba7631ce0c97c0b41c5fbf61cc842386fe..4ab89564158370534b36e9ceb73ca61c
  
      val preloadedBytes = AudioPreloadManager.get(uriString)
      val factory: DataSource.Factory = if (preloadedBytes != null) {
-@@ -914,10 +1016,32 @@ class AudioModule : Module() {
+@@ -914,10 +1010,32 @@ class AudioModule : Module() {
      }
    }
  
@@ -265,7 +294,7 @@ index 992239ba7631ce0c97c0b41c5fbf61cc842386fe..4ab89564158370534b36e9ceb73ca61c
    }
  
    private fun retrieveStreamType(uri: Uri): Int = Util.inferContentType(uri)
-@@ -931,7 +1055,7 @@ class AudioModule : Module() {
+@@ -931,7 +1049,7 @@ class AudioModule : Module() {
        CONTENT_TYPE_SS -> SsMediaSource.Factory(factory)
        CONTENT_TYPE_DASH -> DashMediaSource.Factory(factory)
        CONTENT_TYPE_HLS -> HlsMediaSource.Factory(factory)
@@ -352,6 +381,33 @@ index c76a9fd2a53743a691782e0f67d0d71401df58f6..7c9025af6a1645f79f9964b67e040764
      .setSeekForwardIncrementMs(SEEK_JUMP_INTERVAL_MS)
      .setSeekBackIncrementMs(SEEK_JUMP_INTERVAL_MS)
      .apply {
+@@ -42,15 +84,13 @@ class AudioPlayer(
+     .apply {
+-      if (bufferDurationMs > 0) {
+-        setLoadControl(
+-          DefaultLoadControl.Builder()
+-            .setBufferDurationsMs(
+-              DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
+-              bufferDurationMs.toInt().coerceAtLeast(DefaultLoadControl.DEFAULT_MIN_BUFFER_MS),
+-              DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
+-              DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
+-            )
+-            .build()
+-        )
+-      }
+-    }
++      setLoadControl(
++        DefaultLoadControl.Builder()
++          .setBufferDurationsMs(
++            DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
++            if (bufferDurationMs > 0) bufferDurationMs.toInt().coerceAtLeast(DefaultLoadControl.DEFAULT_MIN_BUFFER_MS) else DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
++            DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
++            10_000
++          )
++          .build()
++      )
++    }
+     .build(),
 @@ -64,7 +106,20 @@ class AudioPlayer(
    var isActiveForLockScreen = false
    internal var metadata: Metadata? = null
