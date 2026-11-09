@@ -1630,45 +1630,17 @@ export function searchSongs(query: string, count?: number): Promise<Subsonic.Son
   );
 }
 
-/** Artists shown per search and library; more are asked for, so dropping some still fills it. */
-const SEARCH_ARTISTS_SHOWN = 20;
-
-/**
- * The search with its artists cut down to ones that have songs.
- *
- * Navidrome searches every artist row it has, credit-only ones included (a
- * composer or producer who never made a track of their own), and the result
- * opens an artist with nothing in it. Artists who are the main artist of a
- * song or an album are kept (see `listedArtistIds`). Elsewhere, or if that
- * can't be read, the artists are left as they came.
- */
-export async function search(query: string): Promise<Subsonic.SearchResult> {
+export function search(query: string): Promise<Subsonic.SearchResult> {
   if (isOffline()) return Local.search(query);
   const a = auth();
   const ids = enabledFolderIds(a);
-  // Asked for alongside the search, not before it. Left as they came if it fails.
-  const listedP = listedArtistIds(a).catch(() => null);
-  const raw = await Promise.all(
-    ids ? ids.map((id) => Subsonic.search(a, query, id)) : [Subsonic.search(a, query)],
-  );
-  const listed = await listedP;
-  // Per library, as the server answers: each is asked for more than it shows,
-  // so dropping some still fills it, and several libraries still show what
-  // each of them has.
-  const shown = (r: Subsonic.SearchResult): Subsonic.SearchResult => ({
-    ...r,
-    artists: (listed && listed.size > 0 ? r.artists.filter((x) => listed.has(x.id)) : r.artists).slice(
-      0,
-      SEARCH_ARTISTS_SHOWN,
-    ),
-  });
-  const parts = raw.map(shown);
-  if (parts.length === 1) return parts[0];
-  return {
+  if (!ids) return Subsonic.search(a, query);
+  if (ids.length === 1) return Subsonic.search(a, query, ids[0]);
+  return Promise.all(ids.map((id) => Subsonic.search(a, query, id))).then((parts) => ({
     artists: dedupeById(parts.flatMap((p) => p.artists)),
     albums: dedupeById(parts.flatMap((p) => p.albums)),
     songs: dedupeById(parts.flatMap((p) => p.songs)),
-  };
+  }));
 }
 
 /**
