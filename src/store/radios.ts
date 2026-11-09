@@ -43,34 +43,12 @@ export interface RadioDef {
 export const RADIO_DIR = FileSystem.documentDirectory + 'radios/';
 const INDEX_PATH = RADIO_DIR + 'index.json';
 
-/**
- * The artists a radio is shown with, up to three: the first others in its list
- * once it has one, since that is who plays (the mix also draws on the seed's
- * genre and the server's similar songs, whose artists are in no saved list);
- * its saved neighbours until then.
- */
-export function radioCast(def: RadioDef): RadioArtist[] {
-  // No list yet, or one from a server that names no artist ids on its songs
-  // (there is nobody to draw): the saved neighbours.
-  if (!def.tracks?.some((s) => s.artistId)) return def.similar.slice(0, 3);
-  const out: RadioArtist[] = [];
-  for (const s of def.tracks) {
-    if (out.length >= 3) break;
-    if (!s.artistId || !s.artist || s.artistId === def.seed.id) continue;
-    if (out.some((a) => a.id === s.artistId)) continue;
-    out.push({ id: s.artistId, name: s.artist });
-  }
-  return out;
-}
-
 /** Where one radio's icon is written. The number goes up when the drawing
  *  changes, so icons from the old one are made again; the colour is in the
  *  name because the image cache goes by it, and a recoloured icon written
- *  over the old file would keep showing the old one. So are the artists drawn
- *  beside the seed, which change once the radio's list is made. */
+ *  over the old file would keep showing the old one. */
 export function radioIconPath(def: RadioDef): string {
-  const cast = hashKey(radioCast(def).slice(0, 2).map((a) => a.id).join(','));
-  return `${RADIO_DIR}icon-4-${hashKey(def.seed.id)}-${cast}-${def.color.replace('#', '')}.png`;
+  return `${RADIO_DIR}icon-3-${hashKey(def.seed.id)}-${def.color.replace('#', '')}.png`;
 }
 
 function deleteIcon(uri: string | undefined) {
@@ -185,9 +163,15 @@ export const useRadios = create<RadiosState>((set, get) => ({
 
   setDefs: async (defs) => {
     // Icons of radios that no longer exist would sit on the disk unread: the
-    // ids are the seed artists, so anything not in the new set is stale. So is
-    // one drawn for artists the radio no longer shows (its list was just made).
-    set({ defs, icons: currentIcons(get().icons, defs) });
+    // ids are the seed artists, so anything not in the new set is stale.
+    const keep = new Set(defs.map((d) => d.seed.id));
+    const icons = { ...get().icons };
+    for (const id of Object.keys(icons)) {
+      if (keep.has(id)) continue;
+      deleteIcon(icons[id]);
+      delete icons[id];
+    }
+    set({ defs, icons });
     await enqueue();
   },
 

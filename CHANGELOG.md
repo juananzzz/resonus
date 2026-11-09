@@ -42,7 +42,6 @@ Releases before 0.2.1 are only listed on the
 - A playlist created offline is no longer created twice when part of its upload fails.
 - Favorites and ratings of songs deleted from the server are no longer retried forever.
 - A listen recorded right after opening the app no longer replaces the ones waiting to be sent.
-- Radio cards name the artists the radio plays once it has been opened.
 
 ## [0.8.7] - 2026-11-01
 

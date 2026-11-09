@@ -14,7 +14,7 @@ import { collageCovers, textOn } from '@/lib/radioArt';
 import { PlayingBars } from './PlayingBars';
 import { openRadioMenu } from './RadioMenuSheet';
 import { useSettings } from '@/store/settings';
-import { radioCast, useRadios, type RadioDef } from '@/store/radios';
+import { useRadios, type RadioDef } from '@/store/radios';
 import { tintForMode } from '@/hooks/useDominantColor';
 import { colors, fontSize, radius, spacing, themed, useTheme, useThemeMode } from '@/theme';
 
@@ -177,7 +177,7 @@ export const RadioCard = memo(function RadioCard({
   const lang = useSettings((s) => s.language);
   const playingHere = usePlayerStore((s) => s.sourceHref === `/artist-radio/${def.seed.id}`);
   const accent = useAccent();
-  const similar = radioCast(def).map((a) => a.name);
+  const similar = def.similar.slice(0, 3).map((a) => a.name);
   // The seed's name is on the picture already; with nobody beside it, the
   // line says how much is in it instead of saying the name twice.
   const artists =
