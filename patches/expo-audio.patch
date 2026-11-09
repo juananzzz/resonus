@@ -10,7 +10,7 @@
 +  <uses-permission android:name="android.permission.WAKE_LOCK" />
  </manifest>
 --- a/android/src/main/java/expo/modules/audio/AudioModule.kt	1985-10-26 05:15:00.000000000 -0300
-+++ b/android/src/main/java/expo/modules/audio/AudioModule.kt	2026-11-09 07:57:07.785643488 -0300
++++ b/android/src/main/java/expo/modules/audio/AudioModule.kt	2026-11-09 18:25:54.650234334 -0300
 @@ -18,6 +18,7 @@
  import androidx.media3.common.C.CONTENT_TYPE_OTHER
  import androidx.media3.common.C.CONTENT_TYPE_SS
@@ -27,7 +27,16 @@
  import expo.modules.interfaces.permissions.Permissions
  import expo.modules.kotlin.Promise
  import expo.modules.kotlin.exception.Exceptions
-@@ -57,6 +59,8 @@
+@@ -38,6 +40,8 @@
+ import kotlinx.coroutines.DelicateCoroutinesApi
+ import kotlinx.coroutines.Dispatchers
+ import kotlinx.coroutines.GlobalScope
++import kotlinx.coroutines.Job
++import kotlinx.coroutines.delay
+ import kotlinx.coroutines.launch
+ import kotlinx.coroutines.runBlocking
+ import okhttp3.OkHttpClient
+@@ -57,6 +61,8 @@
    private var shouldPlayInBackground = false
    private var audioEnabled = true
    private var shouldRouteThroughEarpiece = false
@@ -36,7 +45,43 @@
    private var focusAcquired = false
    private var interruptionMode: InterruptionMode? = null
    private var allowsBackgroundRecording = false
-@@ -96,19 +100,13 @@
+@@ -77,6 +83,7 @@
+   }
+ 
+   private var audioFocusRequest: AudioFocusRequest? = null
++  private var transientLossJob: Job? = null
+   private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+     appContext.mainQueue.launch {
+       when (focusChange) {
+@@ -87,33 +94,45 @@
+ 
+         AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+           focusAcquired = false
++          // Immediately duck so the interruption is noticeable.
+           allPlayables.forEach { playable ->
+-            if (playable.isPlaying) {
+-              playable.isPaused = true
+-              playable.pause()
++            if (!playable.isMuted) {
++              playable.player.volume = playable.previousVolume * 0.2f
++            }
++          }
++          // Defer the pause: if GAIN arrives within 400 ms (audio-route
++          // switch, brief system sound) the pause never fires, avoiding
++          // the audible gap a pause-resume cycle creates on every
++          // Bluetooth connect/disconnect.
++          transientLossJob?.cancel()
++          transientLossJob = appContext.mainQueue.launch {
++            delay(400)
++            if (!focusAcquired) {
++              allPlayables.forEach { playable ->
++                if (playable.isPlaying) {
++                  playable.isPaused = true
++                  playable.pause()
++                }
++              }
+             }
+           }
          }
  
          AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
@@ -63,7 +108,14 @@
              }
            }
          }
-@@ -121,7 +119,9 @@
+ 
+         AudioManager.AUDIOFOCUS_GAIN -> {
++          transientLossJob?.cancel()
++          transientLossJob = null
+           focusAcquired = true
+ 
+           if (!shouldPlayInSilentMode()) {
+@@ -121,7 +140,9 @@
            }
  
            allPlayables.forEach { playable ->
@@ -74,7 +126,7 @@
              if (playable.isPaused) {
                playable.isPaused = false
                playable.play()
-@@ -140,6 +140,17 @@
+@@ -140,6 +161,17 @@
      return playsInSilentMode || audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL
    }
  
@@ -92,7 +144,7 @@
    private fun requestAudioFocus() {
      if (focusAcquired || !audioEnabled || interruptionMode == InterruptionMode.MIX_WITH_OTHERS) {
        return
-@@ -148,14 +159,23 @@
+@@ -148,14 +180,23 @@
      val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
        val requestType = interruptionMode?.let {
          if (it == InterruptionMode.DO_NOT_MIX) {
@@ -118,7 +170,7 @@
              .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
              .build()
          )
-@@ -169,7 +189,7 @@
+@@ -169,7 +210,7 @@
      } else {
        @Suppress("DEPRECATION")
        val requestType = if (interruptionMode == InterruptionMode.DO_NOT_MIX) {
@@ -127,7 +179,7 @@
        } else {
          AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
        }
-@@ -363,7 +383,16 @@
+@@ -363,7 +404,16 @@
              bufferDurationMs
            )
            player.onPlaybackStateChange = { isPlaying ->
@@ -145,7 +197,7 @@
                releaseAudioFocus()
              }
            }
-@@ -376,6 +405,15 @@
+@@ -376,6 +426,15 @@
          player.id
        }
  
@@ -161,7 +213,7 @@
        Property("isBuffering") { player ->
          runOnMain {
            player.ref.playbackState == Player.STATE_BUFFERING
-@@ -507,6 +545,27 @@
+@@ -507,6 +566,27 @@
          }
        }
  
@@ -189,7 +241,7 @@
        Function("setActiveForLockScreen") { ref: AudioPlayer, active: Boolean, metadata: Metadata?, options: AudioLockScreenOptions? ->
          runOnMain {
            ref.setActiveForLockScreen(active, metadata, options)
-@@ -519,12 +578,26 @@
+@@ -519,12 +599,26 @@
          }
        }
  
@@ -216,7 +268,7 @@
        Function("setAudioSamplingEnabled") { player: AudioPlayer, enabled: Boolean ->
          runOnMain {
            player.setSamplingEnabled(enabled)
-@@ -685,7 +758,16 @@
+@@ -685,7 +779,16 @@
            }
            playlist.loadInitialPlaylist()
            playlist.onPlaybackStateChange = { isPlaying ->
@@ -234,7 +286,7 @@
                releaseAudioFocus()
              }
            }
-@@ -860,13 +942,29 @@
+@@ -860,13 +963,29 @@
  
    private fun createMediaItem(source: AudioSource?): MediaSource? = source?.uri?.let { uriString ->
      val uri = uriString.toUri()
@@ -265,7 +317,7 @@
  
      val preloadedBytes = AudioPreloadManager.get(uriString)
      val factory: DataSource.Factory = if (preloadedBytes != null) {
-@@ -914,10 +1012,32 @@
+@@ -914,10 +1033,32 @@
      }
    }
  
@@ -299,7 +351,7 @@
    }
  
    private fun retrieveStreamType(uri: Uri): Int = Util.inferContentType(uri)
-@@ -931,7 +1051,7 @@
+@@ -931,7 +1072,7 @@
        CONTENT_TYPE_SS -> SsMediaSource.Factory(factory)
        CONTENT_TYPE_DASH -> DashMediaSource.Factory(factory)
        CONTENT_TYPE_HLS -> HlsMediaSource.Factory(factory)
