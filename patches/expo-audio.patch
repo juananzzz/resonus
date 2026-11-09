@@ -10,8 +10,21 @@
 +  <uses-permission android:name="android.permission.WAKE_LOCK" />
  </manifest>
 --- a/android/src/main/java/expo/modules/audio/AudioModule.kt	1985-10-26 05:15:00.000000000 -0300
-+++ b/android/src/main/java/expo/modules/audio/AudioModule.kt	2026-11-09 18:25:54.650234334 -0300
-@@ -18,6 +18,7 @@
++++ b/android/src/main/java/expo/modules/audio/AudioModule.kt	2026-11-09 19:28:06.860194394 -0300
+@@ -1,9 +1,12 @@
+ package expo.modules.audio
+ 
+ import android.Manifest
++import android.content.BroadcastReceiver
+ import android.content.ContentResolver
+ import android.content.Context
++import android.content.Intent
+ import android.content.IntentFilter
++import android.media.AudioDeviceInfo
+ import android.content.pm.PackageManager
+ import android.media.AudioAttributes
+ import android.media.AudioFocusRequest
+@@ -18,6 +21,7 @@
  import androidx.media3.common.C.CONTENT_TYPE_OTHER
  import androidx.media3.common.C.CONTENT_TYPE_SS
  import androidx.media3.common.MediaItem
@@ -19,7 +32,7 @@
  import androidx.media3.common.Player
  import androidx.media3.common.util.Util
  import androidx.media3.datasource.DataSource
-@@ -28,6 +29,7 @@
+@@ -28,6 +32,7 @@
  import androidx.media3.exoplayer.smoothstreaming.SsMediaSource
  import androidx.media3.exoplayer.source.MediaSource
  import androidx.media3.exoplayer.source.ProgressiveMediaSource
@@ -27,7 +40,7 @@
  import expo.modules.interfaces.permissions.Permissions
  import expo.modules.kotlin.Promise
  import expo.modules.kotlin.exception.Exceptions
-@@ -38,6 +40,8 @@
+@@ -38,6 +43,8 @@
  import kotlinx.coroutines.DelicateCoroutinesApi
  import kotlinx.coroutines.Dispatchers
  import kotlinx.coroutines.GlobalScope
@@ -36,7 +49,7 @@
  import kotlinx.coroutines.launch
  import kotlinx.coroutines.runBlocking
  import okhttp3.OkHttpClient
-@@ -57,6 +61,8 @@
+@@ -57,6 +64,8 @@
    private var shouldPlayInBackground = false
    private var audioEnabled = true
    private var shouldRouteThroughEarpiece = false
@@ -45,7 +58,61 @@
    private var focusAcquired = false
    private var interruptionMode: InterruptionMode? = null
    private var allowsBackgroundRecording = false
-@@ -77,6 +83,7 @@
+@@ -65,6 +74,53 @@
+   private val allPlayables: Sequence<Playable>
+     get() = players.values.asSequence() + playlists.values.asSequence()
+ 
++  // Headphones still present = the BECOMING_NOISY was a false alarm
++  // (ANC mode change, BT codec renegotiation).
++  private fun headphonesStillConnected(): Boolean {
++    val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
++    return devices.any {
++      it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
++        it.type == AudioDeviceInfo.TYPE_BLE_HEADSET ||
++        it.type == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
++        it.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
++        it.type == AudioDeviceInfo.TYPE_USB_HEADSET
++    }
++  }
++
++  private var noisyJob: Job? = null
++  private val noisyReceiver = object : BroadcastReceiver() {
++    override fun onReceive(context: Context, intent: Intent?) {
++      if (intent?.action != AudioManager.ACTION_AUDIO_BECOMING_NOISY) return
++      appContext.mainQueue.launch {
++        // Duck immediately so a real unplug is barely audible on the speaker.
++        allPlayables.forEach { playable ->
++          if (!playable.isMuted) {
++            playable.player.volume = playable.previousVolume * 0.1f
++          }
++        }
++        noisyJob?.cancel()
++        noisyJob = appContext.mainQueue.launch {
++          delay(250)
++          if (headphonesStillConnected()) {
++            // False alarm — headphones are still here (ANC adjustment).
++            allPlayables.forEach { playable ->
++              if (!playable.isMuted) {
++                playable.player.volume = playable.previousVolume
++              }
++            }
++          } else {
++            // Real disconnect — pause.
++            allPlayables.forEach { playable ->
++              if (playable.isPlaying) {
++                playable.pause()
++              }
++            }
++          }
++        }
++      }
++    }
++  }
++
+   private val ringerModeReceiver = RingerModeReceiver {
+     if (playsInSilentMode) return@RingerModeReceiver
+     appContext.mainQueue.launch {
+@@ -77,6 +133,7 @@
    }
  
    private var audioFocusRequest: AudioFocusRequest? = null
@@ -53,7 +120,7 @@
    private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
      appContext.mainQueue.launch {
        when (focusChange) {
-@@ -87,33 +94,45 @@
+@@ -87,33 +144,45 @@
  
          AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
            focusAcquired = false
@@ -115,7 +182,7 @@
            focusAcquired = true
  
            if (!shouldPlayInSilentMode()) {
-@@ -121,7 +140,9 @@
+@@ -121,7 +190,9 @@
            }
  
            allPlayables.forEach { playable ->
@@ -126,7 +193,7 @@
              if (playable.isPaused) {
                playable.isPaused = false
                playable.play()
-@@ -140,6 +161,17 @@
+@@ -140,6 +211,17 @@
      return playsInSilentMode || audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL
    }
  
@@ -144,7 +211,7 @@
    private fun requestAudioFocus() {
      if (focusAcquired || !audioEnabled || interruptionMode == InterruptionMode.MIX_WITH_OTHERS) {
        return
-@@ -148,14 +180,23 @@
+@@ -148,14 +230,23 @@
      val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
        val requestType = interruptionMode?.let {
          if (it == InterruptionMode.DO_NOT_MIX) {
@@ -170,7 +237,7 @@
              .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
              .build()
          )
-@@ -169,7 +210,7 @@
+@@ -169,7 +260,7 @@
      } else {
        @Suppress("DEPRECATION")
        val requestType = if (interruptionMode == InterruptionMode.DO_NOT_MIX) {
@@ -179,7 +246,23 @@
        } else {
          AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
        }
-@@ -363,7 +404,16 @@
+@@ -206,6 +297,7 @@
+     OnCreate {
+       audioManager = appContext.reactContext?.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+       context.registerReceiver(ringerModeReceiver, IntentFilter(AudioManager.RINGER_MODE_CHANGED_ACTION))
++      context.registerReceiver(noisyReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
+     }
+ 
+     AsyncFunction("setAudioModeAsync") { mode: AudioMode ->
+@@ -333,6 +425,7 @@
+ 
+     OnDestroy {
+       context.unregisterReceiver(ringerModeReceiver)
++      context.unregisterReceiver(noisyReceiver)
+       GlobalScope.launch(Dispatchers.Main) {
+         releaseAudioFocus()
+         players.values.forEach {
+@@ -363,7 +456,16 @@
              bufferDurationMs
            )
            player.onPlaybackStateChange = { isPlaying ->
@@ -197,7 +280,7 @@
                releaseAudioFocus()
              }
            }
-@@ -376,6 +426,15 @@
+@@ -376,6 +478,15 @@
          player.id
        }
  
@@ -213,7 +296,7 @@
        Property("isBuffering") { player ->
          runOnMain {
            player.ref.playbackState == Player.STATE_BUFFERING
-@@ -507,6 +566,27 @@
+@@ -507,6 +618,27 @@
          }
        }
  
@@ -241,7 +324,7 @@
        Function("setActiveForLockScreen") { ref: AudioPlayer, active: Boolean, metadata: Metadata?, options: AudioLockScreenOptions? ->
          runOnMain {
            ref.setActiveForLockScreen(active, metadata, options)
-@@ -519,12 +599,26 @@
+@@ -519,12 +651,26 @@
          }
        }
  
@@ -268,7 +351,7 @@
        Function("setAudioSamplingEnabled") { player: AudioPlayer, enabled: Boolean ->
          runOnMain {
            player.setSamplingEnabled(enabled)
-@@ -685,7 +779,16 @@
+@@ -685,7 +831,16 @@
            }
            playlist.loadInitialPlaylist()
            playlist.onPlaybackStateChange = { isPlaying ->
@@ -286,7 +369,7 @@
                releaseAudioFocus()
              }
            }
-@@ -860,13 +963,29 @@
+@@ -860,13 +1015,29 @@
  
    private fun createMediaItem(source: AudioSource?): MediaSource? = source?.uri?.let { uriString ->
      val uri = uriString.toUri()
@@ -317,7 +400,7 @@
  
      val preloadedBytes = AudioPreloadManager.get(uriString)
      val factory: DataSource.Factory = if (preloadedBytes != null) {
-@@ -914,10 +1033,32 @@
+@@ -914,10 +1085,32 @@
      }
    }
  
@@ -351,7 +434,7 @@
    }
  
    private fun retrieveStreamType(uri: Uri): Int = Util.inferContentType(uri)
-@@ -931,7 +1072,7 @@
+@@ -931,7 +1124,7 @@
        CONTENT_TYPE_SS -> SsMediaSource.Factory(factory)
        CONTENT_TYPE_DASH -> DashMediaSource.Factory(factory)
        CONTENT_TYPE_HLS -> HlsMediaSource.Factory(factory)
@@ -361,7 +444,7 @@
      }.createMediaSource(mediaItem)
    }
 --- a/android/src/main/java/expo/modules/audio/AudioPlayer.kt	1985-10-26 05:15:00.000000000 -0300
-+++ b/android/src/main/java/expo/modules/audio/AudioPlayer.kt	2026-11-09 07:57:11.112864800 -0300
++++ b/android/src/main/java/expo/modules/audio/AudioPlayer.kt	2026-11-09 19:27:47.626963859 -0300
 @@ -8,15 +8,19 @@
  import androidx.core.content.ContextCompat
  import androidx.media3.common.AudioAttributes
@@ -395,7 +478,7 @@
  private const val SEEK_JUMP_INTERVAL_MS: Long = 10_000
  
  @UnstableApi
-@@ -36,22 +46,52 @@
+@@ -36,22 +46,51 @@
  ) : BaseAudioPlayer(
    player = ExoPlayer.Builder(context)
      .setLooper(context.mainLooper)
@@ -420,12 +503,11 @@
 +        .build(),
 +      false
 +    )
-+    // Pause when the audio output becomes noisy (wired headphones unplugged or a
-+    // Bluetooth device disconnects), instead of blasting through the speaker.
-+    // expo-audio only handles audio-focus loss, which fires for calls/other apps
-+    // but not for a headphone unplug and only inconsistently for Bluetooth — so
-+    // without this the app kept playing (or paused only sometimes) on disconnect.
-+    .setHandleAudioBecomingNoisy(true)
++    // BECOMING_NOISY is handled by AudioModule's own BroadcastReceiver instead
++    // of ExoPlayer's built-in one: the module checks whether headphones are still
++    // connected before pausing, so an ANC mode change that fires the broadcast
++    // without actually disconnecting does not interrupt playback.
++    .setHandleAudioBecomingNoisy(false)
 +    // Keep the CPU and the Wi-Fi radio awake while playing with the screen off.
 +    // media3 defaults to WAKE_MODE_NONE: audio already being rendered keeps the
 +    // device awake by itself, but fetching the NEXT track does not, so in Doze
@@ -461,7 +543,7 @@
      }
      .build(),
    appContext = appContext,
-@@ -64,7 +104,20 @@
+@@ -64,7 +103,20 @@
    var isActiveForLockScreen = false
    internal var metadata: Metadata? = null
    internal var lockScreenOptions: AudioLockScreenOptions? = null
@@ -483,7 +565,7 @@
    val serviceConnection = AudioPlaybackServiceConnection(WeakReference(this), appContext)
  
    val isLive: Boolean
-@@ -85,11 +138,46 @@
+@@ -85,11 +137,46 @@
  
    init {
      installPlayerListeners()
@@ -530,7 +612,7 @@
    fun setMediaSource(source: MediaSource) {
      previousPlaybackState = Player.STATE_IDLE
      ref.setMediaSource(source)
-@@ -97,6 +185,77 @@
+@@ -97,6 +184,77 @@
      startUpdating()
    }
  
@@ -608,7 +690,7 @@
    fun setActiveForLockScreen(active: Boolean, metadata: Metadata? = null, options: AudioLockScreenOptions? = null) {
      if (active) {
        this.metadata = metadata
-@@ -221,7 +380,8 @@
+@@ -221,7 +379,8 @@
  
    internal fun assignBasicMediaSession() {
      mediaSession.release()
