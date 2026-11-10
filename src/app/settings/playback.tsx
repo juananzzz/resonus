@@ -234,6 +234,11 @@ export default function PlaybackSettings() {
             heading that sticks to the header wants no margin above it. */}
         <Text style={[settingsStyles.sectionTitle, local && { marginTop: 0 }]}>{t('Sound')}</Text>
         <SettingsGroup>
+          <SettingRow
+            label={t('Equalizer')}
+            chevron
+            onPress={() => router.push('/settings/equalizer')}
+          />
           <SliderRow
             label={t('Crossfade')}
             value={crossfadeSec}
@@ -271,11 +276,6 @@ export default function PlaybackSettings() {
               onChange={setReplayGainPreampDb}
             />
           )}
-          <SettingRow
-            label={t('Equalizer')}
-            chevron
-            onPress={() => router.push('/settings/equalizer')}
-          />
         </SettingsGroup>
 
         <Text style={settingsStyles.sectionTitle}>{t('Playback')}</Text>

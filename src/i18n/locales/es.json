@@ -818,7 +818,7 @@
   "Lost the connection to {name}": "Se perdió la conexión con {name}",
   "{name} is playing something else": "{name} está reproduciendo otra cosa",
   "Pill-shaped navigation bar": "Barra de navegación en forma de píldora",
-  "Pill-shaped mini player": "Minirreproductor en forma de píldora",
+  "Pill-shaped mini player": "Mini reproductor en forma de píldora",
   "{n} of {songs}": "{n} de {songs}",
   "Episode information": "Información del episodio",
   "Mark as played": "Marcar como escuchado",
@@ -852,5 +852,15 @@
   "Only downloaded": "Solo lo descargado",
   "Newest first": "Más recientes primero",
   "Oldest first": "Más antiguos primero",
-  "Album artist": "Artista del álbum"
+  "Album artist": "Artista del álbum",
+  "Crossfade, volume, equalizer": "Fundido cruzado, volumen, ecualizador",
+  "Streaming, equalizer, autoplay, scrobbling": "Streaming, ecualizador, reproducción automática",
+  "Background, mini player, cover, buttons, lyrics": "Fondo, mini reproductor, carátula, botones, letra",
+  "Download quality, song cache, storage used": "Calidad de descarga, caché de canciones, espacio usado",
+  "Music folders, scan": "Carpetas de música, escaneo",
+  "Scan, libraries": "Escaneo, bibliotecas",
+  "Language, theme, font, lists, gestures": "Idioma, tema, fuente, listas, gestos",
+  "Home & tabs": "Inicio y pestañas",
+  "Home, navigation bar, Explore, Your library": "Inicio, barra de navegación, Explorar, Tu biblioteca",
+  "Version, help, updates, settings backup": "Versión, ayuda, actualizaciones, copia de los ajustes"
 }

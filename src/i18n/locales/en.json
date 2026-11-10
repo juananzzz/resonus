@@ -851,5 +851,15 @@
   "Only downloaded": "Only downloaded",
   "Newest first": "Newest first",
   "Oldest first": "Oldest first",
-  "Album artist": "Album artist"
+  "Album artist": "Album artist",
+  "Crossfade, volume, equalizer": "Crossfade, volume, equalizer",
+  "Streaming, equalizer, autoplay, scrobbling": "Streaming, equalizer, autoplay, scrobbling",
+  "Background, mini player, cover, buttons, lyrics": "Background, mini player, cover, buttons, lyrics",
+  "Download quality, song cache, storage used": "Download quality, song cache, storage used",
+  "Music folders, scan": "Music folders, scan",
+  "Scan, libraries": "Scan, libraries",
+  "Language, theme, font, lists, gestures": "Language, theme, font, lists, gestures",
+  "Home & tabs": "Home & tabs",
+  "Home, navigation bar, Explore, Your library": "Home, navigation bar, Explore, Your library",
+  "Version, help, updates, settings backup": "Version, help, updates, settings backup"
 }

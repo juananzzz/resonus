@@ -60,11 +60,26 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
   const sections: {
     key: string;
     title: string;
+    /** What is inside, so a name alone does not have to say it. */
+    hint: string;
     icon: keyof typeof Icon.glyphMap;
     disabled?: boolean;
   }[] = [
-    { key: 'playback', title: 'Quality & playback', icon: 'musical-notes-outline' as const },
-    { key: 'player', title: 'Player', icon: 'play-circle-outline' as const },
+    {
+      key: 'playback',
+      title: 'Quality & playback',
+      hint:
+        offline && !auth
+          ? t('Crossfade, volume, equalizer')
+          : t('Streaming, equalizer, autoplay, scrobbling'),
+      icon: 'musical-notes-outline' as const,
+    },
+    {
+      key: 'player',
+      title: 'Player',
+      hint: t('Background, mini player, cover, buttons, lyrics'),
+      icon: 'play-circle-outline' as const,
+    },
     // Downloads: in server-offline it reduces to used space and delete (no
     // server means no downloading, but freeing space is still useful). In the
     // local profile (no account) there are NO server downloads, so it's skipped.
@@ -78,6 +93,7 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
             // that turns the mode on by itself lived here with no sign of it
             // from the outside (#89).
             title: 'Downloads & offline',
+            hint: t('Download quality, song cache, storage used'),
             icon: 'download-outline' as const,
           },
         ]),
@@ -90,6 +106,7 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
     {
       key: 'library',
       title: offline && !auth ? 'Local music' : 'Library',
+      hint: offline && !auth ? t('Music folders, scan') : t('Scan, libraries'),
       icon: offline && !auth ? ('phone-portrait-outline' as const) : ('server-outline' as const),
       disabled: serverOffline,
     },
@@ -100,11 +117,35 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
     // deleting the profile and signing in again (#113). Checking an address is
     // a ping, which is one of the two requests offline mode lets through. A
     // local profile has no server, so there is nothing for it here.
-    ...(auth ? [{ key: 'network', title: 'Network', icon: 'git-network-outline' as const }] : []),
+    ...(auth
+      ? [
+          {
+            key: 'network',
+            title: 'Network',
+            hint: t('Server addresses'),
+            icon: 'git-network-outline' as const,
+          },
+        ]
+      : []),
     // Theme lives inside Appearance (row with chevron, like Language).
-    { key: 'personalization', title: 'Appearance', icon: 'color-palette-outline' as const },
-    { key: 'home-navigation', title: 'Navigation', icon: 'grid-outline' as const },
-    { key: 'about', title: 'About::app', icon: 'information-circle-outline' as const },
+    {
+      key: 'personalization',
+      title: 'Appearance',
+      hint: t('Language, theme, font, lists, gestures'),
+      icon: 'color-palette-outline' as const,
+    },
+    {
+      key: 'home-navigation',
+      title: 'Home & tabs',
+      hint: t('Home, navigation bar, Explore, Your library'),
+      icon: 'grid-outline' as const,
+    },
+    {
+      key: 'about',
+      title: 'About::app',
+      hint: t('Version, help, updates, settings backup'),
+      icon: 'information-circle-outline' as const,
+    },
   ];
 
   return (
@@ -183,7 +224,12 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
             onPress={() => router.push(`/settings/${s.key}`)}
           >
             <Icon name={s.icon} size={24} color={colors.text} />
-            <Text style={styles.sectionRowTitle}>{t(s.title)}</Text>
+            <View style={styles.flex}>
+              <Text style={styles.sectionRowTitle}>{t(s.title)}</Text>
+              <Text style={settingsStyles.rowDescription} numberOfLines={1}>
+                {s.hint}
+              </Text>
+            </View>
             <Icon name="chevron-forward" size={20} color={colors.textMuted} />
           </Pressable>
         ))}
@@ -213,7 +259,7 @@ const styles = themed((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: spacing.md + 2,
+    paddingVertical: spacing.md,
   },
-  sectionRowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '500', flex: 1 },
+  sectionRowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
 }));

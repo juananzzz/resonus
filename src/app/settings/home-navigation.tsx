@@ -55,7 +55,7 @@ export default function HomeNavigationSettings() {
   const setHapticsEnabled = useSettings((s) => s.setHapticsEnabled);
 
   return (
-    <SettingsPage title={t('Navigation')}>
+    <SettingsPage title={t('Home & tabs')}>
       <SettingsScroll>
         {/* The first title sticks to the header (no section margin). */}
         <Text style={[settingsStyles.sectionTitle, { marginTop: 0 }]}>{t('Home')}</Text>

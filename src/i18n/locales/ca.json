@@ -818,7 +818,7 @@
   "Lost the connection to {name}": "S'ha perdut la connexió amb {name}",
   "{name} is playing something else": "{name} està reproduint una altra cosa",
   "Pill-shaped navigation bar": "Barra de navegació en forma de píndola",
-  "Pill-shaped mini player": "Minireproductor en forma de píndola",
+  "Pill-shaped mini player": "Mini reproductor en forma de píndola",
   "{n} of {songs}": "{n} de {songs}",
   "Episode information": "Informació de l'episodi",
   "Mark as played": "Marca com a escoltat",
@@ -852,5 +852,15 @@
   "Only downloaded": "Només el que s'ha baixat",
   "Newest first": "Més recents primer",
   "Oldest first": "Més antics primer",
-  "Album artist": "Artista de l'àlbum"
+  "Album artist": "Artista de l'àlbum",
+  "Crossfade, volume, equalizer": "Crossfade, volum, equalitzador",
+  "Streaming, equalizer, autoplay, scrobbling": "Streaming, equalitzador, reproducció automàtica",
+  "Background, mini player, cover, buttons, lyrics": "Fons, mini reproductor, caràtula, botons, lletra",
+  "Download quality, song cache, storage used": "Qualitat de baixada, memòria cau de cançons, espai usat",
+  "Music folders, scan": "Carpetes de música, escaneig",
+  "Scan, libraries": "Escaneig, biblioteques",
+  "Language, theme, font, lists, gestures": "Idioma, tema, tipus de lletra, llistes, gestos",
+  "Home & tabs": "Inici i pestanyes",
+  "Home, navigation bar, Explore, Your library": "Inici, barra de navegació, Explorar, La teva biblioteca",
+  "Version, help, updates, settings backup": "Versió, ajuda, actualitzacions, còpia de la configuració"
 }

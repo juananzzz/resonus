@@ -52,6 +52,16 @@ function diskSpace(): { total: number; free: number } | null {
   return null;
 }
 
+/** One line of the breakdown under the bar: what it is, and what it weighs. */
+function PartLine({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.partLine}>
+      <Text style={styles.partLabel}>{label}</Text>
+      <Text style={styles.legendText}>{value}</Text>
+    </View>
+  );
+}
+
 /** Color dot + label with size, for the bar legend. */
 function LegendItem({ color, label, value }: { color: string; label: string; value: string }) {
   return (
@@ -336,35 +346,35 @@ export default function DownloadsSettings() {
             different reasons and at different rates, so one number for all of
             them would say where the space went without saying why. What weighs
             nothing is left out rather than listed as zero. */}
-        <Text style={styles.mirrorLine}>
-          {t('Library metadata copy')} ·{' '}
-          {mirror
-            ? `${formatBytes(mirror.bytes)} · ${albumsLabel(mirror.albums, lang)} · ${playlistsLabel(mirror.playlists, lang)}`
-            : '…'}
-        </Text>
-        {mirror && mirror.coverBytes > 0 ? (
-          <Text style={styles.mirrorLine}>
-            {t('Cover art')} · {formatBytes(mirror.coverBytes)}
-          </Text>
-        ) : null}
-        {parts
-          ? (
-              [
-                ['lyrics', t('Lyrics')],
-                ['localLibrary', t('Local library index')],
-                ['playlistCovers', t('Playlist covers')],
-                ['legacyRadioCovers', t('Radio station art')],
-                ['outbox', t('Pending changes')],
-                ['podcasts', t('Podcast subscriptions')],
-              ] as [keyof StorageParts, string][]
-            )
-              .filter(([key]) => parts[key] >= LISTED_MIN)
-              .map(([key, label]) => (
-                <Text key={key} style={styles.mirrorLine}>
-                  {label} · {formatBytes(parts[key])}
-                </Text>
-              ))
-          : null}
+        <View style={[settingsStyles.cardBox, styles.parts]}>
+          <PartLine
+            label={t('Library metadata copy')}
+            value={
+              mirror
+                ? `${formatBytes(mirror.bytes)} · ${albumsLabel(mirror.albums, lang)} · ${playlistsLabel(mirror.playlists, lang)}`
+                : '…'
+            }
+          />
+          {mirror && mirror.coverBytes > 0 ? (
+            <PartLine label={t('Cover art')} value={formatBytes(mirror.coverBytes)} />
+          ) : null}
+          {parts
+            ? (
+                [
+                  ['lyrics', t('Lyrics')],
+                  ['localLibrary', t('Local library index')],
+                  ['playlistCovers', t('Playlist covers')],
+                  ['legacyRadioCovers', t('Radio station art')],
+                  ['outbox', t('Pending changes')],
+                  ['podcasts', t('Podcast subscriptions')],
+                ] as [keyof StorageParts, string][]
+              )
+                .filter(([key]) => parts[key] >= LISTED_MIN)
+                .map(([key, label]) => (
+                  <PartLine key={key} label={label} value={formatBytes(parts[key])} />
+                ))
+            : null}
+        </View>
         {/* Greyed offline: what it drops can only be fetched again from the server. */}
         <SettingRow
           icon="trash-outline"
@@ -420,9 +430,9 @@ const styles = themed((colors) => ({
     marginBottom: spacing.md,
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  // Same muted voice as the bar legend, with air above it: it belongs to the
-  // storage section, not to the delete row it sits next to.
-  mirrorLine: { color: colors.textSecondary, fontSize: fontSize.xs, marginBottom: spacing.xs },
+  parts: { paddingVertical: spacing.sm, paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
+  partLine: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.xs },
+  partLabel: { color: colors.textSecondary, fontSize: fontSize.xs, flex: 1 },
   legendDot: { width: 8, height: 8, borderRadius: radius.pill },
   legendText: { color: colors.textSecondary, fontSize: fontSize.xs },
 }));

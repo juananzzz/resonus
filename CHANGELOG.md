@@ -17,6 +17,8 @@ Releases before 0.2.1 are only listed on the
 
 ### Changed
 
+- Settings: each category says what is inside it, and Navigation is now Home & tabs.
+- Settings: lyrics have their own screen inside Player, and the equalizer is the first row under Sound.
 - Podcasts: shows you add stay in Explore, and the ones you favorite also appear in Your library.
 - Podcasts: Download new episodes is now chosen per show, in its ⋯ menu.
 - Your library: fully downloaded playlists show ↓, as albums do.
@@ -42,6 +44,7 @@ Releases before 0.2.1 are only listed on the
 - A playlist created offline is no longer created twice when part of its upload fails.
 - Favorites and ratings of songs deleted from the server are no longer retried forever.
 - A listen recorded right after opening the app no longer replaces the ones waiting to be sent.
+- Settings: the downloads count is translated in Spanish and Catalan, and the scan count groups its thousands.
 
 ## [0.8.7] - 2026-11-01
 

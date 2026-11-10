@@ -10,10 +10,12 @@ import { getScanStatus, startScan } from '@/api/backend';
 import { SettingsScroll, Field, SettingRow, SettingsPage, SwitchList, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { clearTemporaryData } from '@/lib/clearCache';
+import { formatCount } from '@/lib/format';
 import { ensureAudioPermission, folderNameFromUri, pickFolder } from '@/lib/localLibrary';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
 import { profileKeyOf, useLibraries } from '@/store/libraries';
+import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, radius, SHEET_MAX_WIDTH, spacing, themed, useTheme, tracking } from '@/theme';
 
@@ -22,6 +24,7 @@ export default function LibrarySettings() {
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
   const t = useT();
+  const lang = useSettings((s) => s.language);
   const auth = useAuthStore((s) => s.auth);
   const offline = useAuthStore((s) => s.offline);
   const source = useAuthStore((s) => s.offlineSource);
@@ -188,7 +191,7 @@ export default function LibrarySettings() {
             <Text style={[settingsStyles.sectionTitle, { marginTop: 0 }]}>{t('Scan')}</Text>
             <Field
               label={t('Scan status')}
-              value={scan?.scanning ? t('Scanning…') : t('{n} items', { n: scan?.count ?? 0 })}
+              value={scan?.scanning ? t('Scanning…') : t('{n} items', { n: formatCount(scan?.count ?? 0, lang) })}
             />
             <SettingRow icon="refresh" label={t('Scan now')} onPress={scanNow} />
 

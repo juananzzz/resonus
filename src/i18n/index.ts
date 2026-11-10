@@ -61,7 +61,7 @@ const PLURALS: Record<string, Partial<Record<Language, string[]>>> = {
   playlist: { es: ['lista', 'listas'], en: ['playlist', 'playlists'], de: ['Playlist', 'Playlists'], ca: ['llista', 'llistes'], ru: ['плейлист', 'плейлиста', 'плейлистов'], it: ['playlist', 'playlist'], uk: ['плейлист', 'плейлисти', 'плейлистів'], pl: ['playlista', 'playlisty', 'playlist'], sv: ['spellista', 'spellistor'], 'pt-BR': ['playlist', 'playlists'], tr: ['çalma listesi', 'çalma listeleri'], fr: ['playlist', 'playlists'] },
   artist: { es: ['artista', 'artistas'], en: ['artist', 'artists'], ca: ['artista', 'artistes'], uk: ['виконавець', 'виконавці', 'виконавців'], pl: ['artysta', 'artyści', 'artystów'], sv: ['artist', 'artister'], 'pt-BR': ['artista', 'artistas'], tr: ['müzisyen', 'müzisyenler'], fr: ['artiste', 'artistes'] },
   episode: { es: ['episodio', 'episodios'], en: ['episode', 'episodes'], ca: ['episodi', 'episodis'], uk: ['епізод', 'епізоди', 'епізодів'], pl: ['odcinek', 'odcinki', 'odcinków'], sv: ['avsnitt', 'avsnitt'], 'pt-BR': ['episódio', 'episódios'], tr: ['bölüm', 'bölümler'], fr: ['épisode', 'épisodes'] },
-  download: { en: ['download', 'downloads'] },
+  download: { es: ['descarga', 'descargas'], en: ['download', 'downloads'], ca: ['baixada', 'baixades'] },
 };
 
 /**

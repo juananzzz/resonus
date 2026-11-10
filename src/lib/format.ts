@@ -91,6 +91,15 @@ export function formatEpisodeDate(ts: number | undefined, lang: string): string 
   });
 }
 
+/** A count with the language's own thousands separator ("167,275"). */
+export function formatCount(n: number, lang: string): string {
+  try {
+    return new Intl.NumberFormat(lang, { useGrouping: true }).format(n);
+  } catch {
+    return String(n);
+  }
+}
+
 /** Bytes in the appropriate unit ("1.2 GB", "340 MB"). */
 export function formatBytes(n: number): string {
   if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(1)} GB`;
