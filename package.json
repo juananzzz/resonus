@@ -74,6 +74,7 @@
     "i18n:docs": "node scripts/i18n-docs.mjs",
     "i18n:check": "node scripts/i18n-check.mjs",
     "i18n:rename": "node scripts/i18n-rename.mjs",
+    "settings:index": "node scripts/settings-index.mjs",
     "fastlane:changelog": "node scripts/fastlane-changelog.mjs",
     "harness:extractor": "bash scripts/native-harness/run.sh"
   },

@@ -6,15 +6,17 @@
  */
 import Icon from '@/components/Icon';
 import { useRouter } from 'expo-router';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, Switch, Text, TextInput, View } from 'react-native';
 
 import { SettingsScroll, ScreenHeader, SettingsSafeArea, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
+import { searchSettings } from '@/lib/settingsSearch';
 import { useAuthStore } from '@/store/auth';
 import { anyDownloads, useDownloads } from '@/store/downloads';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
-import { colors, fontSize, radius, spacing, themed, useTheme, tracking } from '@/theme';
+import { colors, fontSize, radius, restyled, spacing, themed, useTheme, tracking } from '@/theme';
 
 /** `asTab`: shown as the Settings tab (see `(tabs)/options`), with no way back. */
 export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
@@ -148,13 +150,68 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
     },
   ];
 
+  const [query, setQuery] = useState('');
+  const language = useSettings((s) => s.language);
+  // Only what this profile's index leads to.
+  const roots = sections.filter((s) => !s.disabled).map((s) => s.key).join(',');
+  const hits = useMemo(
+    () => searchSettings(query, t, new Set(roots.split(','))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [query, roots, language],
+  );
+  const searching = query.trim().length > 0;
+
   return (
     <SettingsSafeArea>
       <ScreenHeader title={t('Settings')} back={!asTab} />
       {/* The same centred pane every other settings screen gets from
           `SettingsPage`; this one draws its own header, so it says it here. */}
       <View style={settingsStyles.pane}>
-      <SettingsScroll>
+      <SettingsScroll keyboardShouldPersistTaps="handled">
+        <View style={styles.searchBar}>
+          <Icon name="search" size={20} color={colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('Search settings')}
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={query}
+            onChangeText={setQuery}
+            returnKeyType="search"
+          />
+          {query.length > 0 ? (
+            <Pressable hitSlop={10} accessibilityLabel={t('Clear')} onPress={() => setQuery('')}>
+              <Icon name="close-circle" size={20} color={colors.textMuted} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        {searching ? (
+          hits.length > 0 ? (
+            hits.map((h) => (
+              <Pressable
+                key={h.key}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.sectionRow, pressed && { opacity: 0.6 }]}
+                onPress={() => router.push(`/settings/${h.screen}`)}
+              >
+                <View style={styles.flex}>
+                  <Text style={styles.sectionRowTitle}>{h.label}</Text>
+                  {h.where ? (
+                    <Text style={settingsStyles.rowDescription} numberOfLines={1}>
+                      {h.where}
+                    </Text>
+                  ) : null}
+                </View>
+                <Icon name="chevron-forward" size={20} color={colors.textMuted} />
+              </Pressable>
+            ))
+          ) : (
+            <Text style={styles.noHits}>{t('No results')}</Text>
+          )
+        ) : (
+          <>
         <View style={[settingsStyles.cardBox, styles.accountCard]}>
           <View style={[settingsStyles.row, styles.profileRow]}>
             <View style={styles.avatar}>
@@ -233,7 +290,8 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
             <Icon name="chevron-forward" size={20} color={colors.textMuted} />
           </Pressable>
         ))}
-
+          </>
+        )}
       </SettingsScroll>
       </View>
     </SettingsSafeArea>
@@ -241,6 +299,18 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
 }
 
 const styles = themed((colors) => ({
+  // The Search tab's box, at this screen's margins.
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceHighlight,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: restyled(radius.pill, radius.md),
+  },
+  searchInput: { flex: 1, color: colors.text, fontSize: fontSize.md, paddingVertical: spacing.md },
+  noHits: { color: colors.textMuted, fontSize: fontSize.sm, textAlign: 'center', marginTop: spacing.xl },
   accountCard: { marginBottom: spacing.md },
   profileRow: { paddingVertical: spacing.lg },
   // No ring: the card is what sets the account apart now.

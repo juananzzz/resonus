@@ -11,6 +11,7 @@ Releases before 0.2.1 are only listed on the
 
 ### Added
 
+- Settings: a search box at the top finds a setting by name and opens the screen it is on.
 - Your library: its chips can be reordered and hidden, in Settings › Navigation.
 - Podcasts: a show's episodes can be sorted newest first, oldest first or A to Z, and play in that order.
 - Explore: albums can be sorted by album artist.

@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 863 of them.
+Every string the app can show, under the screen it shows up on. 864 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -666,6 +666,7 @@ you are actually typing into, which is easier than reading it here.
 | `Offline · your downloads` | Settings subtitle shown in offline mode |
 | `Offline mode` | The app working with no server: downloads only |
 | `Scan, libraries` |  |
+| `Search settings` |  |
 | `Server addresses` | Section header: a profile can have several addresses for the same account, one at home and one from outside |
 | `Settings` | The app's settings, and the button that opens them |
 | `Streaming, equalizer, autoplay, scrobbling` |  |
