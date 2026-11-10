@@ -194,7 +194,9 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
                 key={h.key}
                 accessibilityRole="button"
                 style={({ pressed }) => [styles.sectionRow, pressed && { opacity: 0.6 }]}
-                onPress={() => router.push(`/settings/${h.screen}`)}
+                onPress={() =>
+                  router.push({ pathname: `/settings/${h.screen}`, params: { focus: h.label } })
+                }
               >
                 <View style={styles.flex}>
                   <Text style={styles.sectionRowTitle}>{h.label}</Text>

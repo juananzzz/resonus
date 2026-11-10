@@ -6,8 +6,10 @@
  */
 import Icon from '@/components/Icon';
 import Slider from '@react-native-community/slider';
-import { Children, createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { Children, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
   Modal,
   Pressable,
   ScrollView,
@@ -72,13 +74,80 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
   );
 }
 
+/**
+ * The setting a search result led here for (`?focus=` carries its label, as it
+ * reads on screen): the scroll brings it into view and the row lights up.
+ */
+const FocusContext = createContext<{ label: string; reveal: (row: View) => void } | null>(null);
+
+/** How far below the top of the scroll the row is left, so it has context above it. */
+const FOCUS_OFFSET = 140;
+/** After the screen has slid in: scrolling under the transition is not seen. */
+const FOCUS_DELAY_MS = 380;
+
 /** A settings screen's scroll: its last row clears the mini player, whatever the phone's own bar adds. */
 export function SettingsScroll({ children, ...props }: ScrollViewProps) {
   const bottomPad = useScreenBottomPadding();
+  const { focus } = useLocalSearchParams<{ focus?: string }>();
+  const scroll = useRef<ScrollView>(null);
+  // The first row with that label is the one: a second (the same switch under
+  // two conditions) must not pull the scroll away from it.
+  const revealed = useRef(false);
+  const reveal = useCallback((row: View) => {
+    if (revealed.current || !scroll.current) return;
+    revealed.current = true;
+    // The content view, which the types leave out: a row's place in it is
+    // where to scroll to.
+    const content = (scroll.current as unknown as { getInnerViewRef(): View }).getInnerViewRef();
+    row.measureLayout(
+      content,
+      (_x, y) => scroll.current?.scrollTo({ y: Math.max(0, y - FOCUS_OFFSET), animated: true }),
+      () => {},
+    );
+  }, []);
+  const target = useMemo(() => (focus ? { label: focus, reveal } : null), [focus, reveal]);
   return (
-    <ScrollView {...props} contentContainerStyle={[settingsStyles.content, { paddingBottom: bottomPad }]}>
-      {children}
-    </ScrollView>
+    <FocusContext.Provider value={target}>
+      <ScrollView
+        {...props}
+        ref={scroll}
+        contentContainerStyle={[settingsStyles.content, { paddingBottom: bottomPad }]}
+      >
+        {children}
+      </ScrollView>
+    </FocusContext.Provider>
+  );
+}
+
+/**
+ * Lights a row up when it is the one a search result pointed at. Drawn first
+ * inside the row, so it sits behind what the row holds.
+ */
+function FocusFlash({ label }: { label?: string }) {
+  const target = useContext(FocusContext);
+  const accent = useAccent();
+  const match = !!target && !!label && target.label === label;
+  const ref = useRef<View>(null);
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!match) return;
+    const timer = setTimeout(() => {
+      if (ref.current) target.reveal(ref.current);
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.28, duration: 220, useNativeDriver: true }),
+        Animated.delay(1100),
+        Animated.timing(opacity, { toValue: 0, duration: 700, useNativeDriver: true }),
+      ]).start();
+    }, FOCUS_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [match, target, opacity]);
+  if (!match) return null;
+  return (
+    <Animated.View
+      ref={ref}
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, { backgroundColor: accent, opacity }]}
+    />
   );
 }
 
@@ -145,6 +214,7 @@ export function SettingRow({
   const box = useCardBox();
   const body = (
     <>
+      <FocusFlash label={label} />
       {icon ? (
         <Icon name={icon} size={20} color={destructive ? colors.danger : colors.text} />
       ) : null}
@@ -309,6 +379,7 @@ export function SelectList<T extends string | number | boolean>({
         ]}
         onPress={openMenu}
       >
+        <FocusFlash label={label} />
         <View style={settingsStyles.rowLabelBox}>
           <Text style={settingsStyles.rowLabel}>{label ?? active?.label}</Text>
           {description ? <Text style={settingsStyles.rowDescription}>{description}</Text> : null}
@@ -436,6 +507,7 @@ export function SliderRow({
 
   return (
     <View style={[box, disabled && { opacity: 0.5 }]}>
+      <FocusFlash label={label} />
       <View style={[settingsStyles.row, { paddingBottom: 0 }]}>
         <View style={settingsStyles.rowLabelBox}>
           <Text style={settingsStyles.rowLabel}>{label}</Text>
@@ -696,6 +768,7 @@ export function SwitchList({
             pressed && { opacity: 0.6 },
           ]}
         >
+          <FocusFlash label={opt.label} />
           <View style={settingsStyles.rowLabelBox}>
             <Text style={settingsStyles.rowLabel}>{opt.label}</Text>
             {opt.description ? (
@@ -746,6 +819,7 @@ export function TextRow({
   const box = useCardBox();
   return (
     <View style={[box, settingsStyles.textRow]}>
+      <FocusFlash label={label} />
       <View style={settingsStyles.textRowTop}>
         <View style={settingsStyles.rowLabelBox}>
           <Text style={settingsStyles.rowLabel}>{label}</Text>
