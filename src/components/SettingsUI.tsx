@@ -120,12 +120,12 @@ export function SettingsScroll({ children, ...props }: ScrollViewProps) {
 }
 
 /**
- * Lights a row up when it is the one a search result pointed at. Drawn first
- * inside the row, so it sits behind what the row holds.
+ * Lights a row up when it is the one a search result pointed at, in a wash of
+ * the text colour and not the accent: a hint of where to look, not a state.
+ * Drawn first inside the row, so it sits behind what the row holds.
  */
 function FocusFlash({ label }: { label?: string }) {
   const target = useContext(FocusContext);
-  const accent = useAccent();
   const match = !!target && !!label && target.label === label;
   const ref = useRef<View>(null);
   const [opacity] = useState(() => new Animated.Value(0));
@@ -134,7 +134,7 @@ function FocusFlash({ label }: { label?: string }) {
     const timer = setTimeout(() => {
       if (ref.current) target.reveal(ref.current);
       Animated.sequence([
-        Animated.timing(opacity, { toValue: 0.28, duration: 220, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.1, duration: 220, useNativeDriver: true }),
         Animated.delay(1100),
         Animated.timing(opacity, { toValue: 0, duration: 700, useNativeDriver: true }),
       ]).start();
@@ -146,7 +146,7 @@ function FocusFlash({ label }: { label?: string }) {
     <Animated.View
       ref={ref}
       pointerEvents="none"
-      style={[StyleSheet.absoluteFill, { backgroundColor: accent, opacity }]}
+      style={[StyleSheet.absoluteFill, { backgroundColor: colors.text, opacity }]}
     />
   );
 }
