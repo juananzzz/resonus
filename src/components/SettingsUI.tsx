@@ -128,7 +128,7 @@ function FocusFlash({ label }: { label?: string }) {
   const accent = useAccent();
   const match = !!target && !!label && target.label === label;
   const ref = useRef<View>(null);
-  const opacity = useRef(new Animated.Value(0)).current;
+  const [opacity] = useState(() => new Animated.Value(0));
   useEffect(() => {
     if (!match) return;
     const timer = setTimeout(() => {
