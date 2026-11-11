@@ -347,6 +347,34 @@ export async function hasSongs(src: Source): Promise<boolean> {
   return !!row;
 }
 
+/** Every song's id and the date its file carried, which is all it takes to
+ *  tell whether the files on the phone are still the ones that were scanned. */
+export async function songStamps(src: Source): Promise<Map<string, number>> {
+  const handle = await db(src.dir, src.name);
+  const rows = await handle.getAllAsync<{ id: string; added_at: number | null }>(
+    'SELECT id, added_at FROM songs',
+  );
+  return new Map(rows.map((r) => [r.id, r.added_at ?? 0]));
+}
+
+/** Where every song's file is, without the songs themselves. */
+export async function songUris(
+  src: Source,
+): Promise<{ id: string; uri: string; albumId?: string }[]> {
+  const handle = await db(src.dir, src.name);
+  const rows = await handle.getAllAsync<{ id: string; uri: string | null; album_id: string | null }>(
+    "SELECT id, album_id, json_extract(data, '$.localUri') AS uri FROM songs",
+  );
+  return rows.flatMap((r) => (r.uri ? [{ id: r.id, uri: r.uri, albumId: r.album_id ?? undefined }] : []));
+}
+
+/** How many songs a catalog holds. */
+export async function songCount(src: Source): Promise<number> {
+  const handle = await db(src.dir, src.name);
+  const row = await handle.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM songs');
+  return row?.n ?? 0;
+}
+
 const ALBUM_ORDER = {
   name: 'name COLLATE NOCASE ASC',
   artist: 'artist COLLATE NOCASE ASC, name COLLATE NOCASE ASC',

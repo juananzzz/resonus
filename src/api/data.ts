@@ -398,6 +398,21 @@ export function rescanLocal(): Promise<void> {
   return Local.rescan();
 }
 
+/** Writes a local playlist into a folder as an `.m3u8` (#335). */
+export function exportPlaylistFile(id: string, folderUri: string): Promise<void> {
+  return Local.exportPlaylistFile(id, folderUri);
+}
+
+/** How much music the local profile has, and when it was last looked at. */
+export function localInfo(): Promise<{ songs: number; checkedAt: number } | null> {
+  return Local.localInfo();
+}
+
+/** Looks for music added or removed on the phone since the last scan. */
+export function refreshLocal(force = false): Promise<boolean> {
+  return Local.refreshLocal(force);
+}
+
 /** Server genres (global; the API doesn't filter genres by library). */
 export function getGenres(): Promise<Subsonic.Genre[]> {
   return Subsonic.getGenres(auth());
@@ -822,6 +837,8 @@ function subsonicGenreSongs(
 // ── Folder navigation (Subsonic servers only; the UI hides it on
 // Jellyfin and offline) ───────────────────────────────────────────────────
 export function getMusicFolders(): Promise<Subsonic.MusicFolder[]> {
+  // The local profile's folders are the real ones the files are in.
+  if (isOffline() && !serverOffline()) return Local.getMusicFolders();
   return Subsonic.getMusicFolders(auth());
 }
 
@@ -832,6 +849,7 @@ export function getFolderIndexes(musicFolderId?: string): Promise<Subsonic.Folde
 
 /** Contents of a directory: subfolders + songs. */
 export function getMusicDirectory(id: string): Promise<Subsonic.FolderContents> {
+  if (isOffline() && !serverOffline()) return Local.getMusicDirectory(id);
   return Subsonic.getMusicDirectory(auth(), id);
 }
 

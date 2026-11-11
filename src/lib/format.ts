@@ -100,6 +100,16 @@ export function formatCount(n: number, lang: string): string {
   }
 }
 
+/** A moment as a short date and time ("11 Nov 2026, 14:02"). */
+export function formatDateTime(ms: number, lang: string): string {
+  const date = new Date(ms);
+  try {
+    return date.toLocaleString(lang, { dateStyle: 'medium', timeStyle: 'short' });
+  } catch {
+    return date.toLocaleString();
+  }
+}
+
 /** Bytes in the appropriate unit ("1.2 GB", "340 MB"). */
 export function formatBytes(n: number): string {
   if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(1)} GB`;

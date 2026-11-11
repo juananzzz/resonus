@@ -39,7 +39,7 @@ export default function FolderBrowseScreen() {
   const router = useRouter();
   const t = useT();
   const { id, name, root } = useLocalSearchParams<{ id: string; name?: string; root?: string }>();
-  const canFetch = useAuthStore((s) => !!s.auth);
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);

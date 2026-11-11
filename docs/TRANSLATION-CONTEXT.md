@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 864 of them.
+Every string the app can show, under the screen it shows up on. 867 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -75,6 +75,7 @@ you are actually typing into, which is easier than reading it here.
 | `Episode information` |  |
 | `Explicit` | A value of `Content`: the recording carries a parental advisory (strong language). Also read out for the E badge next to a title |
 | `Export “{name}”?` | Confirms getting the files of an album or playlist out of the app |
+| `Export as M3U` |  |
 | `Fixes` | Heading in the update prompt over the bugs a release fixes |
 | `Format` | The file format (FLAC, MP3…), written as the player writes it |
 | `Genre` | Label of a field in the song information sheet |
@@ -84,6 +85,7 @@ you are actually typing into, which is easier than reading it here.
 | `Go to Podcast` | Song menu: open the show an episode belongs to. Not the act of broadcasting |
 | `Home` | The first tab, and a folder in the car |
 | `Library` | The settings section, and a folder in the car |
+| `Library updated` | Toast after the phone finished going through its own files |
 | `Mark as played` |  |
 | `Mark as unplayed` |  |
 | `Mix of “{name}”` | What the player calls the queue once it has grown past its album into songs the app picked itself. `{name}` is the song it was grown from |
@@ -96,6 +98,7 @@ you are actually typing into, which is easier than reading it here.
 | `Playback speed` |  |
 | `Playback stopped` | The mini player when there is nothing playing any more |
 | `Playlist created` | The toast after making one |
+| `Playlist exported` |  |
 | `Plays` | How many times the song has been played |
 | `Previous` | Player control: the previous track (accessibility label) |
 | `Radio updated` |  |
@@ -903,6 +906,7 @@ you are actually typing into, which is easier than reading it here.
 | `Folder` | In offline mode, where the phone's own music is read from: one folder you picked, as opposed to `Device`, the whole phone |
 | `Keep at least one folder` | Refusing to remove the last folder of a local profile, which would leave it with no music |
 | `Keep at least one library on` | Toast: at least one of the server's libraries has to stay ticked |
+| `Last scan` |  |
 | `Libraries` | Section header over the server's libraries, when it has more than one |
 | `Library` | The settings section, and a folder in the car |
 | `Library updated` | Toast after the phone finished going through its own files |

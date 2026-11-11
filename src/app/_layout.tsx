@@ -44,6 +44,7 @@ import { systemAccentAvailable } from '@/lib/materialYou';
 import { loadPastEvents, startPerfLog } from '@/lib/perfLog';
 import { queryClient } from '@/lib/query';
 import { primaryUrl } from '@/lib/serverUrls';
+import { useLocalAutoRefresh } from '@/hooks/useLocalAutoRefresh';
 import { useAuthStore } from '@/store/auth';
 import { useAutoDownloads } from '@/store/autoDownloads';
 import { checkAutoUrlNow, initAutoUrl } from '@/store/autoUrl';
@@ -150,6 +151,7 @@ export default function RootLayout() {
   // flag: settings hydrate after the first render, and a flag already set by
   // then would apply a family that isn't loaded yet.
   const [loadedCustom, setLoadedCustom] = useState<string | null>(null);
+  useLocalAutoRefresh();
 
   useEffect(() => {
     if (appFont !== 'custom' || !customFontFamily || !customFontUri) return;

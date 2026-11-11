@@ -862,5 +862,8 @@
   "Home & tabs": "Home & tabs",
   "Home, navigation bar, Explore, Your library": "Home, navigation bar, Explore, Your library",
   "Version, help, updates, settings backup": "Version, help, updates, settings backup",
-  "Search settings": "Search settings"
+  "Search settings": "Search settings",
+  "Last scan": "Last scan",
+  "Export as M3U": "Export as M3U",
+  "Playlist exported": "Playlist exported"
 }

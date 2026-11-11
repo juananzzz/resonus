@@ -1029,8 +1029,13 @@ function AllTab({ query, onNew }: { query: string; onNew?: () => void }) {
         ) : (
           <EmptyState
             icon="library-outline"
-            title={t('Nothing here yet')}
-            subtitle={t('Your playlists and favorites show up here.')}
+            // With favourite songs the row above is not nothing.
+            title={starred.data?.songs.length ? t('No playlists yet') : t('Nothing here yet')}
+            subtitle={
+              starred.data?.songs.length
+                ? t('Create your first playlist to get started.')
+                : t('Your playlists and favorites show up here.')
+            }
             action={onNew ? { label: t('New playlist'), onPress: onNew } : undefined}
           />
         )

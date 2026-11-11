@@ -11,6 +11,12 @@ Releases before 0.2.1 are only listed on the
 
 ### Added
 
+- Local profile: music added to or removed from the phone shows up when the app opens or comes back, without a rescan.
+- Local profile: an album with no embedded cover uses the `cover.jpg` or `folder.jpg` in its folder.
+- Local profile: an `artist.jpg` in an artist's folder is used as their picture (#337).
+- Local profile: Explore has a Folders section that browses the music folders.
+- Local profile: `.m3u` and `.m3u8` files in the music folders become playlists, and a playlist can be exported as M3U (#335).
+- Local profile: Settings › Local music shows the number of songs and the last scan.
 - Settings: a search box at the top finds a setting by name, scrolls to it and highlights it.
 - Your library: its chips can be reordered and hidden, in Settings › Navigation.
 - Podcasts: a show's episodes can be sorted newest first, oldest first or A to Z, and play in that order.
@@ -30,6 +36,7 @@ Releases before 0.2.1 are only listed on the
 
 ### Fixed
 
+- Your library: with favorite songs and nothing else, it no longer says there is nothing there.
 - The screen could stop answering taps after letting go of the mini player halfway up.
 - Jellyfin: Recently played and Most played albums follow your plays instead of the alphabet.
 - Lyrics: a word synced by syllables no longer splits across two lines.

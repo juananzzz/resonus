@@ -5,12 +5,12 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { rescanLocal } from '@/api/data';
+import { localInfo, rescanLocal } from '@/api/data';
 import { getScanStatus, startScan } from '@/api/backend';
 import { SettingsScroll, Field, SettingRow, SettingsPage, SwitchList, settingsStyles } from '@/components/SettingsUI';
 import { useT } from '@/i18n';
 import { clearTemporaryData } from '@/lib/clearCache';
-import { formatCount } from '@/lib/format';
+import { formatCount, formatDateTime } from '@/lib/format';
 import { ensureAudioPermission, folderNameFromUri, pickFolder } from '@/lib/localLibrary';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
@@ -117,6 +117,12 @@ export default function LibrarySettings() {
     }
   }
 
+  const { data: info } = useQuery({
+    queryKey: ['localInfo'],
+    queryFn: () => localInfo(),
+    enabled: offline && !auth,
+  });
+
   const { data: scan, refetch: refetchScan } = useQuery({
     queryKey: ['scanStatus'],
     queryFn: () => getScanStatus(auth!),
@@ -150,6 +156,14 @@ export default function LibrarySettings() {
               label={t('Source')}
               value={source?.mode === 'folder' ? t('Folder') : t('Device')}
             />
+            {info ? (
+              <>
+                <Field label={t('Songs')} value={formatCount(info.songs, lang)} />
+                {info.checkedAt ? (
+                  <Field label={t('Last scan')} value={formatDateTime(info.checkedAt, lang)} />
+                ) : null}
+              </>
+            ) : null}
             {source?.mode === 'folder' ? (
               <>
                 <Text style={settingsStyles.sectionTitle}>{t('Music folders')}</Text>

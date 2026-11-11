@@ -1,7 +1,8 @@
 /**
- * The server's music folders, as the way into browsing its directory tree.
+ * The server's music folders, as the way into browsing its directory tree. On
+ * the local profile they are the folders the music was chosen from.
  *
- * Subsonic only, and it lived as a fourth segment of "Your library" until the
+ * It lived as a fourth segment of "Your library" until the
  * Explore tab gathered the whole catalogue in one place. What a folder holds
  * is the server's, not yours, which is what it was doing on the wrong side of
  * that line.
@@ -16,6 +17,7 @@ import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native
 
 import { getMusicFolders } from '@/api/data';
 import { Message } from '@/components/Message';
+import { useLocalProfile } from '@/hooks/useLocalProfile';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useListPadding } from '@/hooks/useScreenSize';
 import { useT } from '@/i18n';
@@ -28,9 +30,10 @@ export function FoldersBrowser() {
   const t = useT();
   const router = useRouter();
   const bottomPad = useScreenBottomPadding();
-  const canFetch = useAuthStore((s) => !!s.auth);
+  const local = useLocalProfile();
+  const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['musicFolders'],
+    queryKey: ['musicFolders', local],
     queryFn: () => getMusicFolders(),
     enabled: canFetch,
   });
@@ -54,7 +57,11 @@ export function FoldersBrowser() {
           onPress={() =>
             router.push({
               pathname: '/browse/folder/[id]',
-              params: { id: item.id, name: item.name, root: '1' },
+              // A local folder is a directory like any other, music loose
+              // in it included; a server's root is its index of artists.
+              params: local
+                ? { id: item.id, name: item.name }
+                : { id: item.id, name: item.name, root: '1' },
             })
           }
         >

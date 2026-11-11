@@ -8,7 +8,7 @@ import { tg } from '@/i18n';
 import { profileScopeId, useAuthStore } from '@/store/auth';
 import { usePlayCounts } from '@/store/playCounts';
 import { usePlayHistory } from '@/store/playHistory';
-import { type Album, type Artist, type ArtistInfo, type GuestAlbum, type Playlist, type SearchResult, type Song, type SongListSort, type StarType, type Starred } from '@/api/subsonic';
+import { type Album, type Artist, type ArtistInfo, type FolderContents, type GuestAlbum, type MusicFolder, type Playlist, type SearchResult, type Song, type SongListSort, type StarType, type Starred } from '@/api/subsonic';
 import { queryClient } from '@/lib/query';
 import { deleteItem, getItem, setItem } from '@/lib/storage';
 import { activeServerDir, getDownloadShelf, getDownloadsCatalog } from '@/store/downloads';
@@ -18,16 +18,22 @@ import {
   clearLocalCatalog,
   clearLocalCatalogDisk,
   ensureScanned,
+  folderNameFromUri,
   getLocalCatalog,
   hashKey,
+  localCheckedAt,
+  localPlaylistFiles,
   loadDeviceSongs,
   folderSetKey,
   loadFolderSongs,
   normKey,
+  refreshSource,
   registerCover,
+  writeTextToFolder,
   UNKNOWN_ALBUM,
   UNKNOWN_ARTIST,
 } from './localLibrary';
+import { baseOf, buildM3u, commonRoot, dirOf, folderTree, m3uMatcher, parseM3u, pathOfTree, pathOfUri, type FolderNode } from './localPaths';
 
 // Local favorites and playlists are PER PROFILE (each account/profile has its
 // own): stored under `<base>.<profile hash>`. The bare base key is the old
@@ -125,6 +131,7 @@ export async function unstarLocal(id: string, type?: StarType) {
 export function resetLocalLoading(): void {
   loadingPromise = null;
   scanning = null;
+  lastCheck = 0;
 }
 
 /** Clears the favorites cache (on source change). */
@@ -290,10 +297,102 @@ export async function rescan(): Promise<void> {
   await clearLocalCatalogDisk();
   loadingPromise = null;
   scanning = null;
+  tree = null;
   // Through the database on the local profile, which is what reads it from now
   // on: `ensureCatalog` would rebuild the whole library in memory to answer a
   // question nobody asked.
   if (!(await localSrc())) await ensureCatalog();
+}
+
+// ── Keeping up with the files ───────────────────────────────────────────────
+
+/** A check walks every folder, so coming back to the app does not start one
+ *  each time. */
+const CHECK_EVERY_MS = 5 * 60_000;
+let lastCheck = 0;
+let checking: Promise<boolean> | null = null;
+
+/**
+ * Looks for music that was added or removed since the catalog was made, and
+ * for playlist files. True if anything on screen is now out of date.
+ */
+export function refreshLocal(force = false): Promise<boolean> {
+  if (checking) return checking;
+  if (!force && Date.now() - lastCheck < CHECK_EVERY_MS) return Promise.resolve(false);
+  checking = (async () => {
+    const src = await localSrc();
+    if (!src) return false;
+    lastCheck = Date.now();
+    const { mode, uris } = sourceInfo();
+    const changed = await refreshSource(mode, uris);
+    if (changed) tree = null;
+    // Asked again: the folders may have been changed while this walked them.
+    const now = sourceInfo();
+    if (now.mode !== mode || now.key !== (uris.length > 0 ? folderSetKey(uris) : undefined)) return false;
+    const imported = await importPlaylistFiles(src, localPlaylistFiles(mode, uris));
+    if (changed || imported) void queryClient.invalidateQueries();
+    return changed || imported;
+  })()
+    .catch(() => false)
+    .finally(() => {
+      checking = null;
+    });
+  return checking;
+}
+
+/** How much music the local profile has, and when it was last looked at. */
+export async function localInfo(): Promise<{ songs: number; checkedAt: number } | null> {
+  const src = await localSrc();
+  if (!src) return null;
+  const { mode, uris } = sourceInfo();
+  return { songs: await LocalCat.songCount(src), checkedAt: await localCheckedAt(mode, uris) };
+}
+
+// ── Folders ─────────────────────────────────────────────────────────────────
+
+/** The folders with music in them, worked out once per catalog: ids and paths
+ *  only, never the songs. */
+let tree: { name: string; map: Map<string, FolderNode> } | null = null;
+
+async function localTree(src: LocalCat.Source): Promise<Map<string, FolderNode>> {
+  if (tree?.name === src.name) return tree.map;
+  const map = folderTree(await LocalCat.songUris(src));
+  tree = { name: src.name, map };
+  return map;
+}
+
+/** Where browsing by folder starts: the chosen folders, or the one all of the
+ *  device's music is under. */
+export async function getMusicFolders(): Promise<MusicFolder[]> {
+  const src = await localSrc();
+  if (!src) return [];
+  const { mode, uris } = sourceInfo();
+  if (mode === 'folder') {
+    return uris.map((uri) => ({ id: pathOfTree(uri), name: folderNameFromUri(uri) }));
+  }
+  const root = commonRoot(await localTree(src));
+  return [{ id: root, name: baseOf(root) || root }];
+}
+
+export async function getMusicDirectory(id: string): Promise<FolderContents> {
+  const src = await localSrc();
+  const node = src ? (await localTree(src)).get(id) : undefined;
+  if (!src || !node) return { id, name: baseOf(id), dirs: [], songs: [] };
+  const map = await localTree(src);
+  const found = await LocalCat.songsByIds(src, node.songs);
+  const songs = node.songs
+    .map((songId) => found.get(songId))
+    .filter((song): song is Song => !!song)
+    .sort(
+      (a, b) =>
+        (a.discNumber ?? 1) - (b.discNumber ?? 1) ||
+        (a.track ?? Infinity) - (b.track ?? Infinity) ||
+        a.title.localeCompare(b.title),
+    );
+  const dirs = [...node.dirs]
+    .map((path) => ({ id: path, name: baseOf(path), coverArt: map.get(path)?.albumId }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return { id, name: baseOf(id), dirs, songs };
 }
 
 // An album and an artist with nothing to go by are grouped under a name that
@@ -1041,6 +1140,73 @@ export async function deletePlaylist(id: string): Promise<void> {
   const list = await loadPlaylists();
   deleteCoverFile(list.find((p) => p.id === id)?.coverUri);
   await savePlaylists(list.filter((p) => p.id !== id));
+}
+
+// ── Playlist files (#335) ───────────────────────────────────────────────────
+// An `.m3u` in the music folders becomes a playlist. It is read again only
+// when the file itself changes, so editing or deleting the playlist in the app
+// is not undone by the next look at the folder.
+const M3U_KEY = 'resonus.localM3u';
+
+async function importPlaylistFiles(src: LocalCat.Source, files: string[]): Promise<boolean> {
+  if (files.length === 0) return false;
+  const key = `${M3U_KEY}.${hashKey(profileScopeId())}`;
+  let seen: Record<string, string> = {};
+  try {
+    seen = JSON.parse((await getItem(key)) ?? '{}') as Record<string, string>;
+  } catch {
+    // Starts over: the worst case is importing them once more.
+  }
+  let match: ReturnType<typeof m3uMatcher> | null = null;
+  let imported = false;
+  let dirty = false;
+  for (const uri of files) {
+    let text: string;
+    try {
+      text = await FileSystem.readAsStringAsync(uri);
+    } catch {
+      continue;
+    }
+    const stamp = hashKey(text);
+    if (seen[uri] === stamp) continue;
+    // The same text under another name or by another road: one already read,
+    // or one this app wrote.
+    const known = Object.values(seen).includes(stamp);
+    seen[uri] = stamp;
+    dirty = true;
+    if (known) continue;
+    match = match ?? m3uMatcher(await LocalCat.songUris(src));
+    const path = pathOfUri(uri);
+    const ids = parseM3u(text)
+      .map((entry) => match!(entry, dirOf(path)))
+      .filter((id): id is string => !!id);
+    if (ids.length === 0) continue;
+    await upsertLocalPlaylist(`lp_m3u_${hashKey(uri)}`, baseOf(path).replace(/\.m3u8?$/i, ''), ids);
+    imported = true;
+  }
+  if (dirty) await setItem(key, JSON.stringify(seen));
+  return imported;
+}
+
+/**
+ * Writes a local playlist into a folder as an `.m3u8`. The file is noted as
+ * read: saved among the music, it would otherwise come back as a second copy
+ * of the playlist it was made from.
+ */
+export async function exportPlaylistFile(id: string, folderUri: string): Promise<void> {
+  const { playlist, songs } = await getPlaylist(id);
+  const text = buildM3u(songs);
+  const name = `${playlist.name.replace(/[\\/:*?"<>|]/g, '_')}.m3u8`;
+  const file = await writeTextToFolder(folderUri, name, 'audio/x-mpegurl', text);
+  const key = `${M3U_KEY}.${hashKey(profileScopeId())}`;
+  let seen: Record<string, string> = {};
+  try {
+    seen = JSON.parse((await getItem(key)) ?? '{}') as Record<string, string>;
+  } catch {
+    // Starts over.
+  }
+  seen[file] = hashKey(text);
+  await setItem(key, JSON.stringify(seen));
 }
 
 // ── Custom cover for local playlists ────────────────────────────────────────

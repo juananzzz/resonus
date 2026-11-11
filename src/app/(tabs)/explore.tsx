@@ -135,7 +135,9 @@ export default function ExploreScreen() {
         // Jellyfin's are its Live TV radio channels (see `getRadioStations`).
         return !!auth && !offline;
       case 'folders':
-        return subsonic && !offline && showFolderBrowser;
+        // The local profile's music does live in folders, so it is there
+        // without the switch, which is the server's.
+        return !auth && offline ? true : subsonic && !offline && showFolderBrowser;
       case 'playlists':
         // Jellyfin answers for them too, and offline the mirror does; it is
         // the one server-side section the local profile has nothing for.

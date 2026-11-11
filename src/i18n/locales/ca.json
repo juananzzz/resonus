@@ -863,5 +863,8 @@
   "Home & tabs": "Inici i pestanyes",
   "Home, navigation bar, Explore, Your library": "Inici, barra de navegació, Explorar, La teva biblioteca",
   "Version, help, updates, settings backup": "Versió, ajuda, actualitzacions, còpia de la configuració",
-  "Search settings": "Cerca a la configuració"
+  "Search settings": "Cerca a la configuració",
+  "Last scan": "Últim escaneig",
+  "Export as M3U": "Exporta com a M3U",
+  "Playlist exported": "Llista exportada"
 }
