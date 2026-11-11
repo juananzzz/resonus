@@ -36,6 +36,7 @@ Releases before 0.2.1 are only listed on the
 
 ### Fixed
 
+- Local profile: playlists and selections no longer offer Export and Delete downloads.
 - Your library: with favorite songs and nothing else, it no longer says there is nothing there.
 - The screen could stop answering taps after letting go of the mini player halfway up.
 - Jellyfin: Recently played and Most played albums follow your plays instead of the alphabet.

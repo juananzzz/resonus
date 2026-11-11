@@ -126,8 +126,10 @@ export function MediaMenuSheet() {
   const albumHasDownloads = useAlbumDownloads(
     item?.kind === 'album' ? item.album.id : undefined,
   );
+  // Not on the local profile: its songs are files it points at, and the
+  // downloads it does have are podcast episodes.
   const hasDownloads =
-    item?.kind === 'album' ? albumHasDownloads : anyDownloads({ files });
+    !local && (item?.kind === 'album' ? albumHasDownloads : anyDownloads({ files }));
 
   if (!item) return null;
 

@@ -16,6 +16,7 @@
  * is gone by the time it is asked, since choosing an action leaves selection
  * mode.
  */
+import { useLocalProfile } from '@/hooks/useLocalProfile';
 import { type ReactNode, useState } from 'react';
 
 import { star, unstar } from '@/api/data';
@@ -48,7 +49,10 @@ export function useSelectionMenu(
   const favIds = useFavoriteIds();
   // Only whether there are any, not the map itself: subscribing to `files`
   // would repaint the whole list every time a download lands.
-  const hasDownloads = useDownloads(anyDownloads);
+  // The local profile's songs are files it points at, never downloads; what it
+  // does download is podcast episodes, which is what made this true there.
+  const local = useLocalProfile();
+  const hasDownloads = useDownloads(anyDownloads) && !local;
   const [pendingExport, setPendingExport] = useState<{ songs: Song[]; bytes: number } | null>(null);
 
   async function applyFavorite(songs: Song[], add: boolean) {
