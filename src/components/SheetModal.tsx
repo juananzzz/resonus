@@ -7,6 +7,15 @@
  *
  * Slides up and down and closes with a swipe, like the song menu: these menus
  * open the same way and from the same ⋯, so they behave the same way too.
+ *
+ * Two escape hatches, because not every sheet can be opened and drawn from
+ * here: `visible` for the sheets mounted once in the root layout whose
+ * visibility already lives in a store they read, and `overSheet` for content
+ * that belongs to the `Modal` but sits over and outside the sheet. Both are
+ * optional, and every sheet that opens by `openRef` and draws only its sheet
+ * passes neither and is unchanged. What is left over is a sheet that needs a
+ * second gesture - the hook hands out `makePan` for that, but this frame owns
+ * only one, so those sheets stay their own.
  */
 import { type MutableRefObject, type ReactNode, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
@@ -19,29 +28,54 @@ import { radius, SHEET_MAX_WIDTH, spacing, themed } from '@/theme';
 
 export function SheetModal({
   openRef,
+  visible,
+  overSheet,
   onClosed,
   children,
 }: {
   /** The screen holds a ref and calls `openRef.current()` to open. */
-  openRef: MutableRefObject<() => void>;
-  /** Runs once the sheet is off screen, however it was closed. For an action
-   *  that unmounts the sheet along with whatever declares it. */
+  openRef?: MutableRefObject<() => void>;
+  /**
+   * Escape hatch, for the sheets mounted once in the root layout whose
+   * visibility already lives somewhere the caller reads (a store, say) rather
+   * than in a screen that can call a ref. Opening follows the caller; the sheet
+   * still slides out, and `onClosed` is where the caller flips what it reads -
+   * that is what keeps the `Modal` up for the length of the animation, exactly
+   * as the hand-drawn sheets do it today.
+   */
+  visible?: boolean;
+  /**
+   * Escape hatch, for the content that belongs to the `Modal` but sits **over
+   * and outside** the sheet — a confirm `Dialog`, the cover viewer, the
+   * calendar on every platform but Android. Leaving it out is the common case;
+   * drawing it inside the sheet instead changes the layering and slides it with
+   * the sheet, which is what the sheets that carry one avoid.
+   *
+   * It takes the same `close` as the sheet's content because those actions
+   * finish a choice the same way a swipe does.
+   */
+  overSheet?: (close: (after?: () => void) => void) => ReactNode;
+  /** Runs once the sheet is off screen, however it was closed. */
   onClosed?: () => void;
-  /** `close()` closes the sheet; `close(after)` runs `after` once the sheet is
-   *  off screen, for actions that navigate away - pushing while the Modal is
-   *  still up races its unmount with the stack commit (see ArtistPickerSheet). */
+  /** `close()` closes the sheet; `close(after)` runs `after` once it is off
+   *  screen, for actions that navigate away (see ArtistPickerSheet). */
   children: (close: (after?: () => void) => void) => ReactNode;
 }) {
   const insets = useSafeAreaInsets();
-  const [open, setOpen] = useState(false);
-  openRef.current = () => setOpen(true);
+  const [openByRef, setOpenByRef] = useState(false);
+  if (openRef) openRef.current = () => setOpenByRef(true);
+  // Either this component opened the sheet itself, or the caller says it is on.
+  // A caller-driven close still runs the slide-out below: the caller flips what
+  // it reads only once the sheet is off screen, which is what keeps the Modal
+  // up for the length of the animation.
+  const shown = openByRef || !!visible;
 
   const closeNow = () => {
-    setOpen(false);
+    setOpenByRef(false);
     onClosed?.();
   };
   const { dismiss, pan, backdropStyle, sheetStyle, onSheetLayout } = useBottomSheetAnim(
-    open,
+    shown,
     closeNow,
   );
   // The sheet slides down and only then is the Modal dismissed. Actions close
@@ -56,7 +90,7 @@ export function SheetModal({
     <Modal
       transparent
       animationType="none"
-      visible={open}
+      visible={shown}
       onRequestClose={() => close()}
     >
       {/* Gestures inside an RN Modal need a root view of their own: the Modal
@@ -80,6 +114,11 @@ export function SheetModal({
           </Animated.View>
         </GestureDetector>
       </GestureHandlerRootView>
+      {/* Content that belongs to the Modal but sits over and outside the sheet -
+          a confirm Dialog, the cover viewer, the calendar outside Android. It
+          takes the same `close` as the sheet's content, because a choice made
+          in it finishes the sheet the same way a swipe does. */}
+      {overSheet?.(close)}
     </Modal>
   );
 }
