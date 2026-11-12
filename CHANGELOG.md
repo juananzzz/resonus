@@ -36,6 +36,11 @@ Releases before 0.2.1 are only listed on the
 
 ### Fixed
 
+- Podcasts: a feed that stops answering halfway now fails after 20 seconds instead of loading forever.
+- Genres show as empty offline instead of failing to load.
+- Downloads: pressing download twice on the same playlist or favorites no longer downloads it twice.
+- Jellyfin: editing a playlist no longer offers a description the server cannot save.
+- Downloads: every Remove download says how many songs or episodes it deleted, or that there was nothing to delete.
 - Local profile: playlists and selections no longer offer Export and Delete downloads.
 - Your library: with favorite songs and nothing else, it no longer says there is nothing there.
 - The screen could stop answering taps after letting go of the mini player halfway up.
