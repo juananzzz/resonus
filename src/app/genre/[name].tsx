@@ -156,7 +156,7 @@ export default function GenreScreen() {
   const download = useDownloads(useShallow((s) => groupDownloadState(s, `genre:${genre}`, [])));
   const downloadGenre = useDownloads((s) => s.downloadGenre);
   const cancelDownload = useDownloads((s) => s.cancelDownload);
-  const deleteSongs = useDownloads((s) => s.deleteSongs);
+  const deleteDownloadsOnDisk = useDownloads((s) => s.deleteDownloadsOnDisk);
   const [confirmDownload, setConfirmDownload] = useState(false);
   const [confirmStop, setConfirmStop] = useState(false);
   /** While reading the genre's songs off the server, before downloading any. */
@@ -256,14 +256,7 @@ export default function GenreScreen() {
   async function deleteGenreDownloads() {
     const gathered = await gatherGenreSongs();
     if (!gathered) return;
-    const files = useDownloads.getState().files;
-    const ids = gathered.filter((s) => files[s.id]).map((s) => s.id);
-    if (ids.length === 0) {
-      toast(t('Nothing here is downloaded'));
-      return;
-    }
-    await deleteSongs(ids);
-    toast(t('{n} songs deleted', { n: ids.length }));
+    await deleteDownloadsOnDisk(gathered.map((s) => s.id));
   }
 
   /** Play and shuffle draw from the SAME pool (the genre's songs), one in the

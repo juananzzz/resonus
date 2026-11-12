@@ -91,7 +91,7 @@ export default function ArtistSongsScreen() {
   const playQueue = usePlayerStore((s) => s.playQueue);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const downloadSongs = useDownloads((s) => s.downloadSongs);
-  const deleteSongs = useDownloads((s) => s.deleteSongs);
+  const deleteDownloadsOnDisk = useDownloads((s) => s.deleteDownloadsOnDisk);
   const downloadArtist = useDownloads((s) => s.downloadArtist);
   const cancelDownload = useDownloads((s) => s.cancelDownload);
   const openPlaylistPicker = usePlaylistPicker((s) => s.open);
@@ -188,14 +188,7 @@ export default function ArtistSongsScreen() {
   const selectionMenu = useSelectionMenu(runSelection);
 
   async function deleteArtistDownloads() {
-    const files = useDownloads.getState().files;
-    const ids = all.filter((s) => files[s.id]).map((s) => s.id);
-    if (ids.length === 0) {
-      toast(t('Nothing here is downloaded'));
-      return;
-    }
-    await deleteSongs(ids);
-    toast(t('{n} songs deleted', { n: ids.length }));
+    await deleteDownloadsOnDisk(all.map((s) => s.id));
   }
 
   if (isLoading || (!artist && canFetch)) return <TrackListSkeleton />;

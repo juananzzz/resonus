@@ -199,7 +199,7 @@ export default function AlbumScreen() {
   const download = useDownloads(useShallow((s) => groupDownloadState(s, `album:${id}`, songIds)));
   const downloadAlbum = useDownloads((s) => s.downloadAlbum);
   const cancelDownload = useDownloads((s) => s.cancelDownload);
-  const deleteSongs = useDownloads((s) => s.deleteSongs);
+  const deleteDownloadsOnDisk = useDownloads((s) => s.deleteDownloadsOnDisk);
   const downloadSongs = useDownloads((s) => s.downloadSongs);
   // Stable between progress ticks (only changes with status): if its identity
   // changed on every % update, the Pressable would lose its touch and you'd
@@ -372,7 +372,7 @@ export default function AlbumScreen() {
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
           setConfirmDelete(false);
-          void deleteSongs(songIds);
+          void deleteDownloadsOnDisk(songIds);
         }}
       />
       <Dialog
