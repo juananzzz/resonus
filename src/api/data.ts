@@ -413,8 +413,20 @@ export function refreshLocal(force = false): Promise<boolean> {
   return Local.refreshLocal(force);
 }
 
-/** Server genres (global; the API doesn't filter genres by library). */
+/**
+ * Server genres (global; the API doesn't filter genres by library).
+ *
+ * Offline there is nothing to answer with: the local catalog carries no genre at
+ * all — `localDb.ts` has no genre column and the scan never reads one — so the
+ * answer is `[]`, on the same terms as the two genre menus next to it already
+ * answer offline (`genreAlbumSorts`, `genreSongSorts`) and as `getSimilarSongs`
+ * states in its header. The screens then show their empty state instead of
+ * failing: asked offline these four reached `auth()` (null in the local
+ * profile) and were stopped by netGate's `assertCanRequest` with an
+ * `OfflineError`, which is an error on screen, not "the phone has no genres".
+ */
 export function getGenres(): Promise<Subsonic.Genre[]> {
+  if (isOffline()) return Promise.resolve([]);
   return Subsonic.getGenres(auth());
 }
 
@@ -465,6 +477,8 @@ export function getAlbumsByGenre(
   sort: AlbumListSort = 'server',
   dir?: Subsonic.SortDirection,
 ): Promise<Subsonic.Album[]> {
+  // Online only: no genre tags on the phone (see `getGenres`).
+  if (isOffline()) return Promise.resolve([]);
   const a = auth();
   if ((sort !== 'server' || dir) && canListNative(a)) {
     return ndGenreMap(a)
@@ -496,6 +510,9 @@ export function getAlbumsByGenre(
  * requests (each parsed on the JS thread) for two covers a card.
  */
 export function getGenreArt(genre: string, count: number): Promise<Subsonic.Album[]> {
+  // Online only (see `getGenres`). Guarded here as well as in the door below,
+  // so the `auth()` in the sort argument never runs offline either.
+  if (isOffline()) return Promise.resolve([]);
   return getAlbumsByGenre(genre, count, 0, canListNative(auth()) ? 'alpha' : 'server');
 }
 
@@ -791,6 +808,8 @@ export function getSongsByGenre(
   sort: Subsonic.SongListSort = 'server',
   dir?: Subsonic.SortDirection,
 ): Promise<Subsonic.Song[]> {
+  // Online only: no genre tags on the phone (see `getGenres`).
+  if (isOffline()) return Promise.resolve([]);
   const a = auth();
   if (canListNative(a)) {
     return ndGenreMap(a)
