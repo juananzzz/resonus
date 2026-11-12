@@ -7,14 +7,11 @@
 import Icon from '@/components/Icon';
 import { useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, Text, View } from 'react-native';
 
 import { COVER, coverArtUrl, getAlbum, getPlaylist, exportPlaylistFile, star, unstar, type Song } from '@/api/data';
+import { SheetModal } from '@/components/SheetModal';
 import { useAlbumDownloads } from '@/hooks/useAlbumDownloads';
-import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
 import { useCanShare } from '@/hooks/useCanShare';
 import { useDownloadMessage } from '@/hooks/useDownloadMessage';
 import { songsLabel, useT } from '@/i18n';
@@ -34,7 +31,7 @@ import { usePlaylistPicker } from '@/store/playlistPicker';
 import { useSettings } from '@/store/settings';
 import { useSharePicker } from '@/store/sharePicker';
 import { useToast } from '@/store/toast';
-import { colors, fontSize, radius, SHEET_MAX_WIDTH, spacing, themed } from '@/theme';
+import { colors, fontSize, spacing, themed } from '@/theme';
 import { Cover } from './Cover';
 import { Dialog } from './Dialog';
 import { StarRating } from './StarRating';
@@ -76,7 +73,6 @@ async function fetchSongs(item: MediaMenuItem): Promise<Song[]> {
 }
 
 export function MediaMenuSheet() {
-  const insets = useSafeAreaInsets();
   const t = useT();
   const lang = useSettings((s) => s.language);
   const toast = useToast((s) => s.show);
@@ -84,10 +80,6 @@ export function MediaMenuSheet() {
   const local = useAuthStore((s) => s.offline && !s.auth);
   const item = useMediaMenu((s) => s.item);
   const closeNow = useMediaMenu((s) => s.close);
-  const { dismiss, pan, backdropStyle, sheetStyle, onSheetLayout } = useBottomSheetAnim(
-    !!item,
-    closeNow,
-  );
   const pins = usePins((s) => s.pins);
   const togglePin = usePins((s) => s.toggle);
   const playQueue = usePlayerStore((s) => s.playQueue);
@@ -131,11 +123,10 @@ export function MediaMenuSheet() {
   const hasDownloads =
     !local && (item?.kind === 'album' ? albumHasDownloads : anyDownloads({ files }));
 
+  // Nothing to open, nothing to draw: this also narrows `item` for everything
+  // below, the frame's `visible` is the same question asked where it needs it.
   if (!item) return null;
 
-  // The sheet slides down, the Modal dismisses after it, and only then is the
-  // item let go. Actions close through here.
-  const close = () => dismiss(closeNow);
   const album = item.kind === 'album' ? item.album : null;
   const playlist = item.kind === 'playlist' ? item.playlist : null;
   const name = album ? album.name : playlist!.name;
@@ -162,8 +153,11 @@ export function MediaMenuSheet() {
    * follows needs the count and the size, and only the downloaded songs are
    * going anywhere. What is not on the phone is not offered as if it were
    * (#57).
+   *
+   * `close` is the shared frame's, required so no call site can forget it: the
+   * frame hands its close to its content, and this is reached from there.
    */
-  async function askExport() {
+  async function askExport(close: (after?: () => void) => void) {
     try {
       const songs = (await fetchSongs(item!)).filter((s) => files[s.id]);
       if (songs.length === 0) {
@@ -205,8 +199,9 @@ export function MediaMenuSheet() {
     }
   }
 
-  /** Closes, fetches the songs, and runs the action (with toast on failure). */
-  async function withSongs(fn: (songs: Song[]) => void) {
+  /** Closes, fetches the songs, and runs the action (with toast on failure).
+   *  `close` is the shared frame's, threaded through every one of these. */
+  async function withSongs(close: (after?: () => void) => void, fn: (songs: Song[]) => void) {
     close();
     try {
       const songs = await fetchSongs(item!);
@@ -216,7 +211,7 @@ export function MediaMenuSheet() {
     }
   }
 
-  async function toggleFavorite() {
+  async function toggleFavorite(close: (after?: () => void) => void) {
     if (!album) return;
     close();
     try {
@@ -238,344 +233,301 @@ export function MediaMenuSheet() {
   }
 
   return (
-    <Modal transparent animationType="none" visible onRequestClose={() => close()}>
-      {/* Gestures inside an RN Modal need a root view of their own: the
-          Modal renders in a native hierarchy outside the app's. */}
-      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
-        <Animated.View style={[styles.backdrop, backdropStyle]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => close()} />
-        </Animated.View>
-        {/* One drag around the whole sheet: this list of actions never
-            scrolls, so nothing else competes for the gesture. */}
-        <GestureDetector gesture={pan}>
-          <Animated.View
-            style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }, sheetStyle]}
-            onLayout={onSheetLayout}
-          >
-            {/* Spotify-style grabber: the visual cue that the sheet can be
-                dragged down to dismiss. */}
-            <View style={styles.grabber} />
-            <View style={styles.headerRow}>
-              <Cover uri={coverArtUrl(coverId, COVER.thumb)} size={48} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.title} numberOfLines={1}>
-                  {name}
-                </Text>
-                {subtitle ? (
-                  <Text style={styles.subtitle} numberOfLines={1}>
-                    {subtitle}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-            <View style={styles.divider} />
+    <SheetModal
+      visible={!!item}
+      onClosed={closeNow}
+      /* Over the sheet, which stays open behind them: closing the sheet would
+         take a dialog that is still asking with it. How many of these songs are
+         actually downloaded takes fetching them, so the question is asked before,
+         not after. */
+      overSheet={(close) => (
+        <>
+          <Dialog
+            visible={!!pending}
+            title={t('Download “{name}”?', { name })}
+            message={downloadMsg.message}
+            confirmLabel={t('Download')}
+            onCancel={() => setPending(null)}
+            onConfirm={() => {
+              const songs = pending ?? [];
+              setPending(null);
+              close();
+              if (album) void downloadAlbum(album, songs);
+              else void downloadPlaylist(playlist!, songs);
+              toast(t('Downloading…'));
+            }}
+          />
 
-            {mode === 'rating' && album ? (
-              <View>
-                <Pressable style={styles.action} onPress={() => setMode('actions')}>
-                  <Icon name="chevron-back" size={24} color={colors.text} />
-                  <Text style={styles.actionText}>{t('Rate')}</Text>
-                </Pressable>
-                <View style={styles.ratingRow}>
-                  <StarRating
-                    id={album.id}
-                    rating={
-                      queryClient.getQueryData<{ album: { userRating?: number } }>(['album', album.id])
-                        ?.album.userRating ?? album.userRating
-                    }
-                    size={34}
-                    // Written back where the album screen and the next opening
-                    // read it, so the stars keep what was just set.
-                    onRated={(r) => {
-                      queryClient.setQueryData<{ album: typeof album; songs: Song[] }>(
-                        ['album', album.id],
-                        (old) => (old ? { ...old, album: { ...old.album, userRating: r } } : old),
-                      );
-                      useMediaMenu.setState((s) =>
-                        s.item?.kind === 'album' && s.item.album.id === album.id
-                          ? { item: { ...s.item, album: { ...s.item.album, userRating: r } } }
-                          : s,
-                      );
-                    }}
-                  />
-                </View>
-              </View>
-            ) : (
-            <>
-            <Action
-              icon="play-outline"
-              label={t('Play')}
-              onPress={() => withSongs((songs) => void playQueue(songs, 0, name, href))}
-            />
-            <Action
-              icon="shuffle-outline"
-              label={t('Shuffle')}
-              onPress={() =>
-                withSongs((songs) => {
-                  // Same as the screen buttons: the queue comes out dealt and
-                  // the shuffle mode stays as it was.
-                  void playQueue(songs, 0, name, href, { shuffled: true });
-                })
-              }
-            />
-            {extraActions.map((action) => (
-              <Action
-                key={action.label}
-                icon={action.icon}
-                label={action.label}
-                onPress={() => {
-                  close();
-                  void Promise.resolve(action.onPress()).catch(() => {
-                    toast(t("Couldn't complete the action"));
-                  });
-                }}
-              />
-            ))}
-            <Action
-              icon="play-forward-outline"
-              label={t('Play next')}
-              onPress={() =>
-                withSongs((songs) => {
-                  queueMany(songs, 'next');
-                  toast(t('Playing next'));
-                })
-              }
-            />
-            <Action
-              icon="list-outline"
-              label={t('Add to queue')}
-              onPress={() =>
-                withSongs((songs) => {
-                  queueMany(songs, 'end');
-                  toast(t('Added to queue'));
-                })
-              }
-            />
-            <Action
-              icon="add-outline"
-              label={t('Add to a playlist')}
-              onPress={() => withSongs((songs) => usePlaylistPicker.getState().open(songs))}
-            />
-            {!offline ? (
-              <Action
-                icon="download-outline"
-                label={t('Download')}
-                // Asks with the size, like the button on the album's own screen:
-                // the same action shouldn't warn down one path and not the other.
-                onPress={() => void askDownload()}
-              />
-            ) : null}
-            {/* What is downloaded is what can be exported, and whether these
-                songs are among this profile's downloads takes fetching them,
-                which is what the press does. */}
-            {hasDownloads ? (
-              <Action icon="save-outline" label={t('Export')} onPress={() => void askExport()} />
-            ) : null}
-            {playlist && local ? (
-              <Action icon="document-text-outline" label={t('Export as M3U')} onPress={() => void exportM3u()} />
-            ) : null}
-            {/* Moved here from the header row, which had grown to four icons for
-                something used now and then. Covers the long press on a card too,
-                which never had it. */}
-            {canShare ? (
-              <Action
-                icon="share-social-outline"
-                label={t('Share')}
-                onPress={() => {
-                  dismiss(() => {
-                    closeNow();
-                    useSharePicker.getState().open({ id: album ? album.id : playlist!.id, name });
-                  });
-                }}
-              />
-            ) : null}
-            {/* Albums only: a hand-picked artwork URL pins the animated
-                cover the fuzzy search keeps mismatching. */}
-            {album ? (
-              <Action
-                icon="film-outline"
-                label={t('Animated cover')}
-                onPress={() => {
-                  dismiss(() => {
-                    closeNow();
-                    pushOrReplace(
-                      `/animated-artwork-url?artist=${encodeURIComponent(album.artist ?? '')}&album=${encodeURIComponent(album.name)}`,
-                      top,
-                    );
-                  });
-                }}
-              />
-            ) : null}
-            {/* Albums only: a playlist is nobody's. The song menu has had this
-                since always and an album is the one thing on screen that names
-                an artist without offering a way to them. */}
-            {album && artistTargets(album).length > 0 ? (
-              <Action
-                icon="person-outline"
-                label={t('Go to artist')}
-                onPress={() => {
-                  const targets = artistTargets(album);
-                  if (targets.length > 1) {
-                    // The sheet goes first and the picker opens after its exit
-                    // animation: two Modals visible at once is the thing to
-                    // avoid, same as in the song menu.
-                    dismiss(() => {
-                      closeNow();
-                      openArtistPicker(targets);
-                    });
-                    return;
-                  }
-                  dismiss(() => {
-                    closeNow();
-                    pushOrReplace(`/artist/${targets[0].id}`, top);
-                  });
-                }}
-              />
-            ) : null}
-            {album ? (
-              <Action
-                icon={album.starred ? 'heart' : 'heart-outline'}
-                label={album.starred ? t('Remove from favorites') : t('Add to favorites')}
-                onPress={() => void toggleFavorite()}
-              />
-            ) : null}
-            {album && canRate ? (
-              <Pressable
-                style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
-                onPress={() => setMode('rating')}
-              >
-                <Icon name="star-outline" size={24} color={colors.text} />
+          {/* Asked before the folder picker, not after: the size is the part worth
+              knowing while there is still nothing to undo. */}
+          <Dialog
+            visible={!!pendingExport}
+            title={t('Export “{name}”?', { name })}
+            message={
+              pendingExport
+                ? t('{n} songs, {size}, copied into a folder of their own.', {
+                    n: pendingExport.songs.length,
+                    size: formatBytes(pendingExport.bytes),
+                  })
+                : undefined
+            }
+            confirmLabel={t('Export')}
+            onCancel={() => setPendingExport(null)}
+            onConfirm={() => {
+              const songs = pendingExport?.songs ?? [];
+              setPendingExport(null);
+              void runExport(songs);
+            }}
+          />
+
+          <Dialog
+            visible={confirmDelete}
+            title={t('Remove download?')}
+            message={t('“{name}” will no longer be available offline.', { name })}
+            confirmLabel={t('Remove')}
+            destructive
+            onCancel={() => setConfirmDelete(false)}
+            onConfirm={() => {
+              setConfirmDelete(false);
+              void withSongs(close, (songs) => void deleteDownloadsOnDisk(songs.map((s) => s.id)));
+            }}
+          />
+        </>
+      )}
+    >
+      {(close) => (
+        <>
+          <View style={styles.headerRow}>
+            <Cover uri={coverArtUrl(coverId, COVER.thumb)} size={48} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title} numberOfLines={1}>
+                {name}
+              </Text>
+              {subtitle ? (
+                <Text style={styles.subtitle} numberOfLines={1}>
+                  {subtitle}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+          <View style={styles.divider} />
+
+          {mode === 'rating' && album ? (
+            <View>
+              <Pressable style={styles.action} onPress={() => setMode('actions')}>
+                <Icon name="chevron-back" size={24} color={colors.text} />
                 <Text style={styles.actionText}>{t('Rate')}</Text>
               </Pressable>
-            ) : null}
-            {/* Only makes sense if the item can
-                appear in the Library: playlists always do, but albums only if
-                favorited (the list comes from getStarred). */}
-            {playlist || album?.starred ? (
-              <Pressable
-                style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
-                onPress={() => {
-                  const ok = togglePin(pinKey);
-                  close();
-                  if (!ok) toast(t('You can pin up to {n} items.', { n: MAX_PINS }));
-                }}
-              >
-                <Icon
-                  name={pinned ? 'pin' : 'pin-outline'}
-                  size={24}
-                  color={colors.text}
+              <View style={styles.ratingRow}>
+                <StarRating
+                  id={album.id}
+                  rating={
+                    queryClient.getQueryData<{ album: { userRating?: number } }>(['album', album.id])
+                      ?.album.userRating ?? album.userRating
+                  }
+                  size={34}
+                  // Written back where the album screen and the next opening
+                  // read it, so the stars keep what was just set.
+                  onRated={(r) => {
+                    queryClient.setQueryData<{ album: typeof album; songs: Song[] }>(
+                      ['album', album.id],
+                      (old) => (old ? { ...old, album: { ...old.album, userRating: r } } : old),
+                    );
+                    useMediaMenu.setState((s) =>
+                      s.item?.kind === 'album' && s.item.album.id === album.id
+                        ? { item: { ...s.item, album: { ...s.item.album, userRating: r } } }
+                        : s,
+                    );
+                  }}
                 />
-                <Text style={styles.actionText}>{pinned ? t('Unpin') : t('Pin to top')}</Text>
-              </Pressable>
-            ) : null}
-            {/* Last, because it is the only thing here that takes something
-                away, but not in red: the files come back with one tap and red
-                is kept for what does not, like deleting a playlist itself.
-
-                The header button on an album's own screen only turns into
-                "delete" once EVERYTHING is downloaded, and offline there is no
-                header button at all — so a half-downloaded album could only be
-                cleared song by song (#47). For an album `hasDownloads` is about
-                this album; for a playlist, whose songs are not known without
-                fetching them, it is only about the profile. */}
-            {hasDownloads ? (
-              <Action
-                icon="trash-outline"
-                label={t('Delete downloads')}
-                onPress={() => setConfirmDelete(true)}
-              />
-            ) : null}
-            </>
-            )}
-          </Animated.View>
-        </GestureDetector>
-      </GestureHandlerRootView>
-
-      {/* Over the sheet, which stays open behind it: closing it would take the
-          dialog with it. How many of these songs are actually downloaded takes
-          fetching them, so the question is asked before, not after. */}
-      <Dialog
-        visible={!!pending}
-        title={t('Download “{name}”?', { name })}
-        message={downloadMsg.message}
-        confirmLabel={t('Download')}
-        onCancel={() => setPending(null)}
-        onConfirm={() => {
-          const songs = pending ?? [];
-          setPending(null);
-          close();
-          if (album) void downloadAlbum(album, songs);
-          else void downloadPlaylist(playlist!, songs);
-          toast(t('Downloading…'));
-        }}
-      />
-
-      {/* Asked before the folder picker, not after: the size is the part worth
-          knowing while there is still nothing to undo. */}
-      <Dialog
-        visible={!!pendingExport}
-        title={t('Export “{name}”?', { name })}
-        message={
-          pendingExport
-            ? t('{n} songs, {size}, copied into a folder of their own.', {
-                n: pendingExport.songs.length,
-                size: formatBytes(pendingExport.bytes),
+              </View>
+            </View>
+          ) : (
+          <>
+          <Action
+            icon="play-outline"
+            label={t('Play')}
+            onPress={() => withSongs(close, (songs) => void playQueue(songs, 0, name, href))}
+          />
+          <Action
+            icon="shuffle-outline"
+            label={t('Shuffle')}
+            onPress={() =>
+              withSongs(close, (songs) => {
+                // Same as the screen buttons: the queue comes out dealt and
+                // the shuffle mode stays as it was.
+                void playQueue(songs, 0, name, href, { shuffled: true });
               })
-            : undefined
-        }
-        confirmLabel={t('Export')}
-        onCancel={() => setPendingExport(null)}
-        onConfirm={() => {
-          const songs = pendingExport?.songs ?? [];
-          setPendingExport(null);
-          void runExport(songs);
-        }}
-      />
+            }
+          />
+          {extraActions.map((action) => (
+            <Action
+              key={action.label}
+              icon={action.icon}
+              label={action.label}
+              onPress={() => {
+                close();
+                void Promise.resolve(action.onPress()).catch(() => {
+                  toast(t("Couldn't complete the action"));
+                });
+              }}
+            />
+          ))}
+          <Action
+            icon="play-forward-outline"
+            label={t('Play next')}
+            onPress={() =>
+              withSongs(close, (songs) => {
+                queueMany(songs, 'next');
+                toast(t('Playing next'));
+              })
+            }
+          />
+          <Action
+            icon="list-outline"
+            label={t('Add to queue')}
+            onPress={() =>
+              withSongs(close, (songs) => {
+                queueMany(songs, 'end');
+                toast(t('Added to queue'));
+              })
+            }
+          />
+          <Action
+            icon="add-outline"
+            label={t('Add to a playlist')}
+            onPress={() => withSongs(close, (songs) => usePlaylistPicker.getState().open(songs))}
+          />
+          {!offline ? (
+            <Action
+              icon="download-outline"
+              label={t('Download')}
+              // Asks with the size, like the button on the album's own screen:
+              // the same action shouldn't warn down one path and not the other.
+              onPress={() => void askDownload()}
+            />
+          ) : null}
+          {/* What is downloaded is what can be exported, and whether these
+              songs are among this profile's downloads takes fetching them,
+              which is what the press does. */}
+          {hasDownloads ? (
+            <Action icon="save-outline" label={t('Export')} onPress={() => void askExport(close)} />
+          ) : null}
+          {playlist && local ? (
+            <Action icon="document-text-outline" label={t('Export as M3U')} onPress={() => void exportM3u()} />
+          ) : null}
+          {/* Moved here from the header row, which had grown to four icons for
+              something used now and then. Covers the long press on a card too,
+              which never had it. */}
+          {canShare ? (
+            <Action
+              icon="share-social-outline"
+              label={t('Share')}
+              onPress={() =>
+                close(() =>
+                  useSharePicker.getState().open({ id: album ? album.id : playlist!.id, name })
+                )}
+            />
+          ) : null}
+          {/* Albums only: a hand-picked artwork URL pins the animated
+              cover the fuzzy search keeps mismatching. */}
+          {album ? (
+            <Action
+              icon="film-outline"
+              label={t('Animated cover')}
+              onPress={() =>
+                close(() =>
+                  pushOrReplace(
+                    `/animated-artwork-url?artist=${encodeURIComponent(album.artist ?? '')}&album=${encodeURIComponent(album.name)}`,
+                    top,
+                  )
+                )}
+            />
+          ) : null}
+          {/* Albums only: a playlist is nobody's. The song menu has had this
+              since always and an album is the one thing on screen that names
+              an artist without offering a way to them. */}
+          {album && artistTargets(album).length > 0 ? (
+            <Action
+              icon="person-outline"
+              label={t('Go to artist')}
+              onPress={() => {
+                const targets = artistTargets(album);
+                if (targets.length > 1) {
+                  // The sheet goes first and the picker opens after its exit
+                  // animation: two Modals visible at once is the thing to
+                  // avoid, same as in the song menu.
+                  close(() => openArtistPicker(targets));
+                  return;
+                }
+                close(() => pushOrReplace(`/artist/${targets[0].id}`, top));
+              }}
+            />
+          ) : null}
+          {album ? (
+            <Action
+              icon={album.starred ? 'heart' : 'heart-outline'}
+              label={album.starred ? t('Remove from favorites') : t('Add to favorites')}
+              onPress={() => void toggleFavorite(close)}
+            />
+          ) : null}
+          {album && canRate ? (
+            <Pressable
+              style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+              onPress={() => setMode('rating')}
+            >
+              <Icon name="star-outline" size={24} color={colors.text} />
+              <Text style={styles.actionText}>{t('Rate')}</Text>
+            </Pressable>
+          ) : null}
+          {/* Only makes sense if the item can
+              appear in the Library: playlists always do, but albums only if
+              favorited (the list comes from getStarred). */}
+          {playlist || album?.starred ? (
+            <Pressable
+              style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+              onPress={() => {
+                const ok = togglePin(pinKey);
+                close();
+                if (!ok) toast(t('You can pin up to {n} items.', { n: MAX_PINS }));
+              }}
+            >
+              <Icon
+                name={pinned ? 'pin' : 'pin-outline'}
+                size={24}
+                color={colors.text}
+              />
+              <Text style={styles.actionText}>{pinned ? t('Unpin') : t('Pin to top')}</Text>
+            </Pressable>
+          ) : null}
+          {/* Last, because it is the only thing here that takes something
+              away, but not in red: the files come back with one tap and red
+              is kept for what does not, like deleting a playlist itself.
 
-      <Dialog
-        visible={confirmDelete}
-        title={t('Remove download?')}
-        message={t('“{name}” will no longer be available offline.', { name })}
-        confirmLabel={t('Remove')}
-        destructive
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={() => {
-          setConfirmDelete(false);
-          void withSongs((songs) => void deleteDownloadsOnDisk(songs.map((s) => s.id)));
-        }}
-      />
-    </Modal>
+              The header button on an album's own screen only turns into
+              "delete" once EVERYTHING is downloaded, and offline there is no
+              header button at all — so a half-downloaded album could only be
+              cleared song by song (#47). For an album `hasDownloads` is about
+              this album; for a playlist, whose songs are not known without
+              fetching them, it is only about the profile. */}
+          {hasDownloads ? (
+            <Action
+              icon="trash-outline"
+              label={t('Delete downloads')}
+              onPress={() => setConfirmDelete(true)}
+            />
+          ) : null}
+          </>
+          )}
+        </>
+      )}
+    </SheetModal>
   );
 }
 
 const styles = themed((colors) => ({
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: colors.backdrop },
-  sheet: {
-    position: 'absolute',
-    bottom: 0,
-    // Centred and no wider than a sheet wants to be (#131).
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: SHEET_MAX_WIDTH,
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xxl,
-    borderTopRightRadius: radius.xxl,
-    paddingHorizontal: spacing.lg,
-    // Smaller than the old spacing.lg because the grabber below already brings
-    // its own margin: together they add up to the same top gap as before.
-    paddingTop: spacing.sm,
-  },
-  // Spotify's little handle. Its only job is to advertise the drag gesture, so
-  // it stays discreet: it must read as an affordance, not as a control.
-  grabber: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: radius.pill,
-    backgroundColor: colors.textMuted,
-    opacity: 0.5,
-    marginBottom: spacing.md,
-  },
+  // The sheet's frame (backdrop, sheet, grabber) is not re-declared here: the
+  // sheet takes the shared one (see `SheetModal`).
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
   subtitle: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
