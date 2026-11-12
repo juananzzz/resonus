@@ -41,6 +41,7 @@ import { invalidatePodcastCaches } from '@/lib/query';
 import { useSettings } from '@/store/settings';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { groupDownloadState, useDownloads } from '@/store/downloads';
+import { useToast } from '@/store/toast';
 import { colors, useTheme } from '@/theme';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -108,6 +109,7 @@ export default function PodcastScreen() {
   const deletePodcastChannelDownloads = useDownloads(
     (s) => s.deletePodcastChannelDownloads,
   );
+  const toast = useToast((s) => s.show);
 
   // The episodes, bridged to songs so the album renderer can list and play
   // them, and marked like the offline song lists: offline, only a downloaded
@@ -164,11 +166,25 @@ export default function PodcastScreen() {
   // Stable between progress ticks (only changes with status): if its identity
   // changed on every % update, the Pressable would lose its touch and you'd
   // have to press multiple times — the album screen answers the same way.
-  const onDownloadPress = useCallback(() => {
+  const onDownloadPress = useCallback(async () => {
     const ch = data.data?.channel;
     if (!ch) return;
-    if (download.status === 'done') void deletePodcastChannelDownloads(ch.id);
-    else if (download.status === 'active') cancelDownload(`podcast:${ch.id}`);
+    if (download.status === 'done') {
+      // The ⋯ menu of this same show already reports what it cleared, the pill
+      // answered the same question with silence. The number matters here more
+      // than elsewhere: the record answers, so episodes no loaded list ever
+      // showed go as well, and a tap that takes more than the screen displayed
+      // has to say so. The empty case speaks up because the status this branch
+      // was chosen from is a snapshot, and everything may have gone since.
+      try {
+        const n = await deletePodcastChannelDownloads(ch.id);
+        toast(
+          n === 0 ? t('Nothing here is downloaded') : t('{n} episodes deleted', { n }),
+        );
+      } catch {
+        toast(t("Couldn't complete the action"));
+      }
+    } else if (download.status === 'active') cancelDownload(`podcast:${ch.id}`);
     else setConfirming(ch);
   }, [download.status, data.data]);
 
