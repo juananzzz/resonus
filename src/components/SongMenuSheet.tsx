@@ -156,7 +156,7 @@ export function SongMenuSheet() {
   const dlUri = useDownloads((s) => (song ? s.files[song.id] : undefined));
   const dlBitRate = useDownloads((s) => (song ? s.dlBitRates[song.id] : undefined));
   const downloadSong = useDownloads((s) => s.downloadSong);
-  const deleteDownloads = useDownloads((s) => s.deleteSongs);
+  const deleteSongs = useDownloads((s) => s.deleteSongs);
   // A podcast episode downloads straight from its enclosure, and its file is
   // cleared from the podcast record rather than a server catalog.
   const downloadPodcastEpisode = useDownloads((s) => s.downloadPodcastEpisode);
@@ -758,7 +758,7 @@ export function SongMenuSheet() {
             close();
             return;
           }
-          void deleteDownloads([song.id]);
+          void deleteSongs([song.id]);
           // «Undo» still there: confirming by mistake is a tap away from
           // getting it back (offline there'd be nowhere to download from).
           toast(

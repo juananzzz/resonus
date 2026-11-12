@@ -121,7 +121,7 @@ export default function PlaylistScreen() {
     }
   }, [autoDownload, data]);
   const cancelDownload = useDownloads((s) => s.cancelDownload);
-  const deleteSongs = useDownloads((s) => s.deleteSongs);
+  const deleteDownloadsOnDisk = useDownloads((s) => s.deleteDownloadsOnDisk);
   const downloadSongs = useDownloads((s) => s.downloadSongs);
   // Stable between progress ticks (only changes with status): prevents the
   // Pressable from losing its touch when its onPress is recreated on every update.
@@ -670,10 +670,7 @@ export default function PlaylistScreen() {
         onCancel={() => setConfirmDeleteDl(false)}
         onConfirm={() => {
           setConfirmDeleteDl(false);
-          const files = useDownloads.getState().files;
-          const ids = songIds.filter((sid) => !!files[sid]);
-          void deleteSongs(ids);
-          toast(t('{n} songs deleted', { n: ids.length }));
+          void deleteDownloadsOnDisk(songIds);
         }}
       />
 
@@ -716,7 +713,7 @@ export default function PlaylistScreen() {
         onCancel={() => setConfirmRemoveDl(false)}
         onConfirm={() => {
           setConfirmRemoveDl(false);
-          void deleteSongs(songIds);
+          void deleteDownloadsOnDisk(songIds);
         }}
       />
 

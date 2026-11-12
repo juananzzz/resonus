@@ -146,7 +146,7 @@ export default function ArtistScreen() {
   const download = useDownloads(useShallow((s) => groupDownloadState(s, `artist:${id}`, [])));
   const downloadArtist = useDownloads((s) => s.downloadArtist);
   const cancelDownload = useDownloads((s) => s.cancelDownload);
-  const deleteSongs = useDownloads((s) => s.deleteSongs);
+  const deleteDownloadsOnDisk = useDownloads((s) => s.deleteDownloadsOnDisk);
   // The boolean, not the map: it is replaced with every song that finishes
   // downloading, so subscribing to it re-rendered the screen on each one (#50).
   const hasDownloads = useDownloads(anyDownloads);
@@ -405,14 +405,7 @@ export default function ArtistScreen() {
   async function deleteDiscography() {
     const songs = await gatherSongs();
     if (!songs) return;
-    const files = useDownloads.getState().files;
-    const ids = songs.filter((s) => files[s.id]).map((s) => s.id);
-    if (ids.length === 0) {
-      toast(t('Nothing here is downloaded'));
-      return;
-    }
-    await deleteSongs(ids);
-    toast(t('{n} songs deleted', { n: ids.length }));
+    await deleteDownloadsOnDisk(songs.map((s) => s.id));
   }
 
   async function playDiscography() {

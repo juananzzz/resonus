@@ -908,6 +908,32 @@ interface DownloadsState {
   /** Deletes files for those songs and removes them from the catalog. */
   deleteSongs: (songIds: string[]) => Promise<void>;
   /**
+   * A "Remove download?" dialog's whole answer, in the one place: clears only
+   * what of these songs is on the device, and tells the screen how many went.
+   *
+   * `deleteSongs` is the primitive and stays silent, because it has callers that
+   * must not report (`forgetIfMissing` repairs a row whose file already went
+   * without one). The screens used to each write their own wrapper over it, and
+   * they had drifted apart: the ⋯ menu's dialog filtered the list and toasted a
+   * count, the download pill deleted the group unfiltered and said nothing at
+   * all. A partly downloaded group is where that showed: the pill
+   * handed over ids the `files` map does not hold, so `deleteSongs` walked
+   * every one of them through the catalog for nothing, and the screen was left
+   * not knowing whether anything had gone.
+   *
+   * The empty case speaks up rather than going quiet: the option is offered
+   * against a snapshot taken while rendering, so "there is something here" can
+   * be stale by the time the tap lands, and silence read as "it worked".
+   *
+   * Songs only. Episodes are a different record and a different database, so
+   * they answer through `deletePodcastDownloads` or `deletePodcastChannelDownloads`,
+   * which already ask that record for what is on disk rather than the screen's
+   * list, and already return how many went.
+   *
+   * Returns how many went.
+   */
+  deleteDownloadsOnDisk: (songIds: string[]) => Promise<number>;
+  /**
    * Downloads episodes straight from their enclosure address. Podcasts have no
    * server to fetch through, so this is a separate path from `downloadGroup`:
    * same slots, same progress, same `files` map the player reads, but the bytes
@@ -1623,6 +1649,25 @@ export const useDownloads = create<DownloadsState>((set, get) => {
         }
       });
       invalidate();
+    },
+
+    /**
+     * Filters against what the app actually has, so a half-downloaded group
+     * clears the part that is on the device and the rest is left out of the
+     * catalog walk instead of being walked for nothing. The count is what every
+     * screen's toast says, and an empty result is reported rather than answered
+     * with silence — see the interface comment for why this is one place.
+     */
+    deleteDownloadsOnDisk: async (songIds) => {
+      const files = get().files;
+      const ids = songIds.filter((id) => !!files[id]);
+      if (ids.length === 0) {
+        useToast.getState().show(tg('Nothing here is downloaded'));
+        return 0;
+      }
+      await get().deleteSongs(ids);
+      useToast.getState().show(tg('{n} songs deleted', { n: ids.length }));
+      return ids.length;
     },
 
     forgetIfMissing: async (songId) => {

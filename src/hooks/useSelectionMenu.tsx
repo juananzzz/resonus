@@ -142,14 +142,7 @@ export function useSelectionMenu(
           label: t('Delete downloads'),
           onPress: () =>
             run((sel) => {
-              const files = useDownloads.getState().files;
-              const ids = sel.filter((s) => files[s.id]).map((s) => s.id);
-              if (ids.length === 0) {
-                toast(t('Nothing here is downloaded'));
-                return;
-              }
-              void useDownloads.getState().deleteSongs(ids);
-              toast(t('{n} songs deleted', { n: ids.length }));
+              void useDownloads.getState().deleteDownloadsOnDisk(sel.map((s) => s.id));
             }),
         },
       ]

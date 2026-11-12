@@ -116,7 +116,7 @@ export function MediaMenuSheet() {
   const downloadMsg = useDownloadMessage(pending ?? []);
   const downloadAlbum = useDownloads((s) => s.downloadAlbum);
   const downloadPlaylist = useDownloads((s) => s.downloadPlaylist);
-  const deleteSongs = useDownloads((s) => s.deleteSongs);
+  const deleteDownloadsOnDisk = useDownloads((s) => s.deleteDownloadsOnDisk);
   const files = useDownloads((s) => s.files);
   const canShare = useCanShare();
   // Before the early return: hooks can't be conditional. For an album this is
@@ -541,15 +541,7 @@ export function MediaMenuSheet() {
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
           setConfirmDelete(false);
-          void withSongs((songs) => {
-            const ids = songs.filter((s) => files[s.id]).map((s) => s.id);
-            if (ids.length === 0) {
-              toast(t('Nothing here is downloaded'));
-              return;
-            }
-            void deleteSongs(ids);
-            toast(t('{n} songs deleted', { n: ids.length }));
-          });
+          void withSongs((songs) => void deleteDownloadsOnDisk(songs.map((s) => s.id)));
         }}
       />
     </Modal>
