@@ -11,8 +11,8 @@
 import Icon from '@/components/Icon';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { GestureDetector } from 'react-native-gesture-handler';
 
 import Animated, {
   Easing,
@@ -20,7 +20,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   addSongsToPlaylist,
@@ -32,17 +31,17 @@ import {
   playlistMembership,
   removeSongsFromPlaylist,
 } from '@/api/data';
+import { Grabber, SheetModal } from '@/components/SheetModal';
 import { haptic } from '@/lib/haptics';
 import { membershipOf, type Membership } from '@/lib/playlistMembership';
 import { useScreenSize } from '@/hooks/useScreenSize';
 import { type Song } from '@/api/subsonic';
-import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
 import { songsLabel, useT } from '@/i18n';
 import { useAutoDownloads } from '@/store/autoDownloads';
 import { usePlaylistPicker } from '@/store/playlistPicker';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
-import { colors, fontSize, radius, SHEET_MAX_WIDTH, spacing, themed } from '@/theme';
+import { colors, fontSize, radius, spacing, themed } from '@/theme';
 import { motion } from '@/theme/motion';
 import { Cover } from './Cover';
 import { Dialog } from './Dialog';
@@ -113,23 +112,15 @@ export function PlaylistPickerSheet({
   excludeId?: string;
   onClose: () => void;
 }) {
-  const insets = useSafeAreaInsets();
   const { height: screenH } = useScreenSize();
   const queryClient = useQueryClient();
   const toast = useToast((s) => s.show);
   const t = useT();
   const lang = useSettings((s) => s.language);
   const visible = !!songs && songs.length > 0;
-  const { dismiss, pan, makePan, backdropStyle, sheetStyle, onSheetLayout } = useBottomSheetAnim(
-    visible,
-    onClose,
-  );
-  // Second drag, for the grabber and the title (see the JSX below).
-  const headerPan = makePan();
   // The list is scrolled to the top: only then does a downward drag belong to
   // the sheet, so pulling down mid-list scrolls instead of dismissing.
   const [atTop, setAtTop] = useState(true);
-  const close = () => dismiss(onClose);
   const [creating, setCreating] = useState(false);
   /** Playlist id → the songs of this batch it holds; absent until known. */
   const [present, setPresent] = useState<Record<string, string[]>>({});
@@ -248,133 +239,118 @@ export function PlaylistPickerSheet({
   }
 
   return (
-    <Modal transparent animationType="none" visible onRequestClose={close}>
-      {/* Gestures inside an RN Modal need a root view of their own: the Modal
-          renders in a native hierarchy outside the app's. */}
-      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
-        <Animated.View style={[styles.backdrop, backdropStyle]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={close} />
-        </Animated.View>
-        <Animated.View
-          style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }, sheetStyle]}
-          onLayout={onSheetLayout}
-        >
-          {/* The header has its own drag, always enabled: it's the way out when
-              the list below is scrolled and keeps the gesture for itself. Two
-              detectors instead of one around everything so both can never fire
-              at once. */}
+    <SheetModal
+      visible={visible}
+      onClosed={onClose}
+      /* The list keeps the drag once it is scrolled: pulling down mid-list
+         scrolls it instead of closing the sheet on somebody trying to read. So
+         this sheet places its own drags - the header's and the list's - inside
+         the sheet, side by side, instead of taking the frame's one around
+         everything. */
+      sheetDrag={false}
+      /* The confirm dialog for a new playlist belongs to the `Modal` over and
+         outside the sheet: the sheet stays open behind it, so confirming is not
+         cancelled by the sheet going away. */
+      overSheet={() => (
+        <Dialog
+          visible={creating}
+          title={t('New playlist')}
+          input={{ placeholder: t('Playlist name') }}
+          confirmLabel={t('Create')}
+          onCancel={() => setCreating(false)}
+          onConfirm={createAndAdd}
+        />
+      )}
+    >
+      {(close, makePan) => {
+        // Second drag, for the grabber and the title (see the JSX below).
+        const headerPan = makePan();
+        return (
+          <>
+            {/* The header has its own drag, always enabled: it's the way out when
+                the list below is scrolled and keeps the gesture for itself. Two
+                detectors instead of one around everything so both can never fire
+                at once. */}
           <GestureDetector gesture={headerPan}>
-            <View>
-              {/* Spotify-style grabber: the visual cue that the sheet can be
-                  dragged down to dismiss. */}
-              <View style={styles.grabber} />
-              <Text style={styles.title}>{t('Add to a playlist')}</Text>
-              <View style={styles.divider} />
-            </View>
-          </GestureDetector>
-          <GestureDetector gesture={pan.enabled(atTop)}>
-            <View style={{ maxHeight: playlistsMaxH(screenH) }}>
-              <Pressable
-                style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
-                onPress={() => setCreating(true)}
-              >
-                <View style={styles.newPlaylistIcon}>
-                  <Icon name="add" size={24} color={colors.text} />
-                </View>
-                <Text style={styles.rowText}>{t('New playlist')}</Text>
-              </Pressable>
-              {isLoading ? (
-                <ActivityIndicator style={{ marginVertical: spacing.lg }} color={colors.accent} />
-              ) : (
-                <ScrollView
-                  scrollEventThrottle={16}
-                  onScroll={(e) => setAtTop(e.nativeEvent.contentOffset.y <= 0)}
+              <View>
+                {/* Spotify-style grabber: the visual cue that the sheet can be
+                    dragged down to dismiss. */}
+                <Grabber />
+                <Text style={styles.title}>{t('Add to a playlist')}</Text>
+                <View style={styles.divider} />
+              </View>
+            </GestureDetector>
+            <GestureDetector gesture={makePan().enabled(atTop)}>
+              <View style={{ maxHeight: playlistsMaxH(screenH) }}>
+                <Pressable
+                  style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
+                  onPress={() => setCreating(true)}
                 >
-                  {targets.map((p) => {
-                    const ids = present[p.id];
-                    const state = ids ? membershipOf(ids, wanted) : null;
-                    return (
-                      <Pressable
-                        key={p.id}
-                        style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
-                        disabled={!ids}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{
-                          checked: state === 'some' ? 'mixed' : state === 'all',
-                          disabled: !ids,
-                        }}
-                        onPress={() => toggle(p.id)}
-                      >
-                        <Cover uri={coverArtUrl(p.coverArt ?? p.id, COVER.thumb)} size={40} />
-                        <View style={styles.rowBody}>
-                          <Text style={styles.rowName} numberOfLines={1}>
-                            {p.name}
-                          </Text>
-                          {state === 'some' ? (
-                            <Text style={styles.rowCount} numberOfLines={1}>
-                              {t('{n} of {songs}', {
-                                n: ids!.length,
-                                songs: songsLabel(wanted.length, lang),
-                              })}
+                  <View style={styles.newPlaylistIcon}>
+                    <Icon name="add" size={24} color={colors.text} />
+                  </View>
+                  <Text style={styles.rowText}>{t('New playlist')}</Text>
+                </Pressable>
+                {isLoading ? (
+                  <ActivityIndicator style={{ marginVertical: spacing.lg }} color={colors.accent} />
+                ) : (
+                  <ScrollView
+                    scrollEventThrottle={16}
+                    onScroll={(e) => setAtTop(e.nativeEvent.contentOffset.y <= 0)}
+                  >
+                    {targets.map((p) => {
+                      const ids = present[p.id];
+                      const state = ids ? membershipOf(ids, wanted) : null;
+                      return (
+                        <Pressable
+                          key={p.id}
+                          style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
+                          disabled={!ids}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{
+                            checked: state === 'some' ? 'mixed' : state === 'all',
+                            disabled: !ids,
+                          }}
+                          onPress={() => toggle(p.id)}
+                        >
+                          <Cover uri={coverArtUrl(p.coverArt ?? p.id, COVER.thumb)} size={40} />
+                          <View style={styles.rowBody}>
+                            <Text style={styles.rowName} numberOfLines={1}>
+                              {p.name}
                             </Text>
-                          ) : null}
-                        </View>
-                        {!ids ? (
-                          <ActivityIndicator size="small" color={colors.textMuted} />
-                        ) : (
-                          <Mark state={state ?? 'none'} tapped={!!busy[p.id]} />
-                        )}
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              )}
-            </View>
-          </GestureDetector>
-        </Animated.View>
-      </GestureHandlerRootView>
-
-      <Dialog
-        visible={creating}
-        title={t('New playlist')}
-        input={{ placeholder: t('Playlist name') }}
-        confirmLabel={t('Create')}
-        onCancel={() => setCreating(false)}
-        onConfirm={createAndAdd}
-      />
-
-    </Modal>
+                            {state === 'some' ? (
+                              <Text style={styles.rowCount} numberOfLines={1}>
+                                {t('{n} of {songs}', {
+                                  n: ids!.length,
+                                  songs: songsLabel(wanted.length, lang),
+                                })}
+                              </Text>
+                            ) : null}
+                          </View>
+                          {!ids ? (
+                            <ActivityIndicator size="small" color={colors.textMuted} />
+                          ) : (
+                            <Mark state={state ?? 'none'} tapped={!!busy[p.id]} />
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+              </View>
+            </GestureDetector>
+          </>
+        );
+      }}
+    </SheetModal>
   );
 }
 
 const styles = themed((colors) => ({
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: colors.backdrop },
-  sheet: {
-    position: 'absolute',
-    bottom: 0,
-    // Centred and no wider than a sheet wants to be (#131).
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: SHEET_MAX_WIDTH,
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xxl,
-    borderTopRightRadius: radius.xxl,
-    paddingHorizontal: spacing.lg,
-    // Smaller than the old spacing.lg because the grabber below already brings
-    // its own margin: together they add up to the same top gap as before.
-    paddingTop: spacing.sm,
-  },
-  // Spotify's little handle. Its only job is to advertise the drag gesture, so
-  // it stays discreet: it must read as an affordance, not as a control.
-  grabber: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: radius.pill,
-    backgroundColor: colors.textMuted,
-    opacity: 0.5,
-    marginBottom: spacing.md,
-  },
+  // The sheet's frame (backdrop, sheet, grabber) is not re-declared here: the
+  // sheet takes the shared one (see `SheetModal`), and its grab-cue is drawn as
+  // the frame's `Grabber` - inside the drag around this sheet's header, which is
+  // where the header's drag has the gesture.
   title: { color: colors.text, fontSize: fontSize.md, fontWeight: '500', paddingBottom: spacing.md },
   divider: { height: 1, backgroundColor: colors.border, marginBottom: spacing.sm },
   row: {
