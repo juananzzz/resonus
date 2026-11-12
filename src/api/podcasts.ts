@@ -8,6 +8,7 @@
  */
 import { fetch } from 'expo/fetch';
 
+import { untilAborted } from './deadline';
 import { assertCanRequest, isManualOffline, OfflineError } from './netGate';
 import { profileScopeId } from '@/store/auth';
 import { useDownloads } from '@/store/downloads';
@@ -118,9 +119,19 @@ async function get(url: string, accept: string, since?: FeedValidators): Promise
     if (!res.ok) throw new FeedError('http');
     const etag = res.headers.get('etag');
     const modified = res.headers.get('last-modified');
+    // The deadline has to cover the body, not only the answer's arrival:
+    // `expo/fetch` resolves on the headers and the client under it has no read
+    // timeout of its own, so a publisher that sends the headers and then stalls
+    // leaves every screen that opens a show waiting for good. The abort below
+    // has nothing to interrupt and the `finally` that clears the timer is never
+    // reached, so the wait is raced against the signal rather than trusted —
+    // `text()` is read natively and does not hear it (see `deadline.ts`). Out
+    // of time answers as `FeedError('http')`, the publisher's side, which is
+    // what a stalled feed is; only 'offline' claims the app fell offline.
+    const body = await Promise.race([res.text(), untilAborted(ctl.signal)]);
     return {
       url,
-      body: await res.text(),
+      body,
       ...(etag ? { etag } : {}),
       ...(modified ? { lastModified: modified } : {}),
     };
