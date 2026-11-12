@@ -982,7 +982,22 @@ export async function deletePlaylist(auth: SubsonicAuth, id: string): Promise<vo
   await request(auth, `/Items/${id}`, {}, { method: 'DELETE' });
 }
 
-/** Renames the playlist (Jellyfin 10.9+; no description field). */
+/**
+ * Edits the name and the visibility — which is all this server can edit.
+ *
+ * The `comment` the shared edit type carries is **not** forwarded, and that is
+ * not an oversight but the shape of the API: the documented `UpdatePlaylistDto`
+ * body is `Ids, IsPublic, Name, Users`, creating a playlist takes
+ * `CreatePlaylistDto` = `Ids, IsPublic, MediaType, Name, UserId, Users`, and the
+ * playlist object itself (`PlaylistDto`) is `ItemIds, OpenAccess, Shares` —
+ * modern Jellyfin has no playlist description to write at any of the three
+ * doors. Dropping one silently and answering "updated" would be a lie, so the
+ * row is not offered for these profiles (`PlaylistEditSheet`'s `hideComment`,
+ * gated in `app/playlist/[id].tsx`).
+ *
+ * Reading a description a server does carry is unaffected: `toPlaylist` maps the
+ * item's `Overview` into `comment`, the name Subsonic uses for the same field.
+ */
 export async function updatePlaylist(
   auth: SubsonicAuth,
   id: string,

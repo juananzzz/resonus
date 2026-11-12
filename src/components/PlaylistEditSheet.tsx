@@ -1,4 +1,9 @@
-/** Sheet to edit a playlist: cover, name, description, and visibility. */
+/**
+ * Sheet to edit a playlist: cover, name, description, and visibility. A row the
+ * server has no field for is not offered at all (see `hidePublic` and
+ * `hideComment`) — offering one would let a person type into something the
+ * server throws away and call the result "updated".
+ */
 import Icon from '@/components/Icon';
 import { useEffect, useState } from 'react';
 import {
@@ -24,7 +29,12 @@ import { colors, fontSize, radius, spacing, themed } from '@/theme';
 
 export interface PlaylistEdit {
   name: string;
-  comment: string;
+  /**
+   * Absent when the server has no playlist description to write (see
+   * `hideComment`): the row is not shown, so the edit carries no description
+   * either — nothing is claimed to have changed.
+   */
+  comment?: string;
   public: boolean;
 }
 
@@ -34,6 +44,13 @@ interface Props {
   coverUri?: string;
   /** Hides the public playlist toggle (e.g. in local mode, no server). */
   hidePublic?: boolean;
+  /**
+   * Hides the description row, for servers that have no playlist description to
+   * write — Jellyfin's is the case (see `jellyfin.ts` `updatePlaylist`). The row
+   * is neither shown nor part of the saved edit, so a person cannot type into a
+   * field the server would throw away.
+   */
+  hideComment?: boolean;
   /**
    * Server playlist ID: enables changing the cover with a local image
    * (Navidrome native API >= 0.61). Navidrome profiles only.
@@ -53,6 +70,7 @@ export function PlaylistEditSheet({
   initial,
   coverUri,
   hidePublic,
+  hideComment,
   coverUploadId,
   localCoverId,
   onCancel,
@@ -60,7 +78,7 @@ export function PlaylistEditSheet({
 }: Props) {
   const t = useT();
   const [name, setName] = useState(initial.name);
-  const [comment, setComment] = useState(initial.comment);
+  const [comment, setComment] = useState(initial.comment ?? '');
   const [isPublic, setIsPublic] = useState(initial.public);
   // Cover change (upload/copy, inline error, and password dialog): logic
   // shared with the cover viewer. Error is inline because a toast would be
@@ -72,7 +90,7 @@ export function PlaylistEditSheet({
   useEffect(() => {
     if (visible) {
       setName(initial.name);
-      setComment(initial.comment);
+      setComment(initial.comment ?? '');
       setIsPublic(initial.public);
       resetCover();
     }
@@ -96,7 +114,16 @@ export function PlaylistEditSheet({
           <Pressable
             hitSlop={12}
             disabled={!canSave}
-            onPress={() => onSave({ name: name.trim(), comment: comment.trim(), public: isPublic })}
+            onPress={() =>
+              onSave({
+                name: name.trim(),
+                // A row that is hidden is not part of the edit either: the
+                // server has no field for it, and claiming otherwise would
+                // promise a change that cannot happen (see `hideComment`).
+                ...(hideComment ? {} : { comment: comment.trim() }),
+                public: isPublic,
+              })
+            }
           >
             <Text style={[styles.headerAction, { color: colors.accent }, !canSave && styles.disabled]}>{t('Save')}</Text>
           </Pressable>
@@ -155,17 +182,21 @@ export function PlaylistEditSheet({
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={styles.label}>{t('Description')}</Text>
-            <TextInput
-              style={[styles.input, styles.multiline]}
-              value={comment}
-              onChangeText={setComment}
-              placeholder={t('Add an optional description')}
-              placeholderTextColor={colors.textMuted}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
+            {hideComment ? null : (
+              <>
+                <Text style={styles.label}>{t('Description')}</Text>
+                <TextInput
+                  style={[styles.input, styles.multiline]}
+                  value={comment}
+                  onChangeText={setComment}
+                  placeholder={t('Add an optional description')}
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                />
+              </>
+            )}
 
             {hidePublic ? null : (
               <Pressable style={styles.switchRow} onPress={() => setIsPublic((v) => !v)}>
