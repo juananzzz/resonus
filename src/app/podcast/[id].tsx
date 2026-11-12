@@ -166,6 +166,10 @@ export default function PodcastScreen() {
   // Stable between progress ticks (only changes with status): if its identity
   // changed on every % update, the Pressable would lose its touch and you'd
   // have to press multiple times — the album screen answers the same way.
+  // `t` and `toast` are in the list because `useT` hands over a new function the
+  // moment the language changes: left out, the toast this handler shows would
+  // still speak the language you switched away from until the status or the
+  // show's data changed. Neither of the two moves with a progress tick.
   const onDownloadPress = useCallback(async () => {
     const ch = data.data?.channel;
     if (!ch) return;
@@ -186,7 +190,7 @@ export default function PodcastScreen() {
       }
     } else if (download.status === 'active') cancelDownload(`podcast:${ch.id}`);
     else setConfirming(ch);
-  }, [download.status, data.data]);
+  }, [download.status, data.data, t, toast]);
 
   if (data.isLoading) {
     return <TrackListSkeleton />;
