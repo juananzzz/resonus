@@ -986,6 +986,22 @@ export const useDownloads = create<DownloadsState>((set, get) => {
     string,
     Set<ReturnType<typeof FileSystem.createDownloadResumable>>
   >();
+  /**
+   * Groups a pass is inside of. This is what "already in progress" means, and
+   * it is not `active`: `active` says a pass has started and carries its
+   * progress, and it is written 18 lines below the guard that reads it, with
+   * the Wi-Fi check's `await` in between — so two calls for one group could
+   * both read an empty `active`, and both then downloaded the whole group:
+   * doubled bytes, progress re-based by the second pass, and the first pass's
+   * `finally` tearing down the second one's `active`/`cancelling`/`activeTasks`
+   * while it still ran. Here the claim is made synchronously at the guard, so
+   * the first suspension of the pass already has its group spoken for.
+   *
+   * One Set serves both families: the song side's keys are `album:`/`artist:`/
+   * `song:`/`batch:`/`playlist:`/`genre:`/`favorites`, the podcast side's
+   * `podcast:`/`episode:` — disjoint by construction, see the call sites.
+   */
+  const claimed = new Set<string>();
 
   /** Downloads a group of songs and updates catalog + progress. */
   async function downloadGroup(groupKey: string, songs: Song[], albums: Album[]): Promise<void> {
@@ -995,7 +1011,9 @@ export const useDownloads = create<DownloadsState>((set, get) => {
     // expo-file-system rather than the API, so the gate under the API layer
     // (see `api/netGate`) cannot see it: this is that same rule, said here.
     if (offline) return;
-    if (get().active[groupKey]) return; // already in progress
+    // `claimed`, not `active`, answers "already in progress": the claim is made
+    // synchronously below, before this pass suspends.
+    if (get().active[groupKey] || claimed.has(groupKey)) return; // already in progress
     // No duplicates (a playlist may have the same song twice) nor
     // already downloaded, radio songs (url), or songs already local.
     const seen = new Set<string>();
@@ -1006,8 +1024,15 @@ export const useDownloads = create<DownloadsState>((set, get) => {
     });
     if (pending.length === 0) return;
 
+    // Claimed before the first await below, and released in its `finally`:
+    // nothing between the guard and here suspends, so a second call for the
+    // same group can no longer find the group unclaimed while the first one is
+    // waiting for the Wi-Fi answer.
+    claimed.add(groupKey);
+
     // "Wi-Fi only" mode: don't start on mobile data.
     if (useSettings.getState().downloadWifiOnly && (await onMobileData())) {
+      claimed.delete(groupKey); // nothing was started, so nothing stays claimed
       useToast.getState().show(tg('Connect to Wi-Fi to download'));
       return;
     }
@@ -1219,6 +1244,7 @@ export const useDownloads = create<DownloadsState>((set, get) => {
           );
       }
     } finally {
+      claimed.delete(groupKey);
       cancelling.delete(groupKey);
       activeTasks.delete(groupKey);
       set((st) => {
@@ -1245,7 +1271,8 @@ export const useDownloads = create<DownloadsState>((set, get) => {
     // manual "use no network" says no. The rule lives here because the
     // transfer goes through expo-file-system, under the API gate's nose.
     if (isManualOffline()) return;
-    if (get().active[groupKey]) return; // already in progress
+    // `claimed`, not `active`, answers "already in progress" — see `downloadGroup`.
+    if (get().active[groupKey] || claimed.has(groupKey)) return; // already in progress
     // No duplicates, nothing already on disk, nothing without an address.
     const seen = new Set<string>();
     const pending = episodes.filter((e) => {
@@ -1255,8 +1282,14 @@ export const useDownloads = create<DownloadsState>((set, get) => {
     });
     if (pending.length === 0) return;
 
+    // Claimed before the first await, released in the `finally` below and in
+    // the branch that starts nothing — same as in `downloadGroup`, whose
+    // comment explains why the claim cannot wait for this `await`.
+    claimed.add(groupKey);
+
     // "Wi-Fi only" mode: don't start on mobile data.
     if (useSettings.getState().downloadWifiOnly && (await onMobileData())) {
+      claimed.delete(groupKey); // nothing was started, so nothing stays claimed
       useToast.getState().show(tg('Connect to Wi-Fi to download'));
       return;
     }
@@ -1367,6 +1400,7 @@ export const useDownloads = create<DownloadsState>((set, get) => {
         );
       }
     } finally {
+      claimed.delete(groupKey);
       cancelling.delete(groupKey);
       activeTasks.delete(groupKey);
       set((st) => {
