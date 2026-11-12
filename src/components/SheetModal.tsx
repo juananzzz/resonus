@@ -8,18 +8,22 @@
  * Slides up and down and closes with a swipe, like the song menu: these menus
  * open the same way and from the same ⋯, so they behave the same way too.
  *
- * Two escape hatches, because not every sheet can be opened and drawn from
+ * Five escape hatches, because not every sheet can be opened and drawn from
  * here: `visible` for the sheets mounted once in the root layout whose
- * visibility already lives in a store they read, and `overSheet` for content
- * that belongs to the `Modal` but sits over and outside the sheet. Both are
- * optional, and every sheet that opens by `openRef` and draws only its sheet
- * passes neither and is unchanged. What is left over is a sheet that needs a
- * second gesture - the hook hands out `makePan` for that, but this frame owns
- * only one, so those sheets stay their own.
+ * visibility already lives in a store they read; `overSheet` for content that
+ * belongs to the `Modal` but sits over and outside the sheet; `panEnabled` for a
+ * sheet whose own list scrolls, so its dismiss-drag only has the top of it;
+ * `sheetDrag` false for the sheets that place their OWN drags inside the sheet -
+ * a header one and a list one, side by side so they can never both fire - and
+ * `maxSheetHeight` for the one sheet that caps its own height. A sheet that
+ * places its own drags takes the factory behind them: `children` receives
+ * `makePan`, whose gestures drive this sheet's animation. All are optional, and
+ * every sheet that opens by `openRef`, never scrolls, draws only its sheet and
+ * takes no second drag passes none and is unchanged.
  */
 import { type MutableRefObject, type ReactNode, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { type GestureType, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,6 +33,9 @@ import { radius, SHEET_MAX_WIDTH, spacing, themed } from '@/theme';
 export function SheetModal({
   openRef,
   visible,
+  panEnabled,
+  sheetDrag,
+  maxSheetHeight,
   overSheet,
   onClosed,
   children,
@@ -45,6 +52,30 @@ export function SheetModal({
    */
   visible?: boolean;
   /**
+   * Escape hatch, for a sheet whose own list scrolls: the drag that dismisses
+   * the sheet and that scroll want the same stretch of it, so one of the two has
+   * to have it, and only the sheet knows which - it reads its own scroll offset.
+   * Leaving this out keeps the drag on all the time, which is what the sheets
+   * whose content never scrolls want.
+   */
+  panEnabled?: boolean;
+  /**
+   * Escape hatch, for the sheets with a scrolling list AND a header: they wrap
+   * their header in one drag and their list in another, side by side inside the
+   * sheet, so the two can never both fire at once. Passing false means this frame
+   * draws no drag of its own around the sheet (and no grabber, which belongs to
+   * the header's drag); the content then takes `makePan` and places them where
+   * they sit today. Leaving it out means one drag around everything.
+   */
+  sheetDrag?: boolean;
+  /**
+   * Escape hatch, for the one sheet that caps its own height (`maxHeight`): the
+   * cap travels with the sheet rather than being dropped by the shared frame, so
+   * the backdrop still shows above it. `maxWidth` is the frame's own and stays
+   * here.
+   */
+  maxSheetHeight?: number | `${number}%`;
+  /**
    * Escape hatch, for the content that belongs to the `Modal` but sits **over
    * and outside** the sheet — a confirm `Dialog`, the cover viewer, the
    * calendar on every platform but Android. Leaving it out is the common case;
@@ -58,8 +89,15 @@ export function SheetModal({
   /** Runs once the sheet is off screen, however it was closed. */
   onClosed?: () => void;
   /** `close()` closes the sheet; `close(after)` runs `after` once it is off
-   *  screen, for actions that navigate away (see ArtistPickerSheet). */
-  children: (close: (after?: () => void) => void) => ReactNode;
+   *  screen, for actions that navigate away (see ArtistPickerSheet).
+   *
+   *  `makePan` is a factory for drags that drive THIS sheet's animation - the
+   *  hook keeps them on the same `progress`, so a sheet that places its own
+   *  drags (`sheetDrag={false}`) still slides, and grabs, the sheet it is in. */
+  children: (
+    close: (after?: () => void) => void,
+    makePan: () => GestureType,
+  ) => ReactNode;
 }) {
   const insets = useSafeAreaInsets();
   const [openByRef, setOpenByRef] = useState(false);
@@ -74,7 +112,7 @@ export function SheetModal({
     setOpenByRef(false);
     onClosed?.();
   };
-  const { dismiss, pan, backdropStyle, sheetStyle, onSheetLayout } = useBottomSheetAnim(
+  const { dismiss, pan, makePan, backdropStyle, sheetStyle, onSheetLayout } = useBottomSheetAnim(
     shown,
     closeNow,
   );
@@ -85,6 +123,11 @@ export function SheetModal({
       closeNow();
       after?.();
     });
+
+  // The one sheet that caps its own height: the cap travels with the sheet, so
+  // the backdrop still shows above it. The off case is a `false` entry, which is
+  // what the other optional style entries in this app already are.
+  const sheetCap = maxSheetHeight === undefined ? false : { maxHeight: maxSheetHeight };
 
   return (
     <Modal
@@ -99,20 +142,44 @@ export function SheetModal({
         <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => close()} />
         </Animated.View>
-        {/* One drag around everything: what goes in here is a short list of
-            actions that never scrolls, so nothing else competes for the
-            gesture (the song menu needs two because its list does scroll). */}
-        <GestureDetector gesture={pan}>
+        {/* One drag around everything (the default): what goes in here is a short
+            list of actions that never scrolls, so nothing else competes with it.
+            A sheet that says so (`sheetDrag={false}`, and `panEnabled` for one
+            whose list scrolls but is dragged only at the top) places its own
+            drags inside the sheet instead - side by side, so the two can never
+            both fire at once - and takes the factory that still drives THIS
+            sheet's animation. */}
+        {sheetDrag === false ? (
           <Animated.View
-            style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }, sheetStyle]}
+            style={[
+              styles.sheet,
+              sheetCap,
+              { paddingBottom: insets.bottom + spacing.md },
+              sheetStyle,
+            ]}
             onLayout={onSheetLayout}
           >
-            {/* Spotify-style grabber: the visual cue that the sheet can be
-                dragged down to dismiss. */}
-            <View style={styles.grabber} />
-            {children(close)}
+            {children(close, makePan)}
           </Animated.View>
-        </GestureDetector>
+        ) : (
+          <GestureDetector gesture={panEnabled === undefined ? pan : pan.enabled(panEnabled)}>
+            <Animated.View
+              style={[
+                styles.sheet,
+                sheetCap,
+                { paddingBottom: insets.bottom + spacing.md },
+                sheetStyle,
+              ]}
+              onLayout={onSheetLayout}
+            >
+              {/* Spotify-style grabber: the visual cue that the sheet can be
+                    dragged down to dismiss. A sheet that owns its drags draws it
+                    itself, inside the drag around its header. */}
+              <Grabber />
+              {children(close, makePan)}
+            </Animated.View>
+          </GestureDetector>
+        )}
       </GestureHandlerRootView>
       {/* Content that belongs to the Modal but sits over and outside the sheet -
           a confirm Dialog, the cover viewer, the calendar outside Android. It
@@ -121,6 +188,16 @@ export function SheetModal({
       {overSheet?.(close)}
     </Modal>
   );
+}
+
+/**
+ * The sheet's grab-cue: the visual cue that the sheet can be dragged down to
+ * dismiss. This file draws it above the sheet's content, because that is where
+ * its own drag is; a sheet that places its own drags draws it where ITS header
+ * drag is instead - above its list, not above the sheet.
+ */
+export function Grabber() {
+  return <View style={styles.grabber} />;
 }
 
 const styles = themed((colors) => ({
