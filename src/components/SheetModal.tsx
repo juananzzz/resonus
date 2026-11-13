@@ -129,6 +129,27 @@ export function SheetModal({
   // what the other optional style entries in this app already are.
   const sheetCap = maxSheetHeight === undefined ? false : { maxHeight: maxSheetHeight };
 
+  // The sheet itself, built once and wrapped in one of the two drags below: what
+  // differs between those is only what is wrapped around it, so the sheet can
+  // never drift apart from itself while the two cases are written out separately.
+  // The grab-cue is handed in rather than drawn here, because it belongs to the
+  // frame's own drag: a sheet that places its OWN drags inside (`sheetDrag={false}`)
+  // draws its cue itself, inside the drag around its header.
+  const sheet = (grabber?: ReactNode) => (
+    <Animated.View
+      style={[
+        styles.sheet,
+        sheetCap,
+        { paddingBottom: insets.bottom + spacing.md },
+        sheetStyle,
+      ]}
+      onLayout={onSheetLayout}
+    >
+      {grabber}
+      {children(close, makePan)}
+    </Animated.View>
+  );
+
   return (
     <Modal
       transparent
@@ -150,34 +171,13 @@ export function SheetModal({
             both fire at once - and takes the factory that still drives THIS
             sheet's animation. */}
         {sheetDrag === false ? (
-          <Animated.View
-            style={[
-              styles.sheet,
-              sheetCap,
-              { paddingBottom: insets.bottom + spacing.md },
-              sheetStyle,
-            ]}
-            onLayout={onSheetLayout}
-          >
-            {children(close, makePan)}
-          </Animated.View>
+          sheet()
         ) : (
           <GestureDetector gesture={panEnabled === undefined ? pan : pan.enabled(panEnabled)}>
-            <Animated.View
-              style={[
-                styles.sheet,
-                sheetCap,
-                { paddingBottom: insets.bottom + spacing.md },
-                sheetStyle,
-              ]}
-              onLayout={onSheetLayout}
-            >
-              {/* Spotify-style grabber: the visual cue that the sheet can be
-                    dragged down to dismiss. A sheet that owns its drags draws it
-                    itself, inside the drag around its header. */}
-              <Grabber />
-              {children(close, makePan)}
-            </Animated.View>
+            {/* Spotify-style grabber: the visual cue that the sheet can be
+                dragged down to dismiss. A sheet that owns its drags draws it
+                itself, inside the drag around its header. */}
+            {sheet(<Grabber />)}
           </GestureDetector>
         )}
       </GestureHandlerRootView>
