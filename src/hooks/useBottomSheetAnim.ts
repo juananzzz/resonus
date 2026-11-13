@@ -3,7 +3,9 @@
  * the backdrop fades and the sheet slides up from the bottom on open (240 ms)
  * and slides down on close (160 ms). `dismiss(after)` plays the exit animation
  * and then runs the actual close (whoever closes the Modal), so the sheet
- * doesn't vanish abruptly. `pan` adds swipe-down-to-dismiss.
+ * doesn't vanish abruptly. `makePan()` adds swipe-down-to-dismiss: a factory,
+ * so whoever wants the gesture builds one only where it is attached - the
+ * frame around the sheet, or a sheet's own header and list drags.
  */
 import { useEffect } from 'react';
 import { Dimensions, type LayoutChangeEvent } from 'react-native';
@@ -87,5 +89,5 @@ export function useBottomSheetAnim(open: boolean, onClose?: () => void) {
       }
     });
 
-  return { dismiss, pan: makePan(), makePan, backdropStyle, sheetStyle, onSheetLayout };
+  return { dismiss, makePan, backdropStyle, sheetStyle, onSheetLayout };
 }

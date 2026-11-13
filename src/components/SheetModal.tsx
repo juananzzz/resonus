@@ -112,7 +112,7 @@ export function SheetModal({
     setOpenByRef(false);
     onClosed?.();
   };
-  const { dismiss, pan, makePan, backdropStyle, sheetStyle, onSheetLayout } = useBottomSheetAnim(
+  const { dismiss, makePan, backdropStyle, sheetStyle, onSheetLayout } = useBottomSheetAnim(
     shown,
     closeNow,
   );
@@ -173,7 +173,12 @@ export function SheetModal({
         {sheetDrag === false ? (
           sheet()
         ) : (
-          <GestureDetector gesture={panEnabled === undefined ? pan : pan.enabled(panEnabled)}>
+          <GestureDetector
+            /* The drag is built here, where it is attached, and only for the
+                sheets that take one: the ones placing their OWN drags inside
+                (`sheetDrag={false}`) build no throwaway and never see this. */
+            gesture={panEnabled === undefined ? makePan() : makePan().enabled(panEnabled)}
+          >
             {/* Spotify-style grabber: the visual cue that the sheet can be
                 dragged down to dismiss. A sheet that owns its drags draws it
                 itself, inside the drag around its header. */}
