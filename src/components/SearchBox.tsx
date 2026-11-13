@@ -55,7 +55,7 @@ export function SearchBox({
   style,
   fieldStyle,
 }: {
-  /** What the screen asks for, already spoken (`t('Find an album')`). */
+  /** What the screen asks for, already spoken by the screen itself. */
   placeholder: string;
   /** The screen's own typed text; the box is a controlled component like the field. */
   value: string;
