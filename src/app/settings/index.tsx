@@ -171,7 +171,6 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
       <SettingsScroll keyboardShouldPersistTaps="handled">
         <SearchBox
           style={{ marginBottom: spacing.md }}
-          fieldStyle={{ paddingVertical: spacing.md }}
           iconSize={20}
           placeholder={t('Search settings')}
           value={query}
