@@ -11,7 +11,6 @@ import {
   Pressable,
   RefreshControl,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 
@@ -29,6 +28,7 @@ import { isManualOffline } from '@/api/netGate';
 import { COVER, coverArtUrl } from '@/api/data';
 import { BackChevron } from '@/components/BackChevron';
 import { BrowseFrame, useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
+import { SearchBox } from '@/components/SearchBox';
 import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import Icon from '@/components/Icon';
@@ -50,7 +50,6 @@ import { openPodcastMenu } from '@/components/PodcastMenuSheet';
 import {
   colors,
   fontSize,
-  radius,
   spacing,
   themed,
   tracking,
@@ -220,24 +219,14 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
       )}
 
       {(embedded ? boxOpen : showSearch) ? (
-        <View style={styles.searchBar}>
-          <Icon name="search" size={18} color={colors.textMuted} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('Find a podcast')}
-            placeholderTextColor={colors.textMuted}
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={query}
-            onChangeText={setQuery}
-            autoFocus={embedded}
-          />
-          {query ? (
-            <Pressable hitSlop={8} onPress={() => setQuery('')} accessibilityLabel={t('Clear')}>
-              <Icon name="close-circle" size={18} color={colors.textMuted} />
-            </Pressable>
-          ) : null}
-        </View>
+        <SearchBox
+          style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md }}
+          fieldStyle={{ padding: 0 }}
+          placeholder={t('Find a podcast')}
+          value={query}
+          onChangeText={setQuery}
+          autoFocus={embedded}
+        />
       ) : null}
 
       {discovering ? (
@@ -413,16 +402,4 @@ const styles = themed((colors) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   rowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
   rowSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    height: 44,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceHighlight,
-  },
-  searchInput: { flex: 1, color: colors.text, fontSize: fontSize.md, padding: 0 },
 }));
