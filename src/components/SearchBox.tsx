@@ -16,6 +16,11 @@
  * while searching for it. `returnKeyType` is the search glyph on every screen
  * that draws this bar, so the Return key says what pressing it does even where
  * it used to look like a plain return.
+ *
+ * The glyph is one size and the field keeps no padding of its own: two screens drew a
+ * bigger magnifier and two let the field carry the air around its text, and a bar whose
+ * text starts a different distance from the magnifier on one screen than on another is
+ * the difference between one box and a box each screen redrew.
  */
 import { type MutableRefObject, type ReactNode } from 'react';
 import { Pressable, TextInput, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
@@ -45,7 +50,6 @@ export function SearchBox({
   ref,
   autoFocus,
   onFocus,
-  iconSize,
   iconColor,
   after,
   style,
@@ -67,15 +71,13 @@ export function SearchBox({
   autoFocus?: boolean;
   /** The screen's answer to the field taking focus, where it has one to give. */
   onFocus?: () => void;
-  /** 20 where the bar is the one you tap to search the whole app, 18 in a filter. */
-  iconSize?: number;
   /** The quieter tone everywhere; one step louder where the box sits on a pane. */
   iconColor?: string;
   /** What the screen wants inside the bar past the Clear button (the offline dot). */
   after?: ReactNode;
   /** The screen's own geometry of the bar: its margins, the one a row gives it. */
   style?: StyleProp<ViewStyle>;
-  /** The field's own type: the smaller face inside a playlist, the air two bars keep. */
+  /** The field's own type: the smaller face inside a playlist and on the favorites screen. */
   fieldStyle?: StyleProp<TextStyle>;
 }) {
   // Its own subscription to the theme: the screens around it have one, but a
@@ -83,10 +85,9 @@ export function SearchBox({
   useTheme();
   const t = useT();
   const tone = iconColor ?? colors.textMuted;
-  const size = iconSize ?? 18;
   return (
     <View style={[styles.bar, style]}>
-      <Icon name="search" size={size} color={tone} />
+      <Icon name="search" size={18} color={tone} />
       <TextInput
         ref={ref}
         style={[styles.field, fieldStyle]}
@@ -109,7 +110,7 @@ export function SearchBox({
           accessibilityLabel={t('Clear')}
           onPress={() => onChangeText('')}
         >
-          <Icon name="close-circle" size={size} color={tone} />
+          <Icon name="close-circle" size={18} color={tone} />
         </Pressable>
       ) : null}
       {after}

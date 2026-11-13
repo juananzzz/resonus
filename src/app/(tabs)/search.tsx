@@ -328,7 +328,6 @@ export default function SearchScreen() {
     <View style={[styles.safe, { paddingTop: insets.top }]}>
       <SearchBox
         style={{ margin: spacing.lg }}
-        iconSize={20}
         ref={inputRef}
         placeholder={t('What do you want to listen to?')}
         value={query}
