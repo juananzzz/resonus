@@ -195,7 +195,6 @@ export function RadioBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
             section of Explore now opens. */
         <SearchBox
           style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md }}
-          fieldStyle={{ padding: 0 }}
           placeholder={t('Find a station')}
           value={query}
           onChangeText={setQuery}

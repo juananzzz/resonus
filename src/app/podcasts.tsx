@@ -221,7 +221,6 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
       {(embedded ? boxOpen : showSearch) ? (
         <SearchBox
           style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md }}
-          fieldStyle={{ padding: 0 }}
           placeholder={t('Find a podcast')}
           value={query}
           onChangeText={setQuery}

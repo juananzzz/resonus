@@ -35,7 +35,7 @@ const styles = themed((palette) => ({
     // A capsule with Round, a rounded rectangle with Pointier.
     borderRadius: restyled(radius.pill, radius.md),
   },
-  field: { flex: 1, color: palette.text, fontSize: fontSize.md, paddingVertical: 0 },
+  field: { flex: 1, color: palette.text, fontSize: fontSize.md, padding: 0 },
 }));
 
 export function SearchBox({
