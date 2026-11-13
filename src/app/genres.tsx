@@ -7,7 +7,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
-  Pressable,
   Text,
   View,
 } from 'react-native';
@@ -21,7 +20,6 @@ import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import {
-  colors,
   fontSize,
   spacing,
   SCREEN_BOTTOM_PADDING,

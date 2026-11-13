@@ -17,7 +17,7 @@
  * that draws this bar, so the Return key says what pressing it does even where
  * it used to look like a plain return.
  */
-import { useRef, type MutableRefObject, type ReactNode } from 'react';
+import { type MutableRefObject, type ReactNode } from 'react';
 import { Pressable, TextInput, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 
 import Icon from '@/components/Icon';
