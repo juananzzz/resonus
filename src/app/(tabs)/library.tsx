@@ -8,7 +8,6 @@ import {
   BackHandler,
   FlatList,
   Keyboard,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -17,7 +16,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -37,6 +35,7 @@ import { ArtistRow } from '@/components/ArtistRow';
 import { PlaylistRow } from '@/components/PlaylistRow';
 import { PodcastRow } from '@/components/PodcastRow';
 import { Cover } from '@/components/Cover';
+import { SheetModal } from '@/components/SheetModal';
 import { useDownloadedPlaylists } from '@/hooks/useDownloadedPlaylists';
 import { useHistoryTimes } from '@/hooks/useHistoryTimes';
 import { Dialog } from '@/components/Dialog';
@@ -44,7 +43,6 @@ import { EmptyState } from '@/components/EmptyState';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
-import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
 import { usePressFeedback } from '@/hooks/usePressFeedback';
 import { albumsLabel, episodesLabel, songsLabel, useT } from '@/i18n';
 import {
@@ -68,7 +66,7 @@ import { useSettings, type LibrarySort } from '@/store/settings';
 import { useAccent } from '@/hooks/useAccent';
 import { episodeUnavailable } from '@/hooks/useEpisodeUnavailable';
 import { useToast } from '@/store/toast';
-import { colors, DIM_OPACITY, fontSize, lineHeight, radius, restyled, SHEET_MAX_WIDTH, spacing, themed, useTheme, tracking } from '@/theme';
+import { colors, DIM_OPACITY, fontSize, lineHeight, radius, restyled, spacing, themed, useTheme, tracking } from '@/theme';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { columnsFor, useListPadding, useScreenSize } from '@/hooks/useScreenSize';
 import { listPerf } from '@/lib/listPerf';
@@ -163,58 +161,42 @@ function SortBar({ onPress }: { onPress: () => void }) {
 
 function SortSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const t = useT();
-  const insets = useSafeAreaInsets();
   const sort = useSettings((s) => s.librarySort);
   const setSort = useSettings((s) => s.setLibrarySort);
-  const { dismiss, pan, backdropStyle, sheetStyle, onSheetLayout } = useBottomSheetAnim(
-    visible,
-    onClose,
-  );
-  const close = () => dismiss(onClose);
-  if (!visible) return null;
+  // The frame is the shared one: this sheet opens from the tab's own state
+  // (`sortOpen`) rather than from a ref a screen holds, so it goes through the
+  // frame's `visible` door and hands `onClosed` back the flip that state does -
+  // which runs once the sheet is off screen, exactly as `close` used to.
   return (
-    <Modal transparent animationType="none" visible onRequestClose={close}>
-      {/* Gestures inside an RN Modal need a root view of their own: the
-          Modal renders in a native hierarchy outside the app's. */}
-      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
-        <Animated.View style={[styles.backdrop, backdropStyle]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={close} />
-        </Animated.View>
-        {/* One drag around the whole sheet: what's in here never scrolls,
-            so nothing else competes for the gesture. */}
-        <GestureDetector gesture={pan}>
-          <Animated.View
-            style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }, sheetStyle]}
-            onLayout={onSheetLayout}
-          >
-            {/* Spotify-style grabber: the visual cue that the sheet can be
-                dragged down to dismiss. */}
-            <View style={styles.grabber} />
-            <Text style={styles.sheetTitle}>{t('Sort by')}</Text>
-            {(Object.keys(SORT_LABELS) as LibrarySort[]).map((key) => {
-              const active = key === sort;
-              return (
-                <Pressable
-                  key={key}
-                  style={({ pressed }) => [styles.sheetRow, pressed && { opacity: 0.6 }]}
-                  onPress={() => {
-                    setSort(key);
-                    close();
-                  }}
-                >
-                  <Text style={[styles.sheetRowText, active && { color: colors.accent }]}>
-                    {t(SORT_LABELS[key])}
-                  </Text>
-                  {active ? (
-                    <Icon name="checkmark" size={20} color={colors.accent} style={{ marginLeft: 'auto' }} />
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </Animated.View>
-        </GestureDetector>
-      </GestureHandlerRootView>
-    </Modal>
+    <SheetModal visible={visible} onClosed={onClose}>
+      {/* Choosing closes it: the sheet slides out and the tab stops asking for
+          it, which is the same two hands the gesture makes. */}
+      {(close) => (
+        <>
+          <Text style={styles.sheetTitle}>{t('Sort by')}</Text>
+          {(Object.keys(SORT_LABELS) as LibrarySort[]).map((key) => {
+            const active = key === sort;
+            return (
+              <Pressable
+                key={key}
+                style={({ pressed }) => [styles.sheetRow, pressed && { opacity: 0.6 }]}
+                onPress={() => {
+                  setSort(key);
+                  close();
+                }}
+              >
+                <Text style={[styles.sheetRowText, active && { color: colors.accent }]}>
+                  {t(SORT_LABELS[key])}
+                </Text>
+                {active ? (
+                  <Icon name="checkmark" size={20} color={colors.accent} style={{ marginLeft: 'auto' }} />
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </>
+      )}
+    </SheetModal>
   );
 }
 
@@ -1682,33 +1664,8 @@ const styles = themed((colors) => ({
     gap: spacing.xs,
   },
   sortBarText: { color: colors.textSecondary, fontSize: fontSize.xs, fontWeight: '500' },
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: colors.backdrop },
-  sheet: {
-    position: 'absolute',
-    bottom: 0,
-    // Centred and no wider than a sheet wants to be (#131).
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: SHEET_MAX_WIDTH,
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xxl,
-    borderTopRightRadius: radius.xxl,
-    paddingHorizontal: spacing.lg,
-    // Smaller than the old spacing.lg because the grabber below already brings
-    // its own margin: together they add up to the same top gap as before.
-    paddingTop: spacing.sm,
-  },
-  // Spotify's little handle. Its only job is to advertise the drag gesture, so
-  // it stays discreet: it must read as an affordance, not as a control.
-  grabber: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: radius.pill,
-    backgroundColor: colors.textMuted,
-    opacity: 0.5,
-    marginBottom: spacing.md,
-  },
+  // The sheet's own frame (backdrop, sheet, grabber) is not re-declared here:
+  // the sort sheet takes the shared one (see `SheetModal`).
   sheetTitle: {
     color: colors.textSecondary,
     fontSize: fontSize.sm,
