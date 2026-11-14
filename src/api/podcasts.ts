@@ -491,16 +491,24 @@ export async function refreshAutoDownloadShows(): Promise<void> {
  *  stay one at a time, so no host sees a burst, and one dead feed does not
  *  stall the rest.
  */
-export async function refreshStaleFavoriteShows(): Promise<void> {
-  if (isManualOffline()) return;
-  const auto = await autoDownloadChannelIds();
-  for (const channel of await listFavoriteChannels()) {
-    // A row written before feeds were filed has no address to read.
-    if (!channel.feedUrl || auto.has(channel.id)) continue;
-    if (Date.now() - (channel.refreshedAt ?? 0) < FAVORITE_READ_MS) continue;
-    await refreshChannel(channel.feedUrl).catch(() => {});
-  }
+export function refreshStaleFavoriteShows(): Promise<void> {
+  // One pass at a time: a second one would read the shows the first has not
+  // reached yet, whose clocks still say stale.
+  favoritePass ??= (async () => {
+    if (isManualOffline()) return;
+    const auto = await autoDownloadChannelIds();
+    for (const channel of await listFavoriteChannels()) {
+      // A row written before feeds were filed has no address to read.
+      if (!channel.feedUrl || auto.has(channel.id)) continue;
+      if (Date.now() - (channel.refreshedAt ?? 0) < FAVORITE_READ_MS) continue;
+      await refreshChannel(channel.feedUrl).catch(() => {});
+    }
+  })().finally(() => {
+    favoritePass = null;
+  });
+  return favoritePass;
 }
+let favoritePass: Promise<void> | null = null;
 
 /** The ids of a show's episodes that count as played. */
 export async function playedEpisodeIds(channelId: string): Promise<Set<string>> {
