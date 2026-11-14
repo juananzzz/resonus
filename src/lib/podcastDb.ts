@@ -433,36 +433,6 @@ export async function listFavoriteChannels(
   }));
 }
 
-/** The favorited episodes, each with its show, most recently hearted first. */
-export async function listFavoriteEpisodes(
-  scope: string,
-  limit = 100,
-): Promise<(RecentEpisode & FavoriteTimes)[]> {
-  const db = await podcastDb(scope);
-  const rows = await db.getAllAsync<{
-    episode: string;
-    channel: string;
-    favorited_at: number;
-    listened_at: number | null;
-  }>(
-    `SELECT e.data AS episode, c.data AS channel, f.favorited_at, p.updated_at AS listened_at
-     FROM podcast_favorites f
-     JOIN podcast_episodes e ON e.id = f.id
-     JOIN podcast_channels c ON c.id = e.channel_id
-     LEFT JOIN podcast_progress p ON p.episode_id = e.id
-     WHERE f.kind = 'episode'
-     ORDER BY f.favorited_at DESC
-     LIMIT ?`,
-    [limit],
-  );
-  return rows.map((r) => ({
-    episode: JSON.parse(r.episode) as PodcastEpisode,
-    channel: JSON.parse(r.channel) as PodcastChannel,
-    favoritedAt: r.favorited_at,
-    listenedAt: r.listened_at ?? 0,
-  }));
-}
-
 /** Where an episode was left. Its own table: a feed read replaces the episodes. */
 export async function saveEpisodeProgress(
   scope: string,

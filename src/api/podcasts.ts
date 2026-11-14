@@ -425,10 +425,6 @@ export async function listFavoriteChannels(): Promise<(PodcastChannel & Db.Favor
   return Db.listFavoriteChannels(scope());
 }
 
-export async function listFavoriteEpisodes(limit = 100): Promise<(RecentEpisode & Db.FavoriteTimes)[]> {
-  return Db.listFavoriteEpisodes(scope(), limit);
-}
-
 /**
  * Reads every show you keep again, one at a time so no host sees a burst.
  * Failures are counted, not thrown: one dead feed must not stall the rest.
