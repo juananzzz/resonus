@@ -21,11 +21,12 @@ Releases before 0.2.1 are only listed on the
 - Library: its sections can be reordered and hidden, in Settings › Home & tabs.
 - Podcasts: a show's episodes can be sorted newest first, oldest first or A to Z, and play in that order.
 - Library: albums can be sorted by album artist.
-- Library: a heart at the top of the tab keeps only what you favorited, and it is remembered on and off separately for playlists, albums, artists, songs and podcasts.
+- Library: a heart at the right end of a section's sort row keeps only what you favorited, and it is remembered on and off separately for playlists, albums, artists, songs and podcasts.
 - Library: the + button that makes a new playlist sits at the top of the tab while you are reading playlists.
 - Library: pulling a Playlists, Albums or Artists list down asks the server for it again; a pull that fails leaves the rows you were looking at and says so.
+- Library: the sort row no longer offers Play and Shuffle over an album or song list; those lists are read, filtered and sorted there, and what you want started is opened as such.
 - Library: the Podcasts section has its own sort button (Recents, Recently added, Alphabetical), like the other sections have.
-- Library: pressing the heart keeps whatever you had typed in the section's search box, since you are asking the same question of a smaller list.
+- Library: pressing either filter keeps whatever you had typed in the section's search box, since you are asking the same question of a smaller list.
 
 ### Changed
 
@@ -36,7 +37,7 @@ Releases before 0.2.1 are only listed on the
 - Podcasts: Download new episodes is now chosen per show, in its ⋯ menu.
 - Library: fully downloaded playlists show ↓, as albums do.
 - Settings: Home & navigation is now called Navigation.
-- Library: Downloaded is now a switch at the top of the tab, beside the heart, and keeps Playlists, Albums, Artists and Songs to what is on your phone.
+- Library: Downloaded is now a ↓ at the right end of each section's sort row, beside the heart, and keeps Playlists, Albums, Artists and Songs to what is on your phone.
 - Player: the playback speed and Preserve pitch are kept when the app is closed.
 - Android: Resonus is declared as a music app, for widgets and launchers that look for one (#309).
 - Local profile: Rescan reads again only the files that changed, so a large library no longer takes minutes (#338).
