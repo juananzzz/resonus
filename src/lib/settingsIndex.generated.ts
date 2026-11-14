@@ -777,6 +777,22 @@ export const SETTINGS_INDEX: SettingEntry[] = [
     ]
   },
   {
+    "label": "Share quality",
+    "screen": "playback",
+    "root": "playback",
+    "path": [
+      "Quality & playback"
+    ]
+  },
+  {
+    "label": "Share codec",
+    "screen": "playback",
+    "root": "playback",
+    "path": [
+      "Quality & playback"
+    ]
+  },
+  {
     "label": "Equalizer",
     "screen": "equalizer",
     "root": "playback",

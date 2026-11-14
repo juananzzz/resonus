@@ -124,7 +124,7 @@ async function ndFetch(auth: SubsonicAuth, path: string, init: RequestInit): Pro
 }
 
 /** Authenticated request to the native API whose answer is JSON. */
-async function ndJson<T>(auth: SubsonicAuth, path: string, init: RequestInit): Promise<T> {
+async function ndJsonWithInit<T>(auth: SubsonicAuth, path: string, init: RequestInit): Promise<T> {
   const token = await ndLogin(auth, true);
   netTally(`nd ${path.split('?')[0]}`);
   return await ndWithin(async (signal) => {
@@ -174,7 +174,7 @@ export async function createNativeShare(
     body.format = options.format ?? '';
     body.maxBitRate = options.maxBitRate;
   }
-  const share = await ndJson<{ id?: unknown }>(auth, '/api/share', {
+  const share = await ndJsonWithInit<{ id?: unknown }>(auth, '/api/share', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
