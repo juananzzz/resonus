@@ -45,6 +45,7 @@ import { loadPastEvents, startPerfLog } from '@/lib/perfLog';
 import { queryClient } from '@/lib/query';
 import { primaryUrl } from '@/lib/serverUrls';
 import { useLocalAutoRefresh } from '@/hooks/useLocalAutoRefresh';
+import { usePodcastAutoRefresh } from '@/hooks/usePodcastAutoRefresh';
 import { useAuthStore } from '@/store/auth';
 import { useAutoDownloads } from '@/store/autoDownloads';
 import { checkAutoUrlNow, initAutoUrl } from '@/store/autoUrl';
@@ -152,6 +153,7 @@ export default function RootLayout() {
   // then would apply a family that isn't loaded yet.
   const [loadedCustom, setLoadedCustom] = useState<string | null>(null);
   useLocalAutoRefresh();
+  usePodcastAutoRefresh();
 
   useEffect(() => {
     if (appFont !== 'custom' || !customFontFamily || !customFontUri) return;
