@@ -6,18 +6,23 @@
  */
 import Icon from '@/components/Icon';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { Animated, Keyboard, Pressable, Switch, Text, View } from 'react-native';
 
 import { SettingsScroll, ScreenHeader, SettingsSafeArea, settingsStyles } from '@/components/SettingsUI';
 import { SearchBox } from '@/components/SearchBox';
 import { useT } from '@/i18n';
+import { haptic } from '@/lib/haptics';
 import { searchSettings } from '@/lib/settingsSearch';
 import { useAuthStore } from '@/store/auth';
 import { anyDownloads, useDownloads } from '@/store/downloads';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, radius, spacing, themed, useTheme, tracking } from '@/theme';
+import { motion } from '@/theme/motion';
+
+/** The search box and the gap under it. */
+const SEARCH_H = 44 + spacing.md;
 
 /** `asTab`: shown as the Settings tab (see `(tabs)/options`), with no way back. */
 export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
@@ -162,19 +167,38 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
   );
   const searching = query.trim().length > 0;
 
+  // The box stays out of sight until a pull down at the top, as in a playlist.
+  const searchH = useRef(new Animated.Value(0)).current;
+  const shown = useRef(false);
+  function showSearch(show: boolean) {
+    if (shown.current === show) return;
+    shown.current = show;
+    if (show) haptic('light');
+    else Keyboard.dismiss();
+    Animated.timing(searchH, {
+      toValue: show ? SEARCH_H : 0,
+      duration: motion.duration.fade,
+      useNativeDriver: false,
+    }).start();
+  }
+
   return (
     <SettingsSafeArea>
       <ScreenHeader title={t('Settings')} back={!asTab} />
       {/* The same centred pane every other settings screen gets from
           `SettingsPage`; this one draws its own header, so it says it here. */}
       <View style={settingsStyles.pane}>
-      <SettingsScroll keyboardShouldPersistTaps="handled">
-        <SearchBox
-          style={{ marginBottom: spacing.md }}
-          placeholder={t('Search settings')}
-          value={query}
-          onChangeText={setQuery}
-        />
+      <SettingsScroll
+        keyboardShouldPersistTaps="handled"
+        onPullDown={() => showSearch(true)}
+        // Scrolling away folds it again, unless it is holding a search.
+        onScroll={(e) => {
+          if (!searching && e.nativeEvent.contentOffset.y > 30) showSearch(false);
+        }}
+      >
+        <Animated.View style={{ height: searchH, overflow: 'hidden' }}>
+          <SearchBox placeholder={t('Search settings')} value={query} onChangeText={setQuery} />
+        </Animated.View>
 
         {searching ? (
           hits.length > 0 ? (

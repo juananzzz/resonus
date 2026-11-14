@@ -13,6 +13,8 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   type ScrollViewProps,
   StyleSheet,
   Switch,
@@ -20,6 +22,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Gesture, GestureDetector, ScrollView as GestureScrollView, type GestureType } from 'react-native-gesture-handler';
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAccent } from '@/hooks/useAccent';
@@ -86,8 +89,31 @@ const FOCUS_OFFSET = 140;
 const FOCUS_DELAY_MS = 380;
 
 /** A settings screen's scroll: its last row clears the mini player, whatever the phone's own bar adds. */
-export function SettingsScroll({ children, ...props }: ScrollViewProps) {
+export function SettingsScroll({
+  children,
+  onPullDown,
+  ...props
+}: ScrollViewProps & {
+  /** A pull down with the page at its top: what uncovers the Settings search. */
+  onPullDown?: () => void;
+}) {
   const bottomPad = useScreenBottomPadding();
+  const offsetY = useRef(0);
+  // Android clamps the scroll at 0 and reports no overscroll, so the pull is a
+  // pan that watches beside the scroll, as in `TrackListView`.
+  const pullRef = useRef<GestureType | undefined>(undefined);
+  const pull = Gesture.Pan()
+    .withRef(pullRef)
+    .runOnJS(true)
+    .activeOffsetY(10)
+    .failOffsetY(-10)
+    .onChange((e) => {
+      if (offsetY.current <= 1 && e.translationY > 60) onPullDown?.();
+    });
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    offsetY.current = e.nativeEvent.contentOffset.y;
+    props.onScroll?.(e);
+  };
   const { focus } = useLocalSearchParams<{ focus?: string }>();
   const scroll = useRef<ScrollView>(null);
   // The first row with that label is the one: a second (the same switch under
@@ -106,15 +132,27 @@ export function SettingsScroll({ children, ...props }: ScrollViewProps) {
     );
   }, []);
   const target = useMemo(() => (focus ? { label: focus, reveal } : null), [focus, reveal]);
+  const contentStyle = [settingsStyles.content, { paddingBottom: bottomPad }];
   return (
     <FocusContext.Provider value={target}>
-      <ScrollView
-        {...props}
-        ref={scroll}
-        contentContainerStyle={[settingsStyles.content, { paddingBottom: bottomPad }]}
-      >
-        {children}
-      </ScrollView>
+      {onPullDown ? (
+        <GestureDetector gesture={pull}>
+          <GestureScrollView
+            {...props}
+            ref={scroll as never}
+            simultaneousHandlers={pullRef}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
+            contentContainerStyle={contentStyle}
+          >
+            {children}
+          </GestureScrollView>
+        </GestureDetector>
+      ) : (
+        <ScrollView {...props} ref={scroll} contentContainerStyle={contentStyle}>
+          {children}
+        </ScrollView>
+      )}
     </FocusContext.Provider>
   );
 }

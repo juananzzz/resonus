@@ -17,7 +17,7 @@ Releases before 0.2.1 are only listed on the
 - Local profile: Explore has a Folders section that browses the music folders.
 - Local profile: `.m3u` and `.m3u8` files in the music folders become playlists, and a playlist can be exported as M3U (#335).
 - Local profile: Settings › Local music shows the number of songs and the last scan.
-- Settings: a search box at the top finds a setting by name, scrolls to it and highlights it.
+- Settings: pulling down at the top shows a search box that finds a setting by name, scrolls to it and highlights it.
 - Your library: its chips can be reordered and hidden, in Settings › Navigation.
 - Podcasts: a show's episodes can be sorted newest first, oldest first or A to Z, and play in that order.
 - Explore: albums can be sorted by album artist.
