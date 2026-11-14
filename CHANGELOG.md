@@ -17,7 +17,7 @@ Releases before 0.2.1 are only listed on the
 - Local profile: Library has a Folders section that browses the music folders.
 - Local profile: `.m3u` and `.m3u8` files in the music folders become playlists, and a playlist can be exported as M3U (#335).
 - Local profile: Settings › Local music shows the number of songs and the last scan.
-- Settings: a search box at the top finds a setting by name, scrolls to it and highlights it.
+- Settings: pulling down at the top shows a search box that finds a setting by name, scrolls to it and highlights it.
 - Library: its sections can be reordered and hidden, in Settings › Home & tabs.
 - Podcasts: a show's episodes can be sorted newest first, oldest first or A to Z, and play in that order.
 - Library: albums can be sorted by album artist.
@@ -39,9 +39,12 @@ Releases before 0.2.1 are only listed on the
 - Library: Downloaded is now a switch at the top of the tab, beside the heart, and keeps Playlists, Albums, Artists and Songs to what is on your phone.
 - Player: the playback speed and Preserve pitch are kept when the app is closed.
 - Android: Resonus is declared as a music app, for widgets and launchers that look for one (#309).
+- Local profile: Rescan reads again only the files that changed, so a large library no longer takes minutes (#338).
+- Search boxes look and behave the same on every screen.
 
 ### Fixed
 
+- Player: Previous back to the queue before a radio no longer leaves the radio switched on (#345).
 - Podcasts: a feed that stops answering halfway now fails after 20 seconds instead of loading forever.
 - Genres show as empty offline instead of failing to load.
 - Downloads: pressing download twice on the same playlist or favorites no longer downloads it twice.

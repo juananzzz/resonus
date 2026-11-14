@@ -14,7 +14,6 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,6 +30,7 @@ import {
 } from '@/api/data';
 import { type Song } from '@/api/subsonic';
 import { Cover } from '@/components/Cover';
+import { SearchBox } from '@/components/SearchBox';
 import { useT } from '@/i18n';
 import { listPerf } from '@/lib/listPerf';
 import { useAuthStore } from '@/store/auth';
@@ -171,28 +171,14 @@ export default function FavoritesAddScreen() {
       </View>
 
       <View style={styles.searchWrap}>
-        <View style={styles.searchBox}>
-          <Icon name="search" size={18} color={colors.textSecondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('What would you like to add?')}
-            placeholderTextColor={colors.textSecondary}
-            value={query}
-            onChangeText={setQuery}
-            returnKeyType="search"
-            autoCorrect={false}
-          />
-          {query.length > 0 ? (
-            <Pressable
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={t('Clear')}
-              onPress={() => setQuery('')}
-            >
-              <Icon name="close-circle" size={18} color={colors.textSecondary} />
-            </Pressable>
-          ) : null}
-        </View>
+        <SearchBox
+          style={{ height: 46, borderRadius: radius.pill }}
+          fieldStyle={{ fontSize: fontSize.sm }}
+          iconColor={colors.textSecondary}
+          placeholder={t('What would you like to add?')}
+          value={query}
+          onChangeText={setQuery}
+        />
       </View>
 
       {debouncedQuery.length === 0 ? (
@@ -341,14 +327,4 @@ const styles = themed((colors) => ({
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
   },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surfaceHighlight,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    height: 46,
-  },
-  searchInput: { flex: 1, color: colors.text, fontSize: fontSize.sm, paddingVertical: 0 },
 }));
