@@ -73,6 +73,7 @@ import { remapSong } from '@/lib/navidromeRemap';
 import { noteOwnReport } from '@/lib/ownReports';
 import { beat, bump, note, timed } from '@/lib/perfLog';
 import { captureSnapshot, restoreSnapshot, type PlayerSnapshot } from '@/lib/playerSnapshot';
+import { previousAction } from '@/lib/previousAction';
 import { queryClient } from '@/lib/query';
 import {
   appendEnd,
@@ -262,7 +263,7 @@ function ensurePlayer(idx: number): AudioPlayer {
   });
   // Skip track from notification / lock screen → JS manages the queue.
   // Only the session owner emits these events; there are no double skips.
-  p.addListener('remotePrevious', () => usePlayerStore.getState().previous());
+  p.addListener('remotePrevious', () => usePlayerStore.getState().remotePrevious());
   p.addListener('remoteNext', () => usePlayerStore.getState().next());
   p.addListener('remoteFavorite', () => {
     if (activePlayer() === p) void toggleFavorite(currentSong(usePlayerStore.getState()));
@@ -4180,6 +4181,9 @@ export interface PlayerState {
   toggle: () => void;
   next: () => void;
   previous: () => void;
+  /** Previous from a headset, watch or car: always steps to the previous
+   *  track instead of restarting the song first (see `previousAction`). */
+  remotePrevious: () => void;
   seekTo: (sec: number) => void;
   setVolume: (v: number) => void;
   /** Sets the playback speed (see `speed`). Heard right away, without
@@ -4288,6 +4292,38 @@ export function useLiveInfo(song: Song | null | undefined): StreamInfo | null {
   // A podcast episode (vod) is a file, not a broadcasting station: its own
   // title and artist are the whole story.
   return song?.url && !song.vod ? info : null;
+}
+
+/** The rules behind both previous controls (see `previousAction`). */
+function stepBack(fromRemote: boolean) {
+  endBootQuiet();
+  const state = usePlayerStore.getState();
+  const { index, positionSec } = state;
+  if (previousAction(positionSec, useSettings.getState().previousButtonMode, fromRemote) === 'restart') {
+    state.seekTo(0);
+    return;
+  }
+  const playing = state.isPlaying;
+  // Step backwards within the current queue as long as we're not at the first track.
+  if (index > 0) {
+    void loadIndex(index - 1, skipAutoplay(playing));
+    return;
+  }
+  // At the start of the queue: return to the previous context from history.
+  // Entries of this same list point further into it, left there by the
+  // advances the steps above walked back over.
+  const { queue, source, sourceHref } = state;
+  const key = contextKey(source, sourceHref);
+  const sameList = (e: PlayerSnapshot) =>
+    e.queue === queue || (key != null && contextKey(e.source, e.sourceHref) === key);
+  let entry = playedHistory.pop();
+  while (entry && sameList(entry)) entry = playedHistory.pop();
+  if (entry) {
+    usePlayerStore.setState(restoreSnapshot(entry, { restart: true }));
+    void loadIndex(entry.index, skipAutoplay(playing));
+    return;
+  }
+  state.seekTo(0);
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -4618,37 +4654,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
   },
 
-  previous: () => {
-    endBootQuiet();
-    const { index, positionSec } = get();
-    // Like Spotify: past a few seconds, "previous" restarts the song. In
-    // "always" mode (YouTube-style) it always goes to the previous track, no restart.
-    if (useSettings.getState().previousButtonMode !== 'always' && positionSec > 3) {
-      get().seekTo(0);
-      return;
-    }
-    const playing = get().isPlaying;
-    // Step backwards within the current queue as long as we're not at the first track.
-    if (index > 0) {
-      void loadIndex(index - 1, skipAutoplay(playing));
-      return;
-    }
-    // At the start of the queue: return to the previous context from history.
-    // Entries of this same list point further into it, left there by the
-    // advances the steps above walked back over.
-    const { queue, source, sourceHref } = get();
-    const key = contextKey(source, sourceHref);
-    const sameList = (e: PlayerSnapshot) =>
-      e.queue === queue || (key != null && contextKey(e.source, e.sourceHref) === key);
-    let entry = playedHistory.pop();
-    while (entry && sameList(entry)) entry = playedHistory.pop();
-    if (entry) {
-      set(restoreSnapshot(entry, { restart: true }));
-      void loadIndex(entry.index, skipAutoplay(playing));
-      return;
-    }
-    get().seekTo(0);
-  },
+  previous: () => stepBack(false),
+
+  remotePrevious: () => stepBack(true),
 
   seekTo: (sec) => {
     // A second of this song, and nothing else. The app's own slider cannot hand
