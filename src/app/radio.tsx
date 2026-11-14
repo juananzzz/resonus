@@ -192,7 +192,7 @@ export function RadioBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
 
       {(embedded ? boxOpen : showSearch) ? (
         /* The box the Library tab has, to the same measurements, which is what every
-            section of Explore now opens. */
+            section of the tab now opens. */
         <SearchBox
           style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md }}
           placeholder={t('Find a station')}

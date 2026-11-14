@@ -92,7 +92,7 @@ export function GenresBrowser({ embedded, searchOpen }: BrowserProps) {
 
       {showSearch ? (
         /* The box the Library tab has, to the same measurements, which is what every
-            section of Explore now opens. */
+            section of the tab now opens. */
         <SearchBox
           style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md }}
           placeholder={t('Filter genres')}
