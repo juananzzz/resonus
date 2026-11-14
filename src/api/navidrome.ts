@@ -123,6 +123,68 @@ async function ndFetch(auth: SubsonicAuth, path: string, init: RequestInit): Pro
   if (status) throw ndStatusError(status);
 }
 
+/** Authenticated request to the native API whose answer is JSON. */
+async function ndJson<T>(auth: SubsonicAuth, path: string, init: RequestInit): Promise<T> {
+  const token = await ndLogin(auth, true);
+  netTally(`nd ${path.split('?')[0]}`);
+  return await ndWithin(async (signal) => {
+    let res: Response;
+    try {
+      res = await fetch(`${auth.serverUrl}${path}`, {
+        ...init,
+        headers: { ...init.headers, 'x-nd-authorization': `Bearer ${token}` },
+        signal,
+      });
+    } catch {
+      throw new NavidromeError('Could not reach the server', 'other');
+    }
+    if (!res.ok) throw ndStatusError(res.status);
+    return (await res.json()) as T;
+  });
+}
+
+/**
+ * Creates a share through Navidrome's own API, with the transcode the Subsonic
+ * API cannot ask for.
+ *
+ * The share still has a description and an expiry, and downloading is set in
+ * the same request: unlike `setShareDownloadable`, this is creation, so the
+ * whole record is written at once. Returns the new share's id; the public URL
+ * is read back through Subsonic (see `getShareUrl`), because the native model
+ * does not carry it.
+ */
+export async function createNativeShare(
+  auth: SubsonicAuth,
+  resourceId: string,
+  options: {
+    description?: string;
+    expiresAt?: number;
+    downloadable?: boolean;
+    format?: string;
+    maxBitRate?: number;
+  } = {},
+): Promise<string> {
+  const body: Record<string, unknown> = {
+    resourceIds: resourceId,
+    description: options.description ?? '',
+    downloadable: options.downloadable === true,
+  };
+  if (options.expiresAt) body.expiresAt = new Date(options.expiresAt).toISOString();
+  if (options.maxBitRate && options.maxBitRate > 0) {
+    body.format = options.format ?? '';
+    body.maxBitRate = options.maxBitRate;
+  }
+  const share = await ndJson<{ id?: unknown }>(auth, '/api/share', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (typeof share.id !== 'string' || !share.id) {
+    throw new NavidromeError('The server did not return a share', 'other');
+  }
+  return share.id;
+}
+
 /**
  * Lets a share be downloaded, not just listened to.
  *

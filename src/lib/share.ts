@@ -7,9 +7,11 @@
  */
 import { Share } from 'react-native';
 
-import { setShareDownloadable } from '@/api/navidrome';
-import { createShare } from '@/api/subsonic';
+import { createNativeShare, setShareDownloadable } from '@/api/navidrome';
+import { createShare, getShareUrl } from '@/api/subsonic';
+import { shareEncoding } from '@/lib/shareQuality';
 import { useAuthStore } from '@/store/auth';
+import type { TranscodeFormat } from '@/store/settings';
 
 /**
  * Can this profile decide whether a link allows downloading? Only Navidrome
@@ -19,6 +21,11 @@ import { useAuthStore } from '@/store/auth';
 export function canShareDownloads(): boolean {
   const auth = useAuthStore.getState().auth;
   return auth?.serverType === 'navidrome' && !!auth.ndPassword;
+}
+
+/** Transcoding a shared link is the same native API that downloads use. */
+export function canShareQuality(): boolean {
+  return canShareDownloads();
 }
 
 export interface ShareResult {
@@ -36,24 +43,49 @@ export interface ShareResult {
  * `expiresAt` is when the link should stop working (ms since 1970); without it
  * the server's own default decides, as it always did. `downloadable` only means
  * anything where `canShareDownloads` is true, and failing at it doesn't sink
- * the share: a link that plays is still a link.
+ * the share: a link that plays is still a link. `bitRate` and `format` are the
+ * same: 0/served original unless `canShareQuality` is true.
  */
 export async function shareItem(
   id: string,
   description?: string,
   expiresAt?: number,
   downloadable?: boolean,
+  bitRate = 0,
+  format: TranscodeFormat = '',
 ): Promise<ShareResult> {
   const auth = useAuthStore.getState().auth;
   if (!auth) return { ok: false };
+  const encoding = shareEncoding(bitRate, format);
+  const transcodes = encoding.maxBitRate > 0 && canShareQuality();
   let share: { id: string; url: string };
   try {
-    share = await createShare(auth, id, description, expiresAt);
+    if (transcodes) {
+      // Native creation is what can write the format and the cap; Subsonic's
+      // `createShare` has no field for either. Ask the server back for the URL
+      // so `ND_SHAREURL` still decides what is handed out.
+      const shareId = await createNativeShare(auth, id, {
+        description,
+        expiresAt,
+        downloadable,
+        format: encoding.format,
+        maxBitRate: encoding.maxBitRate,
+      });
+      let url: string | null = null;
+      try {
+        url = await getShareUrl(auth, shareId);
+      } catch {
+        // The link exists either way; the default path is still right.
+      }
+      share = { id: shareId, url: url ?? `${auth.serverUrl}/share/${shareId}` };
+    } else {
+      share = await createShare(auth, id, description, expiresAt);
+    }
   } catch {
     return { ok: false };
   }
   let downloadsFailed = false;
-  if (downloadable && canShareDownloads()) {
+  if (!transcodes && downloadable && canShareDownloads()) {
     try {
       await setShareDownloadable(auth, share.id, true, description);
     } catch {

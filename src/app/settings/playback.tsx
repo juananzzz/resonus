@@ -57,6 +57,10 @@ export default function PlaybackSettings() {
   const setStreamFormatCellular = useSettings((s) => s.setStreamFormatCellular);
   const streamLosslessOnly = useSettings((s) => s.streamLosslessOnly);
   const setStreamLosslessOnly = useSettings((s) => s.setStreamLosslessOnly);
+  const shareBitRate = useSettings((s) => s.shareBitRate);
+  const setShareBitRate = useSettings((s) => s.setShareBitRate);
+  const shareFormat = useSettings((s) => s.shareFormat);
+  const setShareFormat = useSettings((s) => s.setShareFormat);
   const radiosEnabled = useSettings((s) => s.radiosEnabled);
   const radioEndless = useSettings((s) => s.radioEndless);
   const setRadioEndless = useSettings((s) => s.setRadioEndless);
@@ -225,6 +229,32 @@ export default function PlaybackSettings() {
                 onChange={setStreamFormatCellular}
                 disabled={offline || maxBitRateCellular === 0}
                 disabledLabel={maxBitRateCellular === 0 ? t('Not used') : undefined}
+              />
+            </SettingsGroup>
+            {/* What a public link plays, separate from what this phone
+                streams: the person opening it may be on anything. */}
+            <Text style={settingsStyles.groupTitle}>{t('Sharing')}</Text>
+            <SettingsGroup>
+              <SelectList
+                label={t('Share quality')}
+                description={t('Applies to links you share.')}
+                options={bitrateOptions}
+                value={shareBitRate}
+                onChange={setShareBitRate}
+                disabled={offline}
+              />
+              <SelectList
+                label={t('Share codec')}
+                description={
+                  shareBitRate > 0
+                    ? t('Your server must support it.')
+                    : t('At “Original” quality nothing is transcoded.')
+                }
+                options={codecOptions}
+                value={shareFormat}
+                onChange={setShareFormat}
+                disabled={offline || shareBitRate === 0}
+                disabledLabel={shareBitRate === 0 ? t('Not used') : undefined}
               />
             </SettingsGroup>
           </>

@@ -24,11 +24,18 @@ import {
   View,
 } from 'react-native';
 
+import { SelectList } from '@/components/SettingsUI';
 import { SheetModal } from '@/components/SheetModal';
 import { useAccent } from '@/hooks/useAccent';
 import { useT } from '@/i18n';
-import { canShareDownloads, shareItem } from '@/lib/share';
-import { useSettings, SHARE_EXPIRIES, type ShareExpiry } from '@/store/settings';
+import { canShareDownloads, canShareQuality, shareItem } from '@/lib/share';
+import {
+  useSettings,
+  BITRATE_OPTIONS,
+  SHARE_EXPIRIES,
+  TRANSCODE_FORMATS,
+  type ShareExpiry,
+} from '@/store/settings';
 import { useSharePicker } from '@/store/sharePicker';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing, themed } from '@/theme';
@@ -71,9 +78,14 @@ export function GlobalShareSheet() {
   const setLastUsed = useSettings((s) => s.setShareExpiry);
   const downloads = useSettings((s) => s.shareDownloadable);
   const setDownloads = useSettings((s) => s.setShareDownloadable);
+  const shareBitRate = useSettings((s) => s.shareBitRate);
+  const setShareBitRate = useSettings((s) => s.setShareBitRate);
+  const shareFormat = useSettings((s) => s.shareFormat);
+  const setShareFormat = useSettings((s) => s.setShareFormat);
   // Only Navidrome can be told this, and only through its own API. Elsewhere
   // the row isn't there rather than being there and doing nothing.
   const canDownloads = canShareDownloads();
+  const canQuality = canShareQuality();
   /** The calendar is open (Android shows it as its own dialog). */
   const [pickingDate, setPickingDate] = useState(false);
   /** Waiting for the server to mint the link. */
@@ -96,6 +108,15 @@ export function GlobalShareSheet() {
     // defines "Never".
     never: t('Never::expiry'),
   };
+  const bitrateOptions = BITRATE_OPTIONS.map((opt) => ({
+    value: opt.value,
+    // "Original" is the only label that is a word; the rest are a number.
+    label: opt.value === 0 ? t('Original') : opt.label,
+  }));
+  const codecOptions = TRANSCODE_FORMATS.map((format) => ({
+    value: format,
+    label: format === '' ? t('Server default') : format.toUpperCase(),
+  }));
 
   /** The calendar's answer: a date, or nothing if it was dismissed.
    *  `close` is the shared frame's, threaded to here: the calendar answers from
@@ -134,7 +155,14 @@ export function GlobalShareSheet() {
   async function share(expiresAt: number, close: (after?: () => void) => void) {
     if (!target || sharing) return;
     setSharing(true);
-    const res = await shareItem(target.id, target.name, expiresAt, canDownloads && downloads);
+    const res = await shareItem(
+      target.id,
+      target.name,
+      expiresAt,
+      canDownloads && downloads,
+      canQuality ? shareBitRate : 0,
+      canQuality ? shareFormat : '',
+    );
     setSharing(false);
     close();
     if (!res.ok) toast(t("Couldn't create the link"));
@@ -217,6 +245,28 @@ export function GlobalShareSheet() {
                       thumbColor={colors.knob}
                     />
                   </Pressable>
+                </>
+              ) : null}
+              {/* The last choice is also the saved one: the same pair is the
+                  preference on Settings › Quality & playback, so the next
+                  share opens where the previous one was left. */}
+              {canQuality ? (
+                <>
+                  <View style={styles.divider} />
+                  <SelectList
+                    label={t('Share quality')}
+                    options={bitrateOptions}
+                    value={shareBitRate}
+                    onChange={setShareBitRate}
+                  />
+                  <SelectList
+                    label={t('Share codec')}
+                    options={codecOptions}
+                    value={shareFormat}
+                    onChange={setShareFormat}
+                    disabled={shareBitRate === 0}
+                    disabledLabel={t('Not used')}
+                  />
                 </>
               ) : null}
             </>

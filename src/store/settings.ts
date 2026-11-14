@@ -1308,6 +1308,10 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   shareExpiry: ShareExpiry;
   /** Whether the last share allowed downloading (Navidrome only). */
   shareDownloadable: boolean;
+  /** Streaming quality for shared links: 0 = original file. */
+  shareBitRate: number;
+  /** Codec for shared links ('' = the server's default transcoder). */
+  shareFormat: TranscodeFormat;
   /**
    * Bring over the queue another player left on the server, on its own.
    *
@@ -1580,6 +1584,10 @@ const DEFAULTS = {
   shareExpiry: 'never' as ShareExpiry,
   // Off: the server has its own default for this and nothing was overriding it.
   shareDownloadable: false,
+  // Original: a shared link keeps serving the file the server has, as it
+  // always did, until somebody asks for a smaller copy.
+  shareBitRate: 0,
+  shareFormat: '' as TranscodeFormat,
   // On. The queue is pushed to the server whether this is on or off (that is
   // what lets any client, this one included, pick up where you left off), so
   // leaving the reading half off by default made the app a writer that never
@@ -2023,6 +2031,12 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
   }
   if (SHARE_EXPIRIES.includes(parsed.shareExpiry as ShareExpiry)) {
     set({ shareExpiry: parsed.shareExpiry as ShareExpiry });
+  }
+  if (BITRATE_OPTIONS.some((option) => option.value === parsed.shareBitRate)) {
+    set({ shareBitRate: parsed.shareBitRate as number });
+  }
+  if (TRANSCODE_FORMATS.includes(parsed.shareFormat as TranscodeFormat)) {
+    set({ shareFormat: parsed.shareFormat as TranscodeFormat });
   }
   // The light accent falls back to the dark one rather than to the
   // default: every profile that picked a colour before there were two of

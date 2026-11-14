@@ -1956,6 +1956,23 @@ export async function createShare(
 }
 
 /**
+ * The public URL of one share, as the server wants it handed out.
+ *
+ * Creating a transcoded share goes through Navidrome's native API (Subsonic
+ * has no way to ask for a format), and that answer carries the id but not the
+ * link. `getShares` is where the server writes the URL, including the base
+ * from `ND_SHAREURL`.
+ */
+export async function getShareUrl(auth: SubsonicAuth, id: string): Promise<string | null> {
+  const res = await request<{ shares?: { share?: { id: string; url?: string }[] } }>(
+    auth,
+    'getShares.view',
+    {},
+  );
+  return res.shares?.share?.find((share) => share.id === id)?.url ?? null;
+}
+
+/**
  * Can this user create shares? From the `shareRole` of `getUser`, the same way
  * jukebox is detected. Any failure (endpoint missing, sharing disabled on the
  * server, no permission) counts as "no": better no button than a button that

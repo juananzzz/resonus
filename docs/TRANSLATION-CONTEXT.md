@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 867 of them.
+Every string the app can show, under the screen it shows up on. 871 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -92,7 +92,9 @@ you are actually typing into, which is easier than reading it here.
 | `Mix started` | The toast that says the app is now picking the songs |
 | `Moods` | Mood tags the server has on the song: mellow, energetic… |
 | `New features` | Heading in the update prompt over the new things a release brings. The lines under it stay in English |
+| `Not used` | Replaces the codec's value when that network's quality is `Original`. Nothing is transcoded then, so the codec setting has nothing to do and the row is greyed out |
 | `Open settings` | Its confirm button: goes to Android's own settings, not the app's |
+| `Original` | Quality option: the file exactly as it is on the server, nothing transcoded. It also appears in quotes inside two descriptions on those screens, so use the same wording in all three |
 | `Pick a date…` | Opens the calendar to choose the day the link stops working |
 | `Pin to top` | Keep this at the top of its list, above everything else. `Unpin` undoes it |
 | `Playback speed` |  |
@@ -119,6 +121,8 @@ you are actually typing into, which is easier than reading it here.
 | `Server didn't allow downloads` | Warning after sharing: the link was made and works, but the call that turns downloading on did not go through |
 | `Share` | Make a link on the server that others can open. Getting the file itself out is `Export` |
 | `Share “{name}”` | The sheet's title, with what is being shared |
+| `Share codec` |  |
+| `Share quality` |  |
 | `Shuffle favorites` | Shortcut on the app's launcher icon (long press). Short: launchers cut long labels |
 | `Size` | The size of the quick grid tiles |
 | `Sleep timer` | Stop playing after a while, for falling asleep to |
@@ -1044,6 +1048,7 @@ you are actually typing into, which is easier than reading it here.
 | String | What it is |
 | --- | --- |
 | `Always` | A value of when a downloaded song is played from the file instead of streamed |
+| `Applies to links you share.` | The line under “Share quality”, explaining it |
 | `Asks the file for frame-exact seeks and durations before playing. On a stream with no index that means scanning it first, which is the wait before a track starts. Off, tracks start at once: the clock still follows the audio, seeks may land a fraction of a second off.` |  |
 | `Asks the server for the next songs ahead of time, for slow servers and proxies. Nothing is kept on the phone.` |  |
 | `At “Original” quality nothing is transcoded.` |  |
@@ -1077,6 +1082,9 @@ you are actually typing into, which is easier than reading it here.
 | `Preload upcoming tracks` |  |
 | `Quality & playback` |  |
 | `Scrobbling` | Reporting a song as played, to the user's own server and from there to Last.fm or ListenBrainz. The title of its own screen and the row that opens it. The word comes from Last.fm and most languages keep it; use whatever those services call it in yours if they do |
+| `Share codec` |  |
+| `Share quality` |  |
+| `Sharing` |  |
 | `Show on Discord` |  |
 | `Sound` | Section header: normalization and the pre-amp |
 | `Streaming` | Section header: everything about music coming from the server as it plays |
