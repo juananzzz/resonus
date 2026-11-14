@@ -6,13 +6,13 @@
  * Reuses the player's remote machinery (the same `RemoteEvents` as
  * UPnP): the queue still lives in the player store, so autoplay,
  * mixes, shuffle and reordering work the same. The server is handed the
- * current track and the next few after it (`set`), and moves on to them by
- * itself: polling is a JS `setInterval`, which Android freezes in the
- * background, so a queue advanced by the app stopped after one song with the
- * screen off (#333). The poll follows the server's index, and a change to the
- * queue rewrites what comes after the current track (`jukeboxSyncUpcoming`).
- * The end of the last one is inferred from a "stopped near the end", as in
- * UPnP, and the app loads what comes next.
+ * current track and what follows it in the queue (as much as one request can
+ * carry), and moves on to them by itself: polling is a JS `setInterval`, which
+ * Android freezes in the background, so a queue advanced by the app stopped
+ * after one song with the screen off (#333). The poll follows the server's
+ * index, and a change to the queue rewrites what comes after the current track
+ * (`jukeboxSyncUpcoming`). The end of the last one is inferred from a
+ * "stopped near the end", as in UPnP, and the app loads what comes next.
  *
  * Only Subsonic servers with the jukebox role enabled by the admin.
  */
@@ -48,8 +48,15 @@ export const useJukebox = create<JukeboxStoreState>(() => ({
 }));
 
 const POLL_MS = 1000;
-/** How many songs after the current one the server is handed. */
-const UPCOMING = 20;
+/**
+ * How much of the queue the server is handed in one `set`, counted in id
+ * characters. Every id is another `id=` in the GET URL, and proxies commonly
+ * cut at 8 KB (nginx's default), so the list keeps a margin: this is roughly
+ * 200 library ids, or a whole normal playlist. It used to be 20 songs (#333),
+ * which a playlist ran out of in a few minutes and left the server waiting
+ * with the screen off.
+ */
+const MAX_QUEUE_CHARS = 5000;
 
 let events: RemoteEvents | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -81,10 +88,15 @@ const playsOnServer = (s: Song) => !s.url && !s.localUri;
 function upcomingFor(current: Song, upcoming: Song[]): Song[] {
   const out: Song[] = [];
   const seen = new Set([current.id]);
+  let chars = current.id.length;
   for (const s of upcoming) {
-    if (out.length >= UPCOMING || !playsOnServer(s) || seen.has(s.id)) break;
+    if (!playsOnServer(s) || seen.has(s.id)) break;
+    // `&id=` and the value: one more entry in the same GET URL.
+    const next = chars + s.id.length + 4;
+    if (next > MAX_QUEUE_CHARS) break;
     seen.add(s.id);
     out.push(s);
+    chars = next;
   }
   return out;
 }
