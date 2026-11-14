@@ -35,6 +35,7 @@ import {
 } from '@/api/backend';
 import { tg } from '@/i18n';
 import { transcodeTarget } from '@/lib/audioQuality';
+import { downloadSources, type DownloadSource } from '@/lib/downloadSources';
 import {
   forgetCover,
   hashKey,
@@ -551,6 +552,26 @@ function songFileUrl(
     s.downloadLosslessOnly,
   );
   return fileUrlFor(auth, song, bitRate, format);
+}
+
+/** Every file address a song download should try, in order (see `downloadSources`). */
+function songDownloadSources(auth: SubsonicAuth, song: Song): DownloadSource[] {
+  const s = useSettings.getState();
+  const { bitRate, format } = transcodeTarget(
+    song,
+    s.downloadBitRate,
+    s.downloadFormat,
+    s.downloadLosslessOnly,
+  );
+  return downloadSources(
+    song,
+    { bitRate, format },
+    {
+      transcode: streamUrl(auth, song.id, bitRate, 0, format),
+      download: downloadUrl(auth, song.id),
+      stream: streamUrl(auth, song.id),
+    },
+  );
 }
 
 /** Why a song did not download, for the Diagnostics report. No URL: it carries credentials. */
@@ -1148,8 +1169,8 @@ export const useDownloads = create<DownloadsState>((set, get) => {
       activeTasks.set(groupKey, tasks);
 
       /** One attempt at one song. Throws, so the caller decides about trying again. */
-      const fetchSong = async (song: Song): Promise<void> => {
-        const { url, ext, bitRate: dlBitRate } = songFileUrl(auth, song);
+      const fetchSong = async (song: Song, source: DownloadSource): Promise<void> => {
+        const { url, ext, bitRate: dlBitRate } = source;
         const file = `${dir}files/${hashKey(song.id)}.${ext}`;
         const task = FileSystem.createDownloadResumable(url, file, {}, (p) => {
           if (p.totalBytesExpectedToWrite > 0) {
@@ -1218,32 +1239,43 @@ export const useDownloads = create<DownloadsState>((set, get) => {
             break;
           }
           const song = pending[next++];
-          for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
-            // Held across the whole song, cover and lyrics included: they are
-            // requests to the same server as the audio.
-            await takeSlot();
-            try {
-              if (cancelling.has(groupKey)) break;
-              await ensureAlbum(song);
-              if (cancelling.has(groupKey)) break; // may have stopped during the cover
-              await fetchSong(song);
-              break; // done
-            } catch (e) {
-              // A stop is not a failure; the toast already says it stopped.
-              if (cancelling.has(groupKey)) break;
-              const status = e instanceof TransferError ? e.status : undefined;
-              if (attempt === ATTEMPTS || !worthRetrying(status)) {
-                failed++;
-                // The first few only: the report keeps 30 events (#328).
-                if (failed <= 3) noteFailure(auth, song, e);
-                break;
+          const sources = songDownloadSources(auth, song);
+          let done = false;
+          let lastError: unknown;
+          for (const source of sources) {
+            for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+              // Held across the whole song, cover and lyrics included: they are
+              // requests to the same server as the audio.
+              await takeSlot();
+              try {
+                if (cancelling.has(groupKey)) break;
+                await ensureAlbum(song);
+                if (cancelling.has(groupKey)) break; // may have stopped during the cover
+                await fetchSong(song, source);
+                done = true;
+                break; // done
+              } catch (e) {
+                lastError = e;
+                // A stop is not a failure; the toast already says it stopped.
+                if (cancelling.has(groupKey)) break;
+                const status = e instanceof TransferError ? e.status : undefined;
+                // Out of attempts, or the server will answer the same way: try
+                // the next address instead of giving up on the song. A failed
+                // transcode is exactly the case this exists for (#328).
+                if (attempt === ATTEMPTS || !worthRetrying(status)) break;
+              } finally {
+                // Freed before the pause, so somebody else can use the server
+                // while this one waits for it to calm down.
+                freeSlot();
               }
-            } finally {
-              // Freed before the pause, so somebody else can use the server
-              // while this one waits for it to calm down.
-              freeSlot();
+              await new Promise((r) => setTimeout(r, RETRY_PAUSE_MS * attempt));
             }
-            await new Promise((r) => setTimeout(r, RETRY_PAUSE_MS * attempt));
+            if (done || cancelling.has(groupKey)) break;
+          }
+          if (!done && !cancelling.has(groupKey)) {
+            failed++;
+            // The first few only: the report keeps 30 events (#328).
+            if (failed <= 3) noteFailure(auth, song, lastError);
           }
         }
       });
