@@ -8,11 +8,12 @@ import { Pressable, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { COVER, coverArtUrl, type Artist } from '@/api/data';
+import Icon from '@/components/Icon';
 import { usePressFeedback } from '@/hooks/usePressFeedback';
 import { haptic } from '@/lib/haptics';
 import { albumsLabel } from '@/i18n';
 import { useSettings } from '@/store/settings';
-import { fontSize, spacing, themed } from '@/theme';
+import { fontSize, spacing, themed, useTheme } from '@/theme';
 import { bump } from '@/lib/perfLog';
 import { openArtistMenu } from './ArtistMenuSheet';
 import { Cover } from './Cover';
@@ -20,6 +21,7 @@ import { Cover } from './Cover';
 export function ArtistRow({ artist, sub }: { artist: Artist; sub?: string }) {
   bump('render · ArtistRow');
   const lang = useSettings((s) => s.language);
+  const { textSecondary } = useTheme();
   const press = usePressFeedback();
   // The fade sits outside the Link: its child is handed to a `Slot`, which
   // refuses an array of styles, and an animated one cannot be flattened into
@@ -43,6 +45,21 @@ export function ArtistRow({ artist, sub }: { artist: Artist; sub?: string }) {
             </Text>
             <Text style={styles.sub}>{sub ?? albumsLabel(artist.albumCount ?? 0, lang)}</Text>
           </View>
+          {/* Same ⋯ as the album row: play, download and auto-download for the
+              whole discography without opening the artist first. */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`More options for ${artist.name}`}
+            hitSlop={8}
+            style={({ pressed }) => [styles.menu, pressed && { opacity: 0.6 }]}
+            onPress={(event) => {
+              event.stopPropagation();
+              haptic('light');
+              openArtistMenu(artist);
+            }}
+          >
+            <Icon name="ellipsis-horizontal" size={20} color={textSecondary} />
+          </Pressable>
         </Pressable>
       </Link>
     </Animated.View>
@@ -54,4 +71,5 @@ const styles = themed((colors) => ({
   info: { flex: 1 },
   name: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
   sub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
+  menu: { padding: spacing.xs, marginRight: -spacing.xs },
 }));

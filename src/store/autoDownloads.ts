@@ -14,8 +14,9 @@
  */
 import { create } from 'zustand';
 
-import { getPlaylist, getStarred } from '@/api/data';
+import { getAlbum, getArtist, getPlaylist, getStarred } from '@/api/data';
 import { type Playlist, type Song } from '@/api/subsonic';
+import { autoDownloadKey, parseAutoDownloadKey, type AutoDownloadTarget } from '@/lib/autoDownloadTargets';
 import { hashKey } from '@/lib/localLibrary';
 import type { Remap } from '@/lib/navidromeRemap';
 import { remapKeys } from '@/lib/navidromeRemap';
@@ -55,10 +56,12 @@ function canRun(background: boolean): boolean {
 }
 
 interface AutoDownloadsState {
-  /** Server playlist id → marked for auto-download. */
+  /** Stored key → marked for auto-download. */
   ids: Record<string, true>;
   /** Toggles the flag (does not reconcile; caller decides with what data). */
   toggle: (playlistId: string) => void;
+  /** Same, for an album or an artist as well as a playlist. */
+  toggleTarget: (target: AutoDownloadTarget) => void;
   /** Rewrites the marked playlist ids after the server renamed them (#5824).
    *  Left behind, a playlist quietly stops being kept up to date. */
   remapIds: (f: Remap) => void;
@@ -77,13 +80,18 @@ export const useAutoDownloads = create<AutoDownloadsState>((set, get) => ({
   ids: {},
 
   toggle: (playlistId) => {
+    get().toggleTarget({ kind: 'playlist', id: playlistId });
+  },
+
+  toggleTarget: (target) => {
+    const key = autoDownloadKey(target);
     const ids = { ...get().ids };
-    if (ids[playlistId]) delete ids[playlistId];
-    else ids[playlistId] = true;
+    if (ids[key]) delete ids[key];
+    else ids[key] = true;
     set({ ids });
-    const key = storeKey();
+    const storageKey = storeKey();
     // Not one profile's list under another's key (see `profileScopeGuard`).
-    if (scope.owns(key)) void setItem(key, JSON.stringify(ids));
+    if (scope.owns(storageKey)) void setItem(storageKey, JSON.stringify(ids));
   },
 
   remapIds: (f) => {
@@ -93,15 +101,30 @@ export const useAutoDownloads = create<AutoDownloadsState>((set, get) => ({
     if (scope.owns(key)) void setItem(key, JSON.stringify(ids));
   },
 
-  reconcile: async (playlistId, background = false) => {
-    if (!get().ids[playlistId] || !canRun(background)) return;
+  reconcile: async (key, background = false) => {
+    if (!get().ids[key] || !canRun(background)) return;
+    const target = parseAutoDownloadKey(key);
     try {
-      if (playlistId === FAVORITES_AUTODL_ID) {
-        const { songs } = await getStarred();
-        await useDownloads.getState().downloadFavorites(songs);
+      if (target.kind === 'playlist') {
+        if (key === FAVORITES_AUTODL_ID) {
+          const { songs } = await getStarred();
+          await useDownloads.getState().downloadFavorites(songs);
+        } else {
+          const { playlist, songs } = await getPlaylist(key);
+          await useDownloads.getState().downloadPlaylist(playlist, songs);
+        }
+      } else if (target.kind === 'album') {
+        const { album, songs } = await getAlbum(target.id);
+        await useDownloads.getState().downloadAlbum(album, songs);
       } else {
-        const { playlist, songs } = await getPlaylist(playlistId);
-        await useDownloads.getState().downloadPlaylist(playlist, songs);
+        // An artist is their discography, on the same terms as the download
+        // button on the artist's own screen: only their own albums.
+        const { albums } = await getArtist(target.id);
+        const parts = await Promise.all(
+          albums.map((album) => getAlbum(album.id)),
+        );
+        const songs = parts.flatMap((part) => part.songs);
+        await useDownloads.getState().downloadArtist(target.id, songs, albums);
       }
     } catch {
       // Network down or other: retried on next trigger.

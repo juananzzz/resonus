@@ -16,12 +16,14 @@ import { useCanShare } from '@/hooks/useCanShare';
 import { useDownloadMessage } from '@/hooks/useDownloadMessage';
 import { songsLabel, useT } from '@/i18n';
 import { artistTargets } from '@/lib/artistNav';
+import { autoDownloadKey } from '@/lib/autoDownloadTargets';
 import { exportManyToFolder, totalBytes } from '@/lib/exportSong';
 import { formatBytes } from '@/lib/format';
 import { pickFolder } from '@/lib/localLibrary';
 import { pushOrReplace } from '@/lib/pushOrReplace';
 import { queryClient } from '@/lib/query';
 import { useArtistPicker } from '@/store/artistPicker';
+import { useAutoDownloads } from '@/store/autoDownloads';
 import { useAuthStore } from '@/store/auth';
 import { anyDownloads, useDownloads } from '@/store/downloads';
 import { useMediaMenu, type MediaMenuItem } from '@/store/mediaMenu';
@@ -40,18 +42,21 @@ function Action({
   icon,
   label,
   onPress,
+  active,
 }: {
   icon: keyof typeof Icon.glyphMap;
   label: string;
   onPress: () => void;
+  /** A setting that is on (the auto-download cloud), not a disabled action. */
+  active?: boolean;
 }) {
   return (
     <Pressable
       style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
       onPress={onPress}
     >
-      <Icon name={icon} size={24} color={colors.text} />
-      <Text style={styles.actionText}>{label}</Text>
+      <Icon name={icon} size={24} color={active ? colors.accent : colors.text} />
+      <Text style={[styles.actionText, active && { color: colors.accent }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -101,15 +106,23 @@ export function MediaMenuSheet() {
   const canRate = useAuthStore((s) => !!s.auth && s.auth.serverType !== 'jellyfin');
   /** Songs gathered for the download dialog (its size needs them). */
   const [pending, setPending] = useState<Song[] | null>(null);
+  /** Same, for turning automatic downloads on. */
+  const [pendingAuto, setPendingAuto] = useState<Song[] | null>(null);
   /** The downloaded songs and what they weigh, for the export question. */
   const [pendingExport, setPendingExport] = useState<{ songs: Song[]; bytes: number } | null>(
     null,
   );
-  const downloadMsg = useDownloadMessage(pending ?? []);
+  const downloadMsg = useDownloadMessage(pending ?? pendingAuto ?? []);
   const downloadAlbum = useDownloads((s) => s.downloadAlbum);
   const downloadPlaylist = useDownloads((s) => s.downloadPlaylist);
   const deleteDownloadsOnDisk = useDownloads((s) => s.deleteDownloadsOnDisk);
   const files = useDownloads((s) => s.files);
+  // Albums can be kept in sync, not just downloaded once (see
+  // `useAutoDownloads`); a playlist's own screen already offers the same.
+  const autoKey =
+    item?.kind === 'album' ? autoDownloadKey({ kind: 'album', id: item.album.id }) : null;
+  const autoDownload = useAutoDownloads((s) => !!autoKey && !!s.ids[autoKey]);
+  const toggleAutoDownload = useAutoDownloads((s) => s.toggleTarget);
   const canShare = useCanShare();
   // Before the early return: hooks can't be conditional. For an album this is
   // exact; a playlist can't be answered without fetching its songs, so there
@@ -143,6 +156,16 @@ export function MediaMenuSheet() {
     try {
       const songs = await fetchSongs(item!);
       if (songs.length > 0) setPending(songs);
+    } catch {
+      toast(t("Couldn't complete the action"));
+    }
+  }
+
+  /** The album's songs, so the auto-download question can show a size too. */
+  async function askAutoDownload() {
+    try {
+      const songs = await fetchSongs(item!);
+      if (songs.length > 0) setPendingAuto(songs);
     } catch {
       toast(t("Couldn't complete the action"));
     }
@@ -255,6 +278,26 @@ export function MediaMenuSheet() {
               if (album) void downloadAlbum(album, songs);
               else void downloadPlaylist(playlist!, songs);
               toast(t('Downloading…'));
+            }}
+          />
+
+          <Dialog
+            visible={!!pendingAuto}
+            title={t('Turn on auto-download?')}
+            message={t(
+              '{msg} It will keep downloading songs added to this album later.',
+              { msg: downloadMsg.message },
+            )}
+            confirmLabel={t('Turn on')}
+            onCancel={() => setPendingAuto(null)}
+            onConfirm={() => {
+              const songs = pendingAuto ?? [];
+              setPendingAuto(null);
+              close();
+              if (!album) return;
+              toggleAutoDownload({ kind: 'album', id: album.id });
+              void downloadAlbum(album, songs);
+              toast(t('Auto-download on'));
             }}
           />
 
@@ -405,6 +448,24 @@ export function MediaMenuSheet() {
               // Asks with the size, like the button on the album's own screen:
               // the same action shouldn't warn down one path and not the other.
               onPress={() => void askDownload()}
+            />
+          ) : null}
+          {/* Albums only: keeping one in sync is what the Library's bulk
+              download options are for. Off it changes nothing on disk, so
+              turning it off needs no confirmation. */}
+          {album && !offline ? (
+            <Action
+              icon={autoDownload ? 'cloud-done' : 'cloud-download-outline'}
+              label={t('Auto-download')}
+              active={autoDownload}
+              onPress={() => {
+                if (autoDownload) {
+                  toggleAutoDownload({ kind: 'album', id: album.id });
+                  toast(t('Auto-download off'));
+                } else {
+                  void askAutoDownload();
+                }
+              }}
             />
           ) : null}
           {/* What is downloaded is what can be exported, and whether these

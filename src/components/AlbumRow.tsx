@@ -36,7 +36,7 @@ export function AlbumRow({ album, pinned, sub, dimmed, downloaded }: Props) {
   const openMenu = useMediaMenu((s) => s.open);
   // Subscribed, not read straight off `colors`: without it the pin would keep
   // the previous accent while the screen stays mounted.
-  const { accent } = useTheme();
+  const { accent, textSecondary } = useTheme();
   const explicit = useExplicitBadge(album.explicitStatus);
   const press = usePressFeedback();
   const line = sub ?? album.artist;
@@ -76,6 +76,22 @@ export function AlbumRow({ album, pinned, sub, dimmed, downloaded }: Props) {
               </View>
             ) : null}
           </View>
+          {/* The Library's ⋯ (the same options as the long press), so download
+              and auto-download are reachable without holding the row. It sits
+              beside the row's own press, not on top of it. */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`More options for ${album.name}`}
+            hitSlop={8}
+            style={({ pressed }) => [styles.menu, pressed && { opacity: 0.6 }]}
+            onPress={(event) => {
+              event.stopPropagation();
+              haptic('light');
+              openMenu({ kind: 'album', album });
+            }}
+          >
+            <Icon name="ellipsis-horizontal" size={20} color={textSecondary} />
+          </Pressable>
         </Pressable>
       </Link>
     </Animated.View>
@@ -88,5 +104,6 @@ const styles = themed((colors) => ({
   name: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
   subLine: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   sub: { color: colors.textSecondary, fontSize: fontSize.xs, flexShrink: 1 },
+  menu: { padding: spacing.xs, marginRight: -spacing.xs },
   dimmed: { opacity: DIM_OPACITY },
 }));

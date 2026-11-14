@@ -7,20 +7,32 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import Icon from '@/components/Icon';
-import { COVER, coverArtUrl, getTopSongs, star, type Artist } from '@/api/data';
+import { COVER, coverArtUrl, getAlbum, getArtist, getTopSongs, star, type Album, type Artist, type Song } from '@/api/data';
+import { useDownloadMessage } from '@/hooks/useDownloadMessage';
 import { useFavoriteIds } from '@/hooks/useFavoriteIds';
 import { useT } from '@/i18n';
+import { autoDownloadKey } from '@/lib/autoDownloadTargets';
 import { applyStarChange, unstarWithUndo } from '@/lib/favoritesCache';
 import { queryClient } from '@/lib/query';
 import { useAuthStore } from '@/store/auth';
+import { useAutoDownloads } from '@/store/autoDownloads';
+import { useDownloads } from '@/store/downloads';
 import { usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing, themed } from '@/theme';
 import { Cover } from './Cover';
+import { Dialog } from './Dialog';
 import { SheetModal } from './SheetModal';
 
 let openMenu: ((artist: Artist) => void) | null = null;
+
+interface PendingArtistDownload {
+  songs: Song[];
+  albums: Album[];
+  /** The confirmation is to keep the discography downloaded, not just fetch it once. */
+  auto: boolean;
+}
 
 export function openArtistMenu(artist: Artist): void {
   openMenu?.(artist);
@@ -35,6 +47,12 @@ export function ArtistMenuSheet() {
   const openRef = useRef<() => void>(() => {});
   const [target, setTarget] = useState<Artist | null>(null);
   const favorites = useFavoriteIds(!!target, 'artist');
+  const [pending, setPending] = useState<PendingArtistDownload | null>(null);
+  const downloadMsg = useDownloadMessage(pending?.songs ?? []);
+  const downloadArtist = useDownloads((s) => s.downloadArtist);
+  const autoKey = target ? autoDownloadKey({ kind: 'artist', id: target.id }) : null;
+  const autoDownload = useAutoDownloads((s) => !!autoKey && !!s.ids[autoKey]);
+  const toggleAutoDownload = useAutoDownloads((s) => s.toggleTarget);
 
   useEffect(() => {
     openMenu = (artist) => {
@@ -69,6 +87,35 @@ export function ArtistMenuSheet() {
     }
   }
 
+  /**
+   * The discography, as the artist's own screen downloads it: its albums'
+   * songs, with the album objects the download needs for covers and entries.
+   */
+  async function gatherDiscography(artist: Artist): Promise<Omit<PendingArtistDownload, 'auto'> | null> {
+    try {
+      const { albums } = await getArtist(artist.id);
+      const parts = await Promise.all(
+        albums.map((album) =>
+          queryClient.fetchQuery({
+            queryKey: ['album', album.id],
+            queryFn: () => getAlbum(album.id),
+          }),
+        ),
+      );
+      return { songs: parts.flatMap((part) => part.songs), albums };
+    } catch {
+      toast(t("Couldn't load albums."));
+      return null;
+    }
+  }
+
+  /** Fetches first, so the confirmation can say how many songs and how big. */
+  async function askDownload(artist: Artist, auto: boolean) {
+    const discography = await gatherDiscography(artist);
+    if (!discography || discography.songs.length === 0) return;
+    setPending({ ...discography, auto });
+  }
+
   const row = (icon: keyof typeof Icon.glyphMap, label: string, onPress: () => void) => (
     <Pressable
       key={label}
@@ -81,6 +128,7 @@ export function ArtistMenuSheet() {
   );
 
   return (
+    <>
     <SheetModal openRef={openRef}>
       {(close) => {
         if (!target) return null;
@@ -99,6 +147,29 @@ export function ArtistMenuSheet() {
               close();
               void play(artist);
             })}
+            {/* Bulk download from the Library, without opening the artist's
+                screen first. Offline there is nowhere to fetch the rest from. */}
+            {!offline
+              ? row('download-outline', t('Download'), () => {
+                  close();
+                  void askDownload(artist, false);
+                })
+              : null}
+            {!offline
+              ? row(
+                  autoDownload ? 'cloud-done' : 'cloud-download-outline',
+                  t('Auto-download'),
+                  () => {
+                    close();
+                    if (autoDownload) {
+                      toggleAutoDownload({ kind: 'artist', id: artist.id });
+                      toast(t('Auto-download off'));
+                    } else {
+                      void askDownload(artist, true);
+                    }
+                  },
+                )
+              : null}
             {offline || !radiosEnabled
               ? null
               : row('radio-outline', t('Go to artist radio'), () =>
@@ -117,6 +188,31 @@ export function ArtistMenuSheet() {
         );
       }}
     </SheetModal>
+    <Dialog
+      visible={!!pending}
+      title={pending?.auto ? t('Turn on auto-download?') : t('Download “{name}”?', { name: target?.name ?? '' })}
+      message={
+        pending?.auto
+          ? t('{msg} It will keep downloading new albums from this artist later.', {
+              msg: downloadMsg.message,
+            })
+          : downloadMsg.message
+      }
+      confirmLabel={pending?.auto ? t('Turn on') : t('Download')}
+      onCancel={() => setPending(null)}
+      onConfirm={() => {
+        const chosen = pending;
+        if (!chosen || !target) return;
+        setPending(null);
+        if (chosen.auto) {
+          toggleAutoDownload({ kind: 'artist', id: target.id });
+          toast(t('Auto-download on'));
+        }
+        void downloadArtist(target.id, chosen.songs, chosen.albums);
+        toast(t('Downloading…'));
+      }}
+    />
+    </>
   );
 }
 
