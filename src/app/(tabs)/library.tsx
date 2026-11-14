@@ -396,19 +396,16 @@ export default function LibraryScreen() {
       {/* Only the section on screen is mounted, so nothing else is asking the
           server while you are not looking at it. The cost is that coming back
           to one starts it at the top; the alternative is every list live at
-          once, which on a big library is what the app spent #50 undoing. Only
-          the Downloaded filter goes into each section's `key`, since FlatList
-          otherwise reuses what it measured for the list that was on screen
-          before — and only that one, because remounting is how a section loses
-          what was typed in its box, and the heart asks the same question of a
-          smaller list. Each section puts the heart into its own list's key
-          instead, which is where the rows get measured again. Both presses are
-          made from inside the section now, down in its sort row, so the state
-          and the press are handed over rather than kept in two places. */}
+          once, which on a big library is what the app spent #50 undoing. Both
+          filters belong to each section's own list key now, and neither to the
+          section component's: a key there remounts the whole section, which is
+          how the rows get measured again for a list that is no longer the one
+          they were measured for — and it is also how what you typed in the
+          section's box went away, which a filter has no reason to do. The rows
+          are measured again in the list key; the box is left alone. */}
       <View style={styles.body}>
         {current === 'playlists' ? (
           <PlaylistsBrowser
-            key={String(filtering)}
             embedded
             downloaded={filtering}
             favorited={favorited}
@@ -419,7 +416,6 @@ export default function LibraryScreen() {
           />
         ) : current === 'albums' ? (
           <AlbumsBrowser
-            key={String(filtering)}
             embedded
             downloaded={filtering}
             favorited={favorited}
@@ -430,7 +426,6 @@ export default function LibraryScreen() {
           />
         ) : current === 'artists' ? (
           <ArtistsBrowser
-            key={String(filtering)}
             embedded
             downloaded={filtering}
             favorited={favorited}
@@ -441,7 +436,6 @@ export default function LibraryScreen() {
           />
         ) : current === 'songs' ? (
           <SongsBrowser
-            key={String(filtering)}
             embedded
             downloaded={filtering}
             favorited={favorited}

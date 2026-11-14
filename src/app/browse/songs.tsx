@@ -466,10 +466,13 @@ export function SongsBrowser({
           // The random order can hand back a song that already came in an
           // earlier page, so the index goes into the key.
           keyExtractor={(item, i) => `${item.id}-${i}`}
-          // Remount the list when changing sort or view, or when the heart
-          //  swaps the set behind the rows: FlatList keeps its measurements
-          //  otherwise, and numColumns can't be hot-swapped either.
-          key={`${favorited}-${sort}-${layout}-${columns}`}
+          // Remount the list when changing sort or view, when the heart narrows
+          //  it to what carries a star, or when the Downloaded filter takes it to
+          //  what is on the phone: FlatList keeps its measurements otherwise, and
+          //  numColumns can't be hot-swapped. The two filters live here rather
+          //  than in the section's own key up in the tab, where remounting would
+          //  also drop what was typed in the search box.
+          key={`${downloaded}-${favorited}-${sort}-${layout}-${columns}`}
           {...(grid
             ? {
                 numColumns: columns,

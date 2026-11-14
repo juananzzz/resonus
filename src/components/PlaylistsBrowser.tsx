@@ -187,8 +187,10 @@ export function PlaylistsBrowser({
       {...listPerf}
       // Remounts when the shape of the list changes: FlatList keeps its
       //  measurements otherwise, and rows measured as cards scroll wrong. The
-      //  heart is in here since it swaps the set behind the rows.
-      key={`${favorited}-${layout}-${columns}`}
+      //  heart and the Downloaded filter are in here since each swaps the set
+      //  behind the rows — the section's own key up in the tab would also drop
+      //  what you typed in the box along with them.
+      key={`${downloaded}-${favorited}-${layout}-${columns}`}
       data={shown}
       keyExtractor={(item: Playlist) => item.id}
       // A pull asks the server for its playlists again (see `usePullRefresh`).

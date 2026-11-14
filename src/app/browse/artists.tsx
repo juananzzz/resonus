@@ -349,10 +349,12 @@ export function ArtistsBrowser({
           refreshControl={
             <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={colors.accent} />
           }
-          // Remount the list when changing sort or view, or when the heart
-          //  swaps the set the rows are drawn from: FlatList keeps its own
-          //  measurements otherwise, and numColumns cannot be hot-swapped.
-          key={`${favorited}-${sort}-${layout}-${columns}`}
+          // Remount the list when changing sort or view, or when the heart or the
+          //  Downloaded filter swap the set the rows are drawn from: FlatList keeps
+          //  its own measurements otherwise, and numColumns cannot be hot-swapped.
+          //  The filter belongs here rather than to the section's own key up in the
+          //  tab, which is where what you typed in the box would go with it.
+          key={`${downloaded}-${favorited}-${sort}-${layout}-${columns}`}
           keyExtractor={(item) => item.id}
           {...(grid
             ? { numColumns: columns, columnWrapperStyle: { gap: GAP }, contentContainerStyle: [styles.list, { paddingBottom: bottomPad }] }

@@ -399,9 +399,12 @@ export function AlbumsBrowser({
           }
           // Remount the list when changing sort or layout: otherwise FlatList
           // reuses rows and gets stuck with stale ones (numColumns also doesn't
-          // support hot-swapping). The heart is in here too: it swaps the whole
-          // list behind the rows, so the rows have to be measured again.
-          key={`${favorited}-${sort}-${layout}-${columns}`}
+          // support hot-swapping). The heart and the Downloaded filter are in
+          //  here too: each swaps the whole list behind the rows, so the rows
+          //  have to be measured again. Neither belongs in the section's own
+          //  key up in the tab — remounting there is what takes what you typed
+          //  in the search box with it.
+          key={`${downloaded}-${favorited}-${sort}-${layout}-${columns}`}
           keyExtractor={(item, i) => `${item.id}-${i}`}
           {...(grid
             ? { numColumns: columns, columnWrapperStyle: { gap: GAP }, contentContainerStyle: [styles.list, { paddingBottom: bottomPad }] }
