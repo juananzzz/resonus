@@ -173,6 +173,13 @@ export interface Song {
   hasCover?: boolean;
   /** Local file URI (offline mode); if present, playback happens without server. */
   localUri?: string;
+  /**
+   * The server's path to the file (standard Subsonic; Navidrome and the rest
+   * send it on every child). Folder browsing offers an order by file name, and
+   * this is the only place the name exists when the tags disagree with it
+   * (#348). Optional because not every endpoint sends a song's path.
+   */
+  path?: string;
   /** Size on disk of that file, written when it is downloaded. Storage used
    *  adds these up instead of asking the file system once per file. */
   dlBytes?: number;

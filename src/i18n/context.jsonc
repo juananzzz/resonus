@@ -362,6 +362,7 @@
     "Remove download": "Delete the downloaded file, keeping the song in the library",
     "Sort": "Read out by the screen reader for the button that opens the sort options. A verb",
     "Sort by": "Heading over the sort options",
+    "File names": "Sort option in a folder: order its songs by the name of the file on disk, not by their tags",
     "Share": "Make a link on the server that others can open. Getting the file itself out is `Export`",
     "Export “{name}”?": "Confirms getting the files of an album or playlist out of the app",
     "Exit": "Leave the local profile and go back to choosing a server",
