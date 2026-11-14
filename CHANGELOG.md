@@ -38,6 +38,7 @@ Releases before 0.2.1 are only listed on the
 
 ### Fixed
 
+- Player: Previous back to the queue before a radio no longer leaves the radio switched on (#345).
 - Podcasts: a feed that stops answering halfway now fails after 20 seconds instead of loading forever.
 - Genres show as empty offline instead of failing to load.
 - Downloads: pressing download twice on the same playlist or favorites no longer downloads it twice.
