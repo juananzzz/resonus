@@ -72,6 +72,7 @@ import type { Remap } from '@/lib/navidromeRemap';
 import { remapSong } from '@/lib/navidromeRemap';
 import { noteOwnReport } from '@/lib/ownReports';
 import { beat, bump, note, timed } from '@/lib/perfLog';
+import { captureSnapshot, restoreSnapshot, type PlayerSnapshot } from '@/lib/playerSnapshot';
 import { queryClient } from '@/lib/query';
 import {
   appendEnd,
@@ -1294,17 +1295,8 @@ async function loadIndex(index: number, autoplay: boolean): Promise<boolean> {
 // from a different playlist or album. Pushed on each advance/skip forward
 // and popped in previous(). Entries share the `queue` reference within the
 // same context, so they only weigh what changes between skips.
-type HistoryEntry = {
-  queue: Song[];
-  index: number;
-  source: string | null;
-  sourceHref: string | null;
-  originalQueue: Song[] | null;
-  shuffle: boolean;
-  queueDealt: boolean;
-};
 const HISTORY_MAX = 100;
-let playedHistory: HistoryEntry[] = [];
+let playedHistory: PlayerSnapshot[] = [];
 
 /**
  * Why the queue is moving, which decides whether paused stays paused.
@@ -1327,10 +1319,9 @@ function skipAutoplay(playing: boolean): boolean {
 
 /** Pushes the current context before advancing or skipping to another track. */
 function pushHistory() {
-  const { queue, index, source, sourceHref, originalQueue, shuffle, queueDealt } =
-    usePlayerStore.getState();
-  if (!queue[index]) return;
-  playedHistory.push({ queue, index, source, sourceHref, originalQueue, shuffle, queueDealt });
+  const state = usePlayerStore.getState();
+  if (!state.queue[state.index]) return;
+  playedHistory.push(captureSnapshot(state));
   if (playedHistory.length > HISTORY_MAX) playedHistory.shift();
 }
 
@@ -4076,7 +4067,7 @@ export function initRemoteIntegration() {
   });
 }
 
-interface PlayerState {
+export interface PlayerState {
   queue: Song[];
   index: number;
   /**
@@ -4383,19 +4374,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     // it there: the app showing one song, the speakers still on the last one,
     // and nothing to say which was which (@ztx-lyghters). Whatever is put back
     // is what is actually playing, so the two agree again.
-    const before = {
-      queue: get().queue,
-      index: get().index,
-      queuedCount: get().queuedCount,
-      positionSec: get().positionSec,
-      durationSec: get().durationSec,
-      originalQueue: get().originalQueue,
-      queueDealt: get().queueDealt,
-      source: get().source,
-      sourceHref: get().sourceHref,
-      radioMode: get().radioMode,
-      radioSeed: get().radioSeed,
-    };
+    const before = captureSnapshot(get());
     queueOrigin = null;
     // The list goes up before it is loaded, and the store subscription warms
     // what follows it at that same moment.
@@ -4423,7 +4402,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const ok = await loadIndex(at, true);
     if (!ok) {
       if (hold !== undefined) releaseSpeculation(hold);
-      if (before.queue.length > 0) set(before);
+      if (before.queue.length > 0) set(restoreSnapshot(before));
     }
     return ok;
   },
@@ -4659,23 +4638,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     // advances the steps above walked back over.
     const { queue, source, sourceHref } = get();
     const key = contextKey(source, sourceHref);
-    const sameList = (e: HistoryEntry) =>
+    const sameList = (e: PlayerSnapshot) =>
       e.queue === queue || (key != null && contextKey(e.source, e.sourceHref) === key);
     let entry = playedHistory.pop();
     while (entry && sameList(entry)) entry = playedHistory.pop();
     if (entry) {
-      set({
-        queue: entry.queue,
-        index: entry.index,
-        source: entry.source,
-        sourceHref: entry.sourceHref,
-        originalQueue: entry.originalQueue,
-        shuffle: entry.shuffle,
-        queueDealt: entry.queueDealt,
-        queuedCount: 0,
-        positionSec: 0,
-        durationSec: 0,
-      });
+      set(restoreSnapshot(entry, { restart: true }));
       void loadIndex(entry.index, skipAutoplay(playing));
       return;
     }
