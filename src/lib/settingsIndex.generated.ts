@@ -809,6 +809,14 @@ export const SETTINGS_INDEX: SettingEntry[] = [
     ]
   },
   {
+    "label": "Filter by rating",
+    "screen": "playback",
+    "root": "playback",
+    "path": [
+      "Quality & playback"
+    ]
+  },
+  {
     "label": "Autoplay",
     "screen": "playback",
     "root": "playback",

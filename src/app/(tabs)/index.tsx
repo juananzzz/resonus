@@ -57,6 +57,7 @@ import { haptic } from '@/lib/haptics';
 import { listPerf } from '@/lib/listPerf';
 import { bump } from '@/lib/perfLog';
 import { playShuffle } from '@/lib/playShuffle';
+import { filterAlbumsByRating, filterArtistsByRating, filterSongsByRating } from '@/lib/ratingFilter';
 import { refreshRadios } from '@/lib/radioBuild';
 import { requestSearchFocus } from '@/lib/tabOrigin';
 import { useAuthStore } from '@/store/auth';
@@ -319,11 +320,18 @@ function AlbumSection({
 }) {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const card = useShelfCard();
+  const ratingFilter = useSettings((s) => s.ratingFilter);
   const { data, isLoading } = useQuery({
     queryKey: ['albumList', type],
     queryFn: () => getAlbumList(type),
     enabled: canFetch,
   });
+  // Recently played is the one shelf the issue leaves alone: it is a record of
+  // what you listened to, not a recommendation. The rest are discovery.
+  const shown = useMemo(
+    () => (data ? (type === 'recent' ? data : filterAlbumsByRating(data, ratingFilter)) : data),
+    [data, type, ratingFilter],
+  );
 
   if (isLoading) {
     return (
@@ -333,7 +341,7 @@ function AlbumSection({
       </View>
     );
   }
-  if (!data || data.length === 0) return null;
+  if (!shown || shown.length === 0) return null;
 
   return (
     <View style={styles.section}>
@@ -341,7 +349,7 @@ function AlbumSection({
       <FlatList
         {...listPerf}
         horizontal
-        data={data}
+        data={shown}
         keyExtractor={(item: Album) => item.id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.rowContent}
@@ -449,11 +457,16 @@ function SongListCarousel({
 function MostPlayedSongsSection({ title }: { title: string }) {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const currentId = usePlayerStore((s) => s.queue[s.index]?.id);
+  const ratingFilter = useSettings((s) => s.ratingFilter);
   const { data, isLoading } = useQuery({
     queryKey: ['browseSongs', 'frequent', MOST_PLAYED_SONGS],
     queryFn: () => getSongList('frequent', MOST_PLAYED_SONGS),
     enabled: canFetch,
   });
+  const shown = useMemo(
+    () => (data ? filterSongsByRating(data, ratingFilter) : data),
+    [data, ratingFilter],
+  );
 
   if (isLoading) {
     return (
@@ -463,12 +476,12 @@ function MostPlayedSongsSection({ title }: { title: string }) {
       </View>
     );
   }
-  if (!data || data.length === 0) return null;
+  if (!shown || shown.length === 0) return null;
 
   return (
     <View style={styles.section}>
       <SectionHeader title={title} href="/browse/songs?sort=frequent" />
-      <SongListCarousel songs={data} currentId={currentId} title={title} />
+      <SongListCarousel songs={shown} currentId={currentId} title={title} />
     </View>
   );
 }
@@ -483,11 +496,18 @@ const RANDOM_SONGS_COUNT = 30;
 function RandomSongsSection({ title }: { title: string }) {
   const canFetch = useAuthStore((s) => !!s.auth || s.offline);
   const currentId = usePlayerStore((s) => s.queue[s.index]?.id);
+  const ratingFilter = useSettings((s) => s.ratingFilter);
   const { data, isLoading } = useQuery({
     queryKey: ['randomSongs', RANDOM_SONGS_COUNT],
     queryFn: () => getRandomSongs(RANDOM_SONGS_COUNT),
     enabled: canFetch,
   });
+  // The data layer already filtered with the setting of the moment; this also
+  // covers a change made while the cached list is still here.
+  const shown = useMemo(
+    () => (data ? filterSongsByRating(data, ratingFilter) : data),
+    [data, ratingFilter],
+  );
 
   if (isLoading) {
     return (
@@ -497,12 +517,12 @@ function RandomSongsSection({ title }: { title: string }) {
       </View>
     );
   }
-  if (!data || data.length === 0) return null;
+  if (!shown || shown.length === 0) return null;
 
   return (
     <View style={styles.section}>
       <SectionHeader title={title} href="/browse/songs?sort=random" />
-      <SongListCarousel songs={data} currentId={currentId} title={title} />
+      <SongListCarousel songs={shown} currentId={currentId} title={title} />
     </View>
   );
 }
@@ -631,13 +651,17 @@ function ArtistSection({ title, reshuffleKey }: { title: string; reshuffleKey: n
     queryFn: () => getArtists(),
     enabled: canFetch && ready,
   });
+  const ratingFilter = useSettings((s) => s.ratingFilter);
   // Reshuffles when the list changes or on pull-to-refresh (`reshuffleKey`).
   // Without that key, when the list doesn't change react-query keeps the same
   // reference (structural sharing) and the memo would always return the same
   // 10 artists.
   const artists = useMemo(
-    () => (data ? shuffled(data).slice(0, 10) : []),
-    [data, reshuffleKey],
+    () =>
+      data
+        ? shuffled(filterArtistsByRating(data, ratingFilter)).slice(0, 10)
+        : [],
+    [data, ratingFilter, reshuffleKey],
   );
 
   // The skeleton covers the wait as well as the request, so the shelf holds
@@ -682,11 +706,15 @@ function DiscoverSection({ title, reshuffleKey }: { title: string; reshuffleKey:
     queryFn: () => getAlbumList('recent', DISCOVER_POOL, DISCOVER_OFFSET),
     enabled: canFetch,
   });
+  const ratingFilter = useSettings((s) => s.ratingFilter);
   // Reshuffles when changing the list or on pull-to-refresh (`reshuffleKey`);
   // see the note in ArtistSection about react-query's structural sharing.
   const albums = useMemo(
-    () => (data ? shuffled(data).slice(0, 10) : []),
-    [data, reshuffleKey],
+    () =>
+      data
+        ? shuffled(filterAlbumsByRating(data, ratingFilter)).slice(0, 10)
+        : [],
+    [data, ratingFilter, reshuffleKey],
   );
 
   if (isLoading) {

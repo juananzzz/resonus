@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 867 of them.
+Every string the app can show, under the screen it shows up on. 870 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -1054,6 +1054,8 @@ you are actually typing into, which is easier than reading it here.
 | `Crossfade` | One song fading into the next |
 | `Done` | The button that accepts a fine-tuned number |
 | `Equalizer` |  |
+| `Filter by rating` |  |
+| `Hides songs rated at or below this many stars, and everything by an artist or on an album rated that way. Unrated songs are never hidden.` |  |
 | `Keep playing when a radio ends` |  |
 | `Keep screen on` |  |
 | `Mobile data` | Group header under `Streaming`: the settings that apply on mobile data, as opposed to Wi-Fi |
@@ -1307,6 +1309,7 @@ you are actually typing into, which is easier than reading it here.
 | `No results for “{q}”` | Empty state. `{q}` is what was typed |
 | `Not available offline` | This one is not downloaded, so it cannot play without a connection |
 | `Nothing here is downloaded` | Toast when playing something that is not downloaded, offline |
+| `Nothing here matches the rating filter` |  |
 | `Nothing to shuffle yet` | Empty state: there is nothing here to play in random order |
 | `Offline` | The toast shown when the app falls into offline mode by itself, and the badge that says it is in it |
 | `Pause` | Read out by the screen reader for the pause button. A verb |

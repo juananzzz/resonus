@@ -20,6 +20,13 @@ import {
 import { byArtistSortName } from '@/lib/librarySort';
 import { hashKey } from '@/lib/localLibrary';
 import { canEditTracks, indicesToRemove, missingFrom, needsFetch, presentIn } from '@/lib/playlistMembership';
+import {
+  filterSongsByRating,
+  rememberedRatingLookups,
+  rememberAlbums,
+  rememberArtists,
+  rememberRating,
+} from '@/lib/ratingFilter';
 import { bump } from '@/lib/perfLog';
 import { queryClient } from '@/lib/query';
 import { getItem, setItem } from '@/lib/storage';
@@ -39,6 +46,17 @@ import type { Song } from './subsonic';
 
 function isOffline() { return useAuthStore.getState().offline; }
 function auth() { return useAuthStore.getState().auth!; }
+
+/**
+ * Recommendations (random songs, mixes, radios) skip what the rating filter
+ * calls unwanted (#61): these are the places the app chooses music for you.
+ * Browsing a list of songs never goes through here, which is what keeps
+ * filtered content visible where it can be managed.
+ */
+function withRatingFilter(songs: Song[]): Song[] {
+  const filter = useSettings.getState().ratingFilter;
+  return filter === 0 ? songs : filterSongsByRating(songs, filter, rememberedRatingLookups());
+}
 
 /** Offline mode WITH a server account (not the local files-only profile):
  *  here the Library is a mirror of the server (see store/libraryMirror). */
@@ -324,7 +342,15 @@ export function getAlbumList(type: Subsonic.AlbumListType = 'newest', size?: num
                 return merged(ids);
               })
             : merged(ids);
-  return type === 'recent' ? page.then(onlyPlayed) : page;
+  return type === 'recent'
+    ? page.then((list) => {
+        rememberAlbums(list);
+        return onlyPlayed(list);
+      })
+    : page.then((list) => {
+        rememberAlbums(list);
+        return list;
+      });
 }
 
 /**
@@ -360,6 +386,7 @@ export function getAlbum(id: string): Promise<{ album: Subsonic.Album; songs: Su
     return Local.getAlbum(id);
   }
   return Subsonic.getAlbum(auth(), id).then((res) => {
+    rememberAlbums([res.album]);
     useLibraryMirror.getState().saveAlbum(id, res.album, res.songs, useDownloads.getState());
     void noteDownloadedAlbum(auth(), res.album, res.songs);
     return res;
@@ -376,14 +403,17 @@ async function mirrorAlbum(
 }
 
 export function getArtists(): Promise<Subsonic.Artist[]> {
-  if (isOffline()) return Local.getArtists();
+  if (isOffline()) return Local.getArtists().then((list) => { rememberArtists(list); return list; });
   const a = auth();
   const ids = enabledFolderIds(a);
-  if (!ids) return Subsonic.getArtists(a);
-  if (ids.length === 1) return Subsonic.getArtists(a, ids[0]);
+  if (!ids) return Subsonic.getArtists(a).then((list) => { rememberArtists(list); return list; });
+  if (ids.length === 1) {
+    return Subsonic.getArtists(a, ids[0]).then((list) => { rememberArtists(list); return list; });
+  }
   return Promise.all(ids.map((id) => Subsonic.getArtists(a, id))).then((lists) => {
     const merged = dedupeById(lists.flat());
     merged.sort(byArtistSortName);
+    rememberArtists(merged);
     return merged;
   });
 }
@@ -889,6 +919,8 @@ export function getArtist(id: string): Promise<{ artist: Subsonic.Artist; albums
       return Subsonic.getArtist(auth(), mapped);
     })
     .then((res) => {
+      rememberAlbums(res.albums);
+      rememberArtists([res.artist]);
       useLibraryMirror.getState().saveArtist(res.artist.id, res.artist, res.albums);
       // Their picture, for the downloads, while there is a connection to get
       // it with. Only if their music is on the phone; it decides that itself.
@@ -954,20 +986,24 @@ export function getTopSongs(
 /** Songs similar to a given one (suggestions). Online only. */
 export function getSimilarSongs(id: string, count?: number): Promise<Subsonic.Song[]> {
   if (isOffline()) return Promise.resolve([]);
-  return Subsonic.getSimilarSongs(auth(), id, count);
+  // Suggestions feed autoplay, radios and "Add to favorites": music chosen for
+  // the listener, so the rating filter applies (#61).
+  return Subsonic.getSimilarSongs(auth(), id, count).then(withRatingFilter);
 }
 
 /** Most played songs (composition over "frequent" albums in Subsonic). */
-export function getMostPlayedSongs(size = 50): Promise<Subsonic.Song[]> {
-  if (isOffline()) return Local.getMostPlayedSongs(size);
+export async function getMostPlayedSongs(size = 50): Promise<Subsonic.Song[]> {
+  if (isOffline()) return withRatingFilter(await Local.getMostPlayedSongs(size));
   const a = auth();
   const ids = enabledFolderIds(a);
-  if (!ids) return Subsonic.getMostPlayedSongs(a, size);
-  if (ids.length === 1) return Subsonic.getMostPlayedSongs(a, size, ids[0]);
+  if (!ids) return withRatingFilter(await Subsonic.getMostPlayedSongs(a, size));
+  if (ids.length === 1) return withRatingFilter(await Subsonic.getMostPlayedSongs(a, size, ids[0]));
   return Promise.all(ids.map((fid) => Subsonic.getMostPlayedSongs(a, size, fid))).then((lists) =>
-    dedupeById(lists.flat())
-      .sort((x, y) => (y.playCount ?? 0) - (x.playCount ?? 0))
-      .slice(0, size),
+    withRatingFilter(
+      dedupeById(lists.flat())
+        .sort((x, y) => (y.playCount ?? 0) - (x.playCount ?? 0))
+        .slice(0, size),
+    ),
   );
 }
 
@@ -988,16 +1024,18 @@ export function getMostPlayedSongs(size = 50): Promise<Subsonic.Song[]> {
  * be asked for a fraction of what it could give.
  */
 export async function getRandomSongs(size = 200, genre?: string): Promise<Subsonic.Song[]> {
-  if (isOffline()) return Local.getRandomSongs(size);
+  if (isOffline()) return withRatingFilter(await Local.getRandomSongs(size));
   const a = auth();
   const ids = enabledFolderIds(a);
-  if (!ids) return Subsonic.getRandomSongs(a, size, genre);
-  if (ids.length === 1) return Subsonic.getRandomSongs(a, size, genre, ids[0]);
+  if (!ids) return withRatingFilter(await Subsonic.getRandomSongs(a, size, genre));
+  if (ids.length === 1) {
+    return withRatingFilter(await Subsonic.getRandomSongs(a, size, genre, ids[0]));
+  }
   const depths = genre ? ids.map(() => size) : await randomDepths(a, ids, size);
   const lists = await Promise.all(
     ids.map((fid, i) => Subsonic.getRandomSongs(a, depths[i], genre, fid)),
   );
-  return shuffled(dedupeById(lists.flat())).slice(0, size);
+  return withRatingFilter(shuffled(dedupeById(lists.flat())).slice(0, size));
 }
 
 export function getPlaylists(): Promise<Subsonic.Playlist[]> {
@@ -1582,6 +1620,9 @@ export function snapshotCachesToMirror(): Promise<void> {
 
 /** Rate a song (1-5; 0 removes the rating). */
 export function setRating(id: string, rating: number): Promise<void> {
+  // The album/artist screens just changed one, and a queue of their songs may
+  // already be waiting: keep what the filter reads in step.
+  rememberRating(id, rating);
   if (isOffline()) {
     // Server offline: recorded in the outbox and uploaded on reconnect.
     if (serverOffline()) useOfflineQueue.getState().setRating(id, rating);

@@ -89,6 +89,7 @@ import {
   type RepeatMode,
 } from '@/lib/queue';
 import { moreRadioTracks } from '@/lib/radioBuild';
+import { filterSongsByRating, rememberedRatingLookups } from '@/lib/ratingFilter';
 import { getItem, setItem } from '@/lib/storage';
 import { profileScopeId, useAuthStore } from './auth';
 import { checkAutoUrlNow } from './autoUrl';
@@ -4315,6 +4316,26 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   playQueue: async (songs, startIndex = 0, source, sourceHref, opts) => {
     if (songs.length === 0) return false;
+    // The Shuffle button of an album, artist or playlist is queue creation
+    // from a whole list, exactly what #61 asks the rating filter to cover. A
+    // tap on one song is left alone: filtered content stays reachable while
+    // browsing, and an explicit choice is not the app recommending anything.
+    if (opts?.shuffled) {
+      const tapped = songs[startIndex];
+      const wanted = filterSongsByRating(
+        songs,
+        useSettings.getState().ratingFilter,
+        rememberedRatingLookups(),
+      );
+      if (wanted.length === 0) {
+        useToast.getState().show(tg('Nothing here matches the rating filter'));
+        return false;
+      }
+      if (wanted.length !== songs.length) {
+        startIndex = tapped ? Math.max(0, wanted.indexOf(tapped)) : 0;
+        songs = wanted;
+      }
+    }
     // Discard offline-unavailable tracks (not downloaded): they can't be
     // played. The initial index is remapped to the tapped song within the
     // already-filtered list. Online never marks `unavailable`, so it doesn't change.

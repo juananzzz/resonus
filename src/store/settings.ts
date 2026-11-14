@@ -5,6 +5,7 @@ import { create } from 'zustand';
 
 import { isLanguage, LANGUAGE_NAMES, type Language } from '@/i18n/languages';
 import { pushArtworkEncodeFps } from '@/lib/artworkEncode';
+import { asRatingFilter, type RatingFilter } from '@/lib/ratingFilter';
 import { type TabSegment } from '@/lib/tabOrigin';
 import { hashKey } from '@/lib/localLibrary';
 import { setPerfEnabled } from '@/lib/perfLog';
@@ -1002,6 +1003,11 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   /** Rating stars per song in lists. */
   showListRating: boolean;
   /**
+   * Hide songs rated at or below this many stars, and with them their album
+   * and artist (#61). 0 is off. Unrated songs are never hidden.
+   */
+  ratingFilter: RatingFilter;
+  /**
    * The E badge on anything tagged with a parental advisory. One switch and not
    * one per screen: it is the same mark wherever it appears, and whoever wants
    * it out of a list does not want it on the player either. The song
@@ -1444,6 +1450,8 @@ const DEFAULTS = {
   blurMiniPlayer: true,
   showSongDuration: false,
   showListRating: false,
+  // Off: nobody's library is filtered until they ask for it.
+  ratingFilter: 0 as RatingFilter,
   // On: it only ever draws where a file says so, which in most libraries is
   // nowhere, and where it does draw it is the tag the file was given.
   showExplicitTag: true,
@@ -1696,6 +1704,11 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
   }
   if (typeof parsed.maxBitRate === 'number') {
     set({ maxBitRate: parsed.maxBitRate });
+  }
+  // Only 0-4: anything else in the file means the filter is off, never a
+  // threshold nobody chose.
+  if (parsed.ratingFilter !== undefined) {
+    set({ ratingFilter: asRatingFilter(parsed.ratingFilter) });
   }
   if (typeof parsed.maxBitRateCellular === 'number') {
     set({ maxBitRateCellular: parsed.maxBitRateCellular });

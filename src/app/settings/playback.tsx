@@ -28,6 +28,7 @@ import {
 import { useLocalProfile } from '@/hooks/useLocalProfile';
 import { useT } from '@/i18n';
 import { discordPresenceSupported } from '@/lib/discordPresence';
+import { RATING_FILTER_VALUES, type RatingFilter } from '@/lib/ratingFilter';
 import { useAuthStore } from '@/store/auth';
 import { useTheme } from '@/theme';
 import {
@@ -61,6 +62,8 @@ export default function PlaybackSettings() {
   const radioEndless = useSettings((s) => s.radioEndless);
   const setRadioEndless = useSettings((s) => s.setRadioEndless);
   const autoplaySimilar = useSettings((s) => s.autoplaySimilar);
+  const ratingFilter = useSettings((s) => s.ratingFilter);
+  const setRatingFilter = useSettings((s) => s.setRatingFilter);
   const syncQueueFromServer = useSettings((s) => s.syncQueueFromServer);
   const setSyncQueueFromServer = useSettings((s) => s.setSyncQueueFromServer);
   const setAutoplaySimilar = useSettings((s) => s.setAutoplaySimilar);
@@ -283,6 +286,22 @@ export default function PlaybackSettings() {
             and the queue on the server is the server's. In the local profile
             there is nobody to ask, and an empty SwitchList still draws its card. */}
         <SettingsGroup>
+          {/* Ratings are Subsonic's, and there is no server to rate on in the
+              local profile. Jellyfin does not implement setRating, so the
+              filter would have nothing to read there either. */}
+          <SelectList<RatingFilter>
+            label={t('Filter by rating')}
+            description={t(
+              'Hides songs rated at or below this many stars, and everything by an artist or on an album rated that way. Unrated songs are never hidden.',
+            )}
+            options={RATING_FILTER_VALUES.map((value) => ({
+              value,
+              label: value === 0 ? t('Off') : '★'.repeat(value),
+            }))}
+            value={ratingFilter}
+            onChange={setRatingFilter}
+            disabled={local || serverType === 'jellyfin'}
+          />
           {local ? null : (
             <SwitchList
               options={[
