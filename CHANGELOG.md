@@ -11,6 +11,7 @@ Releases before 0.2.1 are only listed on the
 
 ### Added
 
+- Podcasts: the shows you favorite get their feed read again once a day when the app opens or comes back, so new episodes come over without opening the show.
 - Local profile: music added to or removed from the phone shows up when the app opens or comes back, without a rescan.
 - Local profile: an album with no embedded cover uses the `cover.jpg` or `folder.jpg` in its folder.
 - Local profile: an `artist.jpg` in an artist's folder is used as their picture (#337).
