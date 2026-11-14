@@ -15,11 +15,10 @@ import { useAutoDownloads } from '@/store/autoDownloads';
 import { useSettings, type DefaultTab } from '@/store/settings';
 import { refreshAutoDownloadShows } from '@/api/podcasts';
 
-const TAB_HREF: Record<DefaultTab, '/' | '/search' | '/library' | '/explore'> = {
+const TAB_HREF: Record<DefaultTab, '/' | '/search' | '/library'> = {
   index: '/',
   search: '/search',
   library: '/library',
-  explore: '/explore',
 };
 
 export function AppStartupTab() {

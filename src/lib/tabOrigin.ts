@@ -11,14 +11,13 @@
  * only ever written while the tabs themselves are on screen, which is the one
  * moment the answer is known for certain.
  */
-export type TabSegment = 'index' | 'search' | 'library' | 'explore' | 'options';
+export type TabSegment = 'index' | 'search' | 'library' | 'options';
 
 /** Route of each tab, and the label to call it by (translated where used). */
 export const TABS: { segment: TabSegment; href: string; label: string }[] = [
   { segment: 'index', href: '/', label: 'Home' },
   { segment: 'search', href: '/search', label: 'Search' },
-  { segment: 'library', href: '/library', label: 'Your library' },
-  { segment: 'explore', href: '/explore', label: 'Explore' },
+  { segment: 'library', href: '/library', label: 'Library' },
   // Settings as a tab, off by default. Not `/settings`: that is the screen the
   // gear opens, and this tab shows the same one.
   { segment: 'options', href: '/options', label: 'Settings' },

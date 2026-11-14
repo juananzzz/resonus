@@ -2,7 +2,7 @@
  * What a "browse everything" screen sits in.
  *
  * On its own it is a screen: it starts under the status bar and there is a
- * back arrow above it. Inside the Explore tab it is the body of somebody
+ * back arrow above it. Inside the Library tab it is the body of somebody
  * else's screen, and the chrome above it is theirs — the tab has already taken
  * the inset and already says which section you are in, so a second header
  * there would be the section named twice.

@@ -50,7 +50,7 @@ const ITUNES_LOOKUP = 'https://itunes.apple.com/lookup';
 
 /** The iTunes Store's own top-podcasts chart; a starting point for discovery. */
 // What iTunes is asked for: one screen's worth of search answers, and the
-// charts at a full Explore page — nobody scrolls past these either way.
+// charts at a full page of browsing — nobody scrolls past these either way.
 const SEARCH_LIMIT = 25;
 const CHART_LIMIT = 100;
 const ITUNES_CHARTS = `https://itunes.apple.com/us/rss/toppodcasts/limit=${CHART_LIMIT}/json`;
@@ -346,7 +346,7 @@ export async function listChannels(): Promise<PodcastChannel[]> {
   return Db.listChannels(scope());
 }
 
-/** Keeps a show in Explore's list. */
+/** Keeps a show in the Library's list. */
 export async function addChannel(id: string): Promise<void> {
   await Db.addChannel(scope(), id);
   invalidatePodcastLists();

@@ -1,7 +1,7 @@
 /**
  * Server radio stations.
  *
- * A screen of its own and, `embedded`, the Radio section of the Explore tab.
+ * A screen of its own and, `embedded`, the Radio section of the Library tab.
  */
 import Icon from '@/components/Icon';
 import { useQuery } from '@tanstack/react-query';
@@ -164,7 +164,7 @@ export function RadioBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
     }
   }
 
-  // Embedded, the Explore tab draws this in its own header; the form it opens
+  // Embedded, the Library tab draws this in its own header; the form it opens
   // stays down here with the rest of the station editing.
   useEffect(() => {
     if (actionRef) actionRef.current = () => setEditForm({ station: null });
@@ -397,8 +397,8 @@ const styles = themed((colors) => ({
   // The MCI pin comes vertical; rotated 45° it looks like Spotify's, which is
   // how it is drawn everywhere else in the app.
   rowSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
-  // The box "Your library" has, to the same measurements, which is what every
-  // section of Explore now opens.
+  // The box the Library tab has, to the same measurements, which is what every
+  // section of it now opens.
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,16 +1,16 @@
 /**
- * Every playlist on the server, as a section of the Explore tab.
+ * Every playlist on the server, as a section of the Library tab.
  *
- * The same list is already the first segment of "Your library", and this is
- * deliberately a second way in rather than a move: a playlist you made is
- * yours and belongs over there, but a Subsonic server also hands back the ones
- * other people made public, and reaching those from the tab that holds the
- * catalogue is what this is for.
+ * This is the whole list the server answers with: the ones you made, plus the
+ * ones a Subsonic server hands back because other people left them public. A
+ * playlist you made is yours, and the heart here keeps it the way the other
+ * sections do; reaching the server's own is why this section is in the tab that
+ * holds the catalogue rather than only with your things.
  *
- * The order and the rows-or-cards choice are its own settings, not the ones
- * "Your library" keeps. Sharing them would mean pressing the view button here
- * silently rearranged the list over there, which is the same reason browsing
- * all albums does not share its layout with the favourites.
+ * The order and the rows-or-cards choice are the playlists' own settings, kept
+ * separate from the other sections'. Sharing them would mean pressing the view
+ * button in one section silently rearranging another, which is the same reason
+ * browsing all albums does not share its layout with the favourites.
  *
  * No pins. What is pinned is a thing you did to your own library, and this
  * side is the server's.
@@ -24,6 +24,7 @@ import {
   Dimensions,
   FlatList,
   Pressable,
+  RefreshControl,
   Text,
   TextInput,
   View,
@@ -38,6 +39,8 @@ import { Message } from '@/components/Message';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { useDownloadedPlaylists } from '@/hooks/useDownloadedPlaylists';
 import { useGridColumns } from '@/hooks/useGridColumns';
+import { usePullRefresh } from '@/hooks/usePullRefresh';
+import { usePlaylistStars } from '@/hooks/usePlaylistStars';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useListPadding } from '@/hooks/useScreenSize';
 import { songsLabel, useT } from '@/i18n';
@@ -57,18 +60,27 @@ function cardWidth(columns: number): number {
   return (Dimensions.get('window').width - spacing.lg * 2 - GAP * (columns - 1)) / columns;
 }
 
-/** The same three "Your library" offers, in its order. */
+/** The orders a playlist list can be read in, in the order they are offered. */
 const SORTS: { key: LibrarySort; label: string }[] = (
   Object.keys(SORT_LABELS) as LibrarySort[]
 ).map((key) => ({ key, label: SORT_LABELS[key] }));
 
-/** `downloaded` keeps the playlists with every song on the phone (#310). */
+/**
+ * `downloaded` keeps the playlists with every song on the phone (#310).
+ *
+ * `favorited` keeps them to the ones carrying a star, which only exists where
+ *  the server can say it: Navidrome keeps playlist stars out of the Subsonic
+ *  answers, so the state is read back through its own API (see
+ *  `usePlaylistStars`) and the tab draws no heart where that read is not
+ *  available.
+ */
 export function PlaylistsBrowser({
   embedded,
   actionRef,
   searchOpen,
   downloaded,
-}: BrowserProps & { downloaded?: boolean }) {
+  favorited,
+}: BrowserProps & { downloaded?: boolean; favorited?: boolean }) {
   const t = useT();
   const lang = useSettings((s) => s.language);
   const listPad = useListPadding(spacing.lg);
@@ -89,9 +101,12 @@ export function PlaylistsBrowser({
   });
   const card = cardWidth(columns);
   const saved = useDownloadedPlaylists();
+  // The playlist stars, and `undefined` where this server cannot answer for
+  //  them: no heart is drawn there, so `favorited` never arrives true.
+  const stars = usePlaylistStars();
 
   // Assigned in an effect and not while rendering: the React compiler's lint
-  // rule marks a ref written during render (see the Explore tab).
+  // rule marks a ref written during render (see the Library tab).
   useEffect(() => {
     if (actionRef) actionRef.current = openGridMenu;
   });
@@ -105,13 +120,23 @@ export function PlaylistsBrowser({
     enabled: canFetch,
   });
 
+  // Pulling the list down asks the server for its playlists again. The stars
+  //  have their own read, and it is written through by the heart itself (see
+  //  `usePlaylistStars`), so there is nothing else here to ask for.
+  const pull = usePullRefresh(refetch, "Couldn't refresh the playlists");
+
   // Memoised, and before the early returns below, because hooks cannot be
   // conditional. Without it the whole list is filtered and sorted again on
   // every render, which includes every keystroke in the box above (#50).
   const shown = useMemo(() => {
     const q = normQ(query.trim());
     return sortItems(
-      (data ?? []).filter((p) => matches(q, p.name) && (!downloaded || !!saved?.has(p.id))),
+      (data ?? []).filter(
+        (p) =>
+          matches(q, p.name) &&
+          (!downloaded || !!saved?.has(p.id)) &&
+          (!favorited || !!stars?.has(p.id)),
+      ),
       sort,
       (p) => p.name,
       sort === 'recent'
@@ -120,31 +145,45 @@ export function PlaylistsBrowser({
       // Code point so "+"-prefixed playlists pin to the top like on the server.
       byCodepoint,
     );
-  }, [data, query, sort, times, downloaded, saved]);
+  }, [data, query, sort, times, downloaded, saved, favorited, stars]);
 
-  const body = isLoading || (downloaded && !saved) ? (
-    <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
-  ) : isError ? (
-    <Message text={t("Couldn't load playlists.")} onRetry={() => refetch()} />
-  ) : shown.length === 0 ? (
-    <EmptyState
-      icon={downloaded && !query.trim() ? 'download-outline' : 'list-outline'}
-      title={
-        query.trim()
-          ? t('No results')
-          : downloaded
-            ? t('Nothing here is downloaded')
-            : t('No playlists yet')
-      }
-    />
-  ) : (
+  const body =
+    isLoading || (downloaded && !saved) || (favorited && !stars) ? (
+      <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
+    ) : isError ? (
+      <Message text={t("Couldn't load playlists.")} onRetry={() => refetch()} />
+    ) : shown.length === 0 ? (
+      <EmptyState
+        icon={
+          favorited && !query.trim()
+            ? 'heart-outline'
+            : downloaded && !query.trim()
+              ? 'download-outline'
+              : 'list-outline'
+        }
+        title={
+          query.trim()
+            ? t('No results')
+            : favorited
+              ? t('No favorites yet')
+              : downloaded
+                ? t('Nothing here is downloaded')
+                : t('No playlists yet')
+        }
+      />
+    ) : (
     <FlatList
       {...listPerf}
       // Remounts when the shape of the list changes: FlatList keeps its
-      // measurements otherwise, and rows measured as cards scroll wrong.
-      key={`${layout}-${columns}`}
+      //  measurements otherwise, and rows measured as cards scroll wrong. The
+      //  heart is in here since it swaps the set behind the rows.
+      key={`${favorited}-${layout}-${columns}`}
       data={shown}
       keyExtractor={(item: Playlist) => item.id}
+      // A pull asks the server for its playlists again (see `usePullRefresh`).
+      refreshControl={
+        <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={colors.accent} />
+      }
       keyboardShouldPersistTaps="handled"
       {...(grid
         ? {

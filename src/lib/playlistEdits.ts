@@ -3,9 +3,8 @@
  *
  * Two things say it, and servers disagree about which of them they tell you.
  *  Whose list it is comes as the owner, and a server that sends no owner says
- *  nothing rather than "nobody", which counts as yours - the Library filters
- *  its lists by exactly that, so the rule cannot live in that screen and be
- *  written again in another. Whether the list has an order of yours to rewrite
+ *  nothing rather than "nobody", which counts as yours - the reading `isEditable`
+ *  below makes, and no caller should decide it again on its own. Whether the list has an order of yours to rewrite
  *  at all comes as `readonly` on the servers that speak OpenSubsonic: a smart
  *  playlist's songs come out of the rules it was built with on the server, so
  *  moving a row in one would not move a song but ask the server to forget its

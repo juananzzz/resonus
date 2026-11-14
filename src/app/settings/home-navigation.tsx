@@ -47,8 +47,6 @@ export default function HomeNavigationSettings() {
   const setNavBarStyle = useSettings((s) => s.setNavBarStyle);
   const defaultTab = useSettings((s) => s.defaultTab);
   const setDefaultTab = useSettings((s) => s.setDefaultTab);
-  const libraryShowsPlaylists = useSettings((s) => s.libraryShowsPlaylists);
-  const setLibraryShowsPlaylists = useSettings((s) => s.setLibraryShowsPlaylists);
   const showFolderBrowser = useSettings((s) => s.showFolderBrowser);
   const setShowFolderBrowser = useSettings((s) => s.setShowFolderBrowser);
   const hapticsEnabled = useSettings((s) => s.hapticsEnabled);
@@ -155,12 +153,12 @@ export default function HomeNavigationSettings() {
           />
         </SettingsGroup>
 
-        <Text style={settingsStyles.sectionTitle}>{t('Explore')}</Text>
+        <Text style={settingsStyles.sectionTitle}>{t('Library')}</Text>
         <SettingsGroup>
           <SettingRow
-            label={t('Explore sections')}
+            label={t('Library sections')}
             chevron
-            onPress={() => router.push('/settings/explore-sections')}
+            onPress={() => router.push('/settings/library-sections')}
           />
           {/* Guarded as a whole, not with a spread inside the list: SwitchList
               always draws its card, so an empty array left a blank box. */}
@@ -178,27 +176,6 @@ export default function HomeNavigationSettings() {
           ) : null}
         </SettingsGroup>
 
-        <Text style={settingsStyles.sectionTitle}>{t('Your library')}</Text>
-        <SettingsGroup>
-          <SettingRow
-            label={t('Your library chips')}
-            chevron
-            onPress={() => router.push('/settings/library-chips')}
-          />
-          <SwitchList
-            options={[
-              {
-                label: t('Start on your playlists'),
-                description: t(
-                  'With no chip pressed, Your library shows Favorites and your playlists instead of everything mixed together.',
-                ),
-                value: libraryShowsPlaylists,
-                onChange: setLibraryShowsPlaylists,
-              },
-            ]}
-          />
-        </SettingsGroup>
-
         <Text style={settingsStyles.sectionTitle}>{t('Interface')}</Text>
         <SettingsGroup>
           <SelectList<DefaultTab>
@@ -206,8 +183,7 @@ export default function HomeNavigationSettings() {
             options={[
               { value: 'index', label: t('Home') },
               { value: 'search', label: t('Search') },
-              { value: 'explore', label: t('Explore') },
-              { value: 'library', label: t('Your library') },
+              { value: 'library', label: t('Library') },
             ]}
             value={defaultTab}
             onChange={setDefaultTab}

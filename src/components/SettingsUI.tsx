@@ -34,8 +34,8 @@ import { BackChevron } from './BackChevron';
  * The inset is read and applied here rather than left to a `SafeAreaView`:
  * that one pads itself once its own native view has been measured, so the
  * first frame of a screen is drawn without it and corrects a frame later —
- * which is a title that lands slightly low and hops. "Your library" and
- * Explore already read it by hand for the same reason; this is the rest of
+ * which is a title that lands slightly low and hops. The Library tab already
+ * reads it by hand for the same reason; this is the rest of
  * the app catching up. The context has the number long before any of this,
  * so the first frame is the right one.
  */

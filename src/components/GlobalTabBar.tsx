@@ -41,7 +41,6 @@ const ICONS: Record<string, 'home' | 'search' | 'library' | 'albums' | 'settings
   index: 'home',
   search: 'search',
   library: 'library',
-  explore: 'albums',
   options: 'settings',
 };
 

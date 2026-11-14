@@ -1,7 +1,7 @@
 /**
  * How a library list is ordered and filtered.
  *
- * Lifted out of "Your library" when the Explore tab grew a playlists section:
+ * Lifted out of the old Your library tab when it grew a playlists section:
  * both lists are the same rows sorted the same three ways, and the second one
  * was not worth a second copy of this. Pure functions only, so neither screen
  * has to import the other.
@@ -176,4 +176,19 @@ export function byArtistSortName(
   const ka = a.sortName || a.name || '';
   const kb = b.sortName || b.name || '';
   return ka.localeCompare(kb, undefined, { sensitivity: 'base' }) || (a.name ?? '').localeCompare(b.name ?? '');
+}
+
+/**
+ * Pinned first, in the order they were pinned, whatever the chosen sort says
+ * about the rest. A pin is something you did to this list, so it outranks the
+ * order rather than being one of its keys: the record you pinned to the top of
+ * your favorites stays at the top when you switch to alphabetical, and the
+ * ones nobody pinned keep sorting among themselves.
+ */
+export function withPins<T>(items: T[], key: (x: T) => string, pins: Record<string, number>): T[] {
+  const pinned = items
+    .filter((x) => pins[key(x)])
+    .sort((a, b) => pins[key(a)] - pins[key(b)]);
+  if (pinned.length === 0) return items;
+  return [...pinned, ...items.filter((x) => !pins[key(x)])];
 }

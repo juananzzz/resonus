@@ -1,5 +1,5 @@
 /**
- * Loading skeleton for the Search genre grid ("Explore all"): gray pulsing
+ * Loading skeleton for the genres grid: gray pulsing
  * cards at the same size as real ones, instead of an empty gap while data
  * arrives from the server.
  */

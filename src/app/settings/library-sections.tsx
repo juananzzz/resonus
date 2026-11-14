@@ -1,17 +1,22 @@
 /**
- * Settings › Explore sections: which pills are at the top of Explore, and in
- * what order.
+ * Settings › Library sections: which pills are at the top of the Library tab,
+ *  and in what order.
  *
  * The same draggable list the Home chips and the navigation bar use, switches
- * and all. Unlike the Home chips, the last one on cannot be turned off: those
- * can all go and the row simply disappears, while Explore is the only way into
- * the whole of a library, so a tab with no chips is a catalogue with no way in.
- * It is the same floor the navigation bar puts under Home and the library
- * settings put under the last library.
+ *  and all. Unlike the Home chips, the last one on cannot be turned off: those
+ *  can all go and the row simply disappears, while the Library is the only way
+ *  into the whole of a library, so a tab with no chips is a catalogue with no
+ *  way in. It is the same floor the navigation bar puts under Home and the
+ *  settings put under the last library.
  *
  * Every section is listed whether or not this profile can reach it (see the
- * hint below), and the tab still leaves out what it has no answer for: a
- * Jellyfin account has no folder tree, and offline there are no stations.
+ *  hint below), and the tab still leaves out what it has no answer for: a
+ *  Jellyfin account has no folder tree, and offline there are no stations.
+ *
+ * What a section is *shown* for is this screen's; what it is filtered to is not
+ *  on any screen here: the heart lives in the tab's header and saves its own
+ *  state per section, because a switch you press while reading is not a
+ *  preference to set from the settings.
  */
 import Icon from '@/components/Icon';
 import { Pressable, Switch, Text, View } from 'react-native';
@@ -25,7 +30,7 @@ import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { centredPadding, useScreenSize } from '@/hooks/useScreenSize';
 import { useT } from '@/i18n';
 import { haptic } from '@/lib/haptics';
-import { useSettings, type ExploreSection, type ExploreSectionKey } from '@/store/settings';
+import { useSettings, type LibrarySection, type LibrarySectionKey } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import {
   colors,
@@ -38,7 +43,7 @@ import {
 } from '@/theme';
 
 /** Each section's label, as an i18n key. The same ones the tab draws. */
-const LABEL: Record<ExploreSectionKey, string> = {
+const LABEL: Record<LibrarySectionKey, string> = {
   playlists: 'Playlists',
   albums: 'Albums',
   artists: 'Artists',
@@ -54,13 +59,13 @@ function SectionRow({
   section,
   onToggle,
 }: {
-  section: ExploreSection;
+  section: LibrarySection;
   onToggle: (value: boolean) => void;
 }) {
   const t = useT();
   const drag = useReorderableDrag();
   // From the store, not `colors.accent`: without subscription the switch would
-  // keep the previous accent while the screen stays mounted.
+  //  keep the previous accent while the screen stays mounted.
   const { accent } = useTheme();
   return (
     <View style={styles.row}>
@@ -86,22 +91,22 @@ function SectionRow({
   );
 }
 
-export default function ExploreSectionsSettings() {
+export default function LibrarySectionsSettings() {
   // Repaints on a change of appearance or accent: a stack keeps this screen
-  // mounted while you are on another one, out of reach of anything else.
+  //  mounted while you are on another one, out of reach of anything else.
   useTheme();
   const bottomPad = useScreenBottomPadding();
   const { width } = useScreenSize();
   const t = useT();
-  const sections = useSettings((s) => s.exploreSections);
-  const setSections = useSettings((s) => s.setExploreSections);
-  const setSection = useSettings((s) => s.setExploreSection);
+  const sections = useSettings((s) => s.librarySections);
+  const setSections = useSettings((s) => s.setLibrarySections);
+  const setSection = useSettings((s) => s.setLibrarySection);
   const toast = useToast((s) => s.show);
   // The Downloaded pill is a filter, not a section to land on.
   const enabledCount = sections.filter((s) => s.enabled && s.key !== 'downloaded').length;
 
   /** The last one on stays on: see the note at the top of the file. */
-  function toggle(key: ExploreSectionKey, value: boolean) {
+  function toggle(key: LibrarySectionKey, value: boolean) {
     if (!value && key !== 'downloaded' && enabledCount <= 1) {
       toast(t('Keep at least one section on'));
       return;
@@ -111,7 +116,7 @@ export default function ExploreSectionsSettings() {
 
   return (
     <SettingsSafeArea>
-      <ScreenHeader title={t('Explore sections')} />
+      <ScreenHeader title={t('Library sections')} />
       {/* Every section is listed, including the ones this profile cannot reach:
           what is stored is a preference about any profile, and a Jellyfin
           account rearranging the list an offline one comes back to is the kind

@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 867 of them.
+Every string the app can show, under the screen it shows up on. 856 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -19,6 +19,7 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
+| `Album` | In search results, the little word under a result saying what kind of thing it is |
 | `Couldn't load the album.` | Error on the screen, with a Retry button |
 | `Disc {n}` | Heading over the songs of one disc of a multi-disc album. `{n}` is its number |
 | `More from {artist}` | Heading under an album: their other records. `{artist}` is the name |
@@ -46,6 +47,7 @@ you are actually typing into, which is easier than reading it here.
 | `1 hour` | How long a shared link lasts, counted from the moment it is made. Not a time of day |
 | `1 month` | How long a shared link lasts, counted from the moment it is made |
 | `1 week` | How long a shared link lasts, counted from the moment it is made |
+| `Album` | In search results, the little word under a result saying what kind of thing it is |
 | `Allow downloads` | Whether whoever gets the link can download the music, not only listen to it |
 | `Android may stop playback in the background, interrupt downloads or delay the sleep timer. Allowing unrestricted battery use fixes it.` |  |
 | `Animated cover` |  |
@@ -84,7 +86,6 @@ you are actually typing into, which is easier than reading it here.
 | `Go to artist radio` |  |
 | `Go to Podcast` | Song menu: open the show an episode belongs to. Not the act of broadcasting |
 | `Home` | The first tab, and a folder in the car |
-| `Library` | The settings section, and a folder in the car |
 | `Library updated` | Toast after the phone finished going through its own files |
 | `Mark as played` |  |
 | `Mark as unplayed` |  |
@@ -157,6 +158,7 @@ you are actually typing into, which is easier than reading it here.
 | `Audiobooks` | Shelf heading: a book read aloud by one narrator, no music |
 | `Broadcasts` | Shelf heading: records of something first put out on radio, television or as a podcast |
 | `Compilations` | Shelf heading: records collecting older recordings, a “best of” or a various-artists collection |
+| `Couldn't load albums.` | Error on the screen, with a Retry button |
 | `Couldn't load the artist.` | Error on the screen, with a Retry button |
 | `Demos` | Shelf heading: rough recordings made to be passed around rather than released. Kept as-is in Spanish and Catalan, though a language with its own word for these should use it |
 | `Discography` | Everything an artist has released, albums and singles together |
@@ -235,10 +237,13 @@ you are actually typing into, which is easier than reading it here.
 | --- | --- |
 | `A-Z` | Sort option: the order of a list |
 | `Album artist` |  |
+| `Couldn't load albums.` | Error on the screen, with a Retry button |
+| `Couldn't refresh the albums` | On a pull of the list that fails: the rows you were looking at stay, and this one line says the re-ask did not go through |
+| `Favorite albums to see them here.` | The line under an empty state, saying how to fill it |
 | `Find an album` | The search box's placeholder on that screen |
-| `Library` | The settings section, and a folder in the car |
 | `New releases` | Home shelf and album sort: albums by the year they came out, newest first. Not "Recently added", which is when the server got hold of them |
 | `No albums yet` | Empty state heading |
+| `No favorite albums` | Empty state heading on the Library's albums section, with the heart pressed |
 | `Nothing played yet` | Empty state: this phone has not played anything yet |
 | `Your library looks empty.` | Empty state: the server answered, and had nothing |
 | `Your most played albums will show up here.` | The line under an empty state, before anything has been played |
@@ -251,8 +256,11 @@ you are actually typing into, which is easier than reading it here.
 | `A-Z` | Sort option: the order of a list |
 | `Artists` | A heading over a list of them, never a count |
 | `Couldn't load artists.` | Error on the screen, with a Retry button |
+| `Couldn't refresh the artists` | On a pull of the list that fails: the rows you were looking at stay, and this one line says the re-ask did not go through |
+| `Favorite artists to see them here.` | The line under an empty state, saying how to fill it |
 | `Filter artists` | Search box that narrows the list as you type, rather than a filter you set |
 | `No artists yet` | Empty state heading |
+| `No favorite artists` | Empty state heading on the Library's artists section, with the heart pressed |
 | `Your library looks empty.` | Empty state: the server answered, and had nothing |
 
 ## Browse › Folder
@@ -272,6 +280,7 @@ you are actually typing into, which is easier than reading it here.
 | `{size} copied into the folder you pick.` | The line under that one. Those go loose into the chosen folder, since a handful of songs has no name to give a folder of their own |
 | `A-Z` | Sort option: the order of a list |
 | `Export {songs}?` | The same title for a selection instead of a whole album. `{songs}` already reads as a count ("12 songs"), so it comes out like "Export 12 songs?" |
+| `Favorite songs to see them here.` | The line under an empty state, saying how to fill it |
 | `Find a song` | The search box's placeholder on that screen |
 | `No songs yet` | Empty state when the library has no songs |
 | `Nothing played yet` | Empty state: this phone has not played anything yet |
@@ -280,20 +289,6 @@ you are actually typing into, which is easier than reading it here.
 | `Your most played songs will show up here.` | Empty state, before anything has been played |
 | `Your recently played songs will show up here.` | Empty state, before anything has been played |
 
-## Explore
-
-| String | What it is |
-| --- | --- |
-| `Add station` | Title of the sheet for adding an internet radio station |
-| `Couldn't load folders.` | Error on the screen, with a Retry button |
-| `Couldn't load playlists.` | Error on the screen, with a Retry button |
-| `Downloaded` | Badge on something whose files are on the phone |
-| `Explore` | The tab holding everything the server has: all albums, artists, songs, genres, stations and folders |
-| `Find a playlist` | The search box's placeholder on that screen |
-| `Music` | The name given to the server's folder when it does not have one of its own, browsing by folder |
-| `No playlists yet` | Empty state heading |
-| `Only downloaded` |  |
-
 ## Favorites
 
 | String | What it is |
@@ -301,7 +296,6 @@ you are actually typing into, which is easier than reading it here.
 | `Auto-download` | Keep this playlist downloaded by itself as songs are added to it |
 | `Couldn't load favorites.` | Error on the screen, with a Retry button |
 | `Find in favorites` | Placeholder of the search box that narrows the favourites already shown |
-| `No favorites yet` | Empty state heading |
 | `Tap the heart on songs to see them here.` | The line under an empty state, saying how to fill it |
 
 ## Favorites add
@@ -321,6 +315,7 @@ you are actually typing into, which is easier than reading it here.
 | `{n} added to favorites` |  |
 | `{n} selected` | How many songs are ticked right now |
 | `{size} copied into the folder you pick.` | The line under that one. Those go loose into the chosen folder, since a handful of songs has no name to give a folder of their own |
+| `Couldn't load albums.` | Error on the screen, with a Retry button |
 | `Export {songs}?` | The same title for a selection instead of a whole album. `{songs}` already reads as a count ("12 songs"), so it comes out like "Export 12 songs?" |
 | `Genre` | Label of a field in the song information sheet |
 | `No albums in this genre` | Empty state heading |
@@ -383,34 +378,16 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
-| `Artist` | In search results, the little word under a result saying what kind of thing it is |
-| `Couldn't load all of your library.` | Toast: playlists or favorites failed to load, the rest is shown |
-| `Couldn't load artists.` | Error on the screen, with a Retry button |
+| `Add station` | Title of the sheet for adding an internet radio station |
+| `Couldn't load folders.` | Error on the screen, with a Retry button |
 | `Couldn't load playlists.` | Error on the screen, with a Retry button |
-| `Couldn't load your library.` |  |
-| `Couldn't load your podcasts.` | The list of kept shows would not read — the phone's own index, not a server. The Retry button reads it again |
-| `Couldn't read this feed` | Filed under a show whose feed would not load, so the reason is still there offline. One show, not the whole list |
-| `Couldn't refresh your library.` | Toast after a failed pull to refresh; the list on screen stays |
-| `Create your first playlist to get started.` | The line under an empty state |
-| `Episode` | The kind word for one episode, singular, where a row says what it is |
-| `Favorite a show to keep it here.` | The line under the Library's Podcasts shelf: hearts are how a show is kept. 'Here' means this phone |
-| `Favorite albums to see them here.` | The line under an empty state, saying how to fill it |
-| `Favorite artists to see them here.` | The line under an empty state, saying how to fill it |
-| `Find a podcast` | The placeholder in the search box on the shows you keep: searches the iTunes directory, which answers with a show's feed address |
-| `Go to artist radio` |  |
-| `Grid view` | Show the list as cards in a grid |
-| `List view` | Show it as rows, one under the other |
-| `No favorite albums` | Empty state heading on the favourites tab |
-| `No favorite artists` | Empty state heading on the favourites tab |
+| `Couldn't refresh the playlists` | On a pull of the list that fails: the rows you were looking at stay, and this one line says the re-ask did not go through |
+| `Downloaded` | Badge on something whose files are on the phone |
+| `Find a playlist` | The search box's placeholder on that screen |
+| `Music` | The name given to the server's folder when it does not have one of its own, browsing by folder |
 | `No playlists yet` | Empty state heading |
-| `No podcasts` | Nothing kept on this phone yet: no show subscribed |
-| `Nothing here yet` |  |
-| `Playlist` | A list saved on the server. Not the queue |
-| `Podcast` | The kind word: a search result's type and a show's metadata line. A noun, not the verb 'to broadcast' |
-| `Public` |  |
-| `Your library` | The tab with your albums, artists and playlists |
-| `Your playlists and favorites show up here.` |  |
-| `Yours` |  |
+| `Only downloaded` |  |
+| `Only favorited` | The heart's switch at the top of the Library tab, read out by the screen reader: pressed, only what you favorited shows. It sits beside the identical switch that says `Only downloaded` |
 
 ## Login
 
@@ -572,6 +549,7 @@ you are actually typing into, which is easier than reading it here.
 | `Couldn't load your podcasts.` | The list of kept shows would not read — the phone's own index, not a server. The Retry button reads it again |
 | `Couldn't reach any of your podcast feeds.` | Said after asking every kept show for new episodes: none of the feeds answered, so nothing new could be read |
 | `Couldn't read this feed` | Filed under a show whose feed would not load, so the reason is still there offline. One show, not the whole list |
+| `Favorite a show to keep it here.` | The line under the Library's Podcasts shelf: hearts are how a show is kept. 'Here' means this phone |
 | `Feed URL` | The field in the add-a-show sheet: the address of the show's feed, pasted in |
 | `Find a podcast` | The placeholder in the search box on the shows you keep: searches the iTunes directory, which answers with a show's feed address |
 | `Find one, or add it with the address of its feed.` |  |
@@ -639,6 +617,7 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
+| `Album` | In search results, the little word under a result saying what kind of thing it is |
 | `All` |  |
 | `Artist` | In search results, the little word under a result saying what kind of thing it is |
 | `Artists` | A heading over a list of them, never a count |
@@ -661,7 +640,7 @@ you are actually typing into, which is easier than reading it here.
 | `Crossfade, volume, equalizer` |  |
 | `Download quality, song cache, storage used` |  |
 | `Exit local mode` | Leave the profile that plays the phone's own files |
-| `Home, navigation bar, Explore, Your library` |  |
+| `Home, navigation bar, Library` | The line under the Home & tabs row of Settings: where that screen leads. A list of tab names, not a sentence |
 | `Language, theme, font, lists, gestures` |  |
 | `Local profile` | The on-device profile, with no server account. Its library screen is `Local music` |
 | `Music folders, scan` |  |
@@ -793,13 +772,6 @@ you are actually typing into, which is easier than reading it here.
 | `Reset bands` | Put the equalizer's frequency sliders back to flat |
 | `This device does not offer an equalizer.` |  |
 
-## Settings › Explore sections
-
-| String | What it is |
-| --- | --- |
-| `Explore sections` |  |
-| `Keep at least one section on` |  |
-
 ## Settings › Font
 
 | String | What it is |
@@ -845,8 +817,6 @@ you are actually typing into, which is easier than reading it here.
 | `Always show the navigation bar` |  |
 | `At the top of Home, what is playing in your other apps and devices, ready to carry on here.` |  |
 | `Blur` | One of the values of “Navigation bar style” |
-| `Explore` | The tab holding everything the server has: all albums, artists, songs, genres, stations and folders |
-| `Explore sections` |  |
 | `Folder browsing` | Browsing the server's folders as folders, instead of by album and artist |
 | `Gradient` | One of the values of “Navigation bar style” |
 | `Greeting` | Home's "Good morning" line |
@@ -857,6 +827,7 @@ you are actually typing into, which is easier than reading it here.
 | `Home chips` | The row of tappable category chips |
 | `Home sections` | Reorder which sections appear on Home |
 | `Interface` | Section header grouping toggles |
+| `Library sections` | The row that opens the screen choosing which pills sit at the top of the Library tab, and that screen's own heading |
 | `Navigation` | Section header: how you move around the app |
 | `Navigation bar` | Settings screen: which tabs are on the bar at the bottom, and in what order |
 | `Navigation bar style` |  |
@@ -867,10 +838,6 @@ you are actually typing into, which is easier than reading it here.
 | `Radios` |  |
 | `Show tab names` |  |
 | `Solid` | One of the values of “Navigation bar style” |
-| `Start on your playlists` | A switch: with it on, Your library with no chip pressed shows the Favorites entry and the playlists, the way it used to, instead of albums, artists and playlists mixed together |
-| `With no chip pressed, Your library shows Favorites and your playlists instead of everything mixed together.` |  |
-| `Your library` | The tab with your albums, artists and playlists |
-| `Your library chips` |  |
 
 ## Settings › Home sections
 
@@ -908,7 +875,6 @@ you are actually typing into, which is easier than reading it here.
 | `Keep at least one library on` | Toast: at least one of the server's libraries has to stay ticked |
 | `Last scan` |  |
 | `Libraries` | Section header over the server's libraries, when it has more than one |
-| `Library` | The settings section, and a folder in the car |
 | `Library updated` | Toast after the phone finished going through its own files |
 | `Local music` | Music stored on the phone itself |
 | `Music folders` | Settings > Local music: the list of phone folders the local profile reads its music from |
@@ -929,11 +895,12 @@ you are actually typing into, which is easier than reading it here.
 | `We need permission to read your device music.` | Android has not granted access to the phone's files yet |
 | `Where should we get your music?` | Heading when choosing where the phone's own music is read from |
 
-## Settings › Library chips
+## Settings › Library sections
 
 | String | What it is |
 | --- | --- |
-| `Your library chips` |  |
+| `Keep at least one section on` |  |
+| `Library sections` | The row that opens the screen choosing which pills sit at the top of the Library tab, and that screen's own heading |
 
 ## Settings › Lyrics
 
@@ -1252,13 +1219,12 @@ you are actually typing into, which is easier than reading it here.
 | `{songs} need about {size}, but only {free} is free. The download may stop partway.` | The same line when the phone is nearly full |
 | `{songs} will be saved to this device (about {size}).` | The same line when the size is known. `{size}` is like "340 MB" |
 | `{songs} will be saved to this device.` | The line under that title. `{songs}` is already worded and inflected, "12 songs" |
-| `Add podcast` | The Explore chip, the add-a-show sheet's title and the button that opens it: keeps a show on this phone from its feed. Not adding a song to a list |
+| `Add podcast` | The Library's Podcasts section, the add-a-show sheet's title and the button that opens it: keeps a show on this phone from its feed. Not adding a song to a list |
 | `Add to a playlist` | Menu action: put this song, album or selection into a playlist |
 | `Add to favorites` | Menu action and screen reader label for the heart. A verb |
 | `Add to queue` | Action: put this song at the end of the queue |
 | `Added to favorites` | Toast |
 | `Added to queue` | The toast that says it worked |
-| `Album` | In search results, the little word under a result saying what kind of thing it is |
 | `Albums` | A heading over a list of them, never a count |
 | `Alphabetical` | Sort option: the order of a list |
 | `Ascending` | Sort option: the order of a list |
@@ -1275,7 +1241,6 @@ you are actually typing into, which is easier than reading it here.
 | `Couldn't add to the playlist` | Toast: the server refused |
 | `Couldn't complete the action` | What the app says when it does not know what went wrong. Deliberately vague |
 | `Couldn't create the playlist` | Toast: the server refused |
-| `Couldn't load albums.` | Error on the screen, with a Retry button |
 | `Couldn't load songs.` | Error on the screen, with a Retry button |
 | `Couldn't play the song` | Toast: the app could not start it at all |
 | `Create` | The confirm button of the new-playlist dialog. A verb |
@@ -1295,6 +1260,7 @@ you are actually typing into, which is easier than reading it here.
 | `Favorites` | The songs, albums and artists you starred |
 | `Find in playlist` | Placeholder of the search box hidden above a tracklist, for finding a song within it |
 | `Hold to go back to {tab}` | The hint on holding the back arrow. `{tab}` is Home, Search or Library |
+| `Library` | The settings section, and a folder in the car |
 | `List` | An option in that menu: one row per item, instead of cards |
 | `Lost the connection to {name}` | Toast: the speaker or TV stopped answering while casting, so playback came back to the phone, paused. `{name}` is the device |
 | `Lyrics` | The words of the song. Also a line of the storage bar, where it is their size on the phone |
@@ -1303,6 +1269,7 @@ you are actually typing into, which is easier than reading it here.
 | `New` | One-word marker beside an episode's date, with a dot in the app's own accent in front of it: this episode came over with the show's last sync, so it arrived since the feed was last read — it is not a claim that it was published recently, a feed's own date can be rewritten and says nothing about that. Keep it one short word: it sits on the row's quiet meta line, after a length and a date, and a long one gets cut off with an ellipsis. Languages that keep the English word are fine, since podcast apps borrow it. |
 | `New playlist` | Row at the top of the playlist picker, and the button on an empty library: make one |
 | `Next` | Player control: the next track (accessibility label) |
+| `No favorites yet` | Empty state heading |
 | `No results` | Nothing matched what was typed |
 | `No results for “{q}”` | Empty state. `{q}` is what was typed |
 | `Not available offline` | This one is not downloaded, so it cannot play without a connection |

@@ -12,7 +12,7 @@
  * the two hard to tell apart at a glance.
  *
  * The order is spelled out next to the icon rather than hidden behind it, the
- * way "Your library" writes it, so nothing is lost by the menu: what the list
+ * way the Library tab writes it, so nothing is lost by the menu: what the list
  * is sorted by is still readable without opening anything.
  */
 import Icon from '@/components/Icon';

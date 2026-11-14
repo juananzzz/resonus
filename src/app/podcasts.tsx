@@ -1,6 +1,7 @@
 /**
  * The podcasts kept on this phone: a screen, and `embedded`, the Podcasts
- * section of Explore. All local (SQLite), so nothing is gated on a server.
+ *  section of the Library tab. All local (SQLite), so nothing is gated on a
+ *  server.
  */
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -29,6 +30,7 @@ import { isManualOffline } from '@/api/netGate';
 import { COVER, coverArtUrl } from '@/api/data';
 import { BackChevron } from '@/components/BackChevron';
 import { BrowseFrame, useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
+import { BrowseToolbar } from '@/components/BrowseToolbar';
 import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import Icon from '@/components/Icon';
@@ -41,10 +43,10 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { episodesLabel, useT } from '@/i18n';
 import type { Language } from '@/i18n/languages';
 import { listPerf } from '@/lib/listPerf';
-import { sortItems } from '@/lib/librarySort';
+import { SORT_LABELS, sortItems } from '@/lib/librarySort';
 import { usePodcastAddedIds, usePodcastFavoriteIds } from '@/lib/podcastFavorites';
 import { invalidatePodcastCaches } from '@/lib/query';
-import { useSettings } from '@/store/settings';
+import { useSettings, type LibrarySort } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { openPodcastMenu } from '@/components/PodcastMenuSheet';
 import {
@@ -59,6 +61,11 @@ import {
 
 /** Channels from which the list stops being read at a glance. */
 const SEARCH_FROM = 8;
+
+/** The orders the shows can be read in, in the order they are offered. */
+const SORTS: { key: LibrarySort; label: string }[] = (
+  Object.keys(SORT_LABELS) as LibrarySort[]
+).map((key) => ({ key, label: SORT_LABELS[key] }));
 
 export default function PodcastsScreen() {
   return <PodcastsBrowser />;
@@ -76,16 +83,27 @@ function channelSubtitle(
   return parts.join(' · ') || t('No episodes yet');
 }
 
-export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProps) {
+/**
+ * `favorited` keeps the list to the shows carrying this phone's heart — the
+ *  other half of what a show is kept by. The Store search belongs to finding
+ *  something new, so the box stops there while the heart is on.
+ */
+export function PodcastsBrowser({
+  embedded,
+  actionRef,
+  searchOpen,
+  favorited,
+}: BrowserProps & { favorited?: boolean }) {
   useTheme();
   const router = useRouter();
   const bottomPad = useScreenBottomPadding();
   const listPad = useListPadding(spacing.lg);
   const t = useT();
   const lang = useSettings((s) => s.language);
-  // Sort like the rest of the library, so the tab and the Library › Podcasts
-  // segment order their shows the same way.
-  const sort = useSettings((s) => s.librarySort);
+  // Its own order, like every other section of the tab has its own: pressing
+  //  the sort button here must not rearrange the shows the Home shelf lists.
+  const sort = useSettings((s) => s.browsePodcastsSort);
+  const setSort = useSettings((s) => s.setBrowsePodcastsSort);
   const toast = useToast((s) => s.show);
 
   const [adding, setAdding] = useState(false);
@@ -138,8 +156,10 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
 
   const channels = useMemo(() => {
     const q = query.trim().toLowerCase();
-    // Opening a show stores it too, so only the added ones are listed.
-    const all = (data ?? []).filter((c) => addedSet.has(c.id));
+    // Opening a show stores it too, so only the added ones are listed; with the
+    //  heart on it is the hearted ones instead, since a show you opened but
+    //  never hearted is not what the section promises then.
+    const all = (data ?? []).filter((c) => (favorited ? favSet : addedSet).has(c.id));
     const filtered = q
       ? all.filter(
           (c) =>
@@ -152,12 +172,14 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
       (c) => c.title,
       sort === 'recent' ? (c) => c.lastPublishedAt ?? 0 : (c) => c.refreshedAt ?? 0,
     );
-  }, [data, query, sort, addedSet]);
+  }, [data, query, sort, favSet, addedSet, favorited]);
 
   const showSearch = addedSet.size > SEARCH_FROM;
   const boxOpen = useSearchBox(embedded, searchOpen, () => setQuery(''));
-  // Explore lists your shows and only goes to the Store when you search.
-  const discovering = !!embedded && term.length > 1;
+  // The Library's shows list keeps your own and only goes to the Store when you
+  //  search. With the heart on, the box filters what you kept: looking for
+  //  something to add is not what a list of favorites is for.
+  const discovering = !!embedded && term.length > 1 && !favorited;
   const discover = useQuery({
     queryKey: ['podcastDiscover', term],
     queryFn: () => searchPodcasts(term),
@@ -186,7 +208,7 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
     }
   }
 
-  // Embedded, Explore's header button opens the sheet.
+  // Embedded, the Library tab's header button opens the sheet.
   useEffect(() => {
     if (actionRef) actionRef.current = () => setAdding(true);
   });
@@ -239,6 +261,11 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
           ) : null}
         </View>
       ) : null}
+
+      {/* The order, and only where the section is the one doing the ordering:
+          while the Store search is on screen, its relevance rules that list,
+          so ordering it isn't in this section's hands. */}
+      {discovering ? null : <BrowseToolbar options={SORTS} value={sort} onChange={setSort} />}
 
       {discovering ? (
         discover.isLoading ? (
@@ -322,6 +349,10 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
           {...listPerf}
           keyboardShouldPersistTaps="handled"
           data={channels}
+          // The heart swaps which shows the rows are made from, so they are
+          //  measured again; the section itself is not remounted for it, which
+          //  is what keeps the box and whatever is typed in it.
+          key={String(favorited)}
           keyExtractor={(item) => item.id}
           contentContainerStyle={[
             styles.list,
@@ -375,12 +406,20 @@ export function PodcastsBrowser({ embedded, actionRef, searchOpen }: BrowserProp
             </Pressable>
           )}
           ListEmptyComponent={
-            <EmptyState
-              icon="headset-outline"
-              title={t('No podcasts')}
-              subtitle={t('Find one, or add it with the address of its feed.')}
-              action={{ label: t('Find a podcast'), onPress: () => setAdding(true) }}
-            />
+            favorited ? (
+              <EmptyState
+                icon="heart-outline"
+                title={t('No favorites yet')}
+                subtitle={t('Favorite a show to keep it here.')}
+              />
+            ) : (
+              <EmptyState
+                icon="headset-outline"
+                title={t('No podcasts')}
+                subtitle={t('Find one, or add it with the address of its feed.')}
+                action={{ label: t('Find a podcast'), onPress: () => setAdding(true) }}
+              />
+            )
           }
         />
       )}

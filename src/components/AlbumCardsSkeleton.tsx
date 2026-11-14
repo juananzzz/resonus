@@ -1,7 +1,7 @@
 /**
  * Loading skeleton for album grids and carousels: gray blocks with a cover
  * art silhouette and two lines of text, softly pulsing. In a row (home
- * carousel) or wrapping grid (Explore / Genre), at the same size as AlbumCard
+ * carousel) or wrapping grid (the Library tab / Genre), at the same size as AlbumCard
  * so the layout doesn't jump when content arrives.
  */
 import { useEffect } from 'react';

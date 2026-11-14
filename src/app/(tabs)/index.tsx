@@ -1112,8 +1112,8 @@ export default function HomeScreen() {
                   waiting to come out of, it is where somebody has chosen to be,
                   and a permanent badge for it is decoration. Offline is a
                   different matter and still says so, on the right. */}
-              {/* The screen's name when there is no greeting, where Explore and
-                  Your library have theirs. */}
+              {/* The screen's name when there is no greeting, where the Library
+                  tab has its own. */}
               <Text style={styles.greeting} numberOfLines={1}>
                 {showGreeting ? greeting : t('Home')}
               </Text>

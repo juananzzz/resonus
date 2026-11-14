@@ -17,7 +17,7 @@
 import Icon from '@/components/Icon';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -34,6 +34,7 @@ import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 import { getSongList, searchSongs, songListSorts } from '@/api/data';
 import * as Local from '@/lib/localQueries';
 import { type Song, type SongListSort } from '@/api/subsonic';
+import { matches } from '@/lib/librarySort';
 import { AlbumCardsSkeleton } from '@/components/AlbumCardsSkeleton';
 import { AlbumRowsSkeleton } from '@/components/AlbumRowsSkeleton';
 import { EmptyState } from '@/components/EmptyState';
@@ -44,6 +45,7 @@ import { TrackRow } from '@/components/TrackRow';
 import { useAccent } from '@/hooks/useAccent';
 import { useBrowseSort } from '@/hooks/useBrowseSort';
 import { useSelectionMenu } from '@/hooks/useSelectionMenu';
+import { useStarredList } from '@/hooks/useStarredList';
 import { useT } from '@/i18n';
 import { haptic } from '@/lib/haptics';
 import { listPerf } from '@/lib/listPerf';
@@ -108,17 +110,33 @@ const SORT_LABEL: Record<SongListSort, string> = {
 
 const DOWNLOADED_SORTS: SongListSort[] = ['recent', 'frequent', 'added', 'alpha', 'random'];
 
+/**
+ * What a favorited list can answer. The server's own order and everything the
+ *  play counts or the catalogue's dates give belong to the lists above: the
+ *  starred answer is complete the moment it arrives, and apart from the title
+ *  there is nothing on it to order by — a star carries no date here.
+ */
+const FAVORITE_SONG_SORTS: SongListSort[] = ['alpha', 'random'];
+
 export default function BrowseSongsScreen() {
   return <SongsBrowser />;
 }
 
-/** `downloaded` lists the songs on the phone, online too (#310). */
+/**
+ * `downloaded` lists the songs on the phone, online too (#310).
+ *
+ * `favorited` holds the list to what carries a star — the screen the
+ *  Favorites page is, reached from the section's own heart. The selection
+ *  gestures stay, which is what a screen for gathering songs wants: the
+ *  favorites are where you start gathering, not where you end up.
+ */
 export function SongsBrowser({
   embedded,
   actionRef,
   searchOpen,
   downloaded,
-}: BrowserProps & { downloaded?: boolean }) {
+  favorited,
+}: BrowserProps & { downloaded?: boolean; favorited?: boolean }) {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
@@ -150,19 +168,21 @@ export function SongsBrowser({
   });
   const card = cardWidth(columns);
   // What this server can actually order by; the first one is what it opens on.
-  // The downloads answer every order, whatever the server can.
-  const sorts = !canFetch ? [] : downloaded ? DOWNLOADED_SORTS : songListSorts();
+  // The downloads answer every order, whatever the server can, and favorites
+  //  answer only the ones that read the rows themselves.
+  const sorts =
+    !canFetch ? [] : favorited ? FAVORITE_SONG_SORTS : downloaded ? DOWNLOADED_SORTS : songListSorts();
   /**
    * Arrived at from a Home shelf, this says which one. Only the value it opens
-   * on: each visit is its own screen, so there is nothing to keep in step. An
-   * order this server cannot give is ignored rather than offered in a menu
-   * where it would do nothing.
+   *  on: each visit is its own screen, so there is nothing to keep in step. An
+   *  order this server cannot give is ignored rather than offered in a menu
+   *  where it would do nothing.
    */
   const { sort: sortParam } = useLocalSearchParams<{ sort?: string }>();
   const [sort, setSort] = useBrowseSort<SongListSort>(
-    downloaded ? 'downloadedSongs' : 'browseSongs',
+    favorited ? 'favoriteSongs' : downloaded ? 'downloadedSongs' : 'browseSongs',
     sorts,
-    sorts[0] ?? 'server',
+    favorited ? 'alpha' : sorts[0] ?? 'server',
     sorts.find((s) => s === sortParam),
   );
 
@@ -180,15 +200,21 @@ export function SongsBrowser({
       queryFn: ({ pageParam }) => (downloaded ? Local.getSongList : getSongList)(sort, PAGE, pageParam),
       initialPageParam: 0,
       getNextPageParam: (last, pages) => (last.length === PAGE ? pages.length * PAGE : undefined),
-      enabled: canFetch,
+      // The heart's list is the one below, not a window on the catalogue.
+      enabled: canFetch && !favorited,
       // "Recently played" is this phone's own play history and costs nothing to
-      // rebuild, so it is rebuilt every time the screen opens. "Most played" is not:
-      // the server only sorts albums, so that list is fifteen album requests,
-      // and asking for them again on every visit was most of the traffic of a
-      // session. It goes back to the ordinary five minutes, and the album
-      // details behind it are shared with the album screens now.
+      //  rebuild, so it is rebuilt every time the screen opens. "Most played" is not:
+      //  the server only sorts albums, so that list is fifteen album requests,
+      //  and asking for them again on every visit was most of the traffic of a
+      //  session. It goes back to the ordinary five minutes, and the album
+      //  details behind it are shared with the album screens now.
       refetchOnMount: downloaded || sort === 'recent' ? 'always' : undefined,
     });
+
+  // The same `['starred']` entry the hearts on these very rows read from, so
+  //  the list and the hearts are one request and one cache entry, and a star
+  //  that goes on or off repaints both. With the heart off nothing is asked.
+  const starredQ = useStarredList(favorited);
 
   // ── Search ─────────────────────────────────────────────────────────────
   // Server-side, like browsing albums: filtering the loaded pages would look
@@ -210,15 +236,52 @@ export function SongsBrowser({
   } = useQuery({
     queryKey: [downloaded ? 'searchDownloadedSongs' : 'searchSongs', debounced, SEARCH_COUNT],
     queryFn: () => (downloaded ? Local.searchSongs : searchSongs)(debounced, SEARCH_COUNT),
-    enabled: canFetch && debounced.length > 0,
+    // The heart already holds the whole starred answer, so its box filters that
+    //  list right here: the server is not asked a second time for a subset of
+    //  something the request above already handed over.
+    enabled: canFetch && debounced.length > 0 && !favorited,
   });
 
+  /**
+   * The favorited list, worked out once: memoised ahead of the early returns
+   *  below, since hooks cannot be conditional, and because every keystroke in
+   *  the box above re-runs it. Filtering here is exact — the starred answer is
+   *  the whole list, not the window the one above paginates — which is also
+   *  why the box does not wait for the debounce. A song answers by its title,
+   *  and by the artist or album it is filed under, the way the server's own
+   *  search does.
+   */
+  const favoriteSongs = useMemo(
+    () => {
+      if (!favorited) return null;
+      const q = query.trim();
+      const list = (starredQ.data?.songs ?? []).filter(
+        (s) => !q || matches(q, s.title, s.artist, s.album),
+      );
+      if (sort !== 'random') return list.sort((a, b) => a.title.localeCompare(b.title));
+      // Shuffled inside the memo, so it cannot reshuffle itself while the user
+      //  is reading: it only re-runs when the box, the order or the stars change.
+      const arr = list.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    },
+    [favorited, starredQ.data, query, sort],
+  );
+
   const isSearch = query.trim().length > 0;
-  const songs = isSearch ? (results ?? []) : (data?.pages.flat() ?? []);
+  const songs =
+    favorited ? (favoriteSongs ?? []) : isSearch ? (results ?? []) : (data?.pages.flat() ?? []);
   // While the debounce hasn't fired the query is still off, so it's not
   // "loading" but there are also no results: without this «No results» would
-  // flash between keystrokes.
-  const searchPending = isSearch && (searchLoading || debounced !== query.trim());
+  // flash between keystrokes. In favorites nothing is asked, so nothing waits.
+  const searchPending =
+    !favorited && isSearch && (searchLoading || debounced !== query.trim());
+  // Whichever of the two lists is on screen answers for its own load.
+  const loading = favorited ? starredQ.isLoading : isLoading;
+  const failed = favorited ? starredQ.isError : isError;
 
   // ── Multi-select ───────────────────────────────────────────────────────
   // Same as the genre and album lists: null = normal, a Set (even empty) =
@@ -259,7 +322,7 @@ export function SongsBrowser({
   // simply is.
   const showSearch = useSearchBox(embedded, searchOpen, clearSearch);
 
-  // Embedded, the button that opens this menu is drawn by the Explore tab, in
+  // Embedded, the button that opens this menu is drawn by the Library tab, in
   // its own header: this is the way down to the menu it belongs to. Kept up to
   // date after every render rather than during one, which is a rule the ref is
   // not worth breaking for — it is only read from a tap, long after this.
@@ -321,7 +384,7 @@ export function SongsBrowser({
           <Text style={styles.title} numberOfLines={1}>
             {selecting ? t(selectedIds.size === 1 ? '{n} selected::one' : '{n} selected', { n: selectedIds.size }) : t('Songs')}
           </Text>
-          {/* Embedded, the view menu is drawn by the Explore tab and this slot
+          {/* Embedded, the view menu is drawn by the Library tab and this slot
               only carries the select-all. It keeps its width either way, so the
               title stays centred. */}
           <View style={styles.headerAction}>
@@ -380,12 +443,14 @@ export function SongsBrowser({
             setSort(key);
             setSelectedIds(null);
           }}
-          // It plays the server's library, which is not this list.
-          play={downloaded ? undefined : { sort, source: t('Songs'), href: '/browse/songs' }}
+          // It plays the server's library, which is not this list — and in
+          //  favorites it is not the short starred one either, so nothing there
+          //  promises to start what you are looking at.
+          play={downloaded || favorited ? undefined : { sort, source: t('Songs'), href: '/browse/songs' }}
         />
       )}
 
-      {(isSearch ? searchPending : isLoading) ? (
+      {(isSearch ? searchPending : loading) ? (
         grid ? (
           <AlbumCardsSkeleton width={card} count={8} />
         ) : (
@@ -393,8 +458,11 @@ export function SongsBrowser({
         )
       ) : isSearch && searchError ? (
         <Message text={t("Couldn't load songs.")} onRetry={() => refetchSearch()} />
-      ) : isError ? (
-        <Message text={t("Couldn't load songs.")} onRetry={() => refetch()} />
+      ) : failed ? (
+        <Message
+          text={t("Couldn't load songs.")}
+          onRetry={() => void (favorited ? starredQ.refetch() : refetch())}
+        />
       ) : (
         <GHFlatList
           {...listPerf}
@@ -403,10 +471,10 @@ export function SongsBrowser({
           // The random order can hand back a song that already came in an
           // earlier page, so the index goes into the key.
           keyExtractor={(item, i) => `${item.id}-${i}`}
-          // Remount the list when changing sort or view: otherwise FlatList
-          // reuses rows and gets stuck with stale ones (numColumns can't be
-          // hot-swapped either).
-          key={`${sort}-${layout}-${columns}`}
+          // Remount the list when changing sort or view, or when the heart
+          //  swaps the set behind the rows: FlatList keeps its measurements
+          //  otherwise, and numColumns can't be hot-swapped either.
+          key={`${favorited}-${sort}-${layout}-${columns}`}
           {...(grid
             ? {
                 numColumns: columns,
@@ -482,6 +550,12 @@ export function SongsBrowser({
                 icon="search-outline"
                 title={t('No results')}
                 subtitle={t('No results for “{q}”', { q: query.trim() })}
+              />
+            ) : favorited ? (
+              <EmptyState
+                icon="heart-outline"
+                title={t('No favorites yet')}
+                subtitle={t('Favorite songs to see them here.')}
               />
             ) : downloaded && sort !== 'recent' && sort !== 'frequent' ? (
               <EmptyState icon="download-outline" title={t('Nothing here is downloaded')} />
