@@ -18,6 +18,7 @@ import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
 
 import { tg } from '@/i18n';
+import { foldAlbumPlays, type SongPlay } from '@/lib/albumPlays';
 import { wordsAt } from '@/lib/lyricWords';
 import {
   CLIENT_NAME,
@@ -472,9 +473,11 @@ let playsCache:
   | undefined;
 
 /**
- * Plays per album, added up from its songs: Jellyfin keeps them per track
- * only, so sorting albums by `DatePlayed` or `PlayCount` tied them all and
- * fell back to the name (#316, #317). In the order of the last play.
+ * Plays per album, taken from the plays of its songs: Jellyfin keeps them per
+ * track only, so sorting albums by `DatePlayed` or `PlayCount` tied them all
+ * and fell back to the name (#316, #317). The album is ranked by its busiest
+ * song, not by a sum that grows with the length of the record. In the order of
+ * the last play.
  */
 async function albumPlays(
   auth: SubsonicAuth,
@@ -486,7 +489,8 @@ async function albumPlays(
   if (c?.key === key && Date.now() - c.at < PLAYS_TTL_MS && (all || c.stats.size > enough)) {
     return c.stats;
   }
-  const stats = new Map<string, { played: string; count: number }>();
+  const songs: SongPlay[] = [];
+  const albums = new Set<string>();
   for (let start = 0; start < PLAYED_MAX; start += PLAYED_PAGE) {
     const res = await request<JfItems>(auth, `/Users/${auth.jfUserId}/Items`, {
       IncludeItemTypes: 'Audio',
@@ -501,13 +505,17 @@ async function albumPlays(
     const items = res.Items ?? [];
     for (const it of items) {
       if (!it.AlbumId) continue;
-      const s = stats.get(it.AlbumId) ?? { played: it.UserData?.LastPlayedDate ?? '', count: 0 };
-      s.count += it.UserData?.PlayCount ?? 0;
-      stats.set(it.AlbumId, s);
+      albums.add(it.AlbumId);
+      songs.push({
+        albumId: it.AlbumId,
+        playCount: it.UserData?.PlayCount,
+        lastPlayed: it.UserData?.LastPlayedDate,
+      });
     }
     // By last play, an album's first song is its latest: later pages can't move it.
-    if (items.length < PLAYED_PAGE || (!all && stats.size > enough)) break;
+    if (items.length < PLAYED_PAGE || (!all && albums.size > enough)) break;
   }
+  const stats = foldAlbumPlays(songs);
   playsCache = { key, at: Date.now(), stats };
   return stats;
 }

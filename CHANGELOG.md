@@ -48,6 +48,7 @@ Releases before 0.2.1 are only listed on the
 - Your library: with favorite songs and nothing else, it no longer says there is nothing there.
 - The screen could stop answering taps after letting go of the mini player halfway up.
 - Jellyfin: Recently played and Most played albums follow your plays instead of the alphabet.
+- Jellyfin: Most played albums rank by their most-played song, so a long record heard once no longer leads one played more often (#317).
 - Lyrics: a word synced by syllables no longer splits across two lines.
 - Spanish and Catalan: one selected song no longer reads as plural.
 - Podcasts: downloading a whole show asks first, with how many episodes and how long they run.
