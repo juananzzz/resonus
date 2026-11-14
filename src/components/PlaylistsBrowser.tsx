@@ -72,6 +72,10 @@ const SORTS: { key: LibrarySort; label: string }[] = (
  *  answers, so the state is read back through its own API (see
  *  `usePlaylistStars`) and the tab draws no heart where that read is not
  *  available.
+ *
+ * `onToggleDownloaded` and `onToggleFavorite` are the presses the Library tab
+ *  makes in this section's sort row; the heart's state is the section's own
+ *  (saved per section), the Downloaded one is the tab's.
  */
 export function PlaylistsBrowser({
   embedded,
@@ -79,7 +83,15 @@ export function PlaylistsBrowser({
   searchOpen,
   downloaded,
   favorited,
-}: BrowserProps & { downloaded?: boolean; favorited?: boolean }) {
+  onToggleDownloaded,
+  onToggleFavorite,
+}:
+  BrowserProps & {
+    downloaded?: boolean;
+    favorited?: boolean;
+    onToggleDownloaded?: () => void;
+    onToggleFavorite?: () => void;
+  }) {
   const t = useT();
   const lang = useSettings((s) => s.language);
   const listPad = useListPadding(spacing.lg);
@@ -241,9 +253,17 @@ export function PlaylistsBrowser({
         </View>
       ) : null}
 
-      {/* No play pair: the list is playlists, and "play all of them" is not a
-          thing anyone asked for. Same shape as browsing all artists. */}
-      <BrowseToolbar options={SORTS} value={sort} onChange={setSort} />
+      {/* The row's right-hand corner carries the two filters: the heart is this
+          section's own (saved per section), the ↓ the tab's. No play pair here:
+          the list is playlists, and "play all of them" is not a thing anyone
+          asked for. */}
+      <BrowseToolbar
+        options={SORTS}
+        value={sort}
+        onChange={setSort}
+        download={onToggleDownloaded ? { on: !!downloaded, toggle: onToggleDownloaded } : undefined}
+        favorite={onToggleFavorite ? { on: !!favorited, toggle: onToggleFavorite } : undefined}
+      />
 
       {body}
       {gridSheet}

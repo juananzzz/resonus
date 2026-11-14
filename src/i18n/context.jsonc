@@ -319,7 +319,8 @@
     // ── Favourites ───────────────────────────────────────────────────────────
     "Add to favorites": "Menu action and screen reader label for the heart. A verb",
     "Remove from favorites": "The same button when it is already a favourite, and the menu entry that takes a whole selection out",
-    "Only favorited": "The heart's switch at the top of the Library tab, read out by the screen reader: pressed, only what you favorited shows. It sits beside the identical switch that says `Only downloaded`",
+    "Only favorited": "Read out by the screen reader for the heart at the right end of a section's sort row, beside the order it spells out: pressed, the list is held to what you favorited. It sits beside the identical switch that says `Only downloaded`",
+    "Only downloaded": "The ↓ beside that heart in the same row, said the same way: pressed, the list is held to what the phone already holds",
     "Added to favorites": "Toast",
     "Removed from favorites": "Toast",
     "Remove from playlist": "Menu action: take this song out of the playlist it was opened from",

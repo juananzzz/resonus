@@ -97,6 +97,10 @@ export default function BrowseArtistsScreen() {
  *  full index the server already hands over in one go, so favorites are an
  *  intersection with the ids the star list holds rather than a second request:
  *  the index's own rows are what keeps the album count under each name.
+ *
+ * `onToggleDownloaded` and `onToggleFavorite` are the presses the Library tab
+ *  makes in this section's sort row; the state they belong to is the tab's, so
+ *  the press is handed down rather than copied here.
  */
 export function ArtistsBrowser({
   embedded,
@@ -104,7 +108,15 @@ export function ArtistsBrowser({
   searchOpen,
   downloaded,
   favorited,
-}: BrowserProps & { downloaded?: boolean; favorited?: boolean }) {
+  onToggleDownloaded,
+  onToggleFavorite,
+}:
+  BrowserProps & {
+    downloaded?: boolean;
+    favorited?: boolean;
+    onToggleDownloaded?: () => void;
+    onToggleFavorite?: () => void;
+  }) {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
@@ -308,8 +320,17 @@ export function ArtistsBrowser({
         </View>
       ) : null}
 
-      {/* No play beside it: there is no such thing as starting every artist. */}
-      <BrowseToolbar options={SORTS} value={sort} onChange={setSort} />
+      {/* The row's right-hand corner is the tab's two filters: pressing either
+          holds this list to what is on the phone or to what carries a star, and
+          both together ask both questions of one list. There is no play here at
+          all: starting "every artist" is not a thing that means. */}
+      <BrowseToolbar
+        options={SORTS}
+        value={sort}
+        onChange={setSort}
+        download={onToggleDownloaded ? { on: !!downloaded, toggle: onToggleDownloaded } : undefined}
+        favorite={onToggleFavorite ? { on: !!favorited, toggle: onToggleFavorite } : undefined}
+      />
 
       {isLoading || (favorited && !starredArtists) ? (
         grid ? (

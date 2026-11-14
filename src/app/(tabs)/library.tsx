@@ -24,26 +24,34 @@
  *  there is no heart to press, and playlists have stars only where the server
  *  can answer for them (see `usePlaylistStars`).
  *
- * What the tab does draw for a section is the buttons top right: the heart,
- *  the magnifier, the view menu on the lists or "add a station"/"add a
- *  podcast"/"new playlist" where that is what the section is for. Down in the
- *  section they would need a row of their own, and a row holding one icon reads
- *  as an empty band. The menu still lives with the state it belongs to and the
- *  button reaches it through a ref; whether the search box is there is the
- *  other way round, a flag going down (`BrowserProps`), because the magnifier
- *  that opens it is also the X that closes it.
+ * What the tab does draw for a section is the buttons top right: the magnifier,
+ *  the view menu on the lists or "add a station"/"add a podcast"/"new playlist"
+ *  where that is what the section is for. The two filters a section answers to
+ *  are not among them: they are switches over the list, so they sit where that
+ *  list is already read — the right end of the sort row each section wears,
+ *  beside the order it spells out. That row is the one place on the section's
+ *  body that already holds a group of controls, and a band holding one icon
+ *  alone reads as an empty band. The menu still lives with the state it belongs
+ *  to and the button reaches it through a ref; whether the search box is there
+ *  is the other way round, a flag going down (`BrowserProps`), because the
+ *  magnifier that opens it is also the X that closes it.
  *
  * That box used to be open in every section: a band of chrome under the chips
  *  for something you do now and then. It is the one thing the tab has, in the
  *  same place and with the same two ways out of it, Back included.
  *
- * Two filters over the sections, then: the Downloaded pill among the chips,
- *  which keeps every list to what is on the phone (#310), and the heart above
- *  them, which keeps it to what carries a star. Neither is a section, so each
- *  list keeps its own orders, search and view; the heart has its own button
- *  because it belongs to the tab rather than to a chip, and it keeps whatever
- *  was typed in the box, since you are asking the same question of a smaller
- *  list.
+ * Two filters over the sections, then: the Downloaded one, which keeps every
+ *  list to what is on the phone (#310), and the heart, which keeps it to what
+ *  carries a star. They are the section's own sort row's right-hand corner: the
+ *  order in the middle of the row, the two icons pushed to the edge beside it,
+ *  so the row reads as a list's two questions rather than controls that do not
+ *  know about each other. Pressing one holds the list the other is reading, so
+ *  both together ask both questions at once, and neither closes the box: same
+ *  question, smaller list. The Downloaded one is the tab's, one filter over
+ *  every section at a time; the heart belongs to the section it is drawn in and
+ *  remembers its own state there. A section with nothing of one kind draws no
+ *  icon for it — no heart over genres, stations or folders, no ↓ where the
+ *  phone holds nothing to hold the list to.
  */
 import Icon from '@/components/Icon';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -135,10 +143,15 @@ export default function LibraryScreen() {
   const pillOn = order.some((s) => s.key === 'downloaded' && s.enabled);
   const canFilter = !!auth && !offline && hasDownloads && pillOn;
   const filtering = downloadedOnly && canFilter;
-  const toggleFilter = () => {
-    setSearchFor(null);
-    setDownloadedOnly(!filtering);
-  };
+  /**
+   * The two presses the sections draw at the right end of their sort row
+   *  (see `BrowseToolbar`). The Downloaded one is the tab's — one filter over
+   *  every section — and the heart's belongs to the section it is drawn in, so
+   *  a press writes that section's own saved state. Neither closes the search
+   *  box: both ask a narrower question of the list you are reading.
+   */
+  const toggleDownloaded = () => setDownloadedOnly(!filtering);
+  const toggleFavorite = () => setFavoriteSection(current as FavoriteSectionKey, !favorited);
   /** Filled in by whichever section is on screen (see `BrowserProps`). */
   const sectionAction = useRef<() => void>(() => {});
   /**
@@ -205,15 +218,19 @@ export default function LibraryScreen() {
     }
   };
   // What the chips are: turned on, and something this profile can answer for.
-  // The Downloaded pill sits among them, where the settings put it.
+  // The Downloaded filter is not one of them any more — it is a toggle in every
+  //  section's sort row — but it still takes the sections that cannot be held
+  //  to downloads off the bar, which is what `DOWNLOADABLE` says (see #310).
   const chips = order
-    .filter((s) =>
-      s.key === 'downloaded'
-        ? canFilter
-        : s.enabled && available(s.key) && (!filtering || DOWNLOADABLE.includes(s.key as Section)),
+    .filter(
+      (s) =>
+        s.key !== 'downloaded' &&
+        s.enabled &&
+        available(s.key as Section) &&
+        (!filtering || DOWNLOADABLE.includes(s.key as Section)),
     )
-    .map((s) => s.key);
-  const sections = chips.filter((k): k is Section => k !== 'downloaded');
+    .map((s) => s.key as Section);
+  const sections = chips;
   /**
    * Going offline can take the section you were on with it, and so can turning
    * it off in the settings.
@@ -236,6 +253,14 @@ export default function LibraryScreen() {
   const heartable =
     FAVORITABLE.includes(current) && (current !== 'playlists' || playlistStars !== undefined);
   const favorited = heartable && favoriteSections[current as FavoriteSectionKey] === true;
+  /**
+   * Whether the ↓ sits in this section's sort row: the filter is the tab's, but
+   *  it only means something for the lists the phone can hold music for (see
+   *  `DOWNLOADABLE`), and only while there is something on the phone at all.
+   *  Turning it on still hides the sections it cannot answer for from the bar,
+   *  which is what the chips do with the same rule.
+   */
+  const downloadable = canFilter && DOWNLOADABLE.includes(current);
 
   /** Folders is the one section with no box: it is a handful of server roots. */
   const searchable = current !== 'folders';
@@ -292,24 +317,6 @@ export default function LibraryScreen() {
         <Text style={styles.heading}>{t('Library')}</Text>
         <View style={styles.headerActions}>
           <OfflineIndicator />
-          {/* The heart of this section: the same switch the rows show, one
-              level up. It is drawn only where a section has anything to heart,
-              and it says so to the finger as well as to the eye. */}
-          {heartable ? (
-            <Pressable
-              hitSlop={12}
-              accessibilityRole="switch"
-              accessibilityLabel={t('Only favorited')}
-              accessibilityState={{ checked: favorited }}
-              onPress={() => setFavoriteSection(current as FavoriteSectionKey, !favorited)}
-            >
-              <Icon
-                name={favorited ? 'heart' : 'heart-outline'}
-                size={24}
-                color={favorited ? accent : colors.text}
-              />
-            </Pressable>
-          ) : null}
           {/* The magnifier, to the letter: it becomes the X that closes the
               bar, so the bar itself needs no Cancel beside it. */}
           {searchable ? (
@@ -363,23 +370,6 @@ export default function LibraryScreen() {
         contentContainerStyle={styles.segmentsContent}
       >
         {chips.map((key) => {
-          if (key === 'downloaded') {
-            return (
-              <Pressable
-                key={key}
-                style={[styles.filterPill, filtering && { borderColor: accent, backgroundColor: accent }]}
-                accessibilityRole="switch"
-                accessibilityLabel={t('Only downloaded')}
-                accessibilityState={{ checked: filtering }}
-                onPress={toggleFilter}
-              >
-                {filtering ? <Icon name="checkmark" size={14} color={colors.onAccent} /> : null}
-                <Text style={[styles.segmentText, filtering && styles.segmentTextActive]}>
-                  {t('Downloaded')}
-                </Text>
-              </Pressable>
-            );
-          }
           const active = key === current;
           return (
             <Pressable
@@ -407,12 +397,14 @@ export default function LibraryScreen() {
           server while you are not looking at it. The cost is that coming back
           to one starts it at the top; the alternative is every list live at
           once, which on a big library is what the app spent #50 undoing. Only
-          the Downloaded pill goes into each section's `key`, since FlatList
+          the Downloaded filter goes into each section's `key`, since FlatList
           otherwise reuses what it measured for the list that was on screen
           before — and only that one, because remounting is how a section loses
           what was typed in its box, and the heart asks the same question of a
           smaller list. Each section puts the heart into its own list's key
-          instead, which is where the rows get measured again. */}
+          instead, which is where the rows get measured again. Both presses are
+          made from inside the section now, down in its sort row, so the state
+          and the press are handed over rather than kept in two places. */}
       <View style={styles.body}>
         {current === 'playlists' ? (
           <PlaylistsBrowser
@@ -420,6 +412,8 @@ export default function LibraryScreen() {
             embedded
             downloaded={filtering}
             favorited={favorited}
+            onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
+            onToggleFavorite={heartable ? toggleFavorite : undefined}
             actionRef={sectionAction}
             searchOpen={searchOpen}
           />
@@ -429,6 +423,8 @@ export default function LibraryScreen() {
             embedded
             downloaded={filtering}
             favorited={favorited}
+            onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
+            onToggleFavorite={heartable ? toggleFavorite : undefined}
             actionRef={sectionAction}
             searchOpen={searchOpen}
           />
@@ -438,6 +434,8 @@ export default function LibraryScreen() {
             embedded
             downloaded={filtering}
             favorited={favorited}
+            onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
+            onToggleFavorite={heartable ? toggleFavorite : undefined}
             actionRef={sectionAction}
             searchOpen={searchOpen}
           />
@@ -447,6 +445,8 @@ export default function LibraryScreen() {
             embedded
             downloaded={filtering}
             favorited={favorited}
+            onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
+            onToggleFavorite={heartable ? toggleFavorite : undefined}
             actionRef={sectionAction}
             searchOpen={searchOpen}
           />
@@ -458,6 +458,7 @@ export default function LibraryScreen() {
           <PodcastsBrowser
             embedded
             favorited={favorited}
+            onToggleFavorite={heartable ? toggleFavorite : undefined}
             actionRef={sectionAction}
             searchOpen={searchOpen}
           />
@@ -501,16 +502,6 @@ const styles = themed((colors) => ({
     paddingHorizontal: spacing.md,
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceHighlight,
-  },
-  filterPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: spacing.xs - 1,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.textMuted,
   },
   segmentText: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '500' },
   segmentTextActive: { color: colors.onAccent },

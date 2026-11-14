@@ -321,6 +321,7 @@ you are actually typing into, which is easier than reading it here.
 | `No albums in this genre` | Empty state heading |
 | `No songs in this genre` | Empty state heading |
 | `Nothing to change` | Answer to favouriting a selection that already is one, or unfavouriting one that isn't |
+| `Nothing to shuffle yet` | Empty state: there is nothing here to play in random order |
 | `Try exploring another genre.` | Empty state subtitle on a genre screen |
 
 ## Genres
@@ -364,6 +365,7 @@ you are actually typing into, which is easier than reading it here.
 | `Most played albums` | A section of Home: the records played most |
 | `Most played songs` | A section of Home: the songs played most, as songs |
 | `New releases` | Home shelf and album sort: albums by the year they came out, newest first. Not "Recently added", which is when the server got hold of them |
+| `Nothing to shuffle yet` | Empty state: there is nothing here to play in random order |
 | `Paused on {player}` |  |
 | `Play here` |  |
 | `Playing on {player}` | Heading of the card at the top of Home: a song playing right now in another app or on another device of the same account. {player} is that app's name, like Feishin |
@@ -382,12 +384,9 @@ you are actually typing into, which is easier than reading it here.
 | `Couldn't load folders.` | Error on the screen, with a Retry button |
 | `Couldn't load playlists.` | Error on the screen, with a Retry button |
 | `Couldn't refresh the playlists` | On a pull of the list that fails: the rows you were looking at stay, and this one line says the re-ask did not go through |
-| `Downloaded` | Badge on something whose files are on the phone |
 | `Find a playlist` | The search box's placeholder on that screen |
 | `Music` | The name given to the server's folder when it does not have one of its own, browsing by folder |
 | `No playlists yet` | Empty state heading |
-| `Only downloaded` |  |
-| `Only favorited` | The heart's switch at the top of the Library tab, read out by the screen reader: pressed, only what you favorited shows. It sits beside the identical switch that says `Only downloaded` |
 
 ## Login
 
@@ -1274,8 +1273,9 @@ you are actually typing into, which is easier than reading it here.
 | `No results for “{q}”` | Empty state. `{q}` is what was typed |
 | `Not available offline` | This one is not downloaded, so it cannot play without a connection |
 | `Nothing here is downloaded` | Toast when playing something that is not downloaded, offline |
-| `Nothing to shuffle yet` | Empty state: there is nothing here to play in random order |
 | `Offline` | The toast shown when the app falls into offline mode by itself, and the badge that says it is in it |
+| `Only downloaded` | The ↓ beside that heart in the same row, said the same way: pressed, the list is held to what the phone already holds |
+| `Only favorited` | Read out by the screen reader for the heart at the right end of a section's sort row, beside the order it spells out: pressed, the list is held to what you favorited. It sits beside the identical switch that says `Only downloaded` |
 | `Pause` | Read out by the screen reader for the pause button. A verb |
 | `Play` | Read out by the screen reader for the play button. A verb |
 | `Play next` | Action: put this song right after the one playing, without clearing the rest |

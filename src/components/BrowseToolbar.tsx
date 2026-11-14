@@ -1,105 +1,65 @@
 /**
- * The row that sits between a browse list and its search box, shaped like the
- * one a genre has: what you do to the list on the left, what starts it on the
- * right.
+ * The row that sits between a browse list and its search box: what the list is
+ * ordered by on the left, and what it is held to on the right, drawn to the
+ * edge so the row reads as its two ends.
  *
  * It replaced a scrolling row of order pills, and the reason is what the pills
- * left behind. Play and shuffle on their own had nothing on that side of the
- * screen to sit beside, so they read as a green circle alone in an empty band;
- * a genre's pair looks settled because a group of controls holds the other end
- * of the row. The order was already the obvious candidate: as pills it was a
- * second scrolling row of the same shape as the sections above it, which made
- * the two hard to tell apart at a glance.
- *
+ * left behind: as pills the order was a second scrolling row of the same shape
+ * as the sections above it, which made the two hard to tell apart at a glance.
  * The order is spelled out next to the icon rather than hidden behind it, the
  * way the Library tab writes it, so nothing is lost by the menu: what the list
  * is sorted by is still readable without opening anything.
+ *
+ * The two toggles on the right are the section's filters, and both are optional
+ * — a section that has nothing to heart or nothing to hold to downloaded draws
+ * no icon that would do nothing. Each says what it is to the finger as well
+ * (see `accessibilityState`), and they condition each other on the same row:
+ * hearted and downloaded together is the intersection, the two questions asked
+ * of one list rather than one after the other.
  */
 import Icon from '@/components/Icon';
-import { useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useRef } from 'react';
+import { Pressable, Text, View } from 'react-native';
 
-import { getSongList, type Song } from '@/api/data';
-import { type SongListSort } from '@/api/subsonic';
 import { SortSheet } from '@/components/SortSheet';
 import { useAccent } from '@/hooks/useAccent';
 import { useT } from '@/i18n';
-import { playShuffle } from '@/lib/playShuffle';
-import { usePlayerStore } from '@/store/player';
-import { useToast } from '@/store/toast';
-import { colors, fontSize, radius, spacing, themed } from '@/theme';
-
-/**
- * Songs fetched when Play is pressed. The list on screen is a window on a
- * paginated one, so playing it would mean "the first thirty, and whatever you
- * happened to scroll past"; this asks for a queue's worth in the order the
- * list is set to, which is what a genre does with the same button.
- */
-const PLAY_SIZE = 200;
-
-/** What the pair on the right starts, for the lists that have something to
- *  start. Left out by the ones that do not (all artists, say). */
-interface PlayTarget {
-  /** The song order to ask the server for. */
-  sort?: SongListSort;
-  /** What the player says it is playing from, and where that name leads. */
-  source: string;
-  href: string;
-}
+import { colors, fontSize, spacing, themed } from '@/theme';
 
 export function BrowseToolbar<T extends string>({
   options,
   value,
   onChange,
-  play,
+  download,
+  favorite,
+  ordering,
 }: {
   /** In the order they should be shown; the label is a translation key. One of
    *  them, or none, is not a choice, and then no control is drawn. */
   options: { key: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
-  play?: PlayTarget;
+  /** The filters the row holds the list to, each with whether it is on and how
+   *  a press says otherwise. Left out by a section that has nothing of that
+   *  kind — an icon that would do nothing is worse than no icon. */
+  download?: { on: boolean; toggle: () => void };
+  favorite?: { on: boolean; toggle: () => void };
+  /** Whether the order is the list's to offer at all. The search answer comes
+   *  back by relevance, so the sheet would offer orders the list is not in —
+   *  while the two filters still hold it, and their presses belong where the
+   *  finger already found them. */
+  ordering?: boolean;
 }) {
   const t = useT();
   const accent = useAccent();
-  const toast = useToast((s) => s.show);
-  const playQueue = usePlayerStore((s) => s.playQueue);
   const sortRef = useRef<() => void>(() => {});
-  /** A queue's worth is a request, and the play button says so meanwhile. */
-  const [starting, setStarting] = useState(false);
 
   const current = options.find((o) => o.key === value);
-
-  async function onPlay() {
-    if (!play || starting) return;
-    setStarting(true);
-    try {
-      const queue = await getSongList(play.sort ?? 'server', PLAY_SIZE, 0);
-      if (queue.length === 0) {
-        toast(t('Nothing to shuffle yet'));
-        return;
-      }
-      await playQueue(queue as Song[], 0, play.source, play.href);
-    } catch {
-      toast(t("Couldn't load songs."));
-    } finally {
-      setStarting(false);
-    }
-  }
-
-  async function onShuffle() {
-    if (starting) return;
-    setStarting(true);
-    try {
-      await playShuffle();
-    } finally {
-      setStarting(false);
-    }
-  }
+  const showOrder = ordering !== false && options.length > 1 && !!current;
 
   return (
     <View style={styles.row}>
-      {options.length < 2 || !current ? (
+      {!showOrder ? (
         <View />
       ) : (
         <Pressable
@@ -116,28 +76,41 @@ export function BrowseToolbar<T extends string>({
         </Pressable>
       )}
 
-      {play ? (
-        <View style={styles.playRow}>
-          <Pressable
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel={t('Shuffle')}
-            onPress={() => void onShuffle()}
-          >
-            <Icon name="shuffle" size={26} color={colors.textSecondary} />
-          </Pressable>
-          <Pressable
-            style={[styles.playButton, { backgroundColor: accent }]}
-            accessibilityRole="button"
-            accessibilityLabel={t('Play')}
-            onPress={() => void onPlay()}
-          >
-            {starting ? (
-              <ActivityIndicator color={colors.onAccent} />
-            ) : (
-              <Icon name="play" size={28} color={colors.onAccent} />
-            )}
-          </Pressable>
+      {download || favorite ? (
+        <View style={styles.filters}>
+          {download ? (
+            <Pressable
+              hitSlop={12}
+              accessibilityRole="switch"
+              accessibilityLabel={t('Only downloaded')}
+              accessibilityState={{ checked: download.on }}
+              onPress={download.toggle}
+            >
+              {/* The ↓ the rows wear on what is on the phone, filled when the
+                  filter is on and its outline while it is not — the same
+                  language the heart next to it answers in. */}
+              <Icon
+                name={download.on ? 'arrow-down-circle' : 'arrow-down-circle-outline'}
+                size={22}
+                color={download.on ? accent : colors.textSecondary}
+              />
+            </Pressable>
+          ) : null}
+          {favorite ? (
+            <Pressable
+              hitSlop={12}
+              accessibilityRole="switch"
+              accessibilityLabel={t('Only favorited')}
+              accessibilityState={{ checked: favorite.on }}
+              onPress={favorite.toggle}
+            >
+              <Icon
+                name={favorite.on ? 'heart' : 'heart-outline'}
+                size={22}
+                color={favorite.on ? accent : colors.text}
+              />
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
 
@@ -164,14 +137,7 @@ const styles = themed((colors) => ({
   // pushing them off the edge.
   sort: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 1 },
   sortText: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '500' },
-  playRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  // Same measurements as `TrackListView`, which is what an album and a playlist
-  // put in this corner.
-  playButton: {
-    width: 56,
-    height: 56,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  // The two toggles at the row's right end. Spaced like the pair a genre used
+  //  to wear here, so a row with one of them still reads as a group.
+  filters: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
 }));

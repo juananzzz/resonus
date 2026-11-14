@@ -86,13 +86,22 @@ function channelSubtitle(
  * `favorited` keeps the list to the shows carrying this phone's heart — the
  *  other half of what a show is kept by. The Store search belongs to finding
  *  something new, so the box stops there while the heart is on.
+ *
+ * `onToggleFavorite` is the press the Library tab makes in this section's sort
+ *  row. No ↓ is offered beside it: what the Downloaded filter keeps is music on
+ *  the phone, and a show is kept by its own screen.
  */
 export function PodcastsBrowser({
   embedded,
   actionRef,
   searchOpen,
   favorited,
-}: BrowserProps & { favorited?: boolean }) {
+  onToggleFavorite,
+}:
+  BrowserProps & {
+    favorited?: boolean;
+    onToggleFavorite?: () => void;
+  }) {
   useTheme();
   const router = useRouter();
   const bottomPad = useScreenBottomPadding();
@@ -252,8 +261,15 @@ export function PodcastsBrowser({
 
       {/* The order, and only where the section is the one doing the ordering:
           while the Store search is on screen, its relevance rules that list,
-          so ordering it isn't in this section's hands. */}
-      {discovering ? null : <BrowseToolbar options={SORTS} value={sort} onChange={setSort} />}
+          so ordering it isn't in this section's hands. The heart beside it
+          stays, since holding the list to what you kept works either way. */}
+      <BrowseToolbar
+        ordering={!discovering}
+        options={SORTS}
+        value={sort}
+        onChange={setSort}
+        favorite={onToggleFavorite ? { on: !!favorited, toggle: onToggleFavorite } : undefined}
+      />
 
       {discovering ? (
         discover.isLoading ? (

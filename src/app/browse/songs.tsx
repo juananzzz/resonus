@@ -127,6 +127,12 @@ export default function BrowseSongsScreen() {
  *  Favorites page is, reached from the section's own heart. The selection
  *  gestures stay, which is what a screen for gathering songs wants: the
  *  favorites are where you start gathering, not where you end up.
+ *
+ * `onToggleDownloaded` and `onToggleFavorite` are the two presses the Library
+ *  tab makes in the section's sort row; the state they belong to is the tab's,
+ *  so the press is handed down rather than copied here. The Favorites page sets
+ *  `favorited` itself and passes neither, which is why it draws no icons it
+ *  could not press.
  */
 export function SongsBrowser({
   embedded,
@@ -134,7 +140,15 @@ export function SongsBrowser({
   searchOpen,
   downloaded,
   favorited,
-}: BrowserProps & { downloaded?: boolean; favorited?: boolean }) {
+  onToggleDownloaded,
+  onToggleFavorite,
+}:
+  BrowserProps & {
+    downloaded?: boolean;
+    favorited?: boolean;
+    onToggleDownloaded?: () => void;
+    onToggleFavorite?: () => void;
+  }) {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
@@ -413,21 +427,21 @@ export function SongsBrowser({
         </View>
       ) : null}
 
-      {/* Gone while searching, and while selecting: results come back by
-          relevance so there is no order to show, and an action row is not what
-          a selection wants over its list. */}
-      {isSearch || selecting ? null : (
+      {/* Gone while selecting: an action row is not what a selection wants
+          over its list. While searching the order is the server's (it answers
+          by relevance), so the sheet is not drawn — the two filters still hold
+          the answer, and their presses stay where the finger found them. */}
+      {selecting ? null : (
         <BrowseToolbar
+          ordering={!isSearch}
           options={sorts.map((key) => ({ key, label: SORT_LABEL[key] }))}
           value={sort}
           onChange={(key) => {
             setSort(key);
             setSelectedIds(null);
           }}
-          // It plays the server's library, which is not this list — and in
-          //  favorites it is not the short starred one either, so nothing there
-          //  promises to start what you are looking at.
-          play={downloaded || favorited ? undefined : { sort, source: t('Songs'), href: '/browse/songs' }}
+          download={onToggleDownloaded ? { on: !!downloaded, toggle: onToggleDownloaded } : undefined}
+          favorite={onToggleFavorite ? { on: !!favorited, toggle: onToggleFavorite } : undefined}
         />
       )}
 

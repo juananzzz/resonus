@@ -117,6 +117,12 @@ export default function BrowseAlbumsScreen() {
  *  them is the starred answer rather than a window on the catalogue, and the
  *  personal rules that belong to favorites (pins first, offline dimming, the
  *  ↓ of what is on the phone) come along with it.
+ *
+ * `onToggleDownloaded` and `onToggleFavorite` are the two presses the tab makes
+ *  in the section's own sort row: the row draws the icons, and the state they
+ *  belong to is the tab's, so this hands the press down rather than holding a
+ *  copy of it. A section reached as a screen of its own passes neither, and
+ *  draws neither icon.
  */
 export function AlbumsBrowser({
   embedded,
@@ -124,7 +130,15 @@ export function AlbumsBrowser({
   searchOpen,
   downloaded,
   favorited,
-}: BrowserProps & { downloaded?: boolean; favorited?: boolean }) {
+  onToggleDownloaded,
+  onToggleFavorite,
+}:
+  BrowserProps & {
+    downloaded?: boolean;
+    favorited?: boolean;
+    onToggleDownloaded?: () => void;
+    onToggleFavorite?: () => void;
+  }) {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
@@ -342,24 +356,22 @@ export function AlbumsBrowser({
         </View>
       ) : null}
 
-      {/* Gone while searching: the server returns by relevance, so ordering
-          results isn't in its hands, and what "play everything" would start is
-          not what you were looking for either. Gone in favorites: the play
-          button asks the server for its library, and that is not the short
-          list of what you starred. */}
-      {isSearch ? null : (
-        <BrowseToolbar
-          options={
-            favorited
-              ? SORTS.filter((s) => FAVORITE_SORTS.includes(s.key))
-              : SORTS
-          }
-          value={sort}
-          onChange={setSort}
-          // It plays the server's library, which is not this list.
-          play={downloaded || favorited ? undefined : { source: t('Library'), href: '/browse/albums' }}
-        />
-      )}
+      {/* The order is not the list's while the server answers a search: it
+          returns by relevance, so the sheet would offer orders the answer is
+          not in. The two filters still hold the answer, so their presses stay
+          where the finger already found them. */}
+      <BrowseToolbar
+        ordering={!isSearch}
+        options={
+          favorited
+            ? SORTS.filter((s) => FAVORITE_SORTS.includes(s.key))
+            : SORTS
+        }
+        value={sort}
+        onChange={setSort}
+        download={onToggleDownloaded ? { on: !!downloaded, toggle: onToggleDownloaded } : undefined}
+        favorite={onToggleFavorite ? { on: !!favorited, toggle: onToggleFavorite } : undefined}
+      />
 
       {(isSearch ? searchPending : loading) ? (
         grid ? (
