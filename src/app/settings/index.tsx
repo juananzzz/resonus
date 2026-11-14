@@ -7,16 +7,17 @@
 import Icon from '@/components/Icon';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, Switch, Text, TextInput, View } from 'react-native';
+import { Pressable, Switch, Text, View } from 'react-native';
 
 import { SettingsScroll, ScreenHeader, SettingsSafeArea, settingsStyles } from '@/components/SettingsUI';
+import { SearchBox } from '@/components/SearchBox';
 import { useT } from '@/i18n';
 import { searchSettings } from '@/lib/settingsSearch';
 import { useAuthStore } from '@/store/auth';
 import { anyDownloads, useDownloads } from '@/store/downloads';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
-import { colors, fontSize, radius, restyled, spacing, themed, useTheme, tracking } from '@/theme';
+import { colors, fontSize, radius, spacing, themed, useTheme, tracking } from '@/theme';
 
 /** `asTab`: shown as the Settings tab (see `(tabs)/options`), with no way back. */
 export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
@@ -168,24 +169,12 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
           `SettingsPage`; this one draws its own header, so it says it here. */}
       <View style={settingsStyles.pane}>
       <SettingsScroll keyboardShouldPersistTaps="handled">
-        <View style={styles.searchBar}>
-          <Icon name="search" size={20} color={colors.textMuted} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('Search settings')}
-            placeholderTextColor={colors.textMuted}
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={query}
-            onChangeText={setQuery}
-            returnKeyType="search"
-          />
-          {query.length > 0 ? (
-            <Pressable hitSlop={10} accessibilityLabel={t('Clear')} onPress={() => setQuery('')}>
-              <Icon name="close-circle" size={20} color={colors.textMuted} />
-            </Pressable>
-          ) : null}
-        </View>
+        <SearchBox
+          style={{ marginBottom: spacing.md }}
+          placeholder={t('Search settings')}
+          value={query}
+          onChangeText={setQuery}
+        />
 
         {searching ? (
           hits.length > 0 ? (
@@ -302,16 +291,6 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
 
 const styles = themed((colors) => ({
   // The Search tab's box, at this screen's margins.
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surfaceHighlight,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    borderRadius: restyled(radius.pill, radius.md),
-  },
-  searchInput: { flex: 1, color: colors.text, fontSize: fontSize.md, paddingVertical: spacing.md },
   noHits: { color: colors.textMuted, fontSize: fontSize.sm, textAlign: 'center', marginTop: spacing.xl },
   accountCard: { marginBottom: spacing.md },
   profileRow: { paddingVertical: spacing.lg },

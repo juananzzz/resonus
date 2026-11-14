@@ -14,7 +14,6 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,9 +39,10 @@ import { useAuthStore } from '@/store/auth';
 import { MAX_PINS, usePins } from '@/store/pins';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useToast } from '@/store/toast';
-import { colors, fontSize, radius, restyled, SCREEN_BOTTOM_PADDING, SHEET_MAX_WIDTH, spacing, themed, useTheme, tracking } from '@/theme';
+import { colors, fontSize, radius, SCREEN_BOTTOM_PADDING, SHEET_MAX_WIDTH, spacing, themed, useTheme, tracking } from '@/theme';
 import { BackChevron } from '@/components/BackChevron';
 import { BrowseFrame, useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
+import { SearchBox } from '@/components/SearchBox';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useListPadding } from '@/hooks/useScreenSize';
 import { listPerf } from '@/lib/listPerf';
@@ -191,24 +191,15 @@ export function RadioBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
       )}
 
       {(embedded ? boxOpen : showSearch) ? (
-        <View style={styles.searchBar}>
-          <Icon name="search" size={18} color={colors.textMuted} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('Find a station')}
-            placeholderTextColor={colors.textMuted}
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={query}
-            onChangeText={setQuery}
-            autoFocus={embedded}
-          />
-          {query ? (
-            <Pressable hitSlop={8} onPress={() => setQuery('')} accessibilityLabel={t('Clear')}>
-              <Icon name="close-circle" size={18} color={colors.textMuted} />
-            </Pressable>
-          ) : null}
-        </View>
+        /* The box "Your library" has, to the same measurements, which is what every
+            section of Explore now opens. */
+        <SearchBox
+          style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md }}
+          placeholder={t('Find a station')}
+          value={query}
+          onChangeText={setQuery}
+          autoFocus={embedded}
+        />
       ) : null}
 
       {isLoading ? (
@@ -397,21 +388,6 @@ const styles = themed((colors) => ({
   // The MCI pin comes vertical; rotated 45° it looks like Spotify's, which is
   // how it is drawn everywhere else in the app.
   rowSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
-  // The box "Your library" has, to the same measurements, which is what every
-  // section of Explore now opens.
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    height: 44,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
-    // A capsule with Round, a rounded rectangle with Pointier.
-    borderRadius: restyled(radius.pill, radius.md),
-    backgroundColor: colors.surfaceHighlight,
-  },
-  searchInput: { flex: 1, color: colors.text, fontSize: fontSize.md, padding: 0 },
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: colors.backdrop },
   sheet: {
     position: 'absolute',

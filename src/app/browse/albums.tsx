@@ -14,7 +14,6 @@ import {
   Keyboard,
   Pressable,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
@@ -33,8 +32,6 @@ import { useSettings } from '@/store/settings';
 import {
   colors,
   fontSize,
-  radius,
-  restyled,
   spacing,
   SCREEN_BOTTOM_PADDING,
   themed,
@@ -45,6 +42,7 @@ import { listPerf } from '@/lib/listPerf';
 import { BackChevron } from '@/components/BackChevron';
 import { BrowseFrame, useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
 import { BrowseToolbar } from '@/components/BrowseToolbar';
+import { SearchBox } from '@/components/SearchBox';
 import { useBrowseSort } from '@/hooks/useBrowseSort';
 import { useGridColumns } from '@/hooks/useGridColumns';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
@@ -230,33 +228,14 @@ export function AlbumsBrowser({
           In the tab the magnifier asks for it (see `useSearchBox`). */}
       {showSearch ? (
         <View style={styles.searchRow}>
-          <View style={styles.searchBar}>
-            <Icon name="search" size={18} color={colors.textMuted} />
-            <TextInput
-              style={styles.input}
-              placeholder={t('Find an album')}
-              placeholderTextColor={colors.textMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={query}
-              onChangeText={setQuery}
-              onFocus={() => setSearching(true)}
-              returnKeyType="search"
-              // Embedded it was opened on purpose, so the keyboard is what
-              // comes next; on the screen it would cover the list on arrival.
-              autoFocus={embedded}
-            />
-            {query.length > 0 ? (
-              <Pressable
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel={t('Clear')}
-                onPress={() => setQuery('')}
-              >
-                <Icon name="close-circle" size={18} color={colors.textMuted} />
-              </Pressable>
-            ) : null}
-          </View>
+          <SearchBox
+            style={{ flex: 1 }}
+            placeholder={t('Find an album')}
+            value={query}
+            onChangeText={setQuery}
+            onFocus={() => setSearching(true)}
+            autoFocus={embedded}
+          />
           {/* Only on its own screen. In the tab the magnifier has turned into
               an X, and a second way out beside the box is one too many. */}
           {searching && !embedded ? (
@@ -371,18 +350,6 @@ const styles = themed((colors) => ({
     // The gap to the row below is part of the height, not an outer margin.
     paddingBottom: spacing.md,
   },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    height: 44,
-    backgroundColor: colors.surfaceHighlight,
-    paddingHorizontal: spacing.lg,
-    // A capsule with Round, a rounded rectangle with Pointier.
-    borderRadius: restyled(radius.pill, radius.md),
-  },
-  input: { flex: 1, color: colors.text, fontSize: fontSize.md, paddingVertical: 0 },
   searchCancel: { color: colors.text, fontSize: fontSize.sm, fontWeight: '500' },
   list: {
     paddingHorizontal: spacing.lg,

@@ -3,14 +3,11 @@
  *
  * A screen of its own and, `embedded`, the Genres section of the Explore tab.
  */
-import Icon from '@/components/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
-  Pressable,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 
@@ -23,10 +20,7 @@ import { Message } from '@/components/Message';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import {
-  colors,
   fontSize,
-  radius,
-  restyled,
   spacing,
   SCREEN_BOTTOM_PADDING,
   themed,
@@ -36,6 +30,7 @@ import {
 import { listPerf } from '@/lib/listPerf';
 import { BackChevron } from '@/components/BackChevron';
 import { BrowseFrame, useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
+import { SearchBox } from '@/components/SearchBox';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { columnsFor, useScreenSize } from '@/hooks/useScreenSize';
 
@@ -96,24 +91,15 @@ export function GenresBrowser({ embedded, searchOpen }: BrowserProps) {
       )}
 
       {showSearch ? (
-        <View style={styles.searchBar}>
-          <Icon name="search" size={18} color={colors.textMuted} />
-          <TextInput
-            style={styles.input}
-            placeholder={t('Filter genres')}
-            placeholderTextColor={colors.textMuted}
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={query}
-            onChangeText={setQuery}
-            autoFocus={embedded}
-          />
-          {query.length > 0 ? (
-            <Pressable hitSlop={10} onPress={() => setQuery('')}>
-              <Icon name="close-circle" size={18} color={colors.textMuted} />
-            </Pressable>
-          ) : null}
-        </View>
+        /* The box "Your library" has, to the same measurements, which is what every
+            section of Explore now opens. */
+        <SearchBox
+          style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md }}
+          placeholder={t('Filter genres')}
+          value={query}
+          onChangeText={setQuery}
+          autoFocus={embedded}
+        />
       ) : (
         // The gap the box was giving the grid; without it the first row of
         // cards sits against the chips above.
@@ -162,19 +148,6 @@ const styles = themed((colors) => ({
   title: { color: colors.text, fontSize: fontSize.lg, letterSpacing: tracking.heading, fontWeight: '500' },
   // The box "Your library" has, to the same measurements, which is what every
   // section of Explore now opens.
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    height: 44,
-    backgroundColor: colors.surfaceHighlight,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
-    // A capsule with Round, a rounded rectangle with Pointier.
-    borderRadius: restyled(radius.pill, radius.md),
-  },
-  input: { flex: 1, color: colors.text, fontSize: fontSize.md, paddingVertical: 0 },
   searchGap: { height: spacing.sm },
   list: {
     paddingHorizontal: spacing.lg,

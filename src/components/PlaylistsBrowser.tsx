@@ -15,7 +15,6 @@
  * No pins. What is pinned is a thing you did to your own library, and this
  * side is the server's.
  */
-import Icon from '@/components/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -25,13 +24,13 @@ import {
   FlatList,
   Pressable,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 
 import { COVER, coverArtUrl, getPlaylists, type Playlist } from '@/api/data';
 import { BrowseToolbar } from '@/components/BrowseToolbar';
 import { useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
+import { SearchBox } from '@/components/SearchBox';
 import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
@@ -48,7 +47,7 @@ import { useAuthStore } from '@/store/auth';
 import { useLastPlayed } from '@/store/lastPlayed';
 import { useMediaMenu } from '@/store/mediaMenu';
 import { useSettings, type LibrarySort } from '@/store/settings';
-import { colors, fontSize, radius, restyled, spacing, themed } from '@/theme';
+import { colors, fontSize, spacing, themed } from '@/theme';
 
 /** The gap between cards, and what a card is left with once they are taken. */
 const GAP = spacing.md;
@@ -193,30 +192,13 @@ export function PlaylistsBrowser({
     <View style={styles.frame}>
       {showSearch ? (
         <View style={styles.searchRow}>
-          <View style={styles.searchBar}>
-            <Icon name="search" size={18} color={colors.textMuted} />
-            <TextInput
-              style={styles.input}
-              placeholder={t('Find a playlist')}
-              placeholderTextColor={colors.textMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={query}
-              onChangeText={setQuery}
-              returnKeyType="search"
-              autoFocus={embedded}
-            />
-            {query.length > 0 ? (
-              <Pressable
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel={t('Clear')}
-                onPress={() => setQuery('')}
-              >
-                <Icon name="close-circle" size={18} color={colors.textMuted} />
-              </Pressable>
-            ) : null}
-          </View>
+          <SearchBox
+            style={{ flex: 1 }}
+            placeholder={t('Find a playlist')}
+            value={query}
+            onChangeText={setQuery}
+            autoFocus={embedded}
+          />
         </View>
       ) : null}
 
@@ -241,18 +223,6 @@ const styles = themed((colors) => ({
     // list starts where the other sections' lists do.
     paddingBottom: spacing.md,
   },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    height: 44,
-    backgroundColor: colors.surfaceHighlight,
-    paddingHorizontal: spacing.lg,
-    // A capsule with Round, a rounded rectangle with Pointier.
-    borderRadius: restyled(radius.pill, radius.md),
-  },
-  input: { flex: 1, color: colors.text, fontSize: fontSize.md, paddingVertical: 0 },
   list: { paddingHorizontal: spacing.lg, gap: spacing.md },
   grid: { paddingHorizontal: spacing.lg, gap: GAP },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

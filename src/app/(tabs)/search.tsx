@@ -24,6 +24,7 @@ import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
+import { SearchBox } from '@/components/SearchBox';
 import { TrackRow } from '@/components/TrackRow';
 import { useDebounce } from '@/hooks/useDebounce';
 import { songsLabel, episodesLabel, useT } from '@/i18n';
@@ -39,7 +40,7 @@ import { currentSong, usePlayerStore } from '@/store/player';
 import { useRecentSearches, type RecentItem } from '@/store/recentSearches';
 import { useSettings } from '@/store/settings';
 import { useAccent } from '@/hooks/useAccent';
-import { colors, fontSize, radius, restyled, spacing, themed, useTheme, tracking } from '@/theme';
+import { colors, fontSize, radius, spacing, themed, useTheme, tracking } from '@/theme';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { centredPadding, columnsFor, useScreenSize } from '@/hooks/useScreenSize';
 
@@ -325,26 +326,14 @@ export default function SearchScreen() {
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top }]}>
-      <View style={styles.searchBar}>
-        <Icon name="search" size={20} color={colors.textMuted} />
-        <TextInput
-          ref={inputRef}
-          style={styles.input}
-          placeholder={t('What do you want to listen to?')}
-          placeholderTextColor={colors.textMuted}
-          autoCapitalize="none"
-          autoCorrect={false}
-          value={query}
-          onChangeText={setQuery}
-          returnKeyType="search"
-        />
-        {query.length > 0 ? (
-          <Pressable hitSlop={10} accessibilityLabel={t('Clear')} onPress={() => setQuery('')}>
-            <Icon name="close-circle" size={20} color={colors.textMuted} />
-          </Pressable>
-        ) : null}
-        <OfflineIndicator />
-      </View>
+      <SearchBox
+        style={{ margin: spacing.lg }}
+        ref={inputRef}
+        placeholder={t('What do you want to listen to?')}
+        value={query}
+        onChangeText={setQuery}
+        after={<OfflineIndicator />}
+      />
 
       {/* Only while something is being searched for. With the box empty this
           screen is the recent searches, and a filter over those narrows
@@ -623,22 +612,6 @@ const styles = themed((colors) => ({
   safe: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surfaceHighlight,
-    margin: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    // A capsule with Round, a rounded rectangle with Pointier.
-    borderRadius: restyled(radius.pill, radius.md),
-  },
-  input: {
-    flex: 1,
-    color: colors.text,
-    fontSize: fontSize.md,
-    paddingVertical: spacing.md,
   },
   content: {
     paddingHorizontal: spacing.lg,

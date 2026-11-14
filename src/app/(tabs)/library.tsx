@@ -13,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -43,6 +42,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
+import { SearchBox } from '@/components/SearchBox';
 import { usePressFeedback } from '@/hooks/usePressFeedback';
 import { albumsLabel, episodesLabel, songsLabel, useT } from '@/i18n';
 import {
@@ -66,7 +66,7 @@ import { useSettings, type LibrarySort } from '@/store/settings';
 import { useAccent } from '@/hooks/useAccent';
 import { episodeUnavailable } from '@/hooks/useEpisodeUnavailable';
 import { useToast } from '@/store/toast';
-import { colors, DIM_OPACITY, fontSize, lineHeight, radius, restyled, spacing, themed, useTheme, tracking } from '@/theme';
+import { colors, DIM_OPACITY, fontSize, lineHeight, radius, spacing, themed, useTheme, tracking } from '@/theme';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { columnsFor, useListPadding, useScreenSize } from '@/hooks/useScreenSize';
 import { listPerf } from '@/lib/listPerf';
@@ -1435,30 +1435,12 @@ export default function LibraryScreen() {
           across lists, albums and artists. */}
       {searchOpen ? (
         <View style={styles.searchRow}>
-          <View style={styles.searchBar}>
-            <Icon name="search" size={18} color={colors.textMuted} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={t('Search')}
-              placeholderTextColor={colors.textMuted}
-              autoFocus
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={query}
-              onChangeText={setQuery}
-              returnKeyType="search"
-            />
-            {query.length > 0 ? (
-              <Pressable
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel={t('Clear')}
-                onPress={() => setQuery('')}
-              >
-                <Icon name="close-circle" size={18} color={colors.textMuted} />
-              </Pressable>
-            ) : null}
-          </View>
+          <SearchBox
+            placeholder={t('Search')}
+            value={query}
+            onChangeText={setQuery}
+            autoFocus
+          />
         </View>
       ) : null}
 
@@ -1616,17 +1598,6 @@ const styles = themed((colors) => ({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
   },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    height: 44,
-    backgroundColor: colors.surfaceHighlight,
-    paddingHorizontal: spacing.lg,
-    // A capsule with Round, a rounded rectangle with Pointier.
-    borderRadius: restyled(radius.pill, radius.md),
-  },
-  searchInput: { flex: 1, color: colors.text, fontSize: fontSize.md, paddingVertical: 0 },
   list: {
     paddingHorizontal: spacing.lg,
     gap: spacing.md,

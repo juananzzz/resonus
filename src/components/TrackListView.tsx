@@ -17,7 +17,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -51,13 +50,14 @@ import { listPerf, reorderListPerf } from '@/lib/listPerf';
 import { applyDrag } from '@/lib/listOrder';
 import { useArtistPicker } from '@/store/artistPicker';
 import { usePlayerStore } from '@/store/player';
-import { colors, fontSize, radius, restyled, spacing, themed, tracking } from '@/theme';
+import { colors, fontSize, radius, spacing, themed, tracking } from '@/theme';
 import { motion } from '@/theme/motion';
 import { BackChevron } from './BackChevron';
 import { TopBarBackground, TopBarPaint } from './BarBlur';
 import { Cover, useCoverRadius } from './Cover';
 import { ExplicitBadge, useExplicitBadge } from './ExplicitBadge';
 import { FavoriteButton } from './FavoriteButton';
+import { SearchBox } from './SearchBox';
 import { SelectionBar, type SelectionAction } from './SelectionBar';
 import { DragTrackRow, TrackRow } from './TrackRow';
 
@@ -1046,29 +1046,15 @@ export function TrackListView({
            minimum height and show a sliver. */
         <Animated.View style={[styles.searchClip, { height: searchH }]}>
         <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
-            <Icon name="search" size={18} color={colors.textSecondary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={searchPlaceholder ?? t('Find in playlist')}
-              placeholderTextColor={colors.textSecondary}
-              value={query}
-              onChangeText={setQuery}
-              onFocus={() => setSearching(true)}
-              returnKeyType="search"
-              autoCorrect={false}
-            />
-            {query.length > 0 ? (
-              <Pressable
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={t('Clear')}
-                onPress={() => setQuery('')}
-              >
-                <Icon name="close-circle" size={18} color={colors.textSecondary} />
-              </Pressable>
-            ) : null}
-          </View>
+          <SearchBox
+            style={{ flex: 1, backgroundColor: colors.highlight }}
+            fieldStyle={{ fontSize: fontSize.sm }}
+            iconColor={colors.textSecondary}
+            placeholder={searchPlaceholder ?? t('Find in playlist')}
+            value={query}
+            onChangeText={setQuery}
+            onFocus={() => setSearching(true)}
+          />
           {searching ? (
             <Pressable hitSlop={8} accessibilityRole="button" onPress={cancelSearch}>
               <Text style={styles.searchCancel}>{t('Cancel')}</Text>
@@ -1714,24 +1700,6 @@ const styles = themed((colors) => ({
     // The gap to the cover goes inside the animated height: this way it
     // collapses along with the bar (an external margin would always be visible).
     paddingBottom: spacing.md,
-  },
-  searchBox: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    // Translucent to let the header's dominant color through (Spotify).
-    backgroundColor: colors.highlight,
-    // A capsule with Round, a rounded rectangle with Pointier.
-    borderRadius: restyled(radius.pill, radius.md),
-    paddingHorizontal: spacing.lg,
-    height: 44,
-  },
-  searchInput: {
-    flex: 1,
-    color: colors.text,
-    fontSize: fontSize.sm,
-    paddingVertical: 0,
   },
   searchCancel: {
     color: colors.text,
