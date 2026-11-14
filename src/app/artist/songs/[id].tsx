@@ -89,7 +89,7 @@ export default function ArtistSongsScreen() {
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
-  const addToQueue = usePlayerStore((s) => s.addToQueue);
+  const queueMany = usePlayerStore((s) => s.queueMany);
   const downloadSongs = useDownloads((s) => s.downloadSongs);
   const deleteDownloadsOnDisk = useDownloads((s) => s.deleteDownloadsOnDisk);
   const downloadArtist = useDownloads((s) => s.downloadArtist);
@@ -374,9 +374,9 @@ export default function ArtistSongsScreen() {
               label: t('Add to queue'),
               onPress: () =>
                 runSelection((sel) => {
-                  // In reverse: each one goes right after the current song, so
-                  // queueing them backwards leaves them in the order you see.
-                  [...sel].reverse().forEach(addToQueue);
+                  // One call, in the order on screen: the block keeps that
+                  // order instead of reversing it (#319).
+                  queueMany(sel, 'end');
                   toast(t('Added to queue'));
                 }),
             },

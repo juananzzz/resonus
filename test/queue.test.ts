@@ -4,7 +4,7 @@ import { describe, it } from 'node:test';
 
 import type { Song, SubsonicAuth } from '@/api/subsonic';
 import {
-  appendEnd,
+  appendToQueue,
   dealt,
   indexInOriginal,
   insertNext,
@@ -25,7 +25,7 @@ const ids = (q: Song[]) => q.map((s) => s.id).join(' ');
 /** Five songs, the second playing, nothing queued by hand. */
 const album = (): QueueState => ({ queue: list('a b c d e'), index: 1, queuedCount: 0 });
 
-describe('Play next and Add to queue (#184)', () => {
+describe('Play next and Add to queue (#184, #319)', () => {
   it('Play next goes right after the current song and grows the block', () => {
     const once = insertNext(album(), [song('x')]);
     assert.equal(ids(once.queue), 'a b x c d e');
@@ -36,18 +36,36 @@ describe('Play next and Add to queue (#184)', () => {
     assert.equal(twice.index, 1);
   });
 
-  it('Add to queue goes to the very end and leaves the block alone', () => {
+  it('Add to queue follows the current song, before the rest of the list', () => {
+    const added = appendToQueue(album(), [song('z')]);
+    assert.equal(ids(added.queue), 'a b z c d e');
+    assert.equal(added.queuedCount, 1);
+    assert.equal(added.index, 1);
+  });
+
+  it('Add to queue goes after what Play next already queued, not before it', () => {
     const st = insertNext(album(), [song('x')]);
-    assert.equal(ids(appendEnd(st.queue, [song('z')])), 'a b x c d e z');
+    const added = appendToQueue(st, [song('z')]);
+    assert.equal(ids(added.queue), 'a b x z c d e');
+    assert.equal(added.queuedCount, 2);
+  });
+
+  it('Add to queue keeps several additions in the order they were made', () => {
+    const once = appendToQueue(album(), list('x y z'));
+    assert.equal(ids(once.queue), 'a b x y z c d e');
+    assert.equal(once.queuedCount, 3);
+    const twice = appendToQueue(once, list('p q'));
+    assert.equal(ids(twice.queue), 'a b x y z p q c d e');
+    assert.equal(twice.queuedCount, 5);
   });
 
   it('marks songs as added by hand and drops the mix mark', () => {
-    const [added] = appendEnd([], [song('m', { fromMix: true })]);
+    const added = appendToQueue(album(), [song('m', { fromMix: true })]).queue[2];
     assert.equal(added.queued, true);
     assert.equal(added.fromMix, undefined);
   });
 
-  it('inserts many at once in their order', () => {
+  it('inserts many Play next songs at once in their order', () => {
     const st = insertNext(album(), list('x y z'));
     assert.equal(ids(st.queue), 'a b x y z c d e');
     assert.equal(st.queuedCount, 3);

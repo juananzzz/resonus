@@ -2,9 +2,10 @@
  * Playback queue, in sections:
  *   · Previous — what is behind the cursor (optional setting).
  *   · Now playing — the current song.
- *   · Next in queue — what "Play next" put straight after it.
+ *   · Next in queue — what "Play next" and "Add to queue" put after it.
  *   · Next from: {source} — the rest of what was playing.
- *   · At the end of the queue — what "Add to queue" put after everything.
+ *   · At the end of the queue — a hand-added song that a jump or drag left
+ *     outside the block.
  * Every row can be dragged and removed, the one playing included (#157).
  *
  * The sections come from the marks the songs carry, not from where they sit.
@@ -241,8 +242,9 @@ export default function QueueScreen() {
     const kind = kindOf(abs);
     if (abs > index + 1 && kindOf(abs - 1) === kind) return null;
     if (kind === 'queued') {
-      // Straight after the current song it is what "Play next" leaves; anywhere
-      // further along, what "Add to queue" left at the end (#184).
+      // Straight after the current song it is what "Play next" and "Add to
+      // queue" leave (#319); further along, a hand-added song that a jump or
+      // drag left outside the block.
       return abs === index + 1 ? t('Next in queue') : t('At the end of the queue');
     }
     if (kind === 'mix') {

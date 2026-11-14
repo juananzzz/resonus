@@ -132,7 +132,7 @@ export function SongsBrowser({
   const toast = useToast((s) => s.show);
   const playing = usePlayerStore(currentSong);
   const playQueue = usePlayerStore((s) => s.playQueue);
-  const addToQueue = usePlayerStore((s) => s.addToQueue);
+  const queueMany = usePlayerStore((s) => s.queueMany);
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const downloadSongs = useDownloads((s) => s.downloadSongs);
   const openPlaylistPicker = usePlaylistPicker((s) => s.open);
@@ -503,9 +503,9 @@ export function SongsBrowser({
               label: t('Add to queue'),
               onPress: () =>
                 runSelection((sel) => {
-                  // In reverse: each one goes right after the current song, so
-                  // queueing them backwards leaves them in the order you see.
-                  [...sel].reverse().forEach(addToQueue);
+                  // One call, in the order on screen: the block keeps that
+                  // order instead of reversing it (#319).
+                  queueMany(sel, 'end');
                   toast(t('Added to queue'));
                 }),
             },

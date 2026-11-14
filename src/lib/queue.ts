@@ -1,7 +1,7 @@
 /**
  * Queue rules as pure functions, so `test/queue.test.ts` can check them. The
- * "queued" block is what Play next added: `queuedCount` songs right after the
- * current one.
+ * "queued" block is what Play next and Add to queue put after the current
+ * song: `queuedCount` songs in a row starting at `index + 1`.
  */
 import type { Song, SubsonicAuth } from '@/api/subsonic';
 
@@ -38,12 +38,21 @@ export function dealt<T>(list: T[], random: () => number = Math.random): T[] {
   return out;
 }
 
-/** Add to queue: at the very end (#184). */
-export function appendEnd(queue: Song[], songs: Song[]): Song[] {
-  return queue.concat(songs.map(handAdded));
+/** Add to queue: the end of the "Next in queue" block, before the rest of the
+ *  list (#319). It used to go after everything, which made the song wait for
+ *  the whole album or playlist — not what "Add to queue" means in Spotify.
+ *  Appending to the block rather than its front also keeps several additions
+ *  in the order they were made. */
+export function appendToQueue(st: QueueState, songs: Song[]): QueueState {
+  const at = st.index + 1 + st.queuedCount;
+  return {
+    queue: st.queue.slice(0, at).concat(songs.map(handAdded), st.queue.slice(at)),
+    index: st.index,
+    queuedCount: st.queuedCount + songs.length,
+  };
 }
 
-/** Play next: right after the current song, growing the block (#184). Not
+/** Play next: at the front of the block, so it is the next song (#184). Not
  *  `splice(...songs)`: thousands of arguments in one call. */
 export function insertNext(st: QueueState, songs: Song[]): QueueState {
   const at = st.index + 1;

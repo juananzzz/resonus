@@ -75,7 +75,7 @@ import { beat, bump, note, timed } from '@/lib/perfLog';
 import { captureSnapshot, restoreSnapshot, type PlayerSnapshot } from '@/lib/playerSnapshot';
 import { queryClient } from '@/lib/query';
 import {
-  appendEnd,
+  appendToQueue,
   dealt,
   insertNext,
   moveIn,
@@ -4071,10 +4071,9 @@ export interface PlayerState {
   queue: Song[];
   index: number;
   /**
-   * Songs put straight after the current one by "Play next", still pending;
-   * they occupy positions index+1..index+queuedCount and are what the queue
-   * screen heads "Next in queue". "Add to queue" does not join them: it goes
-   * to the end of the whole queue (#184).
+   * Songs put straight after the current one by "Play next" and "Add to
+   * queue", still pending; they occupy positions index+1..index+queuedCount
+   * and are what the queue screen heads "Next in queue" (#319).
    */
   queuedCount: number;
   isPlaying: boolean;
@@ -4163,7 +4162,7 @@ export interface PlayerState {
   startRadio: (seed: Song, source: string) => Promise<boolean | null>;
   /** Stops extending the queue. Doesn't touch it: finishes when it finishes. */
   stopRadio: () => void;
-  /** At the very end of the queue, after everything (#184). */
+  /** After the current song and the rest of the "Next in queue" block (#319). */
   addToQueue: (song: Song) => void;
   /** Straight after the current song, at the front of the "queued" block. */
   playNext: (song: Song) => void;
@@ -4171,7 +4170,7 @@ export interface PlayerState {
    * A whole record's worth at once, in the order given.
    *
    * Not the same as calling the two above in a loop: `playNext` puts each song
-   * where the last one went, so an album handed over song by song comes out
+   * at the front of the block, so an album handed over song by song comes out
    * backwards, and either way a queue of a hundred is a hundred separate
    * changes for whatever is listening to them (the remote players sync on
    * every one).
@@ -4472,30 +4471,25 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   /**
-   * The end of the queue, and it means the end (#184).
+   * After what is playing, at the back of the "Next in queue" block (#319).
    *
-   * It used to land at the back of the "queued" block, which is where Spotify
-   * puts it — but Spotify has no "Play next" beside it. With both in the menu,
-   * one going after the current song and the other one place further along is
-   * a distinction nobody can see and a name that does not describe itself: the
-   * report was somebody adding a record and finding it before the rest of the
-   * one already playing. Every player that offers the pair reads it this way
-   * (Apple Music's "Play Last", Feishin's `Play.LAST`).
+   * Spotify puts "Add to queue" there: the song follows the current one and
+   * anything already queued by hand, but comes before the rest of the album
+   * or playlist. It used to go after the whole list (#184), which made it
+   * look like nothing had been queued at all (#319).
    *
-   * The block is left alone: what is in it was put there by "Play next", and
-   * this song is not joining it.
-   *
-   * Adding one from the queue itself hands back the very object that is in it,
-   * mark and all, so a song picked out of a mix would have carried the mark
-   * into the middle of an album and taken the header with it (`handAdded`).
+   * Appending to the block, not its front, keeps several additions in the
+   * order they were made. Adding one from the queue itself hands back the very
+   * object that is in it, mark and all, so a song picked out of a mix would
+   * have carried the mark into the middle of an album and taken the header
+   * with it (`handAdded`).
    */
   addToQueue: (song) => {
-    const { queue } = get();
-    if (queue.length === 0) {
+    if (get().queue.length === 0) {
       void get().playQueue([song], 0);
       return;
     }
-    set({ queue: appendEnd(queue, [song]) });
+    set(appendToQueue(get(), [song]));
     scheduleSync();
   },
 
@@ -4517,7 +4511,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       void get().playQueue(songs, 0);
       return;
     }
-    set(where === 'end' ? { queue: appendEnd(st.queue, songs) } : insertNext(st, songs));
+    set(where === 'end' ? appendToQueue(st, songs) : insertNext(st, songs));
     scheduleSync();
   },
 

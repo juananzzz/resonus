@@ -121,7 +121,7 @@ export default function GenreScreen() {
   const [starting, setStarting] = useState(false);
   const offline = useAuthStore((s) => s.offline);
   const downloadSongs = useDownloads((s) => s.downloadSongs);
-  const addToQueue = usePlayerStore((s) => s.addToQueue);
+  const queueMany = usePlayerStore((s) => s.queueMany);
 
   // ── Order ────────────────────────────────────────────────────────────────
   // The server's, always. This list arrives a page at a time, so reordering
@@ -603,9 +603,9 @@ export default function GenreScreen() {
               label: t('Add to queue'),
               onPress: () =>
                 runSelection((sel) => {
-                  // In reverse: each one goes right after the current song, so
-                  // queueing them backwards leaves them in the order you see.
-                  [...sel].reverse().forEach(addToQueue);
+                  // One call, in the order on screen: the block keeps that
+                  // order instead of reversing it (#319).
+                  queueMany(sel, 'end');
                   toast(t('Added to queue'));
                 }),
             },
