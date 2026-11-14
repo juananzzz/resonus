@@ -534,6 +534,9 @@ async function loadAlbumCovers(songs: Song[]): Promise<void> {
  */
 interface ScanArt {
   known?: Map<string, string>;
+  /** A manual rescan: an image beside the music is copied again, since one
+   *  replaced under the same name looks unchanged. */
+  fresh?: boolean;
   albums?: Map<string, string>;
   artists?: Map<string, string>;
 }
@@ -565,9 +568,9 @@ async function buildCatalog(songs: Song[], art: ScanArt = {}): Promise<LocalCata
   // that the image file in its folder.
   await mapPool(albums, SCAN_CONCURRENCY, async (a) => {
     if (a.coverUri) return;
-    a.coverUri = art.known?.get(a.id);
-    const beside = a.coverUri ? undefined : art.albums?.get(a.id);
-    if (beside) a.coverUri = await importImage(beside);
+    const beside = art.albums?.get(a.id);
+    const known = art.known?.get(a.id);
+    a.coverUri = (beside && (art.fresh || !known) ? await importImage(beside) : undefined) ?? known;
   });
   const artists = groupByArtist(albums);
   // Their own picture, where the folder has one, over an album's cover (#337).
@@ -706,7 +709,6 @@ interface Previous {
    *  ones are read again even though the file list looks unchanged. */
   force?: boolean;
 }
-
 
 /**
  * Reads the tags of the device's music and catalogues it. With `listed`, the
@@ -1002,11 +1004,9 @@ async function scanFolder(
     const songs = await mapPool(rawSongs, SCAN_CONCURRENCY, async (raw) => {
       let known = previous?.songs.get(raw.id);
       if (known && previous?.force) {
-        // SAF gives no date with the listing, so noticing a retag means one
-        // open per file — but only a stat: the tag read is what is skipped
-        // when the date has not moved, which is nearly all of them (#338).
-        const mtime = await readMtime(raw.uri).catch(() => 0);
-        if (songNeedsReread(known, mtime)) known = undefined;
+        // SAF gives no date with the listing, so noticing a retag is one stat
+        // per file; the tag read is what is skipped (#338).
+        if (songNeedsReread(known, await readMtime(raw.uri))) known = undefined;
       }
       let song: Song;
       if (known) {
@@ -1046,6 +1046,7 @@ async function scanFolder(
     // album, and that takes time, so the indicator has to stay up.
     catalog = await buildCatalog(songs, {
       known: previous?.covers,
+      fresh: previous?.force,
       albums: albumImages,
       artists: artistImages,
     });

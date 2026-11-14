@@ -33,6 +33,8 @@ Releases before 0.2.1 are only listed on the
 - Explore: the Downloads chip is now a Downloaded filter that keeps Playlists, Albums, Artists and Songs to what is on your phone.
 - Player: the playback speed and Preserve pitch are kept when the app is closed.
 - Android: Resonus is declared as a music app, for widgets and launchers that look for one (#309).
+- Local profile: Rescan reads again only the files that changed, so a large library no longer takes minutes (#338).
+- Search boxes look and behave the same on every screen.
 
 ### Fixed
 

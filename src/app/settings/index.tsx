@@ -290,7 +290,6 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
 }
 
 const styles = themed((colors) => ({
-  // The Search tab's box, at this screen's margins.
   noHits: { color: colors.textMuted, fontSize: fontSize.sm, textAlign: 'center', marginTop: spacing.xl },
   accountCard: { marginBottom: spacing.md },
   profileRow: { paddingVertical: spacing.lg },

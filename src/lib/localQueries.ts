@@ -288,34 +288,31 @@ async function localSrc(): Promise<LocalCat.Source | null> {
 }
 
 /**
- * Rescans the local source. The catalog on disk is kept: the scan reuses the
- * tags and covers of every file that has not changed, so a library the size
- * of this issue's 15GB rescan takes seconds, not minutes (#338). Only the
- * files whose date has moved since they were read are read again, which is
- * how a file retagged in place is still picked up.
+ * Rescans the local source. The catalog on disk is kept: only the files whose
+ * date has moved since they were read are read again, which is how a file
+ * retagged in place is picked up without reading a whole library (#338).
  */
 export async function rescan(): Promise<void> {
   const state = useAuthStore.getState();
-  if (state.auth || !state.offlineSource) {
-    // Not the local profile: the old road, a rebuild from zero.
-    clearLocalCatalog();
-    await clearLocalCatalogDisk();
-    loadingPromise = null;
-    scanning = null;
-    tree = null;
-    await ensureCatalog();
-    return;
-  }
+  // A background check in flight would scan the same files next to this one.
+  await checking;
   clearLocalCatalog();
   loadingPromise = null;
   scanning = null;
   tree = null;
+  if (state.auth || !state.offlineSource) {
+    // Not the local profile: a rebuild from zero.
+    await clearLocalCatalogDisk();
+    await ensureCatalog();
+    return;
+  }
   const { mode, uris } = sourceInfo();
   if (mode === 'folder' && uris.length === 0) return;
-  // A forced check: the same walk a background check does, except that files
-  // whose date has moved are read again instead of left alone. False when the
-  // source has never been scanned, which is a load, not a rescan.
-  await refreshSource(mode, uris, true).catch(() => false);
+  // False when the source was never scanned: the queries below load it then.
+  await refreshSource(mode, uris, true);
+  lastCheck = Date.now();
+  const src = await localSrc();
+  if (src) await importPlaylistFiles(src, localPlaylistFiles(mode, uris));
   void queryClient.invalidateQueries();
 }
 
