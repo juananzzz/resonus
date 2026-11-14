@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 867 of them.
+Every string the app can show, under the screen it shows up on. 870 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -448,8 +448,11 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
+| `{count} selected` |  |
 | `No lyrics available for this song.` | Empty state on the lyrics screen |
 | `Previous` | Player control: the previous track (accessibility label) |
+| `Select the lines to share` |  |
+| `Share lyrics` |  |
 | `Show cover` | Lyrics screen: the button that goes back to the cover art |
 | `Show remaining time` |  |
 | `Show total time` |  |
