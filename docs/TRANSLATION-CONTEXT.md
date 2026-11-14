@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 867 of them.
+Every string the app can show, under the screen it shows up on. 868 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -259,8 +259,13 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
+| `Ascending` | Sort option: the order of a list |
 | `Couldn't load the folder.` | Error on the screen, with a Retry button |
+| `Descending` | Sort option: the order of a list |
+| `Direction` | Sort sheet: the ascending vs descending toggle. Not a compass direction |
+| `File names` | Sort option in a folder: order its songs by the name of the file on disk, not by their tags |
 | `Folders` | A heading: browsing the server by folder instead of by album |
+| `Sort by` | Heading over the sort options |
 | `This folder is empty.` | Empty state, browsing the server by folder |
 
 ## Browse › Songs
@@ -408,6 +413,7 @@ you are actually typing into, which is easier than reading it here.
 | `Playlist` | A list saved on the server. Not the queue |
 | `Podcast` | The kind word: a search result's type and a show's metadata line. A noun, not the verb 'to broadcast' |
 | `Public` |  |
+| `Sort by` | Heading over the sort options |
 | `Your library` | The tab with your albums, artists and playlists |
 | `Your playlists and favorites show up here.` |  |
 | `Yours` |  |
@@ -1261,7 +1267,6 @@ you are actually typing into, which is easier than reading it here.
 | `Album` | In search results, the little word under a result saying what kind of thing it is |
 | `Albums` | A heading over a list of them, never a count |
 | `Alphabetical` | Sort option: the order of a list |
-| `Ascending` | Sort option: the order of a list |
 | `Auto-download off` | The toast that says it was turned off |
 | `Auto-download on` | The toast that says it was turned on |
 | `Back` | Screen reader label for the back arrow. A direction, not a verb |
@@ -1281,8 +1286,6 @@ you are actually typing into, which is easier than reading it here.
 | `Create` | The confirm button of the new-playlist dialog. A verb |
 | `Default` | Sorting pill: what you get when nothing is sorted, which is the order the server keeps its songs in. Not alphabetical, and not Resonus deciding. On a playlist it is the order the list came in, which is the one you made by dragging the songs if it is an ordinary playlist and the one its rules produced if it is a smart one — hence a word that is true of both rather than "custom" or "pre-defined" |
 | `Delete downloads` | Menu action: delete the downloaded files of everything here |
-| `Descending` | Sort option: the order of a list |
-| `Direction` | Sort sheet: the ascending vs descending toggle. Not a compass direction |
 | `Download` | The confirm button of the download dialog, and what the screen reader calls the download button. A verb |
 | `Download “{name}”?` | Dialog title. `{name}` is an album, artist or playlist |
 | `Download new episodes` | A show's menu: when on, the latest episodes it publishes from now on download by themselves. Never its back catalog |
@@ -1344,7 +1347,6 @@ you are actually typing into, which is easier than reading it here.
 | `Songs` | Always a heading, never a count, so it wants the plain plural your language uses for a list of them ("Songs", not "of songs"). Counting songs is a different thing and goes through the plural forms |
 | `Songs already downloaded will be kept.` | The line under that title: stopping does not undo what already arrived |
 | `Sort` | Read out by the screen reader for the button that opens the sort options. A verb |
-| `Sort by` | Heading over the sort options |
 | `Stop` | Stop a download that is running. Not stop playback |
 | `Stop download?` | Dialog title: stop a download that is running |
 | `This song can't be cast` | Toast: the speaker or TV will not take this file |
