@@ -69,6 +69,14 @@ const TIMEOUT_MS = 20_000;
 const AUTO_DOWNLOAD_EPISODES = 3;
 const AUTO_DOWNLOAD_READ_MS = 1000 * 60 * 60 * 6;
 
+/**
+ * How long a hearted show may go unread before the app reads it again by
+ *  itself: a day, so every favorite comes over once a day while the app is
+ *  used. The auto-download pass reaches a show it covers long sooner, at six
+ *  hours — the day is for the hearted ones it does not.
+ */
+const FAVORITE_READ_MS = 1000 * 60 * 60 * 24;
+
 function scope(): string {
   return hashKey(profileScopeId());
 }
@@ -468,6 +476,28 @@ export async function refreshAutoDownloadShows(): Promise<void> {
   for (const channel of await listChannels()) {
     if (!ids.has(channel.id)) continue;
     if (Date.now() - (channel.refreshedAt ?? 0) < AUTO_DOWNLOAD_READ_MS) continue;
+    await refreshChannel(channel.feedUrl).catch(() => {});
+  }
+}
+
+/**
+ * Reads the hearted shows gone stale, which is how a heart sees new episodes
+ *  without its show being opened: a read is asked for when its last one was
+ *  older than a day. The read stamps its clock even when it failed (see
+ *  `refreshChannel`), so a dead feed costs one try a day, not one per app
+ *  start. Shows the auto-download pass covers stay out: it has read them
+ *  long before a day came around, and both passes come on the same 'active'
+ *  event — a feed left to one of them has nothing to race with. The reads
+ *  stay one at a time, so no host sees a burst, and one dead feed does not
+ *  stall the rest.
+ */
+export async function refreshStaleFavoriteShows(): Promise<void> {
+  if (isManualOffline()) return;
+  const auto = await autoDownloadChannelIds();
+  for (const channel of await listFavoriteChannels()) {
+    // A row written before feeds were filed has no address to read.
+    if (!channel.feedUrl || auto.has(channel.id)) continue;
+    if (Date.now() - (channel.refreshedAt ?? 0) < FAVORITE_READ_MS) continue;
     await refreshChannel(channel.feedUrl).catch(() => {});
   }
 }
