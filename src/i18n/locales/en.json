@@ -207,6 +207,7 @@
   "View": "View",
   "List": "List",
   "{n} columns": "{n} columns",
+  "{n} plays": "{n} plays",
   "Haptic feedback": "Haptic feedback",
   "Hide unavailable songs": "Hide unavailable songs",
   "History": "History",
@@ -865,5 +866,14 @@
   "Search settings": "Search settings",
   "Last scan": "Last scan",
   "Export as M3U": "Export as M3U",
-  "Playlist exported": "Playlist exported"
+  "Playlist exported": "Playlist exported",
+  "Recap": "Recap",
+  "Month": "Month",
+  "Listening time": "Listening time",
+  "No listens yet": "No listens yet",
+  "Songs that count as played this month will show up here.": "Songs that count as played this month will show up here.",
+  "Songs that count as played this year will show up here.": "Songs that count as played this year will show up here.",
+  "Top artists": "Top artists",
+  "Top songs": "Top songs",
+  "Top genres": "Top genres"
 }

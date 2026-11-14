@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 867 of them.
+Every string the app can show, under the screen it shows up on. 877 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -346,6 +346,7 @@ you are actually typing into, which is easier than reading it here.
 | `History` | The listening history: what was played and when |
 | `History cleared` | Toast |
 | `Nothing played yet` | Empty state: this phone has not played anything yet |
+| `Recap` |  |
 | `Songs you play will show up here.` | The line under an empty state, saying how to fill it |
 | `Today` | Heading over the songs played today, on the listening history screen |
 | `Yesterday` | Heading over the songs played yesterday |
@@ -634,6 +635,23 @@ you are actually typing into, which is easier than reading it here.
 | `Website (optional)` | Field when adding a radio station |
 | `You can pin up to {n} items.` | Toast: there is no room for another pinned thing. `{n}` is the limit |
 | `Your password is needed to upload images and will be stored securely.` | The line explaining why the password is asked for again |
+
+## Recap
+
+| String | What it is |
+| --- | --- |
+| `{n} plays` |  |
+| `Listening time` |  |
+| `Month` |  |
+| `No listens yet` |  |
+| `Plays` | How many times the song has been played |
+| `Recap` |  |
+| `Songs that count as played this month will show up here.` |  |
+| `Songs that count as played this year will show up here.` |  |
+| `Top artists` |  |
+| `Top genres` |  |
+| `Top songs` |  |
+| `Year` | Label of a field in the song information sheet: the year of the release |
 
 ## Search
 
