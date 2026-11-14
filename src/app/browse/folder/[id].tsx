@@ -7,14 +7,18 @@
 import Icon from '@/components/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useMemo, useRef } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COVER, coverArtUrl, getFolderIndexes, getMusicDirectory, type Song } from '@/api/data';
 import { Cover } from '@/components/Cover';
 import { Message } from '@/components/Message';
+import { SortSheet } from '@/components/SortSheet';
 import { TrackRow } from '@/components/TrackRow';
+import { useBrowseSort } from '@/hooks/useBrowseSort';
 import { useT } from '@/i18n';
+import { byFileName, type FolderSort } from '@/lib/folderSort';
 import { listPerf } from '@/lib/listPerf';
 import { useAuthStore } from '@/store/auth';
 import { currentSong, usePlayerStore } from '@/store/player';
@@ -27,6 +31,17 @@ import { useListPadding } from '@/hooks/useScreenSize';
 type Row =
   | { kind: 'dir'; id: string; name: string; year?: number; coverArt?: string }
   | { kind: 'song'; song: Song; index: number };
+
+/** The orders the sheet offers: the folder's own (tags / server), or the
+ *  names of the files on disk (#348). */
+const SORT_OPTIONS: { key: FolderSort; label: string }[] = [
+  { key: 'default', label: 'Default' },
+  { key: 'filename', label: 'File names' },
+];
+
+/** The same comparison the file names get, for a folder's own name. */
+const byDirName = (a: { name: string }, b: { name: string }) =>
+  a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
 
 export default function FolderBrowseScreen() {
   const bottomPad = useScreenBottomPadding();
@@ -61,17 +76,34 @@ export default function FolderBrowseScreen() {
   });
 
   const title = data?.name || name || t('Folders');
-  const rows: Row[] = [
-    ...(data?.dirs ?? []).map((d) => ({
-      kind: 'dir' as const,
-      id: d.id,
-      name: d.name,
-      year: d.year,
-      coverArt: d.coverArt,
-    })),
-    ...(data?.songs ?? []).map((song, index) => ({ kind: 'song' as const, song, index })),
-  ];
-  const songs = data?.songs ?? [];
+  // Remembered across visits, like the orders on the browse screens.
+  const [folderSort, setFolderSort] = useBrowseSort<FolderSort>(
+    'folder',
+    SORT_OPTIONS.map((o) => o.key),
+    'default',
+  );
+  const sortRef = useRef<() => void>(() => {});
+  const songs = useMemo(() => data?.songs ?? [], [data]);
+  // The queue follows the rows, so tapping a song starts the list at the row
+  // the finger hit rather than at its old place in the tag order.
+  const orderedSongs = useMemo(
+    () => (folderSort === 'filename' ? [...songs].sort(byFileName) : songs),
+    [songs, folderSort],
+  );
+  const rows: Row[] = useMemo(() => {
+    const dirs = data?.dirs ?? [];
+    const orderedDirs = folderSort === 'filename' ? [...dirs].sort(byDirName) : dirs;
+    return [
+      ...orderedDirs.map((d) => ({
+        kind: 'dir' as const,
+        id: d.id,
+        name: d.name,
+        year: d.year,
+        coverArt: d.coverArt,
+      })),
+      ...orderedSongs.map((song, index) => ({ kind: 'song' as const, song, index })),
+    ];
+  }, [data, folderSort, orderedSongs]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -80,8 +112,22 @@ export default function FolderBrowseScreen() {
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
-        <View style={{ width: 26 }} />
+        <Pressable
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('Sort')}
+          onPress={() => sortRef.current()}
+        >
+          <Icon name="swap-vertical" size={22} color={colors.textSecondary} />
+        </Pressable>
       </View>
+
+      <SortSheet
+        options={SORT_OPTIONS}
+        field={folderSort}
+        onPick={(key) => setFolderSort(key as FolderSort)}
+        openRef={sortRef}
+      />
 
       {isLoading ? (
         <View style={styles.center}>
@@ -127,7 +173,7 @@ export default function FolderBrowseScreen() {
                 song={item.song}
                 isCurrent={playing?.id === item.song.id}
                 showArtwork={showListArtwork}
-                onPress={() => playQueue(songs, item.index, title, `/folder/${id}`)}
+                onPress={() => playQueue(orderedSongs, item.index, title, `/folder/${id}`)}
               />
             )
           }
