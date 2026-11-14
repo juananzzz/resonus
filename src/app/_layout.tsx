@@ -53,6 +53,7 @@ import { useEqualizer } from '@/store/equalizer';
 import { useLastPlayed } from '@/store/lastPlayed';
 import { useLibraries } from '@/store/libraries';
 import { useLibraryMirror } from '@/store/libraryMirror';
+import { useListenLog } from '@/store/listenLog';
 import { initNetworkType } from '@/store/networkType';
 import { useOfflineQueue } from '@/store/offlineQueue';
 import { usePins } from '@/store/pins';
@@ -251,6 +252,7 @@ export default function RootLayout() {
       useRecentSearches.getState().hydrate();
       usePlayCounts.getState().hydrate();
       usePlayHistory.getState().hydrate();
+      void useListenLog.getState().hydrate();
       useSortPrefs.getState().hydrate();
       void useLastPlayed.getState().hydrate();
       void usePins.getState().hydrate();

@@ -107,6 +107,7 @@ import {
   jukeboxSyncUpcoming,
 } from './jukebox';
 import { useLastPlayed } from './lastPlayed';
+import { useListenLog } from './listenLog';
 import { offLocalNetwork, useNetworkType } from './networkType';
 import { useOfflineQueue } from './offlineQueue';
 import { usePlayCounts } from './playCounts';
@@ -1461,6 +1462,11 @@ function maybeScrobbleThreshold(positionSec: number, playing: boolean) {
   if (threshold === null || heardSec < threshold) return;
   scrobbledThisTrack = true;
   const at = Date.now();
+  // The recap (#119) keeps its own record of every listen that counted. It is
+  // credited the track's length, like a stream in a yearly summary: this is a
+  // record of songs heard, not of where somebody stopped. A song of unknown
+  // length is credited what was heard before it counted.
+  useListenLog.getState().record(song, duration > 0 ? duration : heardSec, at);
   const { auth, offline } = useAuthStore.getState();
   // The listen is remembered locally whatever happens to the server: it feeds
   // "Most played" on this phone, which is nobody else's business.

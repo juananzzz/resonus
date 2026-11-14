@@ -3,6 +3,7 @@
  * (no hero header) and songs grouped by day.
  */
 import Icon from '@/components/Icon';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, SectionList, Text, View } from 'react-native';
 // gesture-handler doesn't export SectionList; its ScrollView as inner scroll
@@ -56,6 +57,7 @@ export default function HistoryScreen() {
   // Rows stop growing at a reading measure and centre themselves (#131).
   const listPad = useListPadding(spacing.lg);
   const t = useT();
+  const router = useRouter();
   const lang = useSettings((s) => s.language);
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const entries = usePlayHistory((s) => s.entries);
@@ -86,6 +88,14 @@ export default function HistoryScreen() {
       <View style={styles.bar}>
         <BackChevron size={28} label={t('Close')} />
         <Text style={styles.barTitle}>{t('History')}</Text>
+        <Pressable
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={t('Recap')}
+          onPress={() => router.push('/recap')}
+        >
+          <Icon name="stats-chart-outline" size={22} color={colors.textSecondary} />
+        </Pressable>
         {songs.length > 0 ? (
           <Pressable
             hitSlop={10}
