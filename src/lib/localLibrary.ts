@@ -29,6 +29,7 @@ import { StorageAccessFramework } from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library/legacy';
 
 import { type Song } from '@/api/subsonic';
+import { artistRefs, splitArtistNames } from '@/lib/artistNames';
 import { bump } from '@/lib/perfLog';
 import { useScanProgress } from '@/store/scanProgress';
 import { isFlac, isMp4, readFlacTags, readMp4Tags } from './containerTags';
@@ -45,6 +46,10 @@ export interface LocalAlbum {
   id: string;
   name: string;
   artist?: string;
+  /** The album artist's id when the tag credits more than one artist. */
+  artistId?: string;
+  /** Every artist credited on the album, for the artist screens (#332). */
+  artists?: { id: string; name: string }[];
   /**
    * The embedded cover, which only passes through here during the scan (and
    * sits in older catalogs on disk): it is written out to a file and `coverUri`
@@ -448,10 +453,28 @@ function groupByAlbum(songs: Song[]): LocalAlbum[] {
   // costing O(n²).
   return Array.from(map.entries()).map(([key, v]) => {
     const artist = pickBestName(v.songs.map((s) => s.artist || UNKNOWN_ARTIST));
+    // A track list may credit more artists than the album artist the record is
+    // filed under. All of them keep a way to their own screen, and the album
+    // follows the artist all its songs agree on (or the most frequent one).
+    const credited = new Map<string, { id: string; name: string }>();
+    for (const song of v.songs) {
+      for (const a of song.artists ?? []) credited.set(a.id, a);
+      if (credited.size === 0 && song.artistId) {
+        credited.set(song.artistId, {
+          id: song.artistId,
+          name: song.artist || UNKNOWN_ARTIST,
+        });
+      }
+    }
+    const artistId =
+      v.songs.find((s) => s.artistId)?.artistId ??
+      (artist !== UNKNOWN_ARTIST ? normKey(artist) : undefined);
     return {
       id: key,
       name: pickBestName(v.songs.map((s) => s.album || UNKNOWN_ALBUM)),
       artist: artist !== UNKNOWN_ARTIST ? artist : undefined,
+      artistId,
+      artists: credited.size > 0 ? [...credited.values()] : undefined,
       coverBase64: v.coverBase64,
       coverMime: v.coverMime,
       songCount: v.songs.length,
@@ -464,21 +487,28 @@ function groupByAlbum(songs: Song[]): LocalAlbum[] {
 function groupByArtist(albums: LocalAlbum[]): LocalArtist[] {
   const map = new Map<string, {
     albums: LocalAlbum[];
+    name: string;
     coverUri?: string;
   }>();
   for (const album of albums) {
-    const key = normKey(album.artist || UNKNOWN_ARTIST);
-    let entry = map.get(key);
-    if (!entry) {
-      entry = { albums: [] };
-      map.set(key, entry);
+    // The album is listed under every artist it credits, not only the one its
+    // title is filed under: "Artist1, Artist2" is two artists (#332).
+    const credited = album.artists?.length
+      ? album.artists
+      : [{ id: normKey(album.artist || UNKNOWN_ARTIST), name: album.artist || UNKNOWN_ARTIST }];
+    for (const artist of credited) {
+      let entry = map.get(artist.id);
+      if (!entry) {
+        entry = { albums: [], name: artist.name || UNKNOWN_ARTIST };
+        map.set(artist.id, entry);
+      }
+      if (!entry.albums.includes(album)) entry.albums.push(album);
+      if (album.coverUri) entry.coverUri = album.coverUri;
     }
-    entry.albums.push(album);
-    if (album.coverUri) entry.coverUri = album.coverUri;
   }
   return Array.from(map.entries()).map(([key, v]) => ({
     id: key,
-    name: pickBestName(v.albums.map((a) => a.artist || UNKNOWN_ARTIST)),
+    name: v.name,
     coverUri: v.coverUri,
     albumCount: v.albums.length,
   }));
@@ -604,7 +634,12 @@ function applyTags(base: Record<string, unknown>, fallbackTitle: string, tags: I
   base.title = tags?.title || fallbackTitle;
   // The album artist (TPE2) is preferred so everything groups under one artist,
   // the way Navidrome does it; failing that, the track artist (TPE1).
-  base.artist = tags?.albumArtist || tags?.artist;
+  const artistTag = tags?.albumArtist || tags?.artist;
+  const names = splitArtistNames(artistTag);
+  base.artist = artistTag;
+  // The tag stays as it is for the row, but every credited name gets its own
+  // artist entry, so a search and both artist screens can find the song (#332).
+  if (names.length > 1) base.artists = artistRefs(artistTag, normKey);
   base.album = tags?.album;
   base.track = tags?.track;
   if (tags?.coverBase64) {
