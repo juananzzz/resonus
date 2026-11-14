@@ -2,6 +2,10 @@
  * Full-screen lyrics page (expanded from the player card), Spotify-style:
  * background from the cover's dominant color, karaoke with tap-line-to-seek
  * and basic controls (progress and play/pause) at the bottom.
+ *
+ * Lyrics can be shared too (#315): the header button shares all of them, and
+ * a long press on a line starts a selection, where taps pick the lines that
+ * the system share sheet gets.
  */
 import Icon from '@/components/Icon';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -9,8 +13,8 @@ import { Image } from 'expo-image';
 import * as Font from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRouter } from 'expo-router';
-import { useEffect } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,10 +24,14 @@ import { SeekBar } from '@/components/SeekBar';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { useLyrics } from '@/hooks/useLyrics';
 import { useT } from '@/i18n';
+import { lyricShareText, toggleLyricLine } from '@/lib/lyricShare';
 import { currentSong, usePlayerStore } from '@/store/player';
 import { useSettings } from '@/store/settings';
 import { colors, fontSize, radius, spacing, themed, useTheme } from '@/theme';
 import { centredPadding, useScreenSize } from '@/hooks/useScreenSize';
+
+/** Stable "nothing picked", so the lyrics view is not handed a new set per render. */
+const NO_LINES: ReadonlySet<number> = new Set();
 
 export default function LyricsScreen() {
   // Repaints on a change of appearance or accent: a stack keeps this screen
@@ -58,6 +66,41 @@ export default function LyricsScreen() {
     maskedOpacity.value = 0;
     requestAnimationFrame(() => router.back());
   };
+  // Sharing (#315). `selected` holds lyric indexes, so the shared text keeps
+  // the song's order no matter the order the lines were picked in. The song id
+  // travels with the selection: a new song is a new set of lines, and an old
+  // index would point at a stranger's lyric, so it reads as no selection.
+  const [selection, setSelection] = useState<{ songId?: string; indexes: ReadonlySet<number> } | null>(null);
+  const selecting = selection !== null && selection.songId === song?.id;
+  const selected = selecting ? selection.indexes : NO_LINES;
+  const cancelSelection = () => setSelection(null);
+  const toggleLine = (index: number) => {
+    setSelection((prev) =>
+      prev && prev.songId === song?.id
+        ? { ...prev, indexes: toggleLyricLine(prev.indexes, index) }
+        : prev,
+    );
+  };
+  const startSelection = (index: number) => {
+    setSelection({ songId: song?.id, indexes: new Set([index]) });
+  };
+  /**
+   * Hands the lyrics to the system sheet. Outside selection mode this is the
+   * whole song; inside it, only the picked lines. The sheet opening is the
+   * success condition, so a dismissed sheet leaves the selection in place to
+   * try again.
+   */
+  const shareLyrics = async () => {
+    if (!song) return;
+    const text = lyricShareText(song, data?.lines ?? [], selecting ? selected : undefined);
+    if (!text) return;
+    try {
+      await Share.share({ message: text });
+    } catch {
+      return;
+    }
+    if (selecting) cancelSelection();
+  };
   const plainLineStyle = useLyricsLineStyle(true);
   // Same iOS rule as the lyrics rows: a custom font file and an explicit
   // weight do not mix, so the title drops its weight with one set.
@@ -83,7 +126,15 @@ export default function LyricsScreen() {
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: spacing.xxl }} color={colors.text} />
       ) : data?.synced ? (
-        <SyncedLyricsView lines={data.lines} large fadeColor={fadeColor} />
+        <SyncedLyricsView
+          lines={data.lines}
+          large
+          fadeColor={fadeColor}
+          selecting={selecting}
+          selected={selected}
+          onToggleLine={toggleLine}
+          onSelectLine={startSelection}
+        />
       ) : data ? (
         <ScrollView contentContainerStyle={styles.plainContent} showsVerticalScrollIndicator={false}>
           <Text style={plainLineStyle}>
@@ -117,20 +168,42 @@ export default function LyricsScreen() {
       ) : null}
       <View style={[styles.safe, { paddingTop: topPad, paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
-        <Pressable hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Close')} onPress={close}>
-          <Icon name="close" size={26} color={colors.text} />
+        <Pressable
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={selecting ? t('Cancel') : t('Close')}
+          onPress={selecting ? cancelSelection : close}
+        >
+          {selecting ? (
+            <Text style={styles.cancel}>{t('Cancel')}</Text>
+          ) : (
+            <Icon name="close" size={26} color={colors.text} />
+          )}
         </Pressable>
         <View style={styles.titleBox}>
           <Text style={[styles.title, customFont && styles.titleCustomFont]} numberOfLines={1}>
-            {song?.title ?? t('Lyrics')}
+            {selecting ? t('{count} selected', { count: selected.size }) : song?.title ?? t('Lyrics')}
           </Text>
-          {song?.artist ? (
+          {selecting || song?.artist ? (
             <Text style={styles.artist} numberOfLines={1}>
-              {song.artist}
+              {selecting ? t('Select the lines to share') : song?.artist}
             </Text>
           ) : null}
         </View>
-        <View style={{ width: 26 }} />
+        <Pressable
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={t('Share lyrics')}
+          accessibilityState={{ disabled: !data || (selecting && selected.size === 0) }}
+          disabled={!data || (selecting && selected.size === 0)}
+          onPress={() => void shareLyrics()}
+        >
+          <Icon
+            name="share-outline"
+            size={24}
+            color={data && (!selecting || selected.size > 0) ? colors.text : colors.textMuted}
+          />
+        </Pressable>
       </View>
 
       {/* Lyrics are a column of text: across a tablet a line runs the whole
@@ -208,6 +281,7 @@ const styles = themed((colors) => ({
   },
   titleBox: { flex: 1, alignItems: 'center' },
   title: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
+  cancel: { color: colors.text, fontSize: fontSize.md },
   // With a custom font the weight is left out entirely (see above): an
   // `undefined` would lose against the base style, so this is the whole
   // style without the key. The family comes from the global injection.

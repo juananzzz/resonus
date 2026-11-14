@@ -161,12 +161,21 @@ export function CoverLyrics({ size, onClose }: { size: number; onClose: () => vo
  * and grows a little, the rest are dimmed. Auto-scroll keeps the
  * focus above; manual scroll pauses it for a few seconds. Tapping a line
  * seeks to that point in the song.
+ *
+ * The full screen also lets a line be picked out for sharing (#315): a long
+ * press starts a selection, and while one is open taps toggle lines instead
+ * of seeking. The card and the cover leave those callbacks out, so their
+ * behaviour is unchanged.
  */
 export function SyncedLyricsView({
   lines,
   large,
   nested,
   fadeColor,
+  selecting,
+  selected,
+  onToggleLine,
+  onSelectLine,
 }: {
   lines: LyricLine[];
   /** Large typography (full screen). */
@@ -175,6 +184,14 @@ export function SyncedLyricsView({
   nested?: boolean;
   /** Color to which the top/bottom edges fade (the background). */
   fadeColor?: string;
+  /** Taps pick lines for sharing instead of seeking. */
+  selecting?: boolean;
+  /** Lines currently picked, while `selecting`. */
+  selected?: ReadonlySet<number>;
+  /** A tap in selection mode: add or remove this line. */
+  onToggleLine?: (index: number) => void;
+  /** A long press on a line: start selecting, with this line picked. */
+  onSelectLine?: (index: number) => void;
 }) {
   // The line, not the position: the position moves twice a second and the
   // line every few, and only a new line has anything to redraw.
@@ -295,18 +312,43 @@ export function SyncedLyricsView({
   // Taps are detected with a separate gesture (not each line's onPress): the
   // gesture coexists with scroll and works even while auto-scroll is active.
   // The line is located by vertical position using actual measurements.
-  const handleTap = useCallback(
+  const lineAt = useCallback(
     (yInView: number) => {
       const contentY = yInView + liveY.value;
       for (let i = 0; i < lines.length; i++) {
         const m = offsets.current[i];
-        if (m && contentY >= m.y && contentY < m.y + m.h) {
-          if (lines[i].start !== undefined) onLineTap(lines[i].start! / 1000);
-          return;
-        }
+        if (m && contentY >= m.y && contentY < m.y + m.h) return i;
       }
+      return -1;
     },
-    [lines, onLineTap, liveY],
+    [lines, liveY],
+  );
+
+  const handleTap = useCallback(
+    (yInView: number) => {
+      const i = lineAt(yInView);
+      if (i < 0) return;
+      // While lines are being picked, a tap is the tick and not a seek: the
+      // listener is choosing what to share, and moving the song would lose
+      // their place in the lyrics.
+      if (selecting && onToggleLine) {
+        // A blank line is a stanza gap, not something anyone can read in the
+        // share: it never becomes a tick.
+        if (lines[i].value.trim()) onToggleLine(i);
+        return;
+      }
+      if (lines[i].start !== undefined) onLineTap(lines[i].start! / 1000);
+    },
+    [lineAt, selecting, onToggleLine, lines, onLineTap],
+  );
+
+  const handleLongPress = useCallback(
+    (yInView: number) => {
+      if (!onSelectLine) return;
+      const i = lineAt(yInView);
+      if (i >= 0 && lines[i].value.trim()) onSelectLine(i);
+    },
+    [lineAt, lines, onSelectLine],
   );
 
   const tapGesture = Gesture.Tap()
@@ -314,9 +356,31 @@ export function SyncedLyricsView({
     .onEnd((e) => {
       scheduleOnRN(handleTap, e.y);
     });
+  // Long press first, tap only if it did not become one: otherwise every
+  // selection would also seek to the line that started it.
+  const longPressGesture = Gesture.LongPress()
+    .enabled(!!onSelectLine)
+    .minDuration(400)
+    .maxDistance(12)
+    .onStart((e) => {
+      scheduleOnRN(handleLongPress, e.y);
+    });
+  const gesture = Gesture.Exclusive(longPressGesture, tapGesture);
 
   useEffect(() => {
-    if (current < 0 || viewH === 0 || userScroll.current) return;
+    // Picking lines holds the list still: an auto-scroll would slide the next
+    // line out from under the finger that is about to tap it.
+    if (selecting) {
+      cancelAnimation(targetY);
+      userScroll.current = true;
+    } else {
+      // Back to following the song once the selection is over.
+      userScroll.current = false;
+    }
+  }, [selecting, targetY]);
+
+  useEffect(() => {
+    if (selecting || current < 0 || viewH === 0 || userScroll.current) return;
     const m = offsets.current[current];
     if (m === undefined) return;
     const dest = Math.max(0, m.y - viewH * anchor);
@@ -333,7 +397,7 @@ export function SyncedLyricsView({
       easing: motion.easing.move,
       reduceMotion: motion.reduceMotion.essential,
     });
-  }, [current, viewH, anchor, targetY, liveY, placed]);
+  }, [current, viewH, anchor, targetY, liveY, placed, selecting]);
 
   useEffect(
     () => () => {
@@ -346,7 +410,7 @@ export function SyncedLyricsView({
 
   return (
     <View style={styles.wrap}>
-      <GestureDetector gesture={tapGesture}>
+      <GestureDetector gesture={gesture}>
       <Animated.ScrollView
         ref={scrollRef}
         nestedScrollEnabled={nested}
@@ -396,6 +460,7 @@ export function SyncedLyricsView({
             size={size}
             weight={weight}
             centered={centered}
+            selected={selected?.has(i)}
             onMeasure={onMeasure}
           />
             {gap ? <GapDots start={gap.start} end={gap.end} pos={gapClock} large={large} /> : null}
@@ -434,6 +499,7 @@ const LyricRow = memo(({
   size,
   weight,
   centered,
+  selected,
   onMeasure,
 }: {
   index: number;
@@ -448,6 +514,8 @@ const LyricRow = memo(({
   size: LyricsSize;
   weight: LyricsWeight;
   centered: boolean;
+  /** Picked for sharing: gets a tinted band behind it. */
+  selected?: boolean;
   onMeasure: (index: number, y: number, h: number) => void;
 }) => {
   // Memoized, so the screen repainting is not enough to bring this one along.
@@ -524,6 +592,7 @@ const LyricRow = memo(({
 
   return (
     <View
+      style={selected ? styles.selectedRow : undefined}
       onLayout={(e) => onMeasure(index, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}
     >
       <Animated.View style={[centered ? styles.centerOrigin : styles.leftOrigin, anim]}>
@@ -738,6 +807,12 @@ const styles = themed((colors) => ({
   centerOrigin: { transformOrigin: 'center center' },
   // Centred, the 8% growth spills to both sides, so the margin is split.
   contentCentered: { paddingRight: '5%', paddingLeft: '5%' },
+  // The band behind a line picked for sharing. Rounded and inset from the
+  // text so two adjacent picks still read as separate lines.
+  selectedRow: {
+    backgroundColor: colors.surfaceHighlight,
+    borderRadius: radius.sm,
+  },
   // Instrumental gap leaders: full size on the lyrics screen, smaller on
   // cards, relative to the text. The row collapses when the dots zoom away.
   gapClip: { overflow: 'hidden' },
