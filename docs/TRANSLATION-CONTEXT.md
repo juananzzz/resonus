@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 867 of them.
+Every string the app can show, under the screen it shows up on. 869 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -39,6 +39,8 @@ you are actually typing into, which is easier than reading it here.
 | String | What it is |
 | --- | --- |
 | `{artist} Radio` |  |
+| `{msg} It will keep downloading new albums from this artist later.` |  |
+| `{msg} It will keep downloading songs added to this album later.` |  |
 | `{n} minutes` | A value of the sleep timer, in minutes from now |
 | `{n} more` | Under a heading of the update prompt: how many more lines of that kind the release notes have |
 | `{n} songs, {size}, copied into a folder of their own.` | The line under that title |
@@ -133,6 +135,8 @@ you are actually typing into, which is easier than reading it here.
 | `This song carries no information.` | Empty state: the file and the server had nothing to say |
 | `Track` | The track number on its album. Not the song itself |
 | `Turn off` | Turn off the sleep timer |
+| `Turn on` | The confirm button of that question |
+| `Turn on auto-download?` | Asks whether new songs added to this playlist should download by themselves from now on |
 | `Unknown title` | Fallback when the file and the server have no title |
 | `Unpin` | Stop keeping it at the top of its list |
 | `Update` | The button that installs a newer version of Resonus. A verb, not a noun: `Update it`, not `An update` |
@@ -298,7 +302,6 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
-| `Auto-download` | Keep this playlist downloaded by itself as songs are added to it |
 | `Couldn't load favorites.` | Error on the screen, with a Retry button |
 | `Find in favorites` | Placeholder of the search box that narrows the favourites already shown |
 | `No favorites yet` | Empty state heading |
@@ -383,6 +386,7 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
+| `{msg} It will keep downloading new albums from this artist later.` |  |
 | `Artist` | In search results, the little word under a result saying what kind of thing it is |
 | `Couldn't load all of your library.` | Toast: playlists or favorites failed to load, the rest is shown |
 | `Couldn't load artists.` | Error on the screen, with a Retry button |
@@ -408,6 +412,8 @@ you are actually typing into, which is easier than reading it here.
 | `Playlist` | A list saved on the server. Not the queue |
 | `Podcast` | The kind word: a search result's type and a show's metadata line. A noun, not the verb 'to broadcast' |
 | `Public` |  |
+| `Turn on` | The confirm button of that question |
+| `Turn on auto-download?` | Asks whether new songs added to this playlist should download by themselves from now on |
 | `Your library` | The tab with your albums, artists and playlists |
 | `Your playlists and favorites show up here.` |  |
 | `Yours` |  |
@@ -519,7 +525,6 @@ you are actually typing into, which is easier than reading it here.
 | `Add songs from the ⋯ menu of any song.` | The line under an empty playlist, saying how to fill it |
 | `Added to “{name}”` | Toast. `{name}` is the playlist's name |
 | `Artwork upload is disabled on the server` | The server can do it but has it turned off |
-| `Auto-download` | Keep this playlist downloaded by itself as songs are added to it |
 | `Based on the tracks in this playlist` | Subtitle under the suggested tracks heading |
 | `Change cover` | Replace the cover image of a playlist or station |
 | `Confirm your password` | Changing a cover on the server needs the password again. It is not a new password being set |
@@ -1262,6 +1267,7 @@ you are actually typing into, which is easier than reading it here.
 | `Albums` | A heading over a list of them, never a count |
 | `Alphabetical` | Sort option: the order of a list |
 | `Ascending` | Sort option: the order of a list |
+| `Auto-download` | Keep this playlist downloaded by itself as songs are added to it |
 | `Auto-download off` | The toast that says it was turned off |
 | `Auto-download on` | The toast that says it was turned on |
 | `Back` | Screen reader label for the back arrow. A direction, not a verb |

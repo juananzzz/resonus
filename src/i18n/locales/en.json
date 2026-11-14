@@ -865,5 +865,7 @@
   "Search settings": "Search settings",
   "Last scan": "Last scan",
   "Export as M3U": "Export as M3U",
-  "Playlist exported": "Playlist exported"
+  "Playlist exported": "Playlist exported",
+  "{msg} It will keep downloading new albums from this artist later.": "{msg} It will keep downloading new albums from this artist later.",
+  "{msg} It will keep downloading songs added to this album later.": "{msg} It will keep downloading songs added to this album later."
 }
