@@ -46,7 +46,12 @@ import { useT } from '@/i18n';
 import { artistTargets } from '@/lib/artistNav';
 import { easedFade } from '@/lib/fade';
 import { haptic } from '@/lib/haptics';
-import { listPerf, reorderListPerf } from '@/lib/listPerf';
+import {
+  listPerf,
+  reorderAutoscroll,
+  REORDER_AUTOSCROLL_STEP_PX,
+  reorderListPerf,
+} from '@/lib/listPerf';
 import { applyDrag } from '@/lib/listOrder';
 import { useArtistPicker } from '@/store/artistPicker';
 import { usePlayerStore } from '@/store/player';
@@ -1426,6 +1431,11 @@ export function TrackListView({
       {reorderEngine ? (
         <ReorderableList
           {...reorderListPerf}
+          // A row held at an end of the screen carries the list with it, and
+          //  the library's own step is a whole row every 50 ms - which reads as
+          //  each song catching on the way down (#336). Small and one frame
+          //  apart, it reads as a scroll (see `reorderAutoscroll`).
+          {...reorderAutoscroll(REORDER_AUTOSCROLL_STEP_PX)}
           ref={dragListRef}
           onScroll={dragScroll}
           dragEnabled={dragging}
