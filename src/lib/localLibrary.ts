@@ -35,6 +35,7 @@ import { isFlac, isMp4, readFlacTags, readMp4Tags } from './containerTags';
 import { base64ToUint8, parseID3, type ID3Tags } from './id3';
 import * as Db from './localDb';
 import { getItem, setItem } from './storage';
+import { songNeedsReread } from './songReread';
 
 const AUDIO_EXT = /\.(mp3|flac|m4a|aac|ogg|opus|wav|wma|alac|aif|aiff)$/i;
 
@@ -701,7 +702,11 @@ async function listDevice(found?: (n: number) => void): Promise<DeviceFile[]> {
 interface Previous {
   songs: Map<string, Song>;
   covers: Map<string, string>;
+  /** A manual rescan: files are opened again for their date, and retagged
+   *  ones are read again even though the file list looks unchanged. */
+  force?: boolean;
 }
+
 
 /**
  * Reads the tags of the device's music and catalogues it. With `listed`, the
@@ -995,7 +1000,14 @@ async function scanFolder(
     useScanProgress.getState().start(rawSongs.length);
     const bump = progressBumper(rawSongs.length);
     const songs = await mapPool(rawSongs, SCAN_CONCURRENCY, async (raw) => {
-      const known = previous?.songs.get(raw.id);
+      let known = previous?.songs.get(raw.id);
+      if (known && previous?.force) {
+        // SAF gives no date with the listing, so noticing a retag means one
+        // open per file — but only a stat: the tag read is what is skipped
+        // when the date has not moved, which is nearly all of them (#338).
+        const mtime = await readMtime(raw.uri).catch(() => 0);
+        if (songNeedsReread(known, mtime)) known = undefined;
+      }
       let song: Song;
       if (known) {
         song = { ...known };
@@ -1081,9 +1093,10 @@ export function localPlaylistFiles(sourceMode: string, uris: string[]): string[]
  * of the files that are new and keeps the rest as they were read, covers
  * included, so copying a record onto the phone costs that record. A file
  * retagged in place keeps its old tags in folder mode, where SAF does not hand
- * its date over with the listing: "Rescan" is still what reads everything.
+ * its date over with the listing: `force` — the manual "Rescan" — opens every
+ * file for its date and reads again only the ones that moved (#338).
  */
-export async function refreshSource(sourceMode: string, uris: string[]): Promise<boolean> {
+export async function refreshSource(sourceMode: string, uris: string[], force = false): Promise<boolean> {
   const setKey = sourceMode === 'folder' ? folderSetKey(uris) : undefined;
   const name = dbName(sourceMode, setKey);
   const src = localSource(sourceMode, setKey);
@@ -1111,7 +1124,7 @@ export async function refreshSource(sourceMode: string, uris: string[]): Promise
       device.length !== stamps.size || device.some((f) => stamps.get(f.id) !== f.mtime);
   }
   await setItem(`${CHECKED_KEY}.${name}`, String(Date.now())).catch(() => {});
-  if (!changed) return false;
+  if (!changed && !force) return false;
 
   const old = await Db.loadCatalog<LocalAlbum, LocalArtist>(CATALOG_DIR, name);
   const previous: Previous = {
@@ -1119,6 +1132,7 @@ export async function refreshSource(sourceMode: string, uris: string[]): Promise
     covers: new Map(
       (old?.albums ?? []).flatMap((a) => (a.coverUri ? [[a.id, a.coverUri] as [string, string]] : [])),
     ),
+    force,
   };
   if (sourceMode !== 'folder') {
     await scanDevice(device, previous);

@@ -288,20 +288,35 @@ async function localSrc(): Promise<LocalCat.Source | null> {
 }
 
 /**
- * Rescans the local source: discards the cached catalog (and the covers) and
- * rebuilds it by reading the files' tags again. Useful after adding or
- * changing music without restarting the app.
+ * Rescans the local source. The catalog on disk is kept: the scan reuses the
+ * tags and covers of every file that has not changed, so a library the size
+ * of this issue's 15GB rescan takes seconds, not minutes (#338). Only the
+ * files whose date has moved since they were read are read again, which is
+ * how a file retagged in place is still picked up.
  */
 export async function rescan(): Promise<void> {
+  const state = useAuthStore.getState();
+  if (state.auth || !state.offlineSource) {
+    // Not the local profile: the old road, a rebuild from zero.
+    clearLocalCatalog();
+    await clearLocalCatalogDisk();
+    loadingPromise = null;
+    scanning = null;
+    tree = null;
+    await ensureCatalog();
+    return;
+  }
   clearLocalCatalog();
-  await clearLocalCatalogDisk();
   loadingPromise = null;
   scanning = null;
   tree = null;
-  // Through the database on the local profile, which is what reads it from now
-  // on: `ensureCatalog` would rebuild the whole library in memory to answer a
-  // question nobody asked.
-  if (!(await localSrc())) await ensureCatalog();
+  const { mode, uris } = sourceInfo();
+  if (mode === 'folder' && uris.length === 0) return;
+  // A forced check: the same walk a background check does, except that files
+  // whose date has moved are read again instead of left alone. False when the
+  // source has never been scanned, which is a load, not a rescan.
+  await refreshSource(mode, uris, true).catch(() => false);
+  void queryClient.invalidateQueries();
 }
 
 // ── Keeping up with the files ───────────────────────────────────────────────
