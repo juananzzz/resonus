@@ -110,7 +110,10 @@ export default function BrowseAlbumsScreen() {
 
 /**
  * `downloaded` lists what the downloads catalog holds, online too (#310). An
- *  album with one song saved is in it, and opens whole.
+ *  album with one song saved is in it, and opens whole. The heart pressed
+ *  along with it narrows the list below to that same membership: the two
+ *  together are their AND, the rows the catalog would have listed and the
+ *  rows that carry a star.
  *
  * `favorited` keeps the list to what carries a star, which is the same screen
  *  one filter deeper: the rows, the layout and the box stay, the data behind
@@ -243,7 +246,10 @@ export function AlbumsBrowser({
    *  the box above re-runs it. Filtering here is exact — the starred answer is
    *  the whole list, not the window the one above paginates — which is also
    *  why the box does not wait for the debounce: nothing is asked of the
-   *  server, so a letter lands as you type it.
+   *  server, so a letter lands as you type it. With the ↓ pressed along with
+   *  the heart the same filter asks the shelf its membership question as
+   *  well: both presses at once are their AND, not one list drawn over
+   *  another.
    */
   const favoriteAlbums = useMemo(
     () => {
@@ -251,7 +257,9 @@ export function AlbumsBrowser({
       const q = query.trim();
       const list = (starredQ.data?.albums ?? []).filter(
         (a) =>
-          !(hideUnavailable && availability.unavailable(a)) && (!q || matches(q, a.name, a.artist)),
+          !(hideUnavailable && availability.unavailable(a)) &&
+          (!downloaded || availability.onPhone(a)) &&
+          (!q || matches(q, a.name, a.artist)),
       );
       const sorted =
         sort === 'random'
@@ -272,7 +280,7 @@ export function AlbumsBrowser({
             );
       return withPins(sorted, (a) => `album:${a.id}`, pins);
     },
-    [favorited, starredQ.data, query, sort, hideUnavailable, availability, pins],
+    [favorited, downloaded, starredQ.data, query, sort, hideUnavailable, availability, pins],
   );
 
   // When searching, the search results rule: the typed text, not the debounce,
@@ -439,6 +447,12 @@ export function AlbumsBrowser({
                 icon="search-outline"
                 title={t('No results')}
                 subtitle={t('No results for “{q}”', { q: query.trim() })}
+              />
+            ) : favorited && downloaded ? (
+              <EmptyState
+                icon="heart-outline"
+                title={t('No downloaded favorites')}
+                subtitle={t('Albums you favorited and downloaded will show up here.')}
               />
             ) : favorited ? (
               <EmptyState

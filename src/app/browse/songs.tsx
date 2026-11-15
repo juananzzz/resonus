@@ -125,9 +125,11 @@ export default function BrowseSongsScreen() {
  * `downloaded` lists the songs on the phone, online too (#310).
  *
  * `favorited` holds the list to what carries a star — the same question the
- *  Favorites page asks, but of this list, asked by the section's own heart. The
- *  selection gestures stay, which is what a screen for gathering songs wants:
- *  the favorites are where you start gathering, not where you end up.
+ *  Favorites page asks, but of this list, asked by the section's own heart.
+ *  The selection gestures stay, which is what a screen for gathering songs
+ *  wants: the favorites are where you start gathering, not where you end
+ *  up. Pressed with the ↓ the answer is both questions at once: only the
+ *  starred songs whose file is on the phone are drawn.
  *
  * `onToggleDownloaded` and `onToggleFavorite` are the two presses the Library
  *  tab makes in the section's sort row, and the states they write split the
@@ -165,6 +167,12 @@ export function SongsBrowser({
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const showListArtwork = useSettings((s) => s.showListArtwork);
   const downloadSongs = useDownloads((s) => s.downloadSongs);
+  // Membership for the ↓ pressed along with the heart: the map's keys are
+  //  exactly the songs with a file on the phone — the same ones the local
+  //  song list below is a window on. `null` until the store has read it off
+  //  disk, and until then the rows wait with it rather than blinking an
+  //  empty list (see the `hydrated` flag's own warning).
+  const downloadedFiles = useDownloads((s) => (s.hydrated ? s.files : null));
   const openPlaylistPicker = usePlaylistPicker((s) => s.open);
   // Its own preference, not the one from browsing albums: the button on one
   // screen shouldn't silently rearrange the other.
@@ -259,14 +267,17 @@ export function SongsBrowser({
    *  the whole list, not the window the one above paginates — which is also
    *  why the box does not wait for the debounce. A song answers by its title,
    *  and by the artist or album it is filed under, the way the server's own
-   *  search does.
+   *  search does. With the ↓ pressed along with the heart the files map above
+   *  answers membership as well: both presses together are their AND.
    */
   const favoriteSongs = useMemo(
     () => {
       if (!favorited) return null;
       const q = query.trim();
       const list = (starredQ.data?.songs ?? []).filter(
-        (s) => !q || matches(q, s.title, s.artist, s.album),
+        (s) =>
+          (!downloaded || !downloadedFiles || !!downloadedFiles[s.id]) &&
+          (!q || matches(q, s.title, s.artist, s.album)),
       );
       if (sort !== 'random') return list.sort((a, b) => a.title.localeCompare(b.title));
       // Shuffled inside the memo, so it cannot reshuffle itself while the user
@@ -278,7 +289,7 @@ export function SongsBrowser({
       }
       return arr;
     },
-    [favorited, starredQ.data, query, sort],
+    [favorited, downloaded, downloadedFiles, starredQ.data, query, sort],
   );
 
   const isSearch = query.trim().length > 0;
@@ -546,6 +557,12 @@ export function SongsBrowser({
                 icon="search-outline"
                 title={t('No results')}
                 subtitle={t('No results for “{q}”', { q: query.trim() })}
+              />
+            ) : favorited && downloaded ? (
+              <EmptyState
+                icon="heart-outline"
+                title={t('No downloaded favorites')}
+                subtitle={t('Songs you favorited and downloaded will show up here.')}
               />
             ) : favorited ? (
               <EmptyState

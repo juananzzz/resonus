@@ -367,6 +367,12 @@ export function ArtistsBrowser({
                 title={t('No results')}
                 subtitle={t('No results for “{q}”', { q: query.trim() })}
               />
+            ) : favorited && downloaded ? (
+              <EmptyState
+                icon="heart-outline"
+                title={t('No downloaded favorites')}
+                subtitle={t('Artists you favorited and downloaded will show up here.')}
+              />
             ) : favorited ? (
               <EmptyState
                 icon="heart-outline"

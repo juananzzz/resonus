@@ -1,9 +1,12 @@
 /**
  * What the downloads say about an album you kept: whether it is whole on the
- * phone (the ↓ badge), and whether offline there is nothing here to play at all
- * (dim the row, or drop it in hide mode). Dimming and hiding are a server
- * account's problem — on the local profile everything is on the phone — and the
- * shelf is read once per download change, not per row.
+ *  phone (the ↓ badge), whether offline there is nothing here to play at all
+ *  (dim the row, or drop it in hide mode), and whether any of it is on the
+ *  phone at all — the membership the both-pressed filters ask, so the heart
+ *  keeps exactly the rows the ↓ alone would have listed: an album with one
+ *  song saved is in the catalog and the ↓ lists it. Dimming and hiding are a
+ *  server account's problem — on the local profile everything is on the
+ *  phone — and the shelf is read once per download change, not per row.
  */
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
@@ -17,6 +20,7 @@ import { getDownloadShelf, useDownloads } from '@/store/downloads';
 export function useAlbumAvailability(enabled = true): {
   downloaded: (album: Album) => boolean;
   unavailable: (album: Album) => boolean;
+  onPhone: (album: Album) => boolean;
 } {
   const files = useDownloads((s) => s.files);
   const fileCount = useMemo(() => Object.keys(files).length, [files]);
@@ -32,6 +36,12 @@ export function useAlbumAvailability(enabled = true): {
     () => ({
       downloaded: (a: Album) => (shelf?.get(a.id) ?? 0) >= (a.songCount || Infinity),
       unavailable: (a: Album) => offline && !!shelf && !shelf.has(a.id),
+      // Membership, not the badge: one song saved puts an album in the catalog
+      //  the ↓ lists its rows from, so with both filters pressed the heart
+      //  keeps exactly the rows the ↓ alone would have shown. While the shelf
+      //  is still arriving nothing is known yet, and a filter must not blink
+      //  an empty list: those rows wait with it and narrow when it answers.
+      onPhone: (a: Album) => !shelf || shelf.has(a.id),
     }),
     [shelf, offline],
   );

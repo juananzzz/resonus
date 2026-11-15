@@ -188,11 +188,13 @@ export function PlaylistsBrowser({
         title={
           query.trim()
             ? t('No results')
-            : favorited
-              ? t('No favorites yet')
-              : downloaded
-                ? t('Nothing here is downloaded')
-                : t('No playlists yet')
+            : favorited && downloaded
+              ? t('No downloaded favorites')
+              : favorited
+                ? t('No favorites yet')
+                : downloaded
+                  ? t('Nothing here is downloaded')
+                  : t('No playlists yet')
         }
       />
     ) : (
