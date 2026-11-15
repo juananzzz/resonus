@@ -315,10 +315,11 @@ export function ArtistsBrowser({
         </View>
       ) : null}
 
-      {/* The row's right-hand corner is the tab's two filters: pressing either
-          holds this list to what is on the phone or to what carries a star, and
-          both together ask both questions of one list. There is no play here at
-          all: starting "every artist" is not a thing that means. */}
+      {/* The row's right-hand corner is the two filters this list answers to:
+          pressing either holds it to what is on the phone or to what carries a
+          star, and both together ask both questions of one list. The ↓ is the
+          tab's, the heart this section's. There is no play here at all:
+          starting "every artist" is not a thing that means. */}
       <BrowseToolbar
         options={SORTS}
         value={sort}

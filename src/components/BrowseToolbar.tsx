@@ -5,10 +5,10 @@
  *
  * It replaced a scrolling row of order pills, and the reason is what the pills
  * left behind: as pills the order was a second scrolling row of the same shape
- * as the sections above it, which made the two hard to tell apart at a glance.
- * The order is spelled out next to the icon rather than hidden behind it, the
- * way the Library tab writes it, so nothing is lost by the menu: what the list
- * is sorted by is still readable without opening anything.
+ * as the tab's chips of sections, which made the two hard to tell apart at a
+ * glance. The order is spelled out next to the icon rather than hidden behind
+ * it, the way the Library tab writes it, so nothing is lost by the menu: what
+ * the list is sorted by is still readable without opening anything.
  *
  * The two toggles on the right are the section's filters, and both are optional
  * — a section that has nothing to heart or nothing to hold to downloaded draws

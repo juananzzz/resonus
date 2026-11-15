@@ -8,7 +8,8 @@
  * server's: Jellyfin, Navidrome (through its own API) and a local library sort
  * songs by anything. A plain Subsonic server sorts none: there the rest are
  * arrived at through the albums it does know how to sort, and A-Z is the one
- * that has no stand-in. No pill here promises an order that won't come.
+ * that has no stand-in. Nothing the row spells out promises an order the
+ * server won't answer.
  *
  * Finding one song among many is the search bar's job, not the list's: a
  * six-figure library is not something anybody scrolls, and pulling it down to
@@ -123,16 +124,18 @@ export default function BrowseSongsScreen() {
 /**
  * `downloaded` lists the songs on the phone, online too (#310).
  *
- * `favorited` holds the list to what carries a star — the screen the
- *  Favorites page is, reached from the section's own heart. The selection
- *  gestures stay, which is what a screen for gathering songs wants: the
- *  favorites are where you start gathering, not where you end up.
+ * `favorited` holds the list to what carries a star — the same question the
+ *  Favorites page asks, but of this list, asked by the section's own heart. The
+ *  selection gestures stay, which is what a screen for gathering songs wants:
+ *  the favorites are where you start gathering, not where you end up.
  *
  * `onToggleDownloaded` and `onToggleFavorite` are the two presses the Library
- *  tab makes in the section's sort row; the state they belong to is the tab's,
- *  so the press is handed down rather than copied here. The Favorites page sets
- *  `favorited` itself and passes neither, which is why it draws no icons it
- *  could not press.
+ *  tab makes in the section's sort row, and the states they write split the
+ *  same way the row's two ends do: the ↓ is the tab's, one filter over every
+ *  section at a time, while the heart's belongs to this section and remembers
+ *  its own switch there. Both are handed down rather than copied here, and
+ *  both are optional: this screen reached as a screen of its own has no tab
+ *  over its lists to hold either answer, so it draws neither icon.
  */
 export function SongsBrowser({
   embedded,

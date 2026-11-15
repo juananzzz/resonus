@@ -16,13 +16,13 @@
  * The tab used to be two, and the line between them was whose the rows are:
  *  your playlists, your favourites and your pins in one, what the server holds
  *  in the other. That line is what the heart is for now, so it stayed as a
- *  switch instead of an address: the tab is the catalogue, and the heart over
- *  a section says you want the half of it you starred. The heart is remembered
- *  per section, since which half you want in the albums is not which half you
- *  want in the songs, and it is remembered per profile like everything else
- *  here. Where a section has nothing to heart — genres, stations, folders —
- *  there is no heart to press, and playlists have stars only where the server
- *  can answer for them (see `usePlaylistStars`).
+ *  switch instead of an address: the tab is the catalogue, and the heart drawn
+ *  in a section's sort row says you want the half of it you starred. The heart
+ *  is remembered per section, since which half you want in the albums is not
+ *  which half you want in the songs, and it is remembered per profile like
+ *  everything else here. Where a section has nothing to heart — genres,
+ *  stations, folders — there is no heart to press, and playlists have stars
+ *  only where the server can answer for them (see `usePlaylistStars`).
  *
  * What the tab does draw for a section is the buttons top right: the magnifier,
  *  the view menu on the lists or "add a station"/"add a podcast"/"new playlist"
@@ -30,28 +30,32 @@
  *  are not among them: they are switches over the list, so they sit where that
  *  list is already read — the right end of the sort row each section wears,
  *  beside the order it spells out. That row is the one place on the section's
- *  body that already holds a group of controls, and a band holding one icon
- *  alone reads as an empty band. The menu still lives with the state it belongs
- *  to and the button reaches it through a ref; whether the search box is there
- *  is the other way round, a flag going down (`BrowserProps`), because the
- *  magnifier that opens it is also the X that closes it.
+ *  body that already holds a group of controls, and the two of them are drawn
+ *  as one group whatever the section offers, so a section that answers only
+ *  one of the two questions still reads as the same pair of switches and the
+ *  other never floats off on its own. Where a section draws neither — a screen
+ *  of its own, searching — the row goes without its padding at all, so opening
+ *  the box does not move the list under it. The menu still lives with the state
+ *  it belongs to and the button reaches it through a ref; whether the search
+ *  box is there is the other way round, a flag going down (`BrowserProps`),
+ *  because the magnifier that opens it is also the X that closes it.
  *
  * That box used to be open in every section: a band of chrome under the chips
  *  for something you do now and then. It is the one thing the tab has, in the
  *  same place and with the same two ways out of it, Back included.
  *
- * Two filters over the sections, then: the Downloaded one, which keeps every
- *  list to what is on the phone (#310), and the heart, which keeps it to what
- *  carries a star. They are the section's own sort row's right-hand corner: the
- *  order in the middle of the row, the two icons pushed to the edge beside it,
- *  so the row reads as a list's two questions rather than controls that do not
- *  know about each other. Pressing one holds the list the other is reading, so
- *  both together ask both questions at once, and neither closes the box: same
- *  question, smaller list. The Downloaded one is the tab's, one filter over
- *  every section at a time; the heart belongs to the section it is drawn in and
- *  remembers its own state there. A section with nothing of one kind draws no
- *  icon for it — no heart over genres, stations or folders, no ↓ where the
- *  phone holds nothing to hold the list to.
+ * Two filters, then, both drawn in a section's own sort row: the Downloaded
+ *  one, which keeps every list to what is on the phone (#310), and the heart,
+ *  which keeps it to what carries a star. They are the row's right-hand corner:
+ *  the order is spelled out at its left, the two icons are pushed to the far
+ *  right end beside it, so the row reads as a list's two questions rather than
+ *  controls that do not know about each other. Pressing one holds the list the
+ *  other is reading, so both together ask both questions at once, and neither
+ *  closes the box: same question, smaller list. The Downloaded one is the tab's,
+ *  one filter over every section at a time; the heart belongs to the section it
+ *  is drawn in and remembers its own state there. A section with nothing of one
+ *  kind draws no icon for it — no heart over genres, stations or folders, no ↓
+ *  where the phone holds nothing to hold the list to.
  */
 import Icon from '@/components/Icon';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -137,13 +141,15 @@ export default function LibraryScreen() {
   const [section, setSection] = useState<Section>('albums');
   /**
    * Only what is on the phone, while online: offline that is all there is
-   * anyway. A filter over the sections rather than a section of its own, so
-   * each keeps its orders, its search and its view.
+   *  anyway. A filter over the sections rather than a section of its own, so
+   *  each keeps its orders, its search and its view. The settings row for it
+   *  says whether it exists at all — see `downloadOn` below, which is what
+   *  makes a profile with nothing downloaded offer no ↓ anywhere.
    */
   const [downloadedOnly, setDownloadedOnly] = useState(false);
-  const pillOn = order.some((s) => s.key === 'downloaded' && s.enabled);
-  const canFilter = !!auth && !offline && hasDownloads && pillOn;
-  const filtering = downloadedOnly && canFilter;
+  const downloadOn = order.some((s) => s.key === 'downloaded' && s.enabled);
+  const canFilter = !!auth && !offline && hasDownloads && downloadOn;
+  const downloadedFilterOn = downloadedOnly && canFilter;
   /**
    * The two presses the sections draw at the right end of their sort row
    *  (see `BrowseToolbar`). The Downloaded one is the tab's — one filter over
@@ -152,7 +158,7 @@ export default function LibraryScreen() {
    *  box: both ask a narrower question of the list you are reading.
    */
   const toggleDownloaded = () => {
-    setDownloadedOnly(!filtering);
+    setDownloadedOnly(!downloadedFilterOn);
     // The narrower answer is not a longer window on the same list, and a
     //  download finishing does not invalidate these reads on its own, so the
     //  press asks for them again rather than serving what the previous press
@@ -235,7 +241,7 @@ export default function LibraryScreen() {
         s.key !== 'downloaded' &&
         s.enabled &&
         available(s.key as Section) &&
-        (!filtering || DOWNLOADABLE.includes(s.key as Section)),
+        (!downloadedFilterOn || DOWNLOADABLE.includes(s.key as Section)),
     )
     .map((s) => s.key as Section);
   const sections = chips;
@@ -415,7 +421,7 @@ export default function LibraryScreen() {
         {current === 'playlists' ? (
           <PlaylistsBrowser
             embedded
-            downloaded={filtering}
+            downloaded={downloadedFilterOn}
             favorited={favorited}
             onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
             onToggleFavorite={heartable ? toggleFavorite : undefined}
@@ -425,7 +431,7 @@ export default function LibraryScreen() {
         ) : current === 'albums' ? (
           <AlbumsBrowser
             embedded
-            downloaded={filtering}
+            downloaded={downloadedFilterOn}
             favorited={favorited}
             onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
             onToggleFavorite={heartable ? toggleFavorite : undefined}
@@ -435,7 +441,7 @@ export default function LibraryScreen() {
         ) : current === 'artists' ? (
           <ArtistsBrowser
             embedded
-            downloaded={filtering}
+            downloaded={downloadedFilterOn}
             favorited={favorited}
             onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
             onToggleFavorite={heartable ? toggleFavorite : undefined}
@@ -445,7 +451,7 @@ export default function LibraryScreen() {
         ) : current === 'songs' ? (
           <SongsBrowser
             embedded
-            downloaded={filtering}
+            downloaded={downloadedFilterOn}
             favorited={favorited}
             onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
             onToggleFavorite={heartable ? toggleFavorite : undefined}
