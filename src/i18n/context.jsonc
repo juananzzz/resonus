@@ -436,7 +436,7 @@
     "Show previous tracks": "Whether the queue keeps the songs already played, dimmed, above the current one",
 
     // ── Downloads, on a song or a list ───────────────────────────────────────
-    "Downloaded": "Badge on something whose files are on the phone",
+    "Downloaded": "Badge on something whose files are on the phone; the label of the row in Settings › Library sections that switches the ↓ filter on, and the one-word notice finishing a download answers with",
     "Not available offline": "This one is not downloaded, so it cannot play without a connection",
     "Auto-download": "Keep this playlist downloaded by itself as songs are added to it",
     "Auto-download on": "The toast that says it was turned on",
@@ -547,7 +547,7 @@
     "Navigation": "Section header: how you move around the app",
     "Navigation bar": "Settings screen: which tabs are on the bar at the bottom, and in what order",
     "Always shown": "Said where a switch would be, on the Home tab, which cannot be taken off the bar",
-    "Library sections": "The row that opens the screen choosing which pills sit at the top of the Library tab, and that screen's own heading",
+    "Library sections": "The row that opens the screen choosing which sections the Library tab draws and in what order, and that screen's own heading. The same screen also carries the switch for the ↓ the tab draws in every section's sort row",
     "Home, navigation bar, Library": "The line under the Home & tabs row of Settings: where that screen leads. A list of tab names, not a sentence",
     "Folder browsing": "Browsing the server's folders as folders, instead of by album and artist",
     "Haptic feedback": "The small vibration when something is tapped",

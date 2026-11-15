@@ -163,7 +163,7 @@ you are actually typing into, which is easier than reading it here.
 | `Demos` | Shelf heading: rough recordings made to be passed around rather than released. Kept as-is in Spanish and Catalan, though a language with its own word for these should use it |
 | `Discography` | Everything an artist has released, albums and singles together |
 | `DJ-mixes` | Shelf heading: recordings of several tracks blended one into the next by a DJ. Kept as-is in Spanish and Catalan, since the term travels |
-| `Downloaded` | Badge on something whose files are on the phone |
+| `Downloaded` | Badge on something whose files are on the phone; the label of the row in Settings › Library sections that switches the ↓ filter on, and the one-word notice finishing a download answers with |
 | `EPs` | Shelf heading: records longer than a single and shorter than an album |
 | `Field recordings` | Shelf heading: records made of the world itself, nature or a city, rather than of performed music |
 | `Go to artist radio` |  |
@@ -826,7 +826,7 @@ you are actually typing into, which is easier than reading it here.
 | `Home chips` | The row of tappable category chips |
 | `Home sections` | Reorder which sections appear on Home |
 | `Interface` | Section header grouping toggles |
-| `Library sections` | The row that opens the screen choosing which pills sit at the top of the Library tab, and that screen's own heading |
+| `Library sections` | The row that opens the screen choosing which sections the Library tab draws and in what order, and that screen's own heading. The same screen also carries the switch for the ↓ the tab draws in every section's sort row |
 | `Navigation` | Section header: how you move around the app |
 | `Navigation bar` | Settings screen: which tabs are on the bar at the bottom, and in what order |
 | `Navigation bar style` |  |
@@ -899,7 +899,7 @@ you are actually typing into, which is easier than reading it here.
 | String | What it is |
 | --- | --- |
 | `Keep at least one section on` |  |
-| `Library sections` | The row that opens the screen choosing which pills sit at the top of the Library tab, and that screen's own heading |
+| `Library sections` | The row that opens the screen choosing which sections the Library tab draws and in what order, and that screen's own heading. The same screen also carries the switch for the ↓ the tab draws in every section's sort row |
 
 ## Settings › Lyrics
 
