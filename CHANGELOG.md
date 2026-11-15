@@ -38,6 +38,7 @@ Releases before 0.2.1 are only listed on the
 - Settings: Home & navigation is now called Navigation.
 - Library: Downloaded is now a ↓ at the right end of each section's sort row, beside the heart, and keeps Playlists, Albums, Artists and Songs to what is on your phone.
 - Library: the sort row no longer offers Play and Shuffle over an album or song list; those lists are read, filtered and sorted there, and what you want started is opened as such.
+- Library: the ↓ and the heart are a pair of filters over one list. Pressed together they keep a section to what is on your phone and you favorited at once; pressed alone each still answers only its own question, and nothing you have not filtered stays away.
 - Library: pinned playlists go back to the top of the section and carry a pin, as albums do.
 - Settings: the Library's ↓ filter has its own row in Settings › Library sections, above the sections it cannot be reordered among.
 - Player: the playback speed and Preserve pitch are kept when the app is closed.

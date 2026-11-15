@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 856 of them.
+Every string the app can show, under the screen it shows up on. 860 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -237,6 +237,7 @@ you are actually typing into, which is easier than reading it here.
 | --- | --- |
 | `A-Z` | Sort option: the order of a list |
 | `Album artist` |  |
+| `Albums you favorited and downloaded will show up here.` | The line under an empty state with both filters pressed, saying what fills the list |
 | `Couldn't load albums.` | Error on the screen, with a Retry button |
 | `Couldn't refresh the albums` | On a pull of the list that fails: the rows you were looking at stay, and this one line says the re-ask did not go through |
 | `Favorite albums to see them here.` | The line under an empty state, saying how to fill it |
@@ -255,6 +256,7 @@ you are actually typing into, which is easier than reading it here.
 | --- | --- |
 | `A-Z` | Sort option: the order of a list |
 | `Artists` | A heading over a list of them, never a count |
+| `Artists you favorited and downloaded will show up here.` | The line under an empty state with both filters pressed, saying what fills the list |
 | `Couldn't load artists.` | Error on the screen, with a Retry button |
 | `Couldn't refresh the artists` | On a pull of the list that fails: the rows you were looking at stay, and this one line says the re-ask did not go through |
 | `Favorite artists to see them here.` | The line under an empty state, saying how to fill it |
@@ -285,6 +287,7 @@ you are actually typing into, which is easier than reading it here.
 | `No songs yet` | Empty state when the library has no songs |
 | `Nothing played yet` | Empty state: this phone has not played anything yet |
 | `Nothing to change` | Answer to favouriting a selection that already is one, or unfavouriting one that isn't |
+| `Songs you favorited and downloaded will show up here.` | The line under an empty state with both filters pressed, saying what fills the list |
 | `Your library looks empty.` | Empty state: the server answered, and had nothing |
 | `Your most played songs will show up here.` | Empty state, before anything has been played |
 | `Your recently played songs will show up here.` | Empty state, before anything has been played |
@@ -1268,6 +1271,7 @@ you are actually typing into, which is easier than reading it here.
 | `New` | One-word marker beside an episode's date, with a dot in the app's own accent in front of it: this episode came over with the show's last sync, so it arrived since the feed was last read — it is not a claim that it was published recently, a feed's own date can be rewritten and says nothing about that. Keep it one short word: it sits on the row's quiet meta line, after a length and a date, and a long one gets cut off with an ellipsis. Languages that keep the English word are fine, since podcast apps borrow it. |
 | `New playlist` | Row at the top of the playlist picker, and the button on an empty library: make one |
 | `Next` | Player control: the next track (accessibility label) |
+| `No downloaded favorites` | Empty state heading on a Library section with both the ↓ and the heart pressed, the list held to what is on the phone and favorited at once |
 | `No favorites yet` | Empty state heading |
 | `No results` | Nothing matched what was typed |
 | `No results for “{q}”` | Empty state. `{q}` is what was typed |
