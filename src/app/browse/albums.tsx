@@ -10,7 +10,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   Keyboard,
   Pressable,
   Text,
@@ -45,15 +44,11 @@ import { BrowseToolbar } from '@/components/BrowseToolbar';
 import { SearchBox } from '@/components/SearchBox';
 import { useBrowseSort } from '@/hooks/useBrowseSort';
 import { useGridColumns } from '@/hooks/useGridColumns';
+import { useGridCardWidth } from '@/hooks/useScreenSize';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 
 const PAGE = 30;
 const GAP = spacing.sm;
-
-/** Card width at a given density (#109). */
-function cardWidth(columns: number): number {
-  return (Dimensions.get('window').width - spacing.lg * 2 - GAP * (columns - 1)) / columns;
-}
 
 /** Bar height: the box (44) plus its gap to the row below. */
 const SEARCH_H = 44 + spacing.md;
@@ -126,7 +121,7 @@ export function AlbumsBrowser({
     value: layout,
     set: setLayout,
   });
-  const card = cardWidth(columns);
+  const card = useGridCardWidth(columns, GAP, spacing.lg);
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({

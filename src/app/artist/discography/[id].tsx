@@ -9,7 +9,6 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   Pressable,
   Text,
@@ -36,17 +35,12 @@ import { BackChevron } from '@/components/BackChevron';
 import { useAlbumSort } from '@/hooks/useAlbumSort';
 import { useGridColumns } from '@/hooks/useGridColumns';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
-import { useListPadding } from '@/hooks/useScreenSize';
+import { useListPadding, useGridCardWidth } from '@/hooks/useScreenSize';
 
 // Same measurements as browsing albums: both are full-screen album grids and
 // cards of different sizes between them would look like an accident. That is
 // why they start at the same density and each keeps its own after that (#109).
 const GAP = spacing.sm;
-
-/** Card width at a given density (#109). */
-function cardWidth(columns: number): number {
-  return (Dimensions.get('window').width - spacing.lg * 2 - GAP * (columns - 1)) / columns;
-}
 
 export default function DiscographyScreen() {
   // Repaints on a change of appearance or accent: a stack keeps this screen
@@ -75,7 +69,7 @@ export default function DiscographyScreen() {
     value: layout,
     set: setLayout,
   });
-  const card = cardWidth(columns);
+  const card = useGridCardWidth(columns, GAP, spacing.lg);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['artist', id],

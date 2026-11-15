@@ -11,7 +11,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   Pressable,
   Text,
@@ -66,17 +65,13 @@ import {
 import { haptic } from '@/lib/haptics';
 import { listPerf } from '@/lib/listPerf';
 import { useGridColumns } from '@/hooks/useGridColumns';
+import { useGridCardWidth } from '@/hooks/useScreenSize';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { BackChevron } from '@/components/BackChevron';
 
 const PAGE = 30;
 const SONG_PAGE = 50;
 const GAP = spacing.sm;
-
-/** Card width at a given density (#109). */
-function cardWidth(columns: number): number {
-  return (Dimensions.get('window').width - spacing.lg * 2 - GAP * (columns - 1)) / columns;
-}
 
 /** Songs fetched when pressing play: the same cap as the library shuffle, for
  *  the same reason (a queue of thousands is unusable). */
@@ -112,7 +107,7 @@ export default function GenreScreen() {
     value: layout,
     set: setLayout,
   });
-  const card = cardWidth(columns);
+  const card = useGridCardWidth(columns, GAP, spacing.lg);
   const [tab, setTab] = useState<'albums' | 'songs'>('albums');
   const lang = useSettings((s) => s.language);
   /** Opens the ⋯ menu: what is too rare or too destructive for the row. */

@@ -20,7 +20,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   Keyboard,
   Pressable,
   Text,
@@ -64,7 +63,7 @@ import {
 } from '@/theme';
 import { useGridColumns } from '@/hooks/useGridColumns';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
-import { useListPadding } from '@/hooks/useScreenSize';
+import { useListPadding, useGridCardWidth } from '@/hooks/useScreenSize';
 import { BackChevron } from '@/components/BackChevron';
 import { BrowseFrame, useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
 import { BrowseToolbar } from '@/components/BrowseToolbar';
@@ -77,11 +76,6 @@ const PAGE = 50;
 // That is why they start at the same density and each keeps its own after
 // that: whoever changes one of them is looking at that one (#109).
 const GAP = spacing.sm;
-
-/** Card width at a given density (#109). */
-function cardWidth(columns: number): number {
-  return (Dimensions.get('window').width - spacing.lg * 2 - GAP * (columns - 1)) / columns;
-}
 
 /** Bar height: the box (44) plus its gap to the row below. */
 const SEARCH_H = 44 + spacing.md;
@@ -146,7 +140,7 @@ export function SongsBrowser({
     value: layout,
     set: setLayout,
   });
-  const card = cardWidth(columns);
+  const card = useGridCardWidth(columns, GAP, spacing.lg);
   // What this server can actually order by; the first one is what it opens on.
   // The downloads answer every order, whatever the server can.
   const sorts = !canFetch ? [] : downloaded ? DOWNLOADED_SORTS : songListSorts();

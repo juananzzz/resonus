@@ -20,7 +20,6 @@ import { Link } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   Pressable,
   Text,
@@ -38,7 +37,7 @@ import { PlaylistCard } from '@/components/PlaylistCard';
 import { useDownloadedPlaylists } from '@/hooks/useDownloadedPlaylists';
 import { useGridColumns } from '@/hooks/useGridColumns';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
-import { useListPadding } from '@/hooks/useScreenSize';
+import { useListPadding, useGridCardWidth } from '@/hooks/useScreenSize';
 import { songsLabel, useT } from '@/i18n';
 import { haptic } from '@/lib/haptics';
 import { SORT_LABELS, byCodepoint, matches, normQ, sortItems } from '@/lib/librarySort';
@@ -51,10 +50,6 @@ import { colors, fontSize, spacing, themed } from '@/theme';
 
 /** The gap between cards, and what a card is left with once they are taken. */
 const GAP = spacing.md;
-
-function cardWidth(columns: number): number {
-  return (Dimensions.get('window').width - spacing.lg * 2 - GAP * (columns - 1)) / columns;
-}
 
 /** The same three "Your library" offers, in its order. */
 const SORTS: { key: LibrarySort; label: string }[] = (
@@ -86,7 +81,7 @@ export function PlaylistsBrowser({
     value: layout,
     set: setLayout,
   });
-  const card = cardWidth(columns);
+  const card = useGridCardWidth(columns, GAP, spacing.lg);
   const saved = useDownloadedPlaylists();
 
   // Assigned in an effect and not while rendering: the React compiler's lint

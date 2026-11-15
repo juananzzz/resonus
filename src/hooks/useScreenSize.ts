@@ -26,6 +26,8 @@
  */
 import { useWindowDimensions } from 'react-native';
 
+import { gridCardWidth } from '@/lib/gridLayout';
+
 export interface ScreenSize {
   width: number;
   height: number;
@@ -101,4 +103,20 @@ export function useListPadding(base = 16): number {
 export function columnsFor(width: number, ideal: number, min = 2, max = 8): number {
   const usable = width - 32; // the screens' own horizontal padding, near enough
   return Math.max(min, Math.min(max, Math.round(usable / ideal)));
+}
+
+/**
+ * The width of one card in a fixed-column grid, measured during the render.
+ *
+ * The grids in the app used to work this out from `Dimensions.get('window')`
+ * when their module was imported, so a turn left every card at the old width
+ * (#131). This is the same arithmetic with the live width.
+ */
+export function useGridCardWidth(
+  columns: number,
+  gap: number,
+  sidePadding: number,
+): number {
+  const { width } = useWindowDimensions();
+  return gridCardWidth(width, columns, gap, sidePadding);
 }

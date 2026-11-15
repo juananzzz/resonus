@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Dimensions,
   Keyboard,
   Pressable,
   Text,
@@ -43,6 +42,7 @@ import { BrowseFrame, useSearchBox, type BrowserProps } from '@/components/Brows
 import { BrowseToolbar } from '@/components/BrowseToolbar';
 import { SearchBox } from '@/components/SearchBox';
 import { useGridColumns } from '@/hooks/useGridColumns';
+import { useGridCardWidth } from '@/hooks/useScreenSize';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 
 // Three across is what this screen starts as (`GRID_DEFAULT_COLUMNS`), like
@@ -52,11 +52,6 @@ import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 // cover and deserves size; an artist is recognized by their face much sooner.
 // It is where the screen starts and no longer where it has to stay (#109).
 const GAP = spacing.sm;
-
-/** Card width at a given density (#109). */
-function cardWidth(columns: number): number {
-  return (Dimensions.get('window').width - spacing.lg * 2 - GAP * (columns - 1)) / columns;
-}
 
 /**
  * Client-side sorting: `getArtists()` brings the full index at once and
@@ -118,7 +113,7 @@ export function ArtistsBrowser({
     value: layout,
     set: setLayout,
   });
-  const card = cardWidth(columns);
+  const card = useGridCardWidth(columns, GAP, spacing.lg);
 
   // "Recently played" blends both sources: having opened their screen and
   // having played within any queue. Neither alone tells the full story, and
