@@ -17,6 +17,7 @@ import { tg } from '@/i18n';
 import { markAbsentCovers, omitsAbsentCovers } from '@/lib/absentCovers';
 import { structuredSongLyrics, type ServerStructuredLyrics } from '@/lib/lyricWords';
 import { canonicalId, idWouldChange } from '@/lib/navidromeIds';
+import { mergeHeaders, serverHeaders, type CustomHeaders } from '@/lib/customHeaders';
 import { netTally, timed } from '@/lib/perfLog';
 import { createSlots } from '@/lib/slots';
 import { DeadlineError, untilAborted, withDeadline } from './deadline';
@@ -83,6 +84,13 @@ export interface SubsonicAuth {
   jfToken?: string;
   jfUserId?: string;
   jfDeviceId?: string;
+  /**
+   * Extra headers for every request to this server (#160), for a reverse
+   * proxy that gates access on one of its own. They are sent on the login
+   * request too, so a header-protected server can be reached before there is
+   * a session. Editing lives in Sign in › Advanced and Settings › Network.
+   */
+  headers?: CustomHeaders;
 }
 
 export interface Song {
@@ -395,6 +403,7 @@ export async function makeAuth(
   password: string,
   serverType?: string,
   plainAuth?: boolean,
+  headers?: CustomHeaders,
 ): Promise<SubsonicAuth> {
   const salt = randomSalt();
   const token = await Crypto.digestStringAsync(
@@ -414,6 +423,7 @@ export async function makeAuth(
     ...(plainAuth ? { plainAuth: true } : {}),
     // Navidrome: the native API (uploading covers) needs the password.
     ...(serverType === 'navidrome' ? { ndPassword: password } : {}),
+    ...(headers && Object.keys(headers).length > 0 ? { headers } : {}),
   };
 }
 
@@ -561,7 +571,10 @@ async function request<T>(
   let res: Response;
   try {
     res = await timed(`net ${endpoint}`, () =>
-      fetch(buildUrl(auth, endpoint, extra), { signal: controller.signal }),
+      fetch(buildUrl(auth, endpoint, extra), {
+        headers: serverHeaders(auth),
+        signal: controller.signal,
+      }),
     );
   } catch {
     clearTimeout(timer);
@@ -1013,7 +1026,10 @@ export async function reorderPlaylist(
   const json = await withDeadline(REQUEST_TIMEOUT_MS, async (signal) => {
     const res = await fetch(`${auth.serverUrl}/rest/createPlaylist.view`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: mergeHeaders(
+        { 'Content-Type': 'application/x-www-form-urlencoded' },
+        auth.headers,
+      ),
       body: params.toString(),
       signal,
     });
@@ -1579,7 +1595,10 @@ export async function savePlayQueue(
     await withDeadline(REQUEST_TIMEOUT_MS, (signal) =>
       fetch(`${auth.serverUrl}/rest/savePlayQueue.view`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: mergeHeaders(
+          { 'Content-Type': 'application/x-www-form-urlencoded' },
+          auth.headers,
+        ),
         body: params.toString(),
         signal,
       }),

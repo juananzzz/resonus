@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 867 of them.
+Every string the app can show, under the screen it shows up on. 874 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -986,6 +986,7 @@ you are actually typing into, which is easier than reading it here.
 
 | String | What it is |
 | --- | --- |
+| `{n} set` |  |
 | `Add address` | The button. `Add server address` is the title of what it opens |
 | `Add server address` | Title of the dialog for adding another address for this account |
 | `Add the address you use from outside next to the one you use at home, so the server works wherever you are.` |  |
@@ -995,9 +996,15 @@ you are actually typing into, which is easier than reading it here.
 | `Back online` | The toast shown when the server answers again and the app comes out of offline mode |
 | `Couldn't reach this address with your account.` | Validation message: nothing answered there, or the account was refused |
 | `Current server address` | The one being used right now, of those |
+| `Custom headers` |  |
+| `Edit headers` |  |
 | `Edit server address` | Title of the same dialog when changing one |
+| `For a server behind a proxy that only answers requests carrying a secret header: one Name: value per line.` |  |
+| `Headers saved` |  |
 | `Local` | An address on the same network (LAN). Nothing to do with the local profile |
 | `Network` |  |
+| `None set` |  |
+| `One Name: value per line. Lines starting with # are notes.` |  |
 | `Remote` | An address reachable from outside the home network |
 | `Server addresses` | Section header: a profile can have several addresses for the same account, one at home and one from outside |
 | `This address is already in the list.` | Validation message: that one is already there |

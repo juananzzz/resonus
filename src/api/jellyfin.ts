@@ -50,6 +50,7 @@ import {
 import { fetch } from 'expo/fetch';
 import { untilAborted } from './deadline';
 import { assertCanRequest } from './netGate';
+import { mergeHeaders, serverHeaders, type CustomHeaders } from '@/lib/customHeaders';
 import { netTally } from '@/lib/perfLog';
 
 const CLIENT_VERSION = Constants.expoConfig?.version ?? '0.0.0';
@@ -204,10 +205,13 @@ async function request<T>(
   try {
     res = await fetch(buildUrl(auth, path, params), {
       method: init.method ?? 'GET',
-      headers: {
-        Authorization: authHeader(auth),
-        ...(init.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-      },
+      headers: mergeHeaders(
+        {
+          Authorization: authHeader(auth),
+          ...(init.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        },
+        serverHeaders(auth),
+      ),
       body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
       signal: controller.signal,
     });
@@ -252,6 +256,7 @@ export async function makeAuth(
   serverUrl: string,
   username: string,
   password: string,
+  headers?: CustomHeaders,
 ): Promise<SubsonicAuth> {
   const url = normalizeUrl(serverUrl);
   const deviceId = randomHex(16);
@@ -262,12 +267,15 @@ export async function makeAuth(
   try {
     res = await fetch(`${url}/Users/AuthenticateByName`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization:
-          `MediaBrowser Client="${CLIENT_NAME}", Device="${CLIENT_DEVICE}", ` +
-          `DeviceId="${deviceId}", Version="${CLIENT_VERSION}"`,
-      },
+      headers: mergeHeaders(
+        {
+          'Content-Type': 'application/json',
+          Authorization:
+            `MediaBrowser Client="${CLIENT_NAME}", Device="${CLIENT_DEVICE}", ` +
+            `DeviceId="${deviceId}", Version="${CLIENT_VERSION}"`,
+        },
+        headers,
+      ),
       body: JSON.stringify({ Username: username, Pw: password }),
       signal: controller.signal,
     });
@@ -305,6 +313,7 @@ export async function makeAuth(
     jfToken: data.AccessToken,
     jfUserId: data.User.Id,
     jfDeviceId: deviceId,
+    ...(headers && Object.keys(headers).length > 0 ? { headers } : {}),
   };
 }
 

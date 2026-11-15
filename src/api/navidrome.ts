@@ -12,6 +12,7 @@ import { fetch } from 'expo/fetch';
 import { type Album, type Song, type SortDirection, type SubsonicAuth } from './subsonic';
 import { DeadlineError, withDeadline } from './deadline';
 import { assertCanRequest } from './netGate';
+import { mergeHeaders, serverHeaders } from '@/lib/customHeaders';
 import { netTally } from '@/lib/perfLog';
 
 /** Typed error to provide useful messages in the UI. */
@@ -78,7 +79,7 @@ async function ndLogin(auth: SubsonicAuth, fresh = false): Promise<string> {
     try {
       res = await fetch(`${auth.serverUrl}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: mergeHeaders({ 'Content-Type': 'application/json' }, serverHeaders(auth)),
         body: JSON.stringify({ username: auth.username, password }),
         signal,
       });
@@ -112,7 +113,13 @@ async function ndFetch(auth: SubsonicAuth, path: string, init: RequestInit): Pro
     try {
       const res = await fetch(`${auth.serverUrl}${path}`, {
         ...init,
-        headers: { ...init.headers, 'x-nd-authorization': `Bearer ${token}` },
+        headers: mergeHeaders(
+          {
+            ...(init.headers as Record<string, string> | undefined),
+            'x-nd-authorization': `Bearer ${token}`,
+          },
+          serverHeaders(auth),
+        ),
         signal,
       });
       return res.ok ? 0 : res.status;
@@ -192,7 +199,7 @@ export async function uploadCoverImage(
         // extension.
         fieldName: 'image',
         mimeType: image.type,
-        headers: { 'x-nd-authorization': `Bearer ${token}` },
+        headers: mergeHeaders({ 'x-nd-authorization': `Bearer ${token}` }, serverHeaders(auth)),
       },
     );
   } catch {
@@ -355,7 +362,10 @@ async function ndJson<T>(auth: SubsonicAuth, path: string): Promise<T> {
       let res: Response;
       try {
         res = await fetch(`${auth.serverUrl}${path}`, {
-          headers: { 'x-nd-authorization': `Bearer ${token}` },
+          headers: mergeHeaders(
+            { 'x-nd-authorization': `Bearer ${token}` },
+            serverHeaders(auth),
+          ),
           signal,
         });
       } catch {

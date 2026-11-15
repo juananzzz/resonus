@@ -18,6 +18,7 @@ import {
   type SubsonicAuth,
 } from '@/api/backend';
 import { primaryUrl } from '@/lib/serverUrls';
+import { type CustomHeaders } from '@/lib/customHeaders';
 import { bump, timed } from '@/lib/perfLog';
 import { clearLocalCatalog, folderSetKey } from '@/lib/localLibrary';
 import { deleteProfileData } from '@/lib/profileData';
@@ -159,6 +160,8 @@ interface AuthState {
     password: string,
     serverType?: string,
     plainAuth?: boolean,
+    /** Sent on the login request too, for a header-gated server (#160). */
+    headers?: CustomHeaders,
   ) => Promise<void>;
   /**
    * Enters a saved profile. With a server profile and no network, instead of
@@ -185,6 +188,12 @@ interface AuthState {
    * (for profiles created before login stored it).
    */
   saveNativePassword: (password: string) => Promise<void>;
+  /**
+   * Replaces the custom HTTP headers of the active server profile (#160).
+   * An empty object removes them. They apply to the next request, without
+   * signing in again.
+   */
+  setCustomHeaders: (headers: CustomHeaders) => Promise<void>;
   enterOffline: () => Promise<void>;
   /**
    * Puts the server account into offline mode (show/play downloads)
@@ -274,8 +283,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  login: async (serverUrl, username, password, serverType, plainAuth) => {
-    const base = await makeAuth(serverUrl, username, password, serverType, plainAuth);
+  login: async (serverUrl, username, password, serverType, plainAuth, headers) => {
+    // Signing in again to a saved profile without touching the header field
+    // keeps what that profile already had: those headers may be the only way
+    // its server answers at all, and asking for them again to change a
+    // password would otherwise lock the profile out.
+    const savedHeaders =
+      headers === undefined
+        ? get().profiles.find(
+            (p): p is ServerProfile =>
+              p._type === 'server' &&
+              p.username === username &&
+              (p.urls ?? [p.serverUrl]).includes(normalizeUrl(serverUrl)),
+          )?.headers
+        : undefined;
+    const base = await makeAuth(
+      serverUrl,
+      username,
+      password,
+      serverType,
+      plainAuth,
+      headers ?? savedHeaders,
+    );
     const auth: ServerProfile = {
       ...base,
       // Born with its URL as the only candidate; more are added from Settings › Network.
@@ -494,6 +523,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await setItem(ACTIVE_KEY, JSON.stringify(auth));
     await setItem(PROFILES_KEY, JSON.stringify(profiles));
     set({ auth, profiles });
+  },
+
+  setCustomHeaders: async (headers) => {
+    const current = get().auth;
+    if (!current) return;
+    const clean = Object.fromEntries(
+      Object.entries(headers).filter(([name, value]) => name.trim() && value.trim()),
+    );
+    const { headers: _old, ...rest } = current;
+    const auth: SubsonicAuth =
+      Object.keys(clean).length > 0 ? { ...rest, headers: clean } : rest;
+    await persistActive(get, set, auth, (p) => {
+      const { headers: _previous, ...profile } = p;
+      return Object.keys(clean).length > 0 ? { ...profile, headers: clean } : profile;
+    });
   },
 
   enterOffline: async () => {

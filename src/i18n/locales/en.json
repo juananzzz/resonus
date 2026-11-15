@@ -865,5 +865,12 @@
   "Search settings": "Search settings",
   "Last scan": "Last scan",
   "Export as M3U": "Export as M3U",
-  "Playlist exported": "Playlist exported"
+  "Playlist exported": "Playlist exported",
+  "Headers saved": "Headers saved",
+  "Custom headers": "Custom headers",
+  "For a server behind a proxy that only answers requests carrying a secret header: one Name: value per line.": "For a server behind a proxy that only answers requests carrying a secret header: one Name: value per line.",
+  "Edit headers": "Edit headers",
+  "None set": "None set",
+  "{n} set": "{n} set",
+  "One Name: value per line. Lines starting with # are notes.": "One Name: value per line. Lines starting with # are notes."
 }

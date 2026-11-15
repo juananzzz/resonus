@@ -7,11 +7,12 @@
  */
 import Icon from '@/components/Icon';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
 import { Dialog } from '@/components/Dialog';
 import { SettingsScroll, SettingsPage, settingsStyles, SwitchList } from '@/components/SettingsUI';
 import { reachable } from '@/api/backend';
+import { formatHeaderLines, parseHeaderLines, type CustomHeaders } from '@/lib/customHeaders';
 import { isLanUrl } from '@/lib/serverUrls';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
@@ -36,6 +37,7 @@ export default function NetworkSettings() {
   const editServerUrl = useAuthStore((s) => s.editServerUrl);
   const removeServerUrl = useAuthStore((s) => s.removeServerUrl);
   const setAutoUrl = useAuthStore((s) => s.setAutoUrl);
+  const setCustomHeaders = useAuthStore((s) => s.setCustomHeaders);
   // From the store, not `colors.accent`: without subscription the active URL
   // radio and «Add address» would keep the previous accent while the screen
   // stays mounted.
@@ -44,8 +46,10 @@ export default function NetworkSettings() {
   const [health, setHealth] = useState<'checking' | 'ok' | 'down'>('checking');
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
+  const [headersOpen, setHeadersOpen] = useState(false);
 
   const activeUrl = auth?.serverUrl ?? '';
+  const headerCount = Object.keys(auth?.headers ?? {}).length;
 
   // Checks whether the active URL responds right now (green/red check).
   useEffect(() => {
@@ -72,6 +76,19 @@ export default function NetworkSettings() {
     if (result === 'duplicate') toast(t('This address is already in the list.'));
     else if (result === 'unreachable') toast(t("Couldn't reach this address with your account."));
     else toast(t('Address added'));
+  }
+
+  async function onSaveHeaders(value: string) {
+    const parsed = parseHeaderLines(value);
+    // One bad line keeps the dialog open with the reason: saving the good ones
+    // silently would leave the server answering 403 with no explanation.
+    if (parsed.errors.length > 0) {
+      toast(parsed.errors[0]);
+      return;
+    }
+    setHeadersOpen(false);
+    await setCustomHeaders(parsed.headers as CustomHeaders);
+    toast(t('Headers saved'));
   }
 
   async function onEdit(value: string) {
@@ -117,6 +134,25 @@ export default function NetworkSettings() {
             },
           ]}
         />
+
+        <Text style={settingsStyles.sectionTitle}>{t('Custom headers')}</Text>
+        <Text style={settingsStyles.sectionDescription}>
+          {t(
+            'For a server behind a proxy that only answers requests carrying a secret header: one Name: value per line.',
+          )}
+        </Text>
+        <Pressable
+          style={({ pressed }) => [settingsStyles.cardBox, settingsStyles.row, pressed && { opacity: 0.6 }]}
+          onPress={() => setHeadersOpen(true)}
+        >
+          <Icon name="create-outline" size={20} color={colors.textMuted} />
+          <View style={settingsStyles.rowLabelBox}>
+            <Text style={settingsStyles.rowLabel}>{t('Edit headers')}</Text>
+            <Text style={settingsStyles.rowDescription} numberOfLines={1}>
+              {headerCount === 0 ? t('None set') : t('{n} set', { n: headerCount })}
+            </Text>
+          </View>
+        </Pressable>
 
         <Text style={settingsStyles.sectionTitle}>{t('Server addresses')}</Text>
         <Text style={settingsStyles.sectionDescription}>
@@ -194,6 +230,16 @@ export default function NetworkSettings() {
           </Text>
         </Pressable>
       </SettingsScroll>
+
+      <Dialog
+        visible={headersOpen}
+        title={t('Custom headers')}
+        message={t('One Name: value per line. Lines starting with # are notes.')}
+        input={{ initialValue: formatHeaderLines(auth?.headers), multiline: true }}
+        confirmLabel={t('Save')}
+        onCancel={() => setHeadersOpen(false)}
+        onConfirm={onSaveHeaders}
+      />
 
       <Dialog
         visible={adding}

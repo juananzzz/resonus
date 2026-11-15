@@ -24,7 +24,7 @@ interface Props {
   /** Anything else to show under the message. */
   children?: ReactNode;
   /** If provided, shows a text field initialized with `initialValue`. */
-  input?: { placeholder?: string; initialValue?: string; secure?: boolean };
+  input?: { placeholder?: string; initialValue?: string; secure?: boolean; multiline?: boolean };
   confirmLabel: string;
   /** Optional third choice, neither confirm nor cancel (e.g. «Don't remind
    *  me»). Goes on its own line so three labels never crowd one row.
@@ -92,12 +92,14 @@ export function Dialog({
           {input ? (
             <TextInput
               ref={inputRef}
-              style={styles.input}
               placeholder={input.placeholder}
               placeholderTextColor={colors.textMuted}
               value={value}
               onChangeText={setValue}
               secureTextEntry={input.secure}
+              multiline={input.multiline}
+              numberOfLines={input.multiline ? 6 : 1}
+              style={input.multiline ? styles.inputMulti : styles.input}
             />
           ) : null}
           {neutral ? (
@@ -161,6 +163,18 @@ const styles = themed((colors) => ({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     fontSize: fontSize.md,
+  },
+  // A multi-line field keeps its height when empty and puts the caret at the top,
+  // which is where a list of `Name: value` lines is read from.
+  inputMulti: {
+    backgroundColor: colors.surface,
+    color: colors.text,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSize.md,
+    minHeight: 120,
+    textAlignVertical: 'top',
   },
   actions: {
     flexDirection: 'row',
