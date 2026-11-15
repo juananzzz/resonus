@@ -24,7 +24,6 @@ Releases before 0.2.1 are only listed on the
 - Library: a heart at the right end of a section's sort row keeps only what you favorited, and it is remembered on and off separately for playlists, albums, artists, songs and podcasts.
 - Library: the + button that makes a new playlist sits at the top of the tab while you are reading playlists.
 - Library: pulling a Playlists, Albums or Artists list down asks the server for it again; a pull that fails leaves the rows you were looking at and says so.
-- Library: the sort row no longer offers Play and Shuffle over an album or song list; those lists are read, filtered and sorted there, and what you want started is opened as such.
 - Library: the Podcasts section has its own sort button (Recents, Recently added, Alphabetical), like the other sections have.
 - Library: pressing either filter keeps whatever you had typed in the section's search box, since you are asking the same question of a smaller list.
 
@@ -38,6 +37,9 @@ Releases before 0.2.1 are only listed on the
 - Library: fully downloaded playlists show ↓, as albums do.
 - Settings: Home & navigation is now called Navigation.
 - Library: Downloaded is now a ↓ at the right end of each section's sort row, beside the heart, and keeps Playlists, Albums, Artists and Songs to what is on your phone.
+- Library: the sort row no longer offers Play and Shuffle over an album or song list; those lists are read, filtered and sorted there, and what you want started is opened as such.
+- Library: pinned playlists go back to the top of the section and carry a pin, as albums do.
+- Settings: the Library's ↓ filter has its own row in Settings › Library sections, above the sections it cannot be reordered among.
 - Player: the playback speed and Preserve pitch are kept when the app is closed.
 - Android: Resonus is declared as a music app, for widgets and launchers that look for one (#309).
 - Local profile: Rescan reads again only the files that changed, so a large library no longer takes minutes (#338).
@@ -52,7 +54,7 @@ Releases before 0.2.1 are only listed on the
 - Jellyfin: editing a playlist no longer offers a description the server cannot save.
 - Downloads: every Remove download says how many songs or episodes it deleted, or that there was nothing to delete.
 - Local profile: playlists and selections no longer offer Export and Delete downloads.
-- Library: with favorite songs and nothing else, it no longer says there is nothing there.
+- Library: a section you have the heart on but nothing of it hearted says so itself, instead of the tab claiming there is nothing to see.
 - The screen could stop answering taps after letting go of the mini player halfway up.
 - Jellyfin: Recently played and Most played albums follow your plays instead of the alphabet.
 - Lyrics: a word synced by syllables no longer splits across two lines.
