@@ -421,7 +421,7 @@ export async function favoriteIds(): Promise<Set<string>> {
  * `favSet` prop keeps its identity across renders instead of churning. */
 export const NO_FAVORITES: Set<string> = new Set();
 
-export async function listFavoriteChannels(): Promise<(PodcastChannel & Db.FavoriteTimes)[]> {
+async function listFavoriteChannels(): Promise<(PodcastChannel & Db.FavoriteTimes)[]> {
   return Db.listFavoriteChannels(scope());
 }
 

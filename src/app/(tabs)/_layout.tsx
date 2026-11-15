@@ -23,7 +23,7 @@ import { colors, useTheme } from '@/theme';
  */
 const TAB_OPTIONS: Record<
   TabSegment,
-  { label: string; icon: 'home' | 'search' | 'library' | 'albums' | 'settings' }
+  { label: string; icon: 'home' | 'search' | 'library' | 'settings' }
 > = {
   index: { label: 'Home', icon: 'home' },
   search: { label: 'Search', icon: 'search' },

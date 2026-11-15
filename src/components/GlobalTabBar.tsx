@@ -37,7 +37,7 @@ import { rememberTab, reselectTab, tabOrigin, TABS } from '@/lib/tabOrigin';
 import { useSettings } from '@/store/settings';
 import { colors, MINI_PLAYER_GAP, MINI_PLAYER_HEIGHT, PILL_MARGIN, PILL_RADIUS, themed, useThemeMode } from '@/theme';
 
-const ICONS: Record<string, 'home' | 'search' | 'library' | 'albums' | 'settings'> = {
+const ICONS: Record<string, 'home' | 'search' | 'library' | 'settings'> = {
   index: 'home',
   search: 'search',
   library: 'library',
