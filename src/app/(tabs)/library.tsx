@@ -73,6 +73,7 @@ import { usePlaylistStars } from '@/hooks/usePlaylistStars';
 import { useAccent } from '@/hooks/useAccent';
 import { createPlaylist } from '@/api/data';
 import { useT } from '@/i18n';
+import { invalidateDownloadedLists } from '@/lib/query';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth';
 import { anyDownloads, useDownloads } from '@/store/downloads';
@@ -150,7 +151,14 @@ export default function LibraryScreen() {
    *  a press writes that section's own saved state. Neither closes the search
    *  box: both ask a narrower question of the list you are reading.
    */
-  const toggleDownloaded = () => setDownloadedOnly(!filtering);
+  const toggleDownloaded = () => {
+    setDownloadedOnly(!filtering);
+    // The narrower answer is not a longer window on the same list, and a
+    //  download finishing does not invalidate these reads on its own, so the
+    //  press asks for them again rather than serving what the previous press
+    //  kept in the cache (see `invalidateDownloadedLists`).
+    invalidateDownloadedLists();
+  };
   const toggleFavorite = () => setFavoriteSection(current as FavoriteSectionKey, !favorited);
   /** Filled in by whichever section is on screen (see `BrowserProps`). */
   const sectionAction = useRef<() => void>(() => {});

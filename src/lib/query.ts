@@ -58,3 +58,24 @@ export function invalidatePodcastFavorites(): void {
   queryClient.invalidateQueries({ queryKey: ['podcastFavorites'] });
   invalidatePodcastLists();
 }
+
+/**
+ * The lists a section holds to what is on the phone, and their searches.
+ *
+ * A download finishing deliberately does not invalidate these: the store's
+ *  own `invalidate` leaves the online lists alone on purpose, because sending
+ *  the app off to re-fetch everything it has visible was what #50 undid. So
+ *  these answers age, and they are asked again only when something wants them
+ *  again — which is the ↓ of a section's sort row. Switching it off and back
+ *  within the five minutes a cached answer stays fresh would otherwise serve
+ *  the list the previous press kept, and the album you just downloaded is not
+ *  in it.
+ */
+export function invalidateDownloadedLists(): void {
+  queryClient.invalidateQueries({ queryKey: ['downloadedAlbums'] });
+  queryClient.invalidateQueries({ queryKey: ['downloadedSongs'] });
+  queryClient.invalidateQueries({ queryKey: ['downloadedArtists'] });
+  queryClient.invalidateQueries({ queryKey: ['downloadedAlbumList'] });
+  queryClient.invalidateQueries({ queryKey: ['searchDownloadedAlbums'] });
+  queryClient.invalidateQueries({ queryKey: ['searchDownloadedSongs'] });
+}

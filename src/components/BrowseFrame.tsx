@@ -23,20 +23,41 @@ import { themed } from '@/theme';
  * What every one of them takes.
  *
  * `actionRef` is how the button in the tab's header reaches the menu it opens,
- * which lives down here with the state it belongs to. The section fills it in
- * while rendering, the way `SheetModal` takes its `openRef`.
+ *  which lives down here with the state it belongs to. The section fills it in
+ *  while rendering, the way `SheetModal` takes its `openRef`.
  *
  * `searchOpen` is the other half of that arrangement, and it goes the other
- * way: embedded, whether the box is there at all is the tab's to say, because
- * the magnifier that opens it is drawn up there and turns into the X that
- * closes it. A ref would have done for opening it, but then two places would
- * hold the same fact and the day they disagree the icon says close and the tap
- * opens (see `useSearchBox`).
+ *  way: embedded, whether the box is there at all is the tab's to say, because
+ *  the magnifier that opens it is drawn up there and turns into the X that
+ *  closes it. A ref would have done for opening it, but then two places would
+ *  hold the same fact and the day they disagree the icon says close and the tap
+ *  opens (see `useSearchBox`).
+ *
+ * `downloaded`/`favorited` and their presses are the same arrangement a third
+ *  time, and they split the same way the filters do: which lists are on screen
+ *  is the tab's answer, one filter over every section, while the heart's state
+ *  belongs to the section it is drawn in and writes its own saved switch. The
+ *  value goes down, the press is handed down — a section reached as a screen of
+ *  its own takes neither pair, and draws neither icon.
  */
 export interface BrowserProps {
   embedded?: boolean;
   actionRef?: MutableRefObject<() => void>;
   searchOpen?: boolean;
+  downloaded?: boolean;
+  favorited?: boolean;
+  onToggleDownloaded?: () => void;
+  onToggleFavorite?: () => void;
+}
+
+/**
+ * A section with no ↓ to offer: the Downloaded filter keeps music the phone
+ *  holds, and a show is kept by its own screen, so `PodcastsBrowser` takes
+ *  exactly this half and typing says so rather than leaving it unstated.
+ */
+export interface ShowHeartProps {
+  favorited?: boolean;
+  onToggleFavorite?: () => void;
 }
 
 /**

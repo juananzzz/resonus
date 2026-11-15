@@ -58,7 +58,10 @@ export function BrowseToolbar<T extends string>({
   const showOrder = ordering !== false && options.length > 1 && !!current;
 
   return (
-    <View style={styles.row}>
+    // A row with nothing to draw goes without its padding: a screen that
+    //  searches and has no filters of its own would otherwise leave a 12 dp
+    //  band there, and the list under it would jump when the box opens.
+    <View style={showOrder || download || favorite ? styles.row : undefined}>
       {!showOrder ? (
         <View />
       ) : (
@@ -80,7 +83,12 @@ export function BrowseToolbar<T extends string>({
         <View style={styles.filters}>
           {download ? (
             <Pressable
-              hitSlop={12}
+              // The two claims must not overlap: the icons are 22 dp wide and
+              //  sit `gap.lg` apart, so the slops may add up to that 16 dp and
+              //  no more. Hit-testing takes the later sibling first, and a
+              //  slop of 12 would have the heart reach 8 dp into the ↓'s half —
+              //  a tap aimed between the two would pick the wrong filter.
+              hitSlop={8}
               accessibilityRole="switch"
               accessibilityLabel={t('Only downloaded')}
               accessibilityState={{ checked: download.on }}
@@ -98,7 +106,8 @@ export function BrowseToolbar<T extends string>({
           ) : null}
           {favorite ? (
             <Pressable
-              hitSlop={12}
+              // Same rule as the ↓: see the note above about the two claims.
+              hitSlop={8}
               accessibilityRole="switch"
               accessibilityLabel={t('Only favorited')}
               accessibilityState={{ checked: favorite.on }}

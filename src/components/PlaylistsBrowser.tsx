@@ -86,12 +86,7 @@ export function PlaylistsBrowser({
   onToggleDownloaded,
   onToggleFavorite,
 }:
-  BrowserProps & {
-    downloaded?: boolean;
-    favorited?: boolean;
-    onToggleDownloaded?: () => void;
-    onToggleFavorite?: () => void;
-  }) {
+  BrowserProps) {
   const t = useT();
   const lang = useSettings((s) => s.language);
   const listPad = useListPadding(spacing.lg);

@@ -3,8 +3,9 @@
  * across visits (#226). Only a field: these orders have no direction.
  *
  * A Home shelf that says which order it was showing wins for that visit, but
- * doesn't overwrite what was saved; picking one on the screen does. A saved
- * order the list no longer offers (another server) falls back to `fallback`.
+ * doesn't overwrite what was saved; picking one on the screen does. An order
+ * the list no longer offers — another server's, or the filters over a section
+ * answering a smaller set of orders — falls back to `fallback`.
  */
 import { useState } from 'react';
 
@@ -20,7 +21,14 @@ export function useBrowseSort<T extends string>(
   const setPref = useSortPrefs((s) => s.setPref);
   const [picked, setPicked] = useState<T | undefined>(fromRoute);
   const saved = offered.find((s) => s === stored);
-  const sort = picked ?? saved ?? fallback;
+  // What was picked during this visit belongs to the list as it was offered
+  //  then. The filters over a section change the set a list answers to at all
+  //  (a downloaded one has no server default, a favourited one no play counts),
+  //  and an order that is no longer offered would stay selected under a row
+  //  that cannot name it and a menu that has nothing left to choose. So it
+  //  follows the list off, the way the saved order above already does.
+  const chosen = picked !== undefined && offered.some((s) => s === picked) ? picked : undefined;
+  const sort = chosen ?? saved ?? fallback;
 
   function set(next: T) {
     setPicked(next);

@@ -111,12 +111,7 @@ export function ArtistsBrowser({
   onToggleDownloaded,
   onToggleFavorite,
 }:
-  BrowserProps & {
-    downloaded?: boolean;
-    favorited?: boolean;
-    onToggleDownloaded?: () => void;
-    onToggleFavorite?: () => void;
-  }) {
+  BrowserProps) {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();

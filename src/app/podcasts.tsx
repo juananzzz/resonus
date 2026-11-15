@@ -28,7 +28,7 @@ import {
 import { isManualOffline } from '@/api/netGate';
 import { COVER, coverArtUrl } from '@/api/data';
 import { BackChevron } from '@/components/BackChevron';
-import { BrowseFrame, useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
+import { BrowseFrame, useSearchBox, type BrowserProps, type ShowHeartProps } from '@/components/BrowseFrame';
 import { BrowseToolbar } from '@/components/BrowseToolbar';
 import { SearchBox } from '@/components/SearchBox';
 import { Cover } from '@/components/Cover';
@@ -98,10 +98,7 @@ export function PodcastsBrowser({
   favorited,
   onToggleFavorite,
 }:
-  BrowserProps & {
-    favorited?: boolean;
-    onToggleFavorite?: () => void;
-  }) {
+  BrowserProps & ShowHeartProps) {
   useTheme();
   const router = useRouter();
   const bottomPad = useScreenBottomPadding();
