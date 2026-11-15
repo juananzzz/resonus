@@ -477,7 +477,10 @@ function normalizeLibrarySections(raw: unknown): LibrarySection[] {
     out.push({ key, enabled: typeof enabled === 'boolean' ? enabled : true });
   }
   for (const def of DEFAULT_LIBRARY_SECTIONS) {
-    // The filter pill goes ahead of the sections, where it starts out.
+    // The ↓ filter's entry goes ahead of the sections, which is where it
+    //  starts out. Only its being in the list matters, not where it sits:
+    //  the tab reads its switch by key, and the settings screen lists it
+    //  apart from the rows that can be dragged.
     if (seen.has(def.key)) continue;
     if (def.key === 'downloaded') out.unshift({ ...def });
     else out.push({ ...def });
@@ -552,8 +555,8 @@ export const DEFAULT_HOME_CHIPS: HomeChip[] = [
   { key: 'radio', enabled: false },
 ];
 
-/** One of the pills at the top of Library. `genres`, `radio` and `folders`
- *  need a server; the rest the local catalogue answers for too. */
+/** One of the Library's sections. `genres`, `radio` and `folders` need a
+ *  server; the rest the local catalogue answers for too. */
 export type LibrarySectionKey =
   | 'playlists'
   | 'albums'
@@ -563,7 +566,10 @@ export type LibrarySectionKey =
   | 'radio'
   | 'podcasts'
   | 'folders'
-  /** Not a section: the pill that keeps the others to what is downloaded (#310). */
+  /** Not a section: the switch for the ↓ that keeps the others to what is on
+   *  the phone (#310). Its place in the saved list means nothing — the ↓ is
+   *  drawn at a fixed end of every section's sort row, and the tab reads this
+   *  entry by key. */
   | 'downloaded';
 
 /** A section with its state, the shape the Home chips already have (order is
@@ -1268,7 +1274,9 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   /** Home's chips, in order (each with its state). With none active, the
    *  row disappears: that replaces the old toggle. */
   homeChips: HomeChip[];
-  /** The pills at the top of Library: their order and their switches. */
+  /** The Library's sections: their order and their switches. The extra
+   *  `downloaded` entry is the ↓ filter's switch, whose place in the list is
+   *  not read — only its state is. */
   librarySections: LibrarySection[];
   /** Which sections of Library the heart is on in, remembered per section. */
   favoriteSections: FavoriteSections;

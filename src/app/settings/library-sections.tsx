@@ -1,6 +1,6 @@
 /**
- * Settings › Library sections: which pills are at the top of the Library tab,
- *  and in what order.
+ * Settings › Library sections: which sections the Library tab draws, and in
+ *  what order.
  *
  * The same draggable list the Home chips and the navigation bar use, switches
  *  and all. Unlike the Home chips, the last one on cannot be turned off: those
@@ -13,8 +13,12 @@
  *  hint below), and the tab still leaves out what it has no answer for: a
  *  Jellyfin account has no folder tree, and offline there are no stations.
  *
- * What a section is *shown* for is this screen's; what it is filtered to is not
- *  on any screen here: the heart lives in the tab's header and saves its own
+ * The Downloaded switch is here too, but not in the draggable list: the ↓ it
+ *  stands for is drawn at the right end of every section's sort row, at a fixed
+ *  place, so there is nothing for dragging it to achieve. Listing it apart,
+ *  without the drag icon, is what tells that to the finger. What a section is
+ *  *shown* for is this screen's; what a section is filtered to is not on any
+ *  screen here — the heart lives in the section's own sort row and saves its
  *  state per section, because a switch you press while reading is not a
  *  preference to set from the settings.
  */
@@ -42,7 +46,8 @@ import {
   useTheme,
 } from '@/theme';
 
-/** Each section's label, as an i18n key. The same ones the tab draws. */
+/** Each row's label, as an i18n key: the sections' plus the ↓ filter's. The
+ *  same ones the tab draws. */
 const LABEL: Record<LibrarySectionKey, string> = {
   playlists: 'Playlists',
   albums: 'Albums',
@@ -91,6 +96,37 @@ function SectionRow({
   );
 }
 
+/**
+ * The Downloaded switch, on a row of its own and without the drag icon.
+ *
+ * The ↓ it stands for is drawn at the right end of every section's sort row,
+ *  at a fixed place, so dragging this row would move nothing — a row that
+ *  cannot be grabbed is the only way to say that. The icon is the same one the
+ *  tab draws there, so the switch and what it switches are told as one thing.
+ */
+function FilterRow({
+  section,
+  onToggle,
+}: {
+  section: LibrarySection;
+  onToggle: (value: boolean) => void;
+}) {
+  const t = useT();
+  const { accent } = useTheme();
+  return (
+    <View style={styles.row}>
+      <Icon name="arrow-down-circle" size={22} color={colors.textSecondary} />
+      <Text style={styles.label}>{t(LABEL[section.key])}</Text>
+      <Switch
+        value={section.enabled}
+        onValueChange={onToggle}
+        trackColor={{ false: colors.control, true: accent }}
+        thumbColor={colors.knob}
+      />
+    </View>
+  );
+}
+
 export default function LibrarySectionsSettings() {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   //  mounted while you are on another one, out of reach of anything else.
@@ -102,8 +138,13 @@ export default function LibrarySectionsSettings() {
   const setSections = useSettings((s) => s.setLibrarySections);
   const setSection = useSettings((s) => s.setLibrarySection);
   const toast = useToast((s) => s.show);
-  // The Downloaded pill is a filter, not a section to land on.
-  const enabledCount = sections.filter((s) => s.enabled && s.key !== 'downloaded').length;
+  // The Downloaded switch is not one of the sections, and not one of the rows
+  //  that can be dragged: see the note at the top of the file and the one on
+  //  `FilterRow`. The tab reads its switch by key, so the entry stays in the
+  //  saved list — leaving it out would read as the filter being off.
+  const downloadRow = sections.find((s) => s.key === 'downloaded');
+  const rows = sections.filter((s) => s.key !== 'downloaded');
+  const enabledCount = rows.filter((s) => s.enabled).length;
 
   /** The last one on stays on: see the note at the top of the file. */
   function toggle(key: LibrarySectionKey, value: boolean) {
@@ -117,22 +158,32 @@ export default function LibrarySectionsSettings() {
   return (
     <SettingsSafeArea>
       <ScreenHeader title={t('Library sections')} />
+      {/* The filter's switch first, in front of the sections the way the saved
+          list keeps it: it is not one of them, so it is not in the list of
+          rows that can be dragged. */}
+      {downloadRow ? (
+        <FilterRow section={downloadRow} onToggle={(v) => toggle('downloaded', v)} />
+      ) : null}
       {/* Every section is listed, including the ones this profile cannot reach:
           what is stored is a preference about any profile, and a Jellyfin
           account rearranging the list an offline one comes back to is the kind
           of surprise nobody asked for (#114). */}
       <Text style={styles.hint}>{t('Drag to reorder, toggle to show or hide.')}</Text>
       <ReorderableList
-        data={sections}
+        data={rows}
         keyExtractor={(item) => item.key}
         renderItem={({ item }) => (
           <SectionRow section={item} onToggle={(v) => toggle(item.key, v)} />
         )}
         onReorder={({ from, to }: ReorderableListReorderEvent) => {
-          const next = sections.slice();
+          const next = rows.slice();
           const [moved] = next.splice(from, 1);
           next.splice(to, 0, moved);
-          setSections(next);
+          // The indices the drag gives are the list's, so the reordering runs
+          //  over the rows that are shown. The Downloaded entry goes back in
+          //  front of them the way `normalizeLibrarySections` puts a saved
+          //  list without one — the tab reads it by key either way.
+          setSections(downloadRow ? [{ ...downloadRow }, ...next] : next);
         }}
         contentContainerStyle={[
           styles.list,
