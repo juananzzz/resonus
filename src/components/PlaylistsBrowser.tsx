@@ -12,9 +12,11 @@
  * button in one section silently rearranging another, which is the same reason
  * browsing all albums does not share its layout with the favourites.
  *
- * No pins. What is pinned is a thing you did to your own library, and this
- * side is the server's.
+ * A playlist can be pinned, and the pin is honoured here and shown on its row
+ * or card the way an album's is: pinning is something you did while reading this
+ * section, so the section keeps it for itself the way it keeps its own order.
  */
+import Icon from '@/components/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -36,6 +38,7 @@ import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { PlaylistCard } from '@/components/PlaylistCard';
+import { useAccent } from '@/hooks/useAccent';
 import { useDownloadedPlaylists } from '@/hooks/useDownloadedPlaylists';
 import { useGridColumns } from '@/hooks/useGridColumns';
 import { usePullRefresh } from '@/hooks/usePullRefresh';
@@ -44,10 +47,11 @@ import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useListPadding } from '@/hooks/useScreenSize';
 import { songsLabel, useT } from '@/i18n';
 import { haptic } from '@/lib/haptics';
-import { SORT_LABELS, byCodepoint, matches, normQ, sortItems } from '@/lib/librarySort';
+import { SORT_LABELS, byCodepoint, matches, normQ, sortItems, withPins } from '@/lib/librarySort';
 import { listPerf } from '@/lib/listPerf';
 import { useAuthStore } from '@/store/auth';
 import { useLastPlayed } from '@/store/lastPlayed';
+import { usePins } from '@/store/pins';
 import { useMediaMenu } from '@/store/mediaMenu';
 import { useSettings, type LibrarySort } from '@/store/settings';
 import { colors, fontSize, spacing, themed } from '@/theme';
@@ -107,6 +111,13 @@ export function PlaylistsBrowser({
   });
   const card = cardWidth(columns);
   const saved = useDownloadedPlaylists();
+  // Pinned first, in the order they were pinned, whatever the chosen sort says:
+  //  the same `withPins` an album list runs its pins through, and the same
+  //  `playlist:<id>` key the long-press menu writes.
+  const pins = usePins((s) => s.pins);
+  // The two marks are the accent's, and this is a section a stack keeps mounted
+  //  behind you, so the colour comes from the hook rather than off `colors`.
+  const accent = useAccent();
   // The playlist stars, and `undefined` where this server cannot answer for
   //  them: no heart is drawn there, so `favorited` never arrives true.
   const stars = usePlaylistStars();
@@ -136,22 +147,29 @@ export function PlaylistsBrowser({
   // every render, which includes every keystroke in the box above (#50).
   const shown = useMemo(() => {
     const q = normQ(query.trim());
-    return sortItems(
-      (data ?? []).filter(
-        (p) =>
-          matches(q, p.name) &&
-          (!downloaded || !!saved?.has(p.id)) &&
-          (!favorited || !!stars?.has(p.id)),
+    // Pinned first, in the order they were pinned, ahead of whatever the
+    //  chosen sort says — the same as an album list's pins, and the same key
+    //  the long-press menu writes them under.
+    return withPins(
+      sortItems(
+        (data ?? []).filter(
+          (p) =>
+            matches(q, p.name) &&
+            (!downloaded || !!saved?.has(p.id)) &&
+            (!favorited || !!stars?.has(p.id)),
+        ),
+        sort,
+        (p) => p.name,
+        sort === 'recent'
+          ? (p) => times[`/playlist/${p.id}`] ?? 0
+          : (p) => Date.parse(p.created ?? '') || 0,
+        // Code point so "+"-prefixed playlists pin to the top like on the server.
+        byCodepoint,
       ),
-      sort,
-      (p) => p.name,
-      sort === 'recent'
-        ? (p) => times[`/playlist/${p.id}`] ?? 0
-        : (p) => Date.parse(p.created ?? '') || 0,
-      // Code point so "+"-prefixed playlists pin to the top like on the server.
-      byCodepoint,
+      (p) => `playlist:${p.id}`,
+      pins,
     );
-  }, [data, query, sort, times, downloaded, saved, favorited, stars]);
+  }, [data, query, sort, times, pins, downloaded, saved, favorited, stars]);
 
   const body =
     isLoading || (downloaded && !saved) || (favorited && !stars) ? (
@@ -208,9 +226,13 @@ export function PlaylistsBrowser({
               { paddingBottom: bottomPad, paddingHorizontal: listPad },
             ],
           })}
-      renderItem={({ item }) =>
-        grid ? (
-          <PlaylistCard playlist={item} width={card} />
+      renderItem={({ item }) => {
+        // Every song on the phone, and the pin: the two marks an album's rows
+        //  and cards get, and the ↓ the section's own switch holds the list to.
+        const whole = !!saved?.has(item.id);
+        const pinned = !!pins[`playlist:${item.id}`];
+        return grid ? (
+          <PlaylistCard playlist={item} width={card} downloaded={whole} pinned={pinned} />
         ) : (
           <Link href={`/playlist/${item.id}`} asChild>
             <Pressable
@@ -225,14 +247,22 @@ export function PlaylistsBrowser({
                 <Text style={styles.rowTitle} numberOfLines={1}>
                   {item.name}
                 </Text>
-                {item.songCount != null ? (
-                  <Text style={styles.rowSub}>{songsLabel(item.songCount, lang)}</Text>
+                {item.songCount != null || whole || pinned ? (
+                  <View style={styles.rowLine}>
+                    {whole ? <Icon name="arrow-down-circle" size={13} color={accent} /> : null}
+                    {pinned ? <Icon name="pin" size={13} color={accent} /> : null}
+                    {item.songCount != null ? (
+                      <Text style={styles.rowSub} numberOfLines={1}>
+                        {songsLabel(item.songCount, lang)}
+                      </Text>
+                    ) : null}
+                  </View>
                 ) : null}
               </View>
             </Pressable>
           </Link>
-        )
-      }
+        );
+      }}
     />
   );
 
@@ -284,5 +314,7 @@ const styles = themed((colors) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   rowInfo: { flex: 1 },
   rowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
-  rowSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
+  // The marks and the count share a line, the way an album row's do.
+  rowLine: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  rowSub: { color: colors.textSecondary, fontSize: fontSize.xs, flexShrink: 1 },
 }));
