@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 860 of them.
+Every string the app can show, under the screen it shows up on. 861 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -558,6 +558,7 @@ you are actually typing into, which is easier than reading it here.
 | `No episodes yet` | Where a show's episode count would be on the list of shows: nothing published yet |
 | `No podcasts` | Nothing kept on this phone yet: no show subscribed |
 | `Podcasts` | Shows kept on this phone, played from the address the publisher gives. Not something the music server stores |
+| `Shows you favorited and downloaded will show up here.` | The line under an empty state with both filters pressed on the Podcasts section, saying what fills the list — a show is kept by one downloaded episode |
 | `The feed URL must start with http:// or https://` | Said when what was pasted is not an address. The two protocols are the answer, not part of the sentence to translate |
 
 ## Queue
