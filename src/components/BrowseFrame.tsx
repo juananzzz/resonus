@@ -51,16 +51,6 @@ export interface BrowserProps {
 }
 
 /**
- * A section with no ↓ to offer: the Downloaded filter keeps music the phone
- *  holds, and a show is kept by its own screen, so `PodcastsBrowser` takes
- *  exactly this half and typing says so rather than leaving it unstated.
- */
-export interface ShowHeartProps {
-  favorited?: boolean;
-  onToggleFavorite?: () => void;
-}
-
-/**
  * Whether to draw the search box, and the clearing that goes with putting it
  * away.
  *

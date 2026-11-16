@@ -100,8 +100,14 @@ const LABEL: Record<Section, string> = {
   folders: 'Folders',
 };
 
-/** What the downloads can answer for: the rest only the server knows (#310). */
-const DOWNLOADABLE: Section[] = ['playlists', 'albums', 'artists', 'songs'];
+/**
+ * What the downloads can answer for: the rest only the server knows (#310).
+ *  Podcasts answer for themselves too — a show is in when at least one of its
+ *  episodes is kept, read off the show's own database — which is what keeps
+ *  its chip on the bar while the ↓ is on, under the same rule as the music
+ *  sections.
+ */
+const DOWNLOADABLE: Section[] = ['playlists', 'albums', 'artists', 'songs', 'podcasts'];
 
 /**
  * What the heart can be drawn over: the sections with a favorite state of
@@ -465,7 +471,9 @@ export default function LibraryScreen() {
         ) : current === 'podcasts' ? (
           <PodcastsBrowser
             embedded
+            downloaded={downloadedFilterOn}
             favorited={favorited}
+            onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
             onToggleFavorite={heartable ? toggleFavorite : undefined}
             actionRef={sectionAction}
             searchOpen={searchOpen}

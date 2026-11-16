@@ -429,6 +429,13 @@ export async function favoriteIds(): Promise<Set<string>> {
  * `favSet` prop keeps its identity across renders instead of churning. */
 export const NO_FAVORITES: Set<string> = new Set();
 
+/** Shows with at least one downloaded episode: what the Library's ↓ keeps the
+ *  shows list to — a show is kept by its own database, not by the music
+ *  catalog the server mirrors. */
+export async function downloadedShowIds(): Promise<Set<string>> {
+  return Db.downloadedChannels(scope());
+}
+
 async function listFavoriteChannels(): Promise<(PodcastChannel & Db.FavoriteTimes)[]> {
   return Db.listFavoriteChannels(scope());
 }

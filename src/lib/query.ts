@@ -78,4 +78,8 @@ export function invalidateDownloadedLists(): void {
   queryClient.invalidateQueries({ queryKey: ['downloadedAlbumList'] });
   queryClient.invalidateQueries({ queryKey: ['searchDownloadedAlbums'] });
   queryClient.invalidateQueries({ queryKey: ['searchDownloadedSongs'] });
+  // The shows list and the sheet's count under the same prefix: the shows the
+  //  ↓ keeps answer from the podcast database, not the server catalog, but the
+  //  press owes them the same freshness.
+  queryClient.invalidateQueries({ queryKey: ['podcastDownloads'] });
 }

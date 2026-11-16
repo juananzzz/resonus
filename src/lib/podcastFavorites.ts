@@ -7,7 +7,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 
-import { addedChannelIds, autoDownloadChannelIds, favoriteIds, NO_FAVORITES } from '@/api/podcasts';
+import { addedChannelIds, autoDownloadChannelIds, downloadedShowIds, favoriteIds, NO_FAVORITES } from '@/api/podcasts';
 
 export function usePodcastFavoriteIds(enabled = true): Set<string> {
   const q = useQuery({
@@ -26,5 +26,20 @@ export function usePodcastAddedIds(): Set<string> {
 
 export function usePodcastAutoDownloadIds(): Set<string> {
   const q = useQuery({ queryKey: ['podcastChannels', 'autoDownload'], queryFn: autoDownloadChannelIds });
+  return q.data ?? NO_FAVORITES;
+}
+
+/**
+ * The shows the ↓ can keep: at least one episode on the phone. Under
+ *  `podcastDownloads` so every download's and deletion's invalidation in the
+ *  store reaches it, and the ↓'s own press invalidates the same prefix
+ *  (see `invalidateDownloadedLists`).
+ */
+export function usePodcastDownloadedShows(enabled = true): Set<string> {
+  const q = useQuery({
+    queryKey: ['podcastDownloads', 'shows'],
+    queryFn: downloadedShowIds,
+    enabled,
+  });
   return q.data ?? NO_FAVORITES;
 }

@@ -608,3 +608,19 @@ export async function downloadedForChannel(
   const ids = rows.map((r) => r.id);
   return { ids, count: ids.length };
 }
+
+/**
+ * Which shows have at least one episode on the phone — the ↓'s question over
+ *  the Library's shows list, answered once for the whole list rather than a
+ *  count per row. The same belt the byte sum wears: an episode the publisher
+ *  pulled cannot keep a show in the list on the strength of its orphaned row.
+ */
+export async function downloadedChannels(scope: string): Promise<Set<string>> {
+  const db = await podcastDb(scope);
+  const rows = await db.getAllAsync<{ id: string }>(
+    `SELECT DISTINCT channel_id AS id FROM podcast_downloads
+     WHERE EXISTS (SELECT 1 FROM podcast_episodes AS e WHERE e.id = episode_id)`,
+    [],
+  );
+  return new Set(rows.map((r) => r.id));
+}

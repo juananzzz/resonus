@@ -28,7 +28,7 @@ import {
 import { isManualOffline } from '@/api/netGate';
 import { COVER, coverArtUrl } from '@/api/data';
 import { BackChevron } from '@/components/BackChevron';
-import { BrowseFrame, useSearchBox, type BrowserProps, type ShowHeartProps } from '@/components/BrowseFrame';
+import { BrowseFrame, useSearchBox, type BrowserProps } from '@/components/BrowseFrame';
 import { BrowseToolbar } from '@/components/BrowseToolbar';
 import { SearchBox } from '@/components/SearchBox';
 import { Cover } from '@/components/Cover';
@@ -44,7 +44,7 @@ import { episodesLabel, useT } from '@/i18n';
 import type { Language } from '@/i18n/languages';
 import { listPerf } from '@/lib/listPerf';
 import { SORT_LABELS, sortItems } from '@/lib/librarySort';
-import { usePodcastAddedIds, usePodcastFavoriteIds } from '@/lib/podcastFavorites';
+import { usePodcastAddedIds, usePodcastDownloadedShows, usePodcastFavoriteIds } from '@/lib/podcastFavorites';
 import { invalidatePodcastCaches } from '@/lib/query';
 import { useSettings, type LibrarySort } from '@/store/settings';
 import { useToast } from '@/store/toast';
@@ -87,18 +87,26 @@ function channelSubtitle(
  *  other half of what a show is kept by. The Store search belongs to finding
  *  something new, so the box stops there while the heart is on.
  *
- * `onToggleFavorite` is the press the Library tab makes in this section's sort
- *  row. No ↓ is offered beside it: what the Downloaded filter keeps is music on
- *  the phone, and a show is kept by its own screen.
+ * `downloaded` keeps the list to the shows with at least one episode on the
+ *  phone — the ↓ the music sections answer off their catalogs, asked here of
+ *  the show's own record: not the whole show, one kept episode is enough to
+ *  call a show downloadable. The presses are the pair they are everywhere:
+ *  heart and ↓ together keep the hearted shows that have an episode kept.
+ *
+ * `onToggleDownloaded` and `onToggleFavorite` are the presses the Library tab
+ *  makes in this section's sort row; their states are the tab's and the
+ *  section's, handed down rather than copied here (see `BrowserProps`).
  */
 export function PodcastsBrowser({
   embedded,
   actionRef,
   searchOpen,
+  downloaded,
   favorited,
+  onToggleDownloaded,
   onToggleFavorite,
 }:
-  BrowserProps & ShowHeartProps) {
+  BrowserProps) {
   useTheme();
   const router = useRouter();
   const bottomPad = useScreenBottomPadding();
@@ -127,6 +135,11 @@ export function PodcastsBrowser({
   // when a heart goes on or off, which is what re-lights the row and the filter.
   const favSet = usePodcastFavoriteIds();
   const addedSet = usePodcastAddedIds();
+
+  // The shows with an episode kept: one read answers the ↓ for the whole list,
+  //  and every podcast download or deletion invalidates it (see
+  //  `usePodcastDownloadedShows`).
+  const dlShows = usePodcastDownloadedShows(downloaded);
 
   // Debounced so typing one letter does not fire a fresh search at the Store
   // each keystroke.
@@ -163,8 +176,12 @@ export function PodcastsBrowser({
     const q = query.trim().toLowerCase();
     // Opening a show stores it too, so only the added ones are listed; with the
     //  heart on it is the hearted ones instead, since a show you opened but
-    //  never hearted is not what the section promises then.
-    const all = (data ?? []).filter((c) => (favorited ? favSet : addedSet).has(c.id));
+    //  never hearted is not what the section promises then. With the ↓ on top,
+    //  the list is held to what has an episode kept as well — both presses
+    //  together are their AND, one list asked both ways.
+    const all = (data ?? []).filter(
+      (c) => (favorited ? favSet : addedSet).has(c.id) && (!downloaded || dlShows.has(c.id)),
+    );
     const filtered = q
       ? all.filter(
           (c) =>
@@ -177,7 +194,7 @@ export function PodcastsBrowser({
       (c) => c.title,
       sort === 'recent' ? (c) => c.lastPublishedAt ?? 0 : (c) => c.refreshedAt ?? 0,
     );
-  }, [data, query, sort, favSet, addedSet, favorited]);
+  }, [data, query, sort, favSet, addedSet, downloaded, dlShows, favorited]);
 
   const showSearch = addedSet.size > SEARCH_FROM;
   const boxOpen = useSearchBox(embedded, searchOpen, () => setQuery(''));
@@ -258,13 +275,15 @@ export function PodcastsBrowser({
 
       {/* The order, and only where the section is the one doing the ordering:
           while the Store search is on screen, its relevance rules that list,
-          so ordering it isn't in this section's hands. The heart beside it
-          stays, since holding the list to what you kept works either way. */}
+          so ordering it isn't in this section's hands. The two filters beside
+          it stay, since holding the list to what you kept or downloaded works
+          either way. */}
       <BrowseToolbar
         ordering={!discovering}
         options={SORTS}
         value={sort}
         onChange={setSort}
+        download={onToggleDownloaded ? { on: !!downloaded, toggle: onToggleDownloaded } : undefined}
         favorite={onToggleFavorite ? { on: !!favorited, toggle: onToggleFavorite } : undefined}
       />
 
@@ -350,10 +369,10 @@ export function PodcastsBrowser({
           {...listPerf}
           keyboardShouldPersistTaps="handled"
           data={channels}
-          // The heart swaps which shows the rows are made from, so they are
-          //  measured again; the section itself is not remounted for it, which
+          // Both filters swap which shows the rows are made from, so they are
+          //  measured again; the section itself is not remounted for them, which
           //  is what keeps the box and whatever is typed in it.
-          key={String(favorited)}
+          key={`${downloaded}-${favorited}`}
           keyExtractor={(item) => item.id}
           contentContainerStyle={[
             styles.list,
@@ -407,11 +426,22 @@ export function PodcastsBrowser({
             </Pressable>
           )}
           ListEmptyComponent={
-            favorited ? (
+            favorited && downloaded ? (
+              <EmptyState
+                icon="heart-outline"
+                title={t('No downloaded favorites')}
+                subtitle={t('Shows you favorited and downloaded will show up here.')}
+              />
+            ) : favorited ? (
               <EmptyState
                 icon="heart-outline"
                 title={t('No favorites yet')}
                 subtitle={t('Favorite a show to keep it here.')}
+              />
+            ) : downloaded ? (
+              <EmptyState
+                icon="download-outline"
+                title={t('Nothing here is downloaded')}
               />
             ) : (
               <EmptyState
