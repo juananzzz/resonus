@@ -9,8 +9,11 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+## [0.8.8] - 2026-11-16
+
 ### Added
 
+- Podcasts: favorited shows check for new episodes once a day, without opening them.
 - Local profile: music added to or removed from the phone shows up when the app opens or comes back, without a rescan.
 - Local profile: an album with no embedded cover uses the `cover.jpg` or `folder.jpg` in its folder.
 - Local profile: an `artist.jpg` in an artist's folder is used as their picture (#337).
