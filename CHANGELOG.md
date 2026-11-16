@@ -9,21 +9,8 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
-## [0.8.8] - 2026-11-16
-
 ### Added
 
-- Podcasts: favorited shows check for new episodes once a day, without opening them.
-- Local profile: music added to or removed from the phone shows up when the app opens or comes back, without a rescan.
-- Local profile: an album with no embedded cover uses the `cover.jpg` or `folder.jpg` in its folder.
-- Local profile: an `artist.jpg` in an artist's folder is used as their picture (#337).
-- Local profile: Library has a Folders section that browses the music folders.
-- Local profile: `.m3u` and `.m3u8` files in the music folders become playlists, and a playlist can be exported as M3U (#335).
-- Local profile: Settings › Local music shows the number of songs and the last scan.
-- Settings: pulling down at the top shows a search box that finds a setting by name, scrolls to it and highlights it.
-- Library: its sections can be reordered and hidden, in Settings › Home & tabs.
-- Podcasts: a show's episodes can be sorted newest first, oldest first or A to Z, and play in that order.
-- Library: albums can be sorted by album artist.
 - Library: a heart at the right end of a section's sort row keeps only what you favorited, and it is remembered on and off separately for playlists, albums, artists, songs and podcasts.
 - Library: the + button that makes a new playlist sits at the top of the tab while you are reading playlists.
 - Library: pulling a Playlists, Albums or Artists list down asks the server for it again; a pull that fails leaves the rows you were looking at and says so.
@@ -32,18 +19,43 @@ Releases before 0.2.1 are only listed on the
 
 ### Changed
 
-- Settings: each category says what is inside it, and Navigation is now Home & tabs.
-- Settings: lyrics have their own screen inside Player, and the equalizer is the first row under Sound.
 - Library: Explore and Your library are one tab now, opened on Playlists, Albums, Artists, Songs, Genres, Radio and Folders.
 - Podcasts: the shows you add live in Library, and the ones you favorite also appear there when the heart is pressed.
-- Podcasts: Download new episodes is now chosen per show, in its ⋯ menu.
-- Library: fully downloaded playlists show ↓, as albums do.
-- Settings: Home & navigation is now called Navigation.
 - Library: Downloaded is now a ↓ at the right end of each section's sort row, beside the heart, and keeps Playlists, Albums, Artists and Songs to what is on your phone.
 - Library: the sort row no longer offers Play and Shuffle over an album or song list; those lists are read, filtered and sorted there, and what you want started is opened as such.
 - Library: the ↓ and the heart are a pair of filters over one list. Pressed together they keep a section to what is on your phone and you favorited at once; pressed alone each still answers only its own question, and nothing you have not filtered stays away.
 - Library: pinned playlists go back to the top of the section and carry a pin, as albums do.
 - Settings: the Library's ↓ filter has its own row in Settings › Library sections, above the sections it cannot be reordered among.
+
+### Fixed
+
+- Library: a section you have the heart on but nothing of it hearted says so itself, instead of the tab claiming there is nothing to see.
+
+## [0.8.8] - 2026-11-16
+
+### Added
+
+- Podcasts: favorited shows check for new episodes once a day, without opening them.
+- Local profile: music added to or removed from the phone shows up when the app opens or comes back, without a rescan.
+- Local profile: an album with no embedded cover uses the `cover.jpg` or `folder.jpg` in its folder.
+- Local profile: an `artist.jpg` in an artist's folder is used as their picture (#337).
+- Local profile: Explore has a Folders section that browses the music folders.
+- Local profile: `.m3u` and `.m3u8` files in the music folders become playlists, and a playlist can be exported as M3U (#335).
+- Local profile: Settings › Local music shows the number of songs and the last scan.
+- Settings: pulling down at the top shows a search box that finds a setting by name, scrolls to it and highlights it.
+- Your library: its chips can be reordered and hidden, in Settings › Navigation.
+- Podcasts: a show's episodes can be sorted newest first, oldest first or A to Z, and play in that order.
+- Explore: albums can be sorted by album artist.
+
+### Changed
+
+- Settings: each category says what is inside it, and Navigation is now Home & tabs.
+- Settings: lyrics have their own screen inside Player, and the equalizer is the first row under Sound.
+- Podcasts: shows you add stay in Explore, and the ones you favorite also appear in Your library.
+- Podcasts: Download new episodes is now chosen per show, in its ⋯ menu.
+- Your library: fully downloaded playlists show ↓, as albums do.
+- Settings: Home & navigation is now called Navigation.
+- Explore: the Downloads chip is now a Downloaded filter that keeps Playlists, Albums, Artists and Songs to what is on your phone.
 - Player: the playback speed and Preserve pitch are kept when the app is closed.
 - Android: Resonus is declared as a music app, for widgets and launchers that look for one (#309).
 - Local profile: Rescan reads again only the files that changed, so a large library no longer takes minutes (#338).
@@ -58,7 +70,7 @@ Releases before 0.2.1 are only listed on the
 - Jellyfin: editing a playlist no longer offers a description the server cannot save.
 - Downloads: every Remove download says how many songs or episodes it deleted, or that there was nothing to delete.
 - Local profile: playlists and selections no longer offer Export and Delete downloads.
-- Library: a section you have the heart on but nothing of it hearted says so itself, instead of the tab claiming there is nothing to see.
+- Your library: with favorite songs and nothing else, it no longer says there is nothing there.
 - The screen could stop answering taps after letting go of the mini player halfway up.
 - Jellyfin: Recently played and Most played albums follow your plays instead of the alphabet.
 - Lyrics: a word synced by syllables no longer splits across two lines.
