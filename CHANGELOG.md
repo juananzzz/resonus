@@ -9,6 +9,8 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+## [0.8.8] - 2026-11-16
+
 ### Added
 
 - Podcasts: favorited shows check for new episodes once a day, without opening them.
