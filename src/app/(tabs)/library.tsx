@@ -110,6 +110,17 @@ const LABEL: Record<Section, string> = {
 const DOWNLOADABLE: Section[] = ['playlists', 'albums', 'artists', 'songs', 'podcasts'];
 
 /**
+ * The sections the ↓ never takes off the bar: genres and stations are the
+ *  server's own lists with nothing on the phone to hold them to, so a ↓ drawn
+ *  over them would be an icon that does nothing. They keep their place on the
+ *  bar and answer their whole list while the filter is on somewhere else — a
+ *  chip that went away every time the filter came on would read as the section
+ *  being switched off, which is the other thing the bar already says with an
+ *  absent chip (see Settings › Library sections).
+ */
+const KEEP_ON_BAR: Section[] = ['genres', 'radio'];
+
+/**
  * What the heart can be drawn over: the sections with a favorite state of
  *  their own. Songs, albums and artists are the server's stars, a show or a
  *  single episode carries the phone's own heart, and playlists carry a star
@@ -239,15 +250,18 @@ export default function LibraryScreen() {
   };
   // What the chips are: turned on, and something this profile can answer for.
   // The Downloaded filter is not one of them any more — it is a toggle in every
-  //  section's sort row — but it still takes the sections that cannot be held
-  //  to downloads off the bar, which is what `DOWNLOADABLE` says (see #310).
+  //  section's sort row — but it still takes the sections it cannot answer for
+  //  off the bar, which is what `DOWNLOADABLE` says (see #310), except the ones
+  //  that have nothing to answer either way and keep their place (`KEEP_ON_BAR`).
   const chips = order
     .filter(
       (s) =>
         s.key !== 'downloaded' &&
         s.enabled &&
         available(s.key as Section) &&
-        (!downloadedFilterOn || DOWNLOADABLE.includes(s.key as Section)),
+        (!downloadedFilterOn ||
+          DOWNLOADABLE.includes(s.key as Section) ||
+          KEEP_ON_BAR.includes(s.key as Section)),
     )
     .map((s) => s.key as Section);
   const sections = chips;
@@ -277,8 +291,10 @@ export default function LibraryScreen() {
    * Whether the ↓ sits in this section's sort row: the filter is the tab's, but
    *  it only means something for the lists the phone can hold music for (see
    *  `DOWNLOADABLE`), and only while there is something on the phone at all.
-   *  Turning it on still hides the sections it cannot answer for from the bar,
-   *  which is what the chips do with the same rule.
+   *  Turning it on takes the sections it cannot answer for off the bar, except
+   *  the ones that have nothing to answer either way and keep their place there
+   *  (`KEEP_ON_BAR`) — a ↓ drawn over those would be an icon that does nothing,
+   *  so they draw neither icon and answer their whole list.
    */
   const downloadable = canFilter && DOWNLOADABLE.includes(current);
 
