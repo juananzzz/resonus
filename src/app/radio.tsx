@@ -1,7 +1,7 @@
 /**
  * Server radio stations.
  *
- * A screen of its own and, `embedded`, the Radio section of the Explore tab.
+ * A screen of its own and, `embedded`, the Radio section of the Library tab.
  */
 import Icon from '@/components/Icon';
 import { useQuery } from '@tanstack/react-query';
@@ -164,7 +164,7 @@ export function RadioBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
     }
   }
 
-  // Embedded, the Explore tab draws this in its own header; the form it opens
+  // Embedded, the Library tab draws this in its own header; the form it opens
   // stays down here with the rest of the station editing.
   useEffect(() => {
     if (actionRef) actionRef.current = () => setEditForm({ station: null });
@@ -191,8 +191,8 @@ export function RadioBrowser({ embedded, actionRef, searchOpen }: BrowserProps) 
       )}
 
       {(embedded ? boxOpen : showSearch) ? (
-        /* The box "Your library" has, to the same measurements, which is what every
-            section of Explore now opens. */
+        /* The box the Library tab has, to the same measurements, which is what every
+            section of the tab now opens. */
         <SearchBox
           style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md }}
           placeholder={t('Find a station')}

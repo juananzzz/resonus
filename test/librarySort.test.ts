@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { byArtistSortName, byCodepoint, byLibraryName, matches, normQ, sortItems } from '@/lib/librarySort';
+import { byArtistSortName, byCodepoint, byLibraryName, matches, normQ, sortItems, withPins } from '@/lib/librarySort';
 
 interface Row {
   name: string;
@@ -18,6 +18,7 @@ const rows: Row[] = [
 ];
 
 const names = (list: Row[]) => list.map((r) => r.name);
+const ids = (list: { id: string }[]) => list.map((r) => r.id);
 
 describe('sortItems', () => {
   it('orders alphabetically with the locale, accents and case included', () => {
@@ -70,6 +71,40 @@ describe('byLibraryName', () => {
   it('keeps "+" playlists on top and accents among the letters', () => {
     const out = ['Zoo', 'Álbum', '[x]', '+pin', 'Beta'].sort(byLibraryName);
     assert.deepEqual(out, ['+pin', '[x]', 'Álbum', 'Beta', 'Zoo']);
+  });
+});
+
+describe('withPins', () => {
+  it('puts the pinned ones first, in the order they were pinned', () => {
+    const playlists = [{ id: 'one' }, { id: 'two' }, { id: 'three' }];
+    // The store keeps the moment of pinning, so the earlier pin is first.
+    const pins = { 'playlist:two': 100, 'playlist:three': 200 };
+    const out = withPins(playlists, (p) => `playlist:${p.id}`, pins);
+    assert.deepEqual(ids(out), ['two', 'three', 'one']);
+  });
+
+  it('holds a pin over whatever the chosen order decided', () => {
+    const artists = [{ id: 'bee' }, { id: 'aitch' }];
+    const sorted = sortItems(
+      artists.map((a) => ({ name: a.id, at: 0 })),
+      'alpha',
+      (r) => r.name,
+      (r) => r.at,
+    );
+    const pins = { 'artist:bee': 100 };
+    const out = withPins(sorted, (r) => `artist:${r.name}`, pins);
+    assert.deepEqual(out.map((r) => r.name), ['bee', 'aitch']);
+  });
+
+  it('leaves the list alone when none of it is pinned', () => {
+    const playlists = [{ id: 'one' }, { id: 'two' }];
+    assert.deepEqual(ids(withPins(playlists, (p) => `playlist:${p.id}`, {})), ['one', 'two']);
+  });
+
+  it('is not answered by a pin kept for another kind or a deleted row', () => {
+    const playlists = [{ id: 'one' }, { id: 'two' }];
+    const pins = { 'album:one': 100, 'playlist:gone': 200 };
+    assert.deepEqual(ids(withPins(playlists, (p) => `playlist:${p.id}`, pins)), ['one', 'two']);
   });
 });
 

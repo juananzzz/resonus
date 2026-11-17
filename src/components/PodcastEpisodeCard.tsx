@@ -39,10 +39,9 @@ export const PodcastEpisodeCard = memo(function PodcastEpisodeCard({ item, width
       accessibilityRole="button"
       onLongPress={() => {
         // A long press opens the menu of the entity the card is: an episode,
-        // so the episode's own sheet — the same target `PodcastRow` gives an
-        // episode row, so hearting or downloading THIS episode works from
-        // Home too. The show is one tap further, at this sheet's "Go to
-        // Podcast".
+        // so the episode's own sheet — the same sheet an episode row opens, so
+        // hearting or downloading THIS episode works from Home too. The show
+        // is one tap further, at this sheet's "Go to Podcast".
         haptic('light');
         openSongMenu(episodeToSong(episode, channel));
       }}

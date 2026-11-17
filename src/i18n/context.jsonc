@@ -147,8 +147,9 @@
     "No artists yet": "Empty state heading",
     "No genres yet": "Empty state heading",
     "No favorites yet": "Empty state heading",
-    "No favorite albums": "Empty state heading on the favourites tab",
-    "No favorite artists": "Empty state heading on the favourites tab",
+    "No favorite albums": "Empty state heading on the Library's albums section, with the heart pressed",
+    "No favorite artists": "Empty state heading on the Library's artists section, with the heart pressed",
+    "No downloaded favorites": "Empty state heading on a Library section with both the ↓ and the heart pressed, the list held to what is on the phone and favorited at once",
     "No playlists yet": "Empty state heading",
     "No radio stations": "Empty state heading",
     "No albums in this genre": "Empty state heading",
@@ -160,9 +161,13 @@
     "Your library looks empty.": "Empty state: the server answered, and had nothing",
     "Favorite albums to see them here.": "The line under an empty state, saying how to fill it",
     "Favorite artists to see them here.": "The line under an empty state, saying how to fill it",
+    "Favorite songs to see them here.": "The line under an empty state, saying how to fill it",
+    "Albums you favorited and downloaded will show up here.": "The line under an empty state with both filters pressed, saying what fills the list",
+    "Artists you favorited and downloaded will show up here.": "The line under an empty state with both filters pressed, saying what fills the list",
+    "Songs you favorited and downloaded will show up here.": "The line under an empty state with both filters pressed, saying what fills the list",
+    "Shows you favorited and downloaded will show up here.": "The line under an empty state with both filters pressed on the Podcasts section, saying what fills the list — a show is kept by one downloaded episode",
     "Tap the heart on songs to see them here.": "The line under an empty state, saying how to fill it",
     "Songs you play will show up here.": "The line under an empty state, saying how to fill it",
-    "Create your first playlist to get started.": "The line under an empty state",
     "Add songs from the ⋯ menu of any song.": "The line under an empty playlist, saying how to fill it",
     "Play a song or album to start the queue.": "The line under the empty queue",
     "Tap + to add an internet radio station.": "The line under an empty state, pointing at the + button",
@@ -188,6 +193,9 @@
     "Couldn't load playlists.": "Error on the screen, with a Retry button",
     "Couldn't load radio stations.": "Error on the screen, with a Retry button",
     "Couldn't reach the server. Check your connection.": "Error on Home when the server does not answer at all",
+    "Couldn't refresh the albums": "On a pull of the list that fails: the rows you were looking at stay, and this one line says the re-ask did not go through",
+    "Couldn't refresh the artists": "On a pull of the list that fails: the rows you were looking at stay, and this one line says the re-ask did not go through",
+    "Couldn't refresh the playlists": "On a pull of the list that fails: the rows you were looking at stay, and this one line says the re-ask did not go through",
     "Playlists are not available in offline mode.": "Shown instead of a playlist when there is no connection",
 
     // ── Search boxes and the questions above them ────────────────────────────
@@ -316,6 +324,8 @@
     // ── Favourites ───────────────────────────────────────────────────────────
     "Add to favorites": "Menu action and screen reader label for the heart. A verb",
     "Remove from favorites": "The same button when it is already a favourite, and the menu entry that takes a whole selection out",
+    "Only favorited": "Read out by the screen reader for the heart at the right end of a section's sort row, beside the order it spells out: pressed, the list is held to what you favorited. It sits beside the identical switch that says `Only downloaded`",
+    "Only downloaded": "The ↓ beside that heart in the same row, said the same way: pressed, the list is held to what the phone already holds",
     "Added to favorites": "Toast",
     "Removed from favorites": "Toast",
     "Remove from playlist": "Menu action: take this song out of the playlist it was opened from",
@@ -415,12 +425,10 @@
     "Nothing to change": "Answer to favouriting a selection that already is one, or unfavouriting one that isn't",
 
     // ── Lists and how they look ──────────────────────────────────────────────
-    "Grid view": "Show the list as cards in a grid",
     "View": "Title of the menu that chooses how a collection is drawn, and the label of the button that opens it. A noun: what you are looking at, not the verb",
     "Columns": "The same menu's title on a screen that has no list to switch to, so all it chooses is the density",
     "List": "An option in that menu: one row per item, instead of cards",
     "{n} columns": "The other options in that menu: cards, this many across. `{n}` is 2, 3 or 4, so it is always plural",
-    "List view": "Show it as rows, one under the other",
     "Show artwork": "Whether song rows carry the album's little picture",
     "Show artist photo": "Whether the artist's photo shows at the top of their screen",
     "Show disc titles": "On an album in several discs, whether each disc's own name shows",
@@ -433,7 +441,7 @@
     "Show previous tracks": "Whether the queue keeps the songs already played, dimmed, above the current one",
 
     // ── Downloads, on a song or a list ───────────────────────────────────────
-    "Downloaded": "Badge on something whose files are on the phone",
+    "Downloaded": "Badge on something whose files are on the phone; the label of the row in Settings › Library sections that switches the ↓ filter on, and the one-word notice finishing a download answers with",
     "Not available offline": "This one is not downloaded, so it cannot play without a connection",
     "Auto-download": "Keep this playlist downloaded by itself as songs are added to it",
     "Auto-download on": "The toast that says it was turned on",
@@ -511,7 +519,6 @@
     // folders the car shows, so one word has to work in all three.
     "Home": "The first tab, and a folder in the car",
     "Library": "The settings section, and a folder in the car",
-    "Your library": "The tab with your albums, artists and playlists",
     "Search": "The search tab, and the action of searching",
     "Favorites": "The songs, albums and artists you starred",
     "Playlists": "A section on Home and in the library, and a folder in the car",
@@ -545,11 +552,11 @@
     "Navigation": "Section header: how you move around the app",
     "Navigation bar": "Settings screen: which tabs are on the bar at the bottom, and in what order",
     "Always shown": "Said where a switch would be, on the Home tab, which cannot be taken off the bar",
-    "Explore": "The tab holding everything the server has: all albums, artists, songs, genres, stations and folders",
+    "Library sections": "The row that opens the screen choosing which sections the Library tab draws and in what order, and that screen's own heading. The same screen also carries the switch for the ↓ the tab draws in every section's sort row",
+    "Home, navigation bar, Library": "The line under the Home & tabs row of Settings: where that screen leads. A list of tab names, not a sentence",
     "Folder browsing": "Browsing the server's folders as folders, instead of by album and artist",
     "Haptic feedback": "The small vibration when something is tapped",
     "Open the app on": "Which tab the app opens on, and comes back to after a while away",
-    "Start on your playlists": "A switch: with it on, Your library with no chip pressed shows the Favorites entry and the playlists, the way it used to, instead of albums, artists and playlists mixed together",
     "Home buttons": "The icons at the top right of Home (search, history, settings), which of them show and in what order",
 
     // ── Settings › Network ───────────────────────────────────────────────────
@@ -710,7 +717,7 @@
     "Allow downloads": "Whether whoever gets the link can download the music, not only listen to it",
     "Server didn't allow downloads": "Warning after sharing: the link was made and works, but the call that turns downloading on did not go through",
 
-    // ── Browsing songs (Home › the Songs chip) ───────────────────────────────
+    // ── Browsing songs (Home's Songs chip, and the Library's Songs section) ──
     "Songs": "Always a heading, never a count, so it wants the plain plural your language uses for a list of them (\"Songs\", not \"of songs\"). Counting songs is a different thing and goes through the plural forms",
     "Default": "Sorting pill: what you get when nothing is sorted, which is the order the server keeps its songs in. Not alphabetical, and not Resonus deciding. On a playlist it is the order the list came in, which is the one you made by dragging the songs if it is an ordinary playlist and the one its rules produced if it is a smart one — hence a word that is true of both rather than \"custom\" or \"pre-defined\"",
     "Find a playlist": "The search box's placeholder on that screen",
@@ -779,7 +786,6 @@
     "Feed URL": "The field in the add-a-show sheet: the address of the show's feed, pasted in",
     "The feed URL must start with http:// or https://": "Said when what was pasted is not an address. The two protocols are the answer, not part of the sentence to translate",
     "Go to Podcast": "Song menu: open the show an episode belongs to. Not the act of broadcasting",
-    "Episode": "The kind word for one episode, singular, where a row says what it is",
     "Episode downloaded": "Toast when one episode finished downloading",
     "{n} episodes downloaded": "Toast after a show's download: how many episodes landed on the phone",
     "{n} episodes couldn't be downloaded": "Toast after a show's download: how many the publisher would not give",
@@ -789,11 +795,9 @@
     "You're offline": "Said when a manual 'use no network' refused an action that needs the network",
     "Remove from this device": "A show's ⋯ menu and the dialog it opens: takes the show, its episodes and its downloads off this phone. Nothing on any server",
     "Download new episodes": "A show's menu: when on, the latest episodes it publishes from now on download by themselves. Never its back catalog",
-    "Add podcast": "The Explore chip, the add-a-show sheet's title and the button that opens it: keeps a show on this phone from its feed. Not adding a song to a list",
+    "Add podcast": "The Library's Podcasts section, the add-a-show sheet's title and the button that opens it: keeps a show on this phone from its feed. Not adding a song to a list",
     "Find a podcast": "The placeholder in the search box on the shows you keep: searches the iTunes directory, which answers with a show's feed address",
     "Recent episodes": "A section of Home, and its switch in settings: the newest episodes of the shows you keep, by the date the publisher gave them. Not episodes you listened to",
-    "Couldn't refresh your library.": "Toast after a failed pull to refresh; the list on screen stays",
-    "Couldn't load all of your library.": "Toast: playlists or favorites failed to load, the rest is shown",
     "No podcasts": "Nothing kept on this phone yet: no show subscribed",
     "Couldn't load your podcasts.": "The list of kept shows would not read — the phone's own index, not a server. The Retry button reads it again",
     "Couldn't reach any of your podcast feeds.": "Said after asking every kept show for new episodes: none of the feeds answered, so nothing new could be read",

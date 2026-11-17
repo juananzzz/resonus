@@ -1,5 +1,6 @@
 /** Browse all artists on the server, with quick filter. */
-/* A screen of its own and, `embedded`, the Artists section of the Explore tab. */
+/* A screen of its own and, `embedded`, the Artists section of the Library tab
+ *  (see `BrowseFrame`). */
 import Icon from '@/components/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
@@ -11,7 +12,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { FlatList as GHFlatList } from 'react-native-gesture-handler';
+import { FlatList as GHFlatList, RefreshControl } from 'react-native-gesture-handler';
 
 import { getAlbumList, getArtists, type Album, type Artist } from '@/api/data';
 import * as Local from '@/lib/localQueries';
@@ -20,6 +21,8 @@ import { ArtistCard } from '@/components/ArtistCard';
 import { ArtistGridSkeleton } from '@/components/ArtistGridSkeleton';
 import { ArtistListSkeleton } from '@/components/ArtistListSkeleton';
 import { ArtistRow } from '@/components/ArtistRow';
+import { useStarredList } from '@/hooks/useStarredList';
+import { usePullRefresh } from '@/hooks/usePullRefresh';
 import { useBrowseSort } from '@/hooks/useBrowseSort';
 import { useHistoryTimes } from '@/hooks/useHistoryTimes';
 import { EmptyState } from '@/components/EmptyState';
@@ -87,13 +90,28 @@ export default function BrowseArtistsScreen() {
   return <ArtistsBrowser />;
 }
 
-/** `downloaded` lists the artists with music on the phone, online too (#310). */
+/**
+ * `downloaded` lists the artists with music on the phone, online too (#310).
+ *
+ * `favorited` narrows that to the ones carrying a star. The list here is the
+ *  full index the server already hands over in one go, so favorites are an
+ *  intersection with the ids the star list holds rather than a second request:
+ *  the index's own rows are what keeps the album count under each name.
+ *
+ * `onToggleDownloaded` and `onToggleFavorite` are the presses the Library tab
+ *  makes in this section's sort row; the state they belong to is the tab's, so
+ *  the press is handed down rather than copied here.
+ */
 export function ArtistsBrowser({
   embedded,
   actionRef,
   searchOpen,
   downloaded,
-}: BrowserProps & { downloaded?: boolean }) {
+  favorited,
+  onToggleDownloaded,
+  onToggleFavorite,
+}:
+  BrowserProps) {
   // Repaints on a change of appearance or accent: a stack keeps this screen
   // mounted while you are on another one, out of reach of anything else.
   useTheme();
@@ -134,6 +152,25 @@ export function ArtistsBrowser({
     // Downloads change with no word to this list, and asking costs no network.
     refetchOnMount: downloaded ? 'always' : undefined,
   });
+
+  // The stars, from the same `['starred']` entry every heart in the app reads.
+  //  This section holds the query rather than the set (`useFavoriteIds` hands
+  //  the set over straight away, which is all a row needs): pulling the
+  //  favourites list down asks that same request again, and a set built here
+  //  is rebuilt only when the entry behind it is invalidated.
+  const starredQ = useStarredList(favorited);
+  const starredArtists = useMemo(
+    () => starredQ.data && new Set((starredQ.data.artists ?? []).map((a) => a.id)),
+    [starredQ.data],
+  );
+
+  // Pulling the list down asks again for what the rows are drawn from: with the
+  //  heart on, that is two requests — the names and the stars — and the pull
+  //  only looks honest if it re-asks both.
+  const pull = usePullRefresh(
+    favorited ? () => Promise.all([refetch(), starredQ.refetch()]) : refetch,
+    "Couldn't refresh the artists",
+  );
 
   // The filter bar sits above the toolbar, outside the scroll: both stay put
   // while the list moves under them, so neither can live inside it.
@@ -190,8 +227,9 @@ export function ArtistsBrowser({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? (data ?? []).filter((a) => a.name.toLowerCase().includes(q)) : (data ?? []);
-  }, [data, query]);
+    const all = favorited ? (data ?? []).filter((a) => starredArtists?.has(a.id)) : (data ?? []);
+    return q ? all.filter((a) => a.name.toLowerCase().includes(q)) : all;
+  }, [data, query, favorited, starredArtists]);
 
   // Shuffled in its own memo, NOT depending on times/byArtist: the history
   // records every song that starts, so with music playing those deps change
@@ -224,7 +262,7 @@ export function ArtistsBrowser({
     return all.sort((a, b) => score(b) - score(a) || byName(a, b));
   }, [filtered, sort, shuffledArtists, times, byArtist, playedByArtist, addedByArtist]);
 
-  // Embedded, the button that opens this menu is drawn by the Explore tab, in
+  // Embedded, the button that opens this menu is drawn by the Library tab, in
   // its own header: this is the way down to the menu it belongs to. Kept up to
   // date after every render rather than during one, which is a rule the ref is
   // not worth breaking for — it is only read from a tap, long after this.
@@ -277,10 +315,20 @@ export function ArtistsBrowser({
         </View>
       ) : null}
 
-      {/* No play beside it: there is no such thing as starting every artist. */}
-      <BrowseToolbar options={SORTS} value={sort} onChange={setSort} />
+      {/* The row's right-hand corner is the two filters this list answers to:
+          pressing either holds it to what is on the phone or to what carries a
+          star, and both together ask both questions of one list. The ↓ is the
+          tab's, the heart this section's. There is no play here at all:
+          starting "every artist" is not a thing that means. */}
+      <BrowseToolbar
+        options={SORTS}
+        value={sort}
+        onChange={setSort}
+        download={onToggleDownloaded ? { on: !!downloaded, toggle: onToggleDownloaded } : undefined}
+        favorite={onToggleFavorite ? { on: !!favorited, toggle: onToggleFavorite } : undefined}
+      />
 
-      {isLoading ? (
+      {isLoading || (favorited && !starredArtists) ? (
         grid ? (
           <ArtistGridSkeleton width={card} />
         ) : (
@@ -293,10 +341,16 @@ export function ArtistsBrowser({
         {...listPerf}
           ref={listRef}
           data={artists}
-          // Remount the list when changing sort or layout: otherwise FlatList
-          // reuses rows and gets stuck with stale ones (numColumns also doesn't
-          // support hot-swapping).
-          key={`${sort}-${layout}-${columns}`}
+          // A pull asks again for what the rows are drawn from (see `usePullRefresh`).
+          refreshControl={
+            <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={colors.accent} />
+          }
+          // Remount the list when changing sort or view, or when the heart or the
+          //  Downloaded filter swap the set the rows are drawn from: FlatList keeps
+          //  its own measurements otherwise, and numColumns cannot be hot-swapped.
+          //  The filter belongs here rather than to the section's own key up in the
+          //  tab, which is where what you typed in the box would go with it.
+          key={`${downloaded}-${favorited}-${sort}-${layout}-${columns}`}
           keyExtractor={(item) => item.id}
           {...(grid
             ? { numColumns: columns, columnWrapperStyle: { gap: GAP }, contentContainerStyle: [styles.list, { paddingBottom: bottomPad }] }
@@ -312,6 +366,18 @@ export function ArtistsBrowser({
                 icon="search-outline"
                 title={t('No results')}
                 subtitle={t('No results for “{q}”', { q: query.trim() })}
+              />
+            ) : favorited && downloaded ? (
+              <EmptyState
+                icon="heart-outline"
+                title={t('No downloaded favorites')}
+                subtitle={t('Artists you favorited and downloaded will show up here.')}
+              />
+            ) : favorited ? (
+              <EmptyState
+                icon="heart-outline"
+                title={t('No favorite artists')}
+                subtitle={t('Favorite artists to see them here.')}
               />
             ) : downloaded ? (
               <EmptyState icon="download-outline" title={t('Nothing here is downloaded')} />

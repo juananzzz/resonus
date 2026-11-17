@@ -145,7 +145,7 @@ export default function SettingsScreen({ asTab = false }: { asTab?: boolean }) {
     {
       key: 'home-navigation',
       title: 'Home & tabs',
-      hint: t('Home, navigation bar, Explore, Your library'),
+      hint: t('Home, navigation bar, Library'),
       icon: 'grid-outline' as const,
     },
     {

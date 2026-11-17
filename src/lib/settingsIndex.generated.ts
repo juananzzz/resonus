@@ -383,8 +383,8 @@ export const SETTINGS_INDEX: SettingEntry[] = [
     ]
   },
   {
-    "label": "Explore sections",
-    "screen": "explore-sections",
+    "label": "Library sections",
+    "screen": "library-sections",
     "root": "home-navigation",
     "path": [
       "Home & tabs"
@@ -392,22 +392,6 @@ export const SETTINGS_INDEX: SettingEntry[] = [
   },
   {
     "label": "Folder browsing",
-    "screen": "home-navigation",
-    "root": "home-navigation",
-    "path": [
-      "Home & tabs"
-    ]
-  },
-  {
-    "label": "Your library chips",
-    "screen": "library-chips",
-    "root": "home-navigation",
-    "path": [
-      "Home & tabs"
-    ]
-  },
-  {
-    "label": "Start on your playlists",
     "screen": "home-navigation",
     "root": "home-navigation",
     "path": [

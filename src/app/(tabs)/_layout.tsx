@@ -23,12 +23,11 @@ import { colors, useTheme } from '@/theme';
  */
 const TAB_OPTIONS: Record<
   TabSegment,
-  { label: string; icon: 'home' | 'search' | 'library' | 'albums' | 'settings' }
+  { label: string; icon: 'home' | 'search' | 'library' | 'settings' }
 > = {
   index: { label: 'Home', icon: 'home' },
   search: { label: 'Search', icon: 'search' },
-  library: { label: 'Your library', icon: 'library' },
-  explore: { label: 'Explore', icon: 'albums' },
+  library: { label: 'Library', icon: 'library' },
   options: { label: 'Settings', icon: 'settings' },
 };
 

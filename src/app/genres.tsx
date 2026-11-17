@@ -1,7 +1,7 @@
 /**
  * Server genre list, in colored cards.
  *
- * A screen of its own and, `embedded`, the Genres section of the Explore tab.
+ * A screen of its own and, `embedded`, the Genres section of the Library tab.
  */
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
@@ -91,8 +91,8 @@ export function GenresBrowser({ embedded, searchOpen }: BrowserProps) {
       )}
 
       {showSearch ? (
-        /* The box "Your library" has, to the same measurements, which is what every
-            section of Explore now opens. */
+        /* The box the Library tab has, to the same measurements, which is what every
+            section of the tab now opens. */
         <SearchBox
           style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md }}
           placeholder={t('Filter genres')}
@@ -146,8 +146,8 @@ const styles = themed((colors) => ({
     paddingVertical: spacing.md,
   },
   title: { color: colors.text, fontSize: fontSize.lg, letterSpacing: tracking.heading, fontWeight: '500' },
-  // The box "Your library" has, to the same measurements, which is what every
-  // section of Explore now opens.
+  // The box the Library tab has, to the same measurements, which is what every
+  // section of it now opens.
   searchGap: { height: spacing.sm },
   list: {
     paddingHorizontal: spacing.lg,

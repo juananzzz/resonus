@@ -378,7 +378,7 @@ export type PreferDownloads = 'always' | 'cellular' | 'original' | 'never';
 
 /** Tab the app starts on (and returns to after being in the background for a
  *  while). Matches the `(tabs)` route names. */
-export type DefaultTab = 'index' | 'search' | 'library' | 'explore';
+export type DefaultTab = 'index' | 'search' | 'library';
 
 /** "Previous" button behavior: restart the track after a few seconds (default,
  *  like Spotify) or always go to the previous track (like YouTube). */
@@ -465,19 +465,22 @@ export const DEFAULT_HOME_SECTIONS: HomeSection[] = [
  * had switches, and it means on: somebody who ordered their chips keeps that
  * order and loses nothing by the upgrade.
  */
-function normalizeExploreSections(raw: unknown): ExploreSection[] {
-  if (!Array.isArray(raw)) return DEFAULT_EXPLORE_SECTIONS.map((s) => ({ ...s }));
-  const seen = new Set<ExploreSectionKey>();
-  const out: ExploreSection[] = [];
+function normalizeLibrarySections(raw: unknown): LibrarySection[] {
+  if (!Array.isArray(raw)) return DEFAULT_LIBRARY_SECTIONS.map((s) => ({ ...s }));
+  const seen = new Set<LibrarySectionKey>();
+  const out: LibrarySection[] = [];
   for (const item of raw) {
-    const key = (typeof item === 'string' ? item : item?.key) as ExploreSectionKey;
-    if (!EXPLORE_SECTION_KEYS.includes(key) || seen.has(key)) continue;
+    const key = (typeof item === 'string' ? item : item?.key) as LibrarySectionKey;
+    if (!LIBRARY_SECTION_KEYS.includes(key) || seen.has(key)) continue;
     seen.add(key);
     const enabled = typeof item === 'string' ? true : item?.enabled;
     out.push({ key, enabled: typeof enabled === 'boolean' ? enabled : true });
   }
-  for (const def of DEFAULT_EXPLORE_SECTIONS) {
-    // The filter pill goes ahead of the sections, where it starts out.
+  for (const def of DEFAULT_LIBRARY_SECTIONS) {
+    // The ↓ filter's entry goes ahead of the sections, which is where it
+    //  starts out. Only its being in the list matters, not where it sits:
+    //  the tab reads its switch by key, and the settings screen lists it
+    //  apart from the rows that can be dragged.
     if (seen.has(def.key)) continue;
     if (def.key === 'downloaded') out.unshift({ ...def });
     else out.push({ ...def });
@@ -552,9 +555,9 @@ export const DEFAULT_HOME_CHIPS: HomeChip[] = [
   { key: 'radio', enabled: false },
 ];
 
-/** One of the pills at the top of Explore. `genres`, `radio` and `folders`
- *  need a server; the rest the local catalogue answers for too. */
-export type ExploreSectionKey =
+/** One of the Library's sections. `genres`, `radio` and `folders` need a
+ *  server; the rest the local catalogue answers for too. */
+export type LibrarySectionKey =
   | 'playlists'
   | 'albums'
   | 'artists'
@@ -563,17 +566,20 @@ export type ExploreSectionKey =
   | 'radio'
   | 'podcasts'
   | 'folders'
-  /** Not a section: the pill that keeps the others to what is downloaded (#310). */
+  /** Not a section: the switch for the ↓ that keeps the others to what is on
+   *  the phone (#310). Its place in the saved list means nothing — the ↓ is
+   *  drawn at a fixed end of every section's sort row, and the tab reads this
+   *  entry by key. */
   | 'downloaded';
 
 /** A section with its state, the shape the Home chips already have (order is
  *  its position in the list). */
-export interface ExploreSection {
-  key: ExploreSectionKey;
+export interface LibrarySection {
+  key: LibrarySectionKey;
   enabled: boolean;
 }
 
-const EXPLORE_SECTION_KEYS: ExploreSectionKey[] = [
+const LIBRARY_SECTION_KEYS: LibrarySectionKey[] = [
   'downloaded',
   'playlists',
   'albums',
@@ -595,40 +601,40 @@ const EXPLORE_SECTION_KEYS: ExploreSectionKey[] = [
  * switches are here, and what keeps the reasoning is the floor under them,
  * since the last one cannot be turned off (see the settings screen).
  */
-export const DEFAULT_EXPLORE_SECTIONS: ExploreSection[] = EXPLORE_SECTION_KEYS.map((key) => ({
+export const DEFAULT_LIBRARY_SECTIONS: LibrarySection[] = LIBRARY_SECTION_KEYS.map((key) => ({
   key,
   enabled: true,
 }));
 
-/** One of the chips at the top of Your library. */
-export type LibraryChipKey = 'playlists' | 'albums' | 'artists' | 'podcasts';
+/**
+ * What the tab's heart can be on for. Every one of these has a favorite state
+ * of its own: songs, albums and artists are the server's stars, playlists are
+ * starred on Navidrome only and read back through its native API (see
+ * `usePlaylistStars`), and a show or a single episode carries the phone's own
+ * heart. The sections with nothing to heart — genres, stations, folders — are
+ * not here, which is what keeps their header from drawing an icon that would
+ * do nothing.
+ */
+export type FavoriteSectionKey = 'playlists' | 'albums' | 'artists' | 'songs' | 'podcasts';
 
-export interface LibraryChip {
-  key: LibraryChipKey;
-  enabled: boolean;
-}
+const FAVORITE_SECTION_KEYS: FavoriteSectionKey[] = ['playlists', 'albums', 'artists', 'songs', 'podcasts'];
 
-const LIBRARY_CHIP_KEYS: LibraryChipKey[] = ['playlists', 'albums', 'artists', 'podcasts'];
+/**
+ * Which sections the heart is on in, kept per profile and remembered across
+ * sessions: the state of one section is not the state of the next, so leaving
+ * the albums favorited and going to the songs finds the songs as the songs
+ * were. Only the ones that are on get written, so an untouched section costs
+ * the saved file nothing.
+ */
+export type FavoriteSections = Partial<Record<FavoriteSectionKey, boolean>>;
+export const DEFAULT_FAVORITE_SECTIONS: FavoriteSections = {};
 
-/** All on. Unlike Explore they can all go: with no chip the tab is still everything you keep. */
-export const DEFAULT_LIBRARY_CHIPS: LibraryChip[] = LIBRARY_CHIP_KEYS.map((key) => ({
-  key,
-  enabled: true,
-}));
-
-/** Same as the Explore sections. */
-function normalizeLibraryChips(raw: unknown): LibraryChip[] {
-  if (!Array.isArray(raw)) return DEFAULT_LIBRARY_CHIPS.map((c) => ({ ...c }));
-  const seen = new Set<LibraryChipKey>();
-  const out: LibraryChip[] = [];
-  for (const item of raw) {
-    const key = item?.key as LibraryChipKey;
-    if (!LIBRARY_CHIP_KEYS.includes(key) || seen.has(key)) continue;
-    seen.add(key);
-    out.push({ key, enabled: typeof item.enabled === 'boolean' ? item.enabled : true });
-  }
-  for (const def of DEFAULT_LIBRARY_CHIPS) {
-    if (!seen.has(def.key)) out.push({ ...def });
+/** Kept as it was, key by key: a file could otherwise name anything. */
+function normalizeFavoriteSections(raw: unknown): FavoriteSections {
+  if (!raw || typeof raw !== 'object') return DEFAULT_FAVORITE_SECTIONS;
+  const out: FavoriteSections = {};
+  for (const key of FAVORITE_SECTION_KEYS) {
+    if ((raw as Record<string, unknown>)[key] === true) out[key] = true;
   }
   return out;
 }
@@ -646,40 +652,52 @@ export interface BottomTab {
   enabled: boolean;
 }
 
-const BOTTOM_TAB_KEYS: TabSegment[] = ['index', 'search', 'library', 'explore', 'options'];
+const BOTTOM_TAB_KEYS: TabSegment[] = ['index', 'search', 'library', 'options'];
 
 /**
  * The order they start in, all of them on.
  *
- * "Your library" goes last, behind Explore. It used to sit third, from when it
- * was the only way to a playlist; Explore now holds those as well as the rest
- * of the catalogue, so it is the one being reached for, and what is left over
- * there is the smaller, more personal half.
+ * "Library" goes last, behind Search. It used to sit third, from when it was
+ * the only way to a playlist; the one tab now holds those as well as the rest
+ * of the catalogue, and the heart says which of the two you are looking at, so
+ * there is no smaller personal half left over to park behind it.
  */
 export const DEFAULT_BOTTOM_TABS: BottomTab[] = [
   { key: 'index', enabled: true },
   { key: 'search', enabled: true },
-  { key: 'explore', enabled: true },
   { key: 'library', enabled: true },
   // Settings, for whoever goes there often enough to want it one tap away. Off:
   // the gear on Home already leads there.
   { key: 'options', enabled: false },
 ];
 
+/**
+ * Which tab a saved entry means. "Explore" and "Your library" became one tab,
+ * so both names still answer for it — an older file keeps its place on the bar
+ * rather than losing the tab it wrote down twice.
+ */
+function tabKeyOf(item: unknown): TabSegment | null {
+  const saved = typeof item === 'string' ? item : (item as { key?: unknown })?.key;
+  if (saved === 'explore' || saved === 'library') return 'library';
+  return BOTTOM_TAB_KEYS.includes(saved as TabSegment) ? saved as TabSegment : null;
+}
+
 /** The same sanitising the chips get, plus Home's exemption. */
 function normalizeBottomTabs(raw: unknown): BottomTab[] {
   if (!Array.isArray(raw)) return DEFAULT_BOTTOM_TABS.map((t) => ({ ...t }));
+  // Whichever of the two old halves a file left on is what turns the one tab on.
+  const on = new Set<TabSegment>();
+  for (const item of raw) {
+    const key = tabKeyOf(item);
+    if (key && (typeof item === 'string' || (item as { enabled?: unknown })?.enabled !== false)) on.add(key);
+  }
   const seen = new Set<TabSegment>();
   const out: BottomTab[] = [];
   for (const item of raw) {
-    const key = item?.key as TabSegment;
-    if (BOTTOM_TAB_KEYS.includes(key) && !seen.has(key)) {
-      seen.add(key);
-      out.push({
-        key,
-        enabled: key === 'index' ? true : typeof item.enabled === 'boolean' ? item.enabled : true,
-      });
-    }
+    const key = tabKeyOf(item);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push({ key, enabled: key === 'index' ? true : on.has(key) });
   }
   // A tab added by a later version arrives on, at the end, rather than the
   // update quietly hiding something new.
@@ -901,8 +919,8 @@ type Reshaped =
   | 'lyricsSize'
   | 'homeSections'
   | 'homeChips'
-  | 'exploreSections'
-  | 'libraryChips'
+  | 'librarySections'
+  | 'defaultTab'
   | 'bottomTabs'
   | 'homeButtons'
   | 'playerButtons'
@@ -933,6 +951,7 @@ type CustomSetter =
   | 'setAnimatedArtworkMode'
   | 'setAnimatedArtworkFps'
   | 'setAnimatedArtworkUrls'
+  | 'setFavoriteSections'
   | 'setBackgroundTint';
 
 interface SettingsState extends Omit<AutoSetters, CustomSetter> {
@@ -1252,12 +1271,15 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   showGreeting: boolean;
   /** Custom greeting; empty = the automatic one based on time of day. */
   customGreeting: string;
-  /** Home explore chips, in order (each with its state). With none active, the
+  /** Home's chips, in order (each with its state). With none active, the
    *  row disappears: that replaces the old toggle. */
   homeChips: HomeChip[];
-  /** The order of the pills at the top of Explore. */
-  exploreSections: ExploreSection[];
-  libraryChips: LibraryChip[];
+  /** The Library's sections: their order and their switches. The extra
+   *  `downloaded` entry is the ↓ filter's switch, whose place in the list is
+   *  not read — only its state is. */
+  librarySections: LibrarySection[];
+  /** Which sections of Library the heart is on in, remembered per section. */
+  favoriteSections: FavoriteSections;
   bottomTabs: BottomTab[];
   /** Whether those chips carry their icon, or are their name and nothing else. */
   homeChipIcons: boolean;
@@ -1268,30 +1290,28 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   homeButtons: HomeButton[];
   /** App startup tab (Home/Search/Library). */
   defaultTab: DefaultTab;
-  /** Your library with no chip pressed shows Favorites and the playlists, as
-   *  it did before the mixed view, instead of everything (#217). */
-  libraryShowsPlaylists: boolean;
-  /** Chosen Library sort order (recent/added/alphabetical). */
-  librarySort: LibrarySort;
-  /** List or grid in the Library. */
-  libraryLayout: ListLayout;
   /**
-   * List or grid when browsing artists. Separate from `libraryLayout` on
-   * purpose: they are different collections (here ALL artists, there only
-   * favorites), and sharing it would make toggling the button on one screen
-   * rearrange the other without warning.
+   * List or grid when browsing artists. Its own key and not the one the
+   *  playlists section keeps: here it is ALL artists, or the favorited ones
+   *  with the heart on, and sharing a key would let a button on one section
+   *  rearrange the next without warning.
    */
   browseArtistsLayout: ListLayout;
-  /** List or grid when browsing albums. Separate for the same reason as above. */
+  /** List or grid when browsing albums. Separate for the same reason. */
   browseAlbumsLayout: ListLayout;
-  /** List or grid, and the order, for the playlists section of Explore. Their
-   *  own keys and not `libraryLayout`/`librarySort`: that pair belongs to
-   *  "Your library", and one list rearranging the other on a button press is
-   *  what the split above exists to avoid. */
+  /**
+   * List or grid, and the order, for the playlists section of the tab. Their
+   *  own keys and not the ones another section carries: one list rearranging
+   *  the other on a button press is what the split above exists to avoid.
+   */
   browsePlaylistsLayout: ListLayout;
   browsePlaylistsSort: LibrarySort;
   /** List or grid when browsing songs. Its own key, same reasoning. */
   browseSongsLayout: ListLayout;
+  /** The order the podcasts section goes in. Its own key, same reasoning:
+   *  the shows are the phone's own, and their orders have nothing to do with
+   *  the server's lists. */
+  browsePodcastsSort: LibrarySort;
   /** List or grid in an artist's full discography. Its own key, again for the
    *  same reason: it's one artist's albums, not the whole library. */
   discographyLayout: ListLayout;
@@ -1357,8 +1377,10 @@ interface SettingsState extends Omit<AutoSetters, CustomSetter> {
   setCustomGreeting: (value: string) => void;
   setHomeChip: (key: HomeChipKey, value: boolean) => void;
   /** One section on or off, by key, the way the Home chips do it. */
-  setExploreSection: (key: ExploreSectionKey, value: boolean) => void;
-  setLibraryChip: (key: LibraryChipKey, value: boolean) => void;
+  setLibrarySection: (key: LibrarySectionKey, value: boolean) => void;
+  /** One section's heart on or off, remembered for the next time the tab
+   *  opens that section. */
+  setFavoriteSection: (key: FavoriteSectionKey, value: boolean) => void;
   setBottomTab: (key: TabSegment, value: boolean) => void;
   setHomeButton: (key: HomeButtonKey, value: boolean) => void;
   setPlayerButton: (key: PlayerButtonKey, value: boolean) => void;
@@ -1541,26 +1563,27 @@ const DEFAULTS = {
   showGreeting: false,
   customGreeting: '',
   homeChips: DEFAULT_HOME_CHIPS.map((c) => ({ ...c })),
-  exploreSections: DEFAULT_EXPLORE_SECTIONS.map((s) => ({ ...s })),
-  libraryChips: DEFAULT_LIBRARY_CHIPS.map((c) => ({ ...c })),
+  librarySections: DEFAULT_LIBRARY_SECTIONS.map((s) => ({ ...s })),
+  favoriteSections: DEFAULT_FAVORITE_SECTIONS,
   bottomTabs: DEFAULT_BOTTOM_TABS.map((t) => ({ ...t })),
   homeChipIcons: true,
   showFolderBrowser: false,
   homeButtons: DEFAULT_HOME_BUTTONS.map((b) => ({ ...b })),
   defaultTab: 'index' as DefaultTab,
-  libraryShowsPlaylists: false,
-  librarySort: 'recent' as LibrarySort,
-  libraryLayout: 'list' as ListLayout,
-  // Rows, like the songs below and like everything else in Explore. A grid is
-  // how you recognise one artist you are already looking at; browsing the
+
+  browsePodcastsSort: 'recent' as LibrarySort,
+
+  // Rows, like the songs below and like every other section of the Library. A
+  // grid is how you recognise one artist you are already looking at; browsing
+  // the
   // whole server is reading names, and a wall of faces is slower at that. The
   // button is there for whoever disagrees.
   browseArtistsLayout: 'list' as ListLayout,
   // Rows, for the same reason. The cover identifies an album you know; the
   // list is what you scan when you do not.
   browseAlbumsLayout: 'list' as ListLayout,
-  // Rows here too, and "Recents" like "Your library" opens on: the two lists
-  // hold the same playlists and landing on a different order in each would
+  // Rows here too, and "Recents" like the Library's playlists open on: the two
+  // lists hold the same playlists and landing on a different order in each would
   // read as a different list.
   browsePlaylistsLayout: 'list' as ListLayout,
   browsePlaylistsSort: 'recent' as LibrarySort,
@@ -1661,8 +1684,11 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
     showAudioQuality?: string | boolean;
     homeSections?: unknown;
     homeChips?: unknown;
+    librarySections?: unknown;
     exploreSections?: unknown;
-    libraryChips?: unknown;
+    favoriteSections?: unknown;
+    librarySort?: unknown;
+    defaultTab?: unknown;
     bottomTabs?: unknown;
     homeButtons?: unknown;
     playerButtons?: unknown;
@@ -1925,11 +1951,13 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
   if (Array.isArray(parsed.bottomTabs)) {
     set({ bottomTabs: normalizeBottomTabs(parsed.bottomTabs) });
   }
-  if (Array.isArray(parsed.exploreSections)) {
-    set({ exploreSections: normalizeExploreSections(parsed.exploreSections) });
+  if (Array.isArray(parsed.librarySections ?? parsed.exploreSections)) {
+    // The row kept its content across the tab's rename; only the name it saves
+    // under moved, so an older file still keeps its order and its switches.
+    set({ librarySections: normalizeLibrarySections(parsed.librarySections ?? parsed.exploreSections) });
   }
-  if (Array.isArray(parsed.libraryChips)) {
-    set({ libraryChips: normalizeLibraryChips(parsed.libraryChips) });
+  if (parsed.favoriteSections && typeof parsed.favoriteSections === 'object') {
+    set({ favoriteSections: normalizeFavoriteSections(parsed.favoriteSections) });
   }
   if (Array.isArray(parsed.homeButtons)) {
     set({ homeButtons: normalizeHomeButtons(parsed.homeButtons) });
@@ -1966,19 +1994,18 @@ function applySaved(raw: unknown, set: (partial: Partial<SettingsState>) => void
       playerButtons: DEFAULT_PLAYER_BUTTONS.map((b) => ({ ...b, enabled: !off.has(b.key) })),
     });
   }
-  if (
-    parsed.defaultTab === 'index' ||
-    parsed.defaultTab === 'search' ||
-    parsed.defaultTab === 'library' ||
-    parsed.defaultTab === 'explore'
-  ) {
-    set({ defaultTab: parsed.defaultTab });
+  if (parsed.defaultTab === 'index' || parsed.defaultTab === 'search') {
+    set({ defaultTab: parsed.defaultTab === 'index' ? 'index' : 'search' });
+  } else if (parsed.defaultTab === 'library' || parsed.defaultTab === 'explore') {
+    // The startup tab that got merged into one: an older file naming either
+    // half still means the tab that replaces them.
+    set({ defaultTab: 'library' });
   }
-  if (parsed.librarySort === 'recent' || parsed.librarySort === 'added' || parsed.librarySort === 'alpha') {
-    set({ librarySort: parsed.librarySort });
-  }
-  if (parsed.libraryLayout === 'list' || parsed.libraryLayout === 'grid') {
-    set({ libraryLayout: parsed.libraryLayout });
+  // The order the podcasts section goes in. The name it saved under moved with
+  // the tab it used to sit next to; the order itself means the same thing.
+  const podcastSort = parsed.browsePodcastsSort ?? parsed.librarySort;
+  if (podcastSort === 'recent' || podcastSort === 'added' || podcastSort === 'alpha') {
+    set({ browsePodcastsSort: podcastSort });
   }
   if (parsed.browseArtistsLayout === 'list' || parsed.browseArtistsLayout === 'grid') {
     set({ browseArtistsLayout: parsed.browseArtistsLayout });
@@ -2168,18 +2195,23 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(snapshot(get));
   },
 
-  setExploreSection: (key, value) => {
+  setLibrarySection: (key, value) => {
     set({
-      exploreSections: get().exploreSections.map((s) =>
+      librarySections: get().librarySections.map((s) =>
         s.key === key ? { ...s, enabled: value } : s,
       ),
     });
     persist(snapshot(get));
   },
 
-  setLibraryChip: (key, value) => {
-    set({
-      libraryChips: get().libraryChips.map((c) => (c.key === key ? { ...c, enabled: value } : c)),
+  setFavoriteSection: (key, value) => {
+    // Only what is on is kept, so a section nobody favorited costs the saved
+    // file nothing and a section somebody did comes back on next session.
+    set((s) => {
+      const next = { ...s.favoriteSections };
+      if (value) next[key] = true;
+      else delete next[key];
+      return { favoriteSections: next };
     });
     persist(snapshot(get));
   },

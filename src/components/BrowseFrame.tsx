@@ -2,7 +2,7 @@
  * What a "browse everything" screen sits in.
  *
  * On its own it is a screen: it starts under the status bar and there is a
- * back arrow above it. Inside the Explore tab it is the body of somebody
+ * back arrow above it. Inside the Library tab it is the body of somebody
  * else's screen, and the chrome above it is theirs — the tab has already taken
  * the inset and already says which section you are in, so a second header
  * there would be the section named twice.
@@ -23,20 +23,31 @@ import { themed } from '@/theme';
  * What every one of them takes.
  *
  * `actionRef` is how the button in the tab's header reaches the menu it opens,
- * which lives down here with the state it belongs to. The section fills it in
- * while rendering, the way `SheetModal` takes its `openRef`.
+ *  which lives down here with the state it belongs to. The section fills it in
+ *  while rendering, the way `SheetModal` takes its `openRef`.
  *
  * `searchOpen` is the other half of that arrangement, and it goes the other
- * way: embedded, whether the box is there at all is the tab's to say, because
- * the magnifier that opens it is drawn up there and turns into the X that
- * closes it. A ref would have done for opening it, but then two places would
- * hold the same fact and the day they disagree the icon says close and the tap
- * opens (see `useSearchBox`).
+ *  way: embedded, whether the box is there at all is the tab's to say, because
+ *  the magnifier that opens it is drawn up there and turns into the X that
+ *  closes it. A ref would have done for opening it, but then two places would
+ *  hold the same fact and the day they disagree the icon says close and the tap
+ *  opens (see `useSearchBox`).
+ *
+ * `downloaded`/`favorited` and their presses are the same arrangement a third
+ *  time, and they split the same way the filters do: which lists are on screen
+ *  is the tab's answer, one filter over every section, while the heart's state
+ *  belongs to the section it is drawn in and writes its own saved switch. The
+ *  value goes down, the press is handed down — a section reached as a screen of
+ *  its own takes neither pair, and draws neither icon.
  */
 export interface BrowserProps {
   embedded?: boolean;
   actionRef?: MutableRefObject<() => void>;
   searchOpen?: boolean;
+  downloaded?: boolean;
+  favorited?: boolean;
+  onToggleDownloaded?: () => void;
+  onToggleFavorite?: () => void;
 }
 
 /**

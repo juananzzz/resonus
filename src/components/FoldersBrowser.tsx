@@ -2,8 +2,8 @@
  * The server's music folders, as the way into browsing its directory tree. On
  * the local profile they are the folders the music was chosen from.
  *
- * It lived as a fourth segment of "Your library" until the
- * Explore tab gathered the whole catalogue in one place. What a folder holds
+ * It lived as a fourth segment of the old Your library tab until the tab now
+ * called Library gathered the whole catalogue in one place. What a folder holds
  * is the server's, not yours, which is what it was doing on the wrong side of
  * that line.
  *

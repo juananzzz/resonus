@@ -309,7 +309,8 @@ export default function SearchScreen() {
 
   const isEmpty = query.trim().length === 0;
   // With the box empty the screen is what was opened from it before. Genres
-  // are Explore's, and were a second Explore here.
+  // belong to the Library tab, and the grid here used to make this screen a
+  // second browsing tab: it went.
   const showRecent = isEmpty && recent.length > 0;
 
   /** Recent item subtitle: type (+ artist for albums/songs). */
@@ -321,7 +322,7 @@ export default function SearchScreen() {
   };
 
   // From JS, not a `SafeAreaView`: that one pads a frame late on a tab's first
-  // mount and the page jumped down (same as Explore).
+  // mount and the page jumped down (same as the Library tab).
   const insets = useSafeAreaInsets();
 
   return (
@@ -616,7 +617,7 @@ const styles = themed((colors) => ({
   content: {
     paddingHorizontal: spacing.lg,
   },
-  // The same pill "Your library" uses, and deliberately the same: they are one
+  // The same pill the Library tab uses, and deliberately the same: they are one
   // control in two places, and a second look for it would read as a different
   // kind of thing.
   //

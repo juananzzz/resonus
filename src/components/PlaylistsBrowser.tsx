@@ -1,20 +1,22 @@
 /**
- * Every playlist on the server, as a section of the Explore tab.
+ * Every playlist on the server, as a section of the Library tab.
  *
- * The same list is already the first segment of "Your library", and this is
- * deliberately a second way in rather than a move: a playlist you made is
- * yours and belongs over there, but a Subsonic server also hands back the ones
- * other people made public, and reaching those from the tab that holds the
- * catalogue is what this is for.
+ * This is the whole list the server answers with: the ones you made, plus the
+ * ones a Subsonic server hands back because other people left them public. A
+ * playlist you made is yours, and the heart here keeps it the way the other
+ * sections do; reaching the server's own is why this section is in the tab that
+ * holds the catalogue rather than only with your things.
  *
- * The order and the rows-or-cards choice are its own settings, not the ones
- * "Your library" keeps. Sharing them would mean pressing the view button here
- * silently rearranged the list over there, which is the same reason browsing
- * all albums does not share its layout with the favourites.
+ * The order and the rows-or-cards choice are the playlists' own settings, kept
+ * separate from the other sections'. Sharing them would mean pressing the view
+ * button in one section silently rearranging another, which is the same reason
+ * browsing all albums does not share its layout with the favourites.
  *
- * No pins. What is pinned is a thing you did to your own library, and this
- * side is the server's.
+ * A playlist can be pinned, and the pin is honoured here and shown on its row
+ * or card the way an album's is: pinning is something you did while reading this
+ * section, so the section keeps it for itself the way it keeps its own order.
  */
+import Icon from '@/components/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -23,6 +25,7 @@ import {
   Dimensions,
   FlatList,
   Pressable,
+  RefreshControl,
   Text,
   View,
 } from 'react-native';
@@ -35,16 +38,20 @@ import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
 import { PlaylistCard } from '@/components/PlaylistCard';
+import { useAccent } from '@/hooks/useAccent';
 import { useDownloadedPlaylists } from '@/hooks/useDownloadedPlaylists';
 import { useGridColumns } from '@/hooks/useGridColumns';
+import { usePullRefresh } from '@/hooks/usePullRefresh';
+import { usePlaylistStars } from '@/hooks/usePlaylistStars';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { useListPadding } from '@/hooks/useScreenSize';
 import { songsLabel, useT } from '@/i18n';
 import { haptic } from '@/lib/haptics';
-import { SORT_LABELS, byCodepoint, matches, normQ, sortItems } from '@/lib/librarySort';
+import { SORT_LABELS, byCodepoint, matches, normQ, sortItems, withPins } from '@/lib/librarySort';
 import { listPerf } from '@/lib/listPerf';
 import { useAuthStore } from '@/store/auth';
 import { useLastPlayed } from '@/store/lastPlayed';
+import { usePins } from '@/store/pins';
 import { useMediaMenu } from '@/store/mediaMenu';
 import { useSettings, type LibrarySort } from '@/store/settings';
 import { colors, fontSize, spacing, themed } from '@/theme';
@@ -56,18 +63,34 @@ function cardWidth(columns: number): number {
   return (Dimensions.get('window').width - spacing.lg * 2 - GAP * (columns - 1)) / columns;
 }
 
-/** The same three "Your library" offers, in its order. */
+/** The orders a playlist list can be read in, in the order they are offered. */
 const SORTS: { key: LibrarySort; label: string }[] = (
   Object.keys(SORT_LABELS) as LibrarySort[]
 ).map((key) => ({ key, label: SORT_LABELS[key] }));
 
-/** `downloaded` keeps the playlists with every song on the phone (#310). */
+/**
+ * `downloaded` keeps the playlists with every song on the phone (#310).
+ *
+ * `favorited` keeps them to the ones carrying a star, which only exists where
+ *  the server can say it: Navidrome keeps playlist stars out of the Subsonic
+ *  answers, so the state is read back through its own API (see
+ *  `usePlaylistStars`) and the tab draws no heart where that read is not
+ *  available.
+ *
+ * `onToggleDownloaded` and `onToggleFavorite` are the presses the Library tab
+ *  makes in this section's sort row; the heart's state is the section's own
+ *  (saved per section), the Downloaded one is the tab's.
+ */
 export function PlaylistsBrowser({
   embedded,
   actionRef,
   searchOpen,
   downloaded,
-}: BrowserProps & { downloaded?: boolean }) {
+  favorited,
+  onToggleDownloaded,
+  onToggleFavorite,
+}:
+  BrowserProps) {
   const t = useT();
   const lang = useSettings((s) => s.language);
   const listPad = useListPadding(spacing.lg);
@@ -88,9 +111,19 @@ export function PlaylistsBrowser({
   });
   const card = cardWidth(columns);
   const saved = useDownloadedPlaylists();
+  // Pinned first, in the order they were pinned, whatever the chosen sort says:
+  //  the same `withPins` an album list runs its pins through, and the same
+  //  `playlist:<id>` key the long-press menu writes.
+  const pins = usePins((s) => s.pins);
+  // The two marks are the accent's, and this is a section a stack keeps mounted
+  //  behind you, so the colour comes from the hook rather than off `colors`.
+  const accent = useAccent();
+  // The playlist stars, and `undefined` where this server cannot answer for
+  //  them: no heart is drawn there, so `favorited` never arrives true.
+  const stars = usePlaylistStars();
 
   // Assigned in an effect and not while rendering: the React compiler's lint
-  // rule marks a ref written during render (see the Explore tab).
+  // rule marks a ref written during render (see the Library tab).
   useEffect(() => {
     if (actionRef) actionRef.current = openGridMenu;
   });
@@ -104,46 +137,81 @@ export function PlaylistsBrowser({
     enabled: canFetch,
   });
 
+  // Pulling the list down asks the server for its playlists again. The stars
+  //  have their own read, and it is written through by the heart itself (see
+  //  `usePlaylistStars`), so there is nothing else here to ask for.
+  const pull = usePullRefresh(refetch, "Couldn't refresh the playlists");
+
   // Memoised, and before the early returns below, because hooks cannot be
   // conditional. Without it the whole list is filtered and sorted again on
   // every render, which includes every keystroke in the box above (#50).
   const shown = useMemo(() => {
     const q = normQ(query.trim());
-    return sortItems(
-      (data ?? []).filter((p) => matches(q, p.name) && (!downloaded || !!saved?.has(p.id))),
-      sort,
-      (p) => p.name,
-      sort === 'recent'
-        ? (p) => times[`/playlist/${p.id}`] ?? 0
-        : (p) => Date.parse(p.created ?? '') || 0,
-      // Code point so "+"-prefixed playlists pin to the top like on the server.
-      byCodepoint,
+    // Pinned first, in the order they were pinned, ahead of whatever the
+    //  chosen sort says — the same as an album list's pins, and the same key
+    //  the long-press menu writes them under.
+    return withPins(
+      sortItems(
+        (data ?? []).filter(
+          (p) =>
+            matches(q, p.name) &&
+            (!downloaded || !!saved?.has(p.id)) &&
+            (!favorited || !!stars?.has(p.id)),
+        ),
+        sort,
+        (p) => p.name,
+        sort === 'recent'
+          ? (p) => times[`/playlist/${p.id}`] ?? 0
+          : (p) => Date.parse(p.created ?? '') || 0,
+        // Code point so "+"-prefixed playlists pin to the top like on the server.
+        byCodepoint,
+      ),
+      (p) => `playlist:${p.id}`,
+      pins,
     );
-  }, [data, query, sort, times, downloaded, saved]);
+  }, [data, query, sort, times, pins, downloaded, saved, favorited, stars]);
 
-  const body = isLoading || (downloaded && !saved) ? (
-    <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
-  ) : isError ? (
-    <Message text={t("Couldn't load playlists.")} onRetry={() => refetch()} />
-  ) : shown.length === 0 ? (
-    <EmptyState
-      icon={downloaded && !query.trim() ? 'download-outline' : 'list-outline'}
-      title={
-        query.trim()
-          ? t('No results')
-          : downloaded
-            ? t('Nothing here is downloaded')
-            : t('No playlists yet')
-      }
-    />
-  ) : (
+  const body =
+    isLoading || (downloaded && !saved) || (favorited && !stars) ? (
+      <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.accent} />
+    ) : isError ? (
+      <Message text={t("Couldn't load playlists.")} onRetry={() => refetch()} />
+    ) : shown.length === 0 ? (
+      <EmptyState
+        icon={
+          favorited && !query.trim()
+            ? 'heart-outline'
+            : downloaded && !query.trim()
+              ? 'download-outline'
+              : 'list-outline'
+        }
+        title={
+          query.trim()
+            ? t('No results')
+            : favorited && downloaded
+              ? t('No downloaded favorites')
+              : favorited
+                ? t('No favorites yet')
+                : downloaded
+                  ? t('Nothing here is downloaded')
+                  : t('No playlists yet')
+        }
+      />
+    ) : (
     <FlatList
       {...listPerf}
       // Remounts when the shape of the list changes: FlatList keeps its
-      // measurements otherwise, and rows measured as cards scroll wrong.
-      key={`${layout}-${columns}`}
+      //  measurements otherwise, and rows measured as cards scroll wrong. The
+      //  heart and the Downloaded filter are in here since each swaps the set
+      //  behind the rows — the section's own key up in the tab would also drop
+      //  what you typed in the box along with them.
+      key={`${downloaded}-${favorited}-${layout}-${columns}`}
       data={shown}
       keyExtractor={(item: Playlist) => item.id}
+      // A pull asks the server for its playlists again (see `usePullRefresh`).
+      refreshControl={
+        <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={colors.accent} />
+      }
       keyboardShouldPersistTaps="handled"
       {...(grid
         ? {
@@ -160,9 +228,13 @@ export function PlaylistsBrowser({
               { paddingBottom: bottomPad, paddingHorizontal: listPad },
             ],
           })}
-      renderItem={({ item }) =>
-        grid ? (
-          <PlaylistCard playlist={item} width={card} />
+      renderItem={({ item }) => {
+        // Every song on the phone, and the pin: the two marks an album's rows
+        //  and cards get, and the ↓ the section's own switch holds the list to.
+        const whole = !!saved?.has(item.id);
+        const pinned = !!pins[`playlist:${item.id}`];
+        return grid ? (
+          <PlaylistCard playlist={item} width={card} downloaded={whole} pinned={pinned} />
         ) : (
           <Link href={`/playlist/${item.id}`} asChild>
             <Pressable
@@ -177,14 +249,22 @@ export function PlaylistsBrowser({
                 <Text style={styles.rowTitle} numberOfLines={1}>
                   {item.name}
                 </Text>
-                {item.songCount != null ? (
-                  <Text style={styles.rowSub}>{songsLabel(item.songCount, lang)}</Text>
+                {item.songCount != null || whole || pinned ? (
+                  <View style={styles.rowLine}>
+                    {whole ? <Icon name="arrow-down-circle" size={13} color={accent} /> : null}
+                    {pinned ? <Icon name="pin" size={13} color={accent} /> : null}
+                    {item.songCount != null ? (
+                      <Text style={styles.rowSub} numberOfLines={1}>
+                        {songsLabel(item.songCount, lang)}
+                      </Text>
+                    ) : null}
+                  </View>
                 ) : null}
               </View>
             </Pressable>
           </Link>
-        )
-      }
+        );
+      }}
     />
   );
 
@@ -202,9 +282,17 @@ export function PlaylistsBrowser({
         </View>
       ) : null}
 
-      {/* No play pair: the list is playlists, and "play all of them" is not a
-          thing anyone asked for. Same shape as browsing all artists. */}
-      <BrowseToolbar options={SORTS} value={sort} onChange={setSort} />
+      {/* The row's right-hand corner carries the two filters: the heart is this
+          section's own (saved per section), the ↓ the tab's. No play pair here:
+          the list is playlists, and "play all of them" is not a thing anyone
+          asked for. */}
+      <BrowseToolbar
+        options={SORTS}
+        value={sort}
+        onChange={setSort}
+        download={onToggleDownloaded ? { on: !!downloaded, toggle: onToggleDownloaded } : undefined}
+        favorite={onToggleFavorite ? { on: !!favorited, toggle: onToggleFavorite } : undefined}
+      />
 
       {body}
       {gridSheet}
@@ -228,5 +316,7 @@ const styles = themed((colors) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   rowInfo: { flex: 1 },
   rowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
-  rowSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
+  // The marks and the count share a line, the way an album row's do.
+  rowLine: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  rowSub: { color: colors.textSecondary, fontSize: fontSize.xs, flexShrink: 1 },
 }));

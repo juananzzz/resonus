@@ -9,6 +9,29 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+### Added
+
+- Library: a heart at the right end of a section's sort row keeps only what you favorited, and it is remembered on and off separately for playlists, albums, artists, songs and podcasts.
+- Library: the + button that makes a new playlist sits at the top of the tab while you are reading playlists.
+- Library: pulling a Playlists, Albums or Artists list down asks the server for it again; a pull that fails leaves the rows you were looking at and says so.
+- Library: the Podcasts section has its own sort button (Recents, Recently added, Alphabetical), like the other sections have.
+- Library: pressing either filter keeps whatever you had typed in the section's search box, since you are asking the same question of a smaller list.
+
+### Changed
+
+- Library: Explore and Your library are one tab now, opened on Playlists, Albums, Artists, Songs, Genres, Radio and Folders.
+- Podcasts: the shows you add live in Library, and the ones you favorite also appear there when the heart is pressed.
+- Library: Downloaded is now a ↓ at the right end of each section's sort row, beside the heart, and keeps Playlists, Albums, Artists, Songs and Podcasts to what is on your phone — a show counts when at least one of its episodes is kept.
+- Library: Genres and Radio keep their place on the bar while the ↓ is on, and answer their whole list: there is nothing in either to hold to the phone, so no ↓ is drawn over them and no chip goes away when a filter comes on.
+- Library: the sort row no longer offers Play and Shuffle over an album or song list; those lists are read, filtered and sorted there, and what you want started is opened as such.
+- Library: the ↓ and the heart are a pair of filters over one list. Pressed together they keep a section to what is on your phone and you favorited at once; pressed alone each still answers only its own question, and nothing you have not filtered stays away.
+- Library: pinned playlists go back to the top of the section and carry a pin, as albums do.
+- Settings: the Library's ↓ filter has its own row in Settings › Library sections, above the sections it cannot be reordered among.
+
+### Fixed
+
+- Library: a section you have the heart on but nothing of it hearted says so itself, instead of the tab claiming there is nothing to see.
+
 ## [0.8.8] - 2026-11-16
 
 ### Added
