@@ -72,6 +72,7 @@ import { PodcastsBrowser } from '@/app/podcasts';
 import { FoldersBrowser } from '@/components/FoldersBrowser';
 import { PlaylistsBrowser } from '@/components/PlaylistsBrowser';
 import { Dialog } from '@/components/Dialog';
+import { type BrowserProps } from '@/components/BrowseFrame';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { usePlaylistStars } from '@/hooks/usePlaylistStars';
 import { useAccent } from '@/hooks/useAccent';
@@ -110,15 +111,17 @@ const LABEL: Record<Section, string> = {
 const DOWNLOADABLE: Section[] = ['playlists', 'albums', 'artists', 'songs', 'podcasts'];
 
 /**
- * The sections the ↓ never takes off the bar: genres and stations are the
- *  server's own lists with nothing on the phone to hold them to, so a ↓ drawn
- *  over them would be an icon that does nothing. They keep their place on the
- *  bar and answer their whole list while the filter is on somewhere else — a
- *  chip that went away every time the filter came on would read as the section
- *  being switched off, which is the other thing the bar already says with an
- *  absent chip (see Settings › Library sections).
+ * The one section the ↓ takes off the bar: browsing the music folders is a
+ *  question the downloads catalog has no answer for. Every other section keeps
+ *  its place while the filter is on — the four music ones and the shows from
+ *  a catalog they can hold themselves to (see `DOWNLOADABLE`), genres and
+ *  stations from neither question. Those two answer whole rather than hide:
+ *  a ↓ drawn over them would be an icon that does nothing, and a chip that
+ *  went away whenever the filter came on would read as the section being
+ *  switched off, which is what an absent chip already says (see Settings
+ *  › Library sections).
  */
-const KEEP_ON_BAR: Section[] = ['genres', 'radio'];
+const DOWN_HIDES: Section[] = ['folders'];
 
 /**
  * What the heart can be drawn over: the sections with a favorite state of
@@ -250,18 +253,15 @@ export default function LibraryScreen() {
   };
   // What the chips are: turned on, and something this profile can answer for.
   // The Downloaded filter is not one of them any more — it is a toggle in every
-  //  section's sort row — but it still takes the sections it cannot answer for
-  //  off the bar, which is what `DOWNLOADABLE` says (see #310), except the ones
-  //  that have nothing to answer either way and keep their place (`KEEP_ON_BAR`).
+  //  section's sort row — but it still takes the one section it has no answer
+  //  for off the bar, which is what `DOWN_HIDES` says (see #310).
   const chips = order
     .filter(
       (s) =>
         s.key !== 'downloaded' &&
         s.enabled &&
         available(s.key as Section) &&
-        (!downloadedFilterOn ||
-          DOWNLOADABLE.includes(s.key as Section) ||
-          KEEP_ON_BAR.includes(s.key as Section)),
+        (!downloadedFilterOn || !DOWN_HIDES.includes(s.key as Section)),
     )
     .map((s) => s.key as Section);
   const sections = chips;
@@ -291,10 +291,10 @@ export default function LibraryScreen() {
    * Whether the ↓ sits in this section's sort row: the filter is the tab's, but
    *  it only means something for the lists the phone can hold music for (see
    *  `DOWNLOADABLE`), and only while there is something on the phone at all.
-   *  Turning it on takes the sections it cannot answer for off the bar, except
-   *  the ones that have nothing to answer either way and keep their place there
-   *  (`KEEP_ON_BAR`) — a ↓ drawn over those would be an icon that does nothing,
-   *  so they draw neither icon and answer their whole list.
+   *  Turning it on takes `DOWN_HIDES` off the bar, and draws the icon over
+   *  none of the sections that have nothing to answer either way — genres and
+   *  stations keep their chip and answer whole, so neither icon is drawn over
+   *  them.
    */
   const downloadable = canFilter && DOWNLOADABLE.includes(current);
 
@@ -302,6 +302,22 @@ export default function LibraryScreen() {
   const searchable = current !== 'folders';
   const searchOpen = searchFor === current;
 
+  /**
+   * The five sections that take both filters, as one object spread into all
+   *  five: the states and the presses are the same for every one of them, so
+   *  what differs between these five is the component and not a single prop
+   *  (see `BrowserProps`). Genres, stations and folders take neither filter,
+   *  which is why they are passed on their own below.
+   */
+  const bothFilters: BrowserProps = {
+    embedded: true,
+    downloaded: downloadedFilterOn,
+    favorited,
+    onToggleDownloaded: downloadable ? toggleDownloaded : undefined,
+    onToggleFavorite: heartable ? toggleFavorite : undefined,
+    actionRef: sectionAction,
+    searchOpen,
+  };
   const closeSearch = useCallback(() => setSearchFor(null), []);
 
   // Leaving the tab puts the bar away, and so does Back while it is open: the
@@ -441,59 +457,19 @@ export default function LibraryScreen() {
           are measured again in the list key; the box is left alone. */}
       <View style={styles.body}>
         {current === 'playlists' ? (
-          <PlaylistsBrowser
-            embedded
-            downloaded={downloadedFilterOn}
-            favorited={favorited}
-            onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
-            onToggleFavorite={heartable ? toggleFavorite : undefined}
-            actionRef={sectionAction}
-            searchOpen={searchOpen}
-          />
+          <PlaylistsBrowser {...bothFilters} />
         ) : current === 'albums' ? (
-          <AlbumsBrowser
-            embedded
-            downloaded={downloadedFilterOn}
-            favorited={favorited}
-            onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
-            onToggleFavorite={heartable ? toggleFavorite : undefined}
-            actionRef={sectionAction}
-            searchOpen={searchOpen}
-          />
+          <AlbumsBrowser {...bothFilters} />
         ) : current === 'artists' ? (
-          <ArtistsBrowser
-            embedded
-            downloaded={downloadedFilterOn}
-            favorited={favorited}
-            onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
-            onToggleFavorite={heartable ? toggleFavorite : undefined}
-            actionRef={sectionAction}
-            searchOpen={searchOpen}
-          />
+          <ArtistsBrowser {...bothFilters} />
         ) : current === 'songs' ? (
-          <SongsBrowser
-            embedded
-            downloaded={downloadedFilterOn}
-            favorited={favorited}
-            onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
-            onToggleFavorite={heartable ? toggleFavorite : undefined}
-            actionRef={sectionAction}
-            searchOpen={searchOpen}
-          />
+          <SongsBrowser {...bothFilters} />
         ) : current === 'genres' ? (
           <GenresBrowser embedded searchOpen={searchOpen} />
         ) : current === 'radio' ? (
           <RadioBrowser embedded actionRef={sectionAction} searchOpen={searchOpen} />
         ) : current === 'podcasts' ? (
-          <PodcastsBrowser
-            embedded
-            downloaded={downloadedFilterOn}
-            favorited={favorited}
-            onToggleDownloaded={downloadable ? toggleDownloaded : undefined}
-            onToggleFavorite={heartable ? toggleFavorite : undefined}
-            actionRef={sectionAction}
-            searchOpen={searchOpen}
-          />
+          <PodcastsBrowser {...bothFilters} />
         ) : (
           <FoldersBrowser />
         )}
