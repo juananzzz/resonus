@@ -14,6 +14,7 @@
 import { useEffect, useState } from 'react';
 
 import { CACHED_COVER, COVER } from '@/api/data';
+import { cacheWrite } from '@/lib/boundedCache';
 import { BACKGROUND_TINTS, colors as theme, useThemeMode, type ThemeMode } from '@/theme';
 
 function hexToRgb(hex: string): [number, number, number] | null {
@@ -266,8 +267,14 @@ export function isPlainTint(c: string): boolean {
  * covers are read, so a screen opened again draws its tint on the first frame
  * instead of starting from the plain one and jumping (which `getColors`'s own
  * cache cannot prevent: it answers asynchronously even when it has the answer).
+ *
+ * The key multiplies with every cover seen, so the map is bounded: past
+ * `RESOLVED_CAP` the entry that came first leaves, and a colour that left is
+ * worked out again from the palette the image loader already keeps.
  */
 const resolved = new Map<string, string>();
+/** Addresses × appearance × band; the same ceiling the cover memo holds to. */
+const RESOLVED_CAP = 4096;
 
 function resolvedKey(src: string, mode: ThemeMode, vivid: boolean): string {
   return `${mode}|${vivid ? 'v' : 'c'}|${src}`;
@@ -306,7 +313,7 @@ export function useCoverTint(uri?: string, vivid = false): { color: string; know
       const c = read ?? theme.surfaceHighlight;
       // A cover that could not be read is not remembered: the next screen
       // that shows it asks again.
-      if (read) resolved.set(key, c);
+      if (read) cacheWrite(resolved, key, c, RESOLVED_CAP);
       if (active) setRead({ key, color: c });
     });
     return () => {
