@@ -35,6 +35,6 @@ export function episodeUnavailable(offline: boolean, files: Record<string, strin
  */
 export function useEpisodeUnavailable(episodeId?: string): boolean {
   const offline = useAuthStore((s) => s.offline);
-  const onDisk = useDownloads((s) => Boolean(episodeId && s.files[episodeId]));
+  const onDisk = useDownloads((s) => !!(episodeId && s.files[episodeId]));
   return offline && !!episodeId && !onDisk;
 }
