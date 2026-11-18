@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { AppState, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { CACHED_COVER, COVER } from '@/api/data';
+import { cacheWrite } from '@/lib/boundedCache';
 import { bump } from '@/lib/perfLog';
 import { useSettings, type CoverCorners } from '@/store/settings';
 import { colors, radius } from '@/theme';
@@ -83,12 +84,18 @@ const CACHE_SIZES = [COVER.card, COVER.full, COVER.thumb, 500, 300, 100] as cons
  * again on the way back, and again for every row scrolling recycled. On a
  * fifteen thousand song library most of them miss, which is the expensive case.
  *
- * A hit is kept for good, since a file in the cache does not leave while the
- * app is running. A miss is kept for a minute: offline nothing new arrives, but
- * back online the mirror does save covers, and a miss remembered for ever would
- * hold a placeholder over one that is now there.
+ * A hit is kept while it is still in the map: the entry that came first leaves
+ * past `MEMO_CAP`, so the map holds what a browse touches instead of every
+ * address the app ever showed — the address again, together with the `file://`
+ * path it answered with. An address that left is asked again, which costs one
+ * call into the image loader, and it answers from its own cache. A miss is kept
+ * for a minute: offline nothing new arrives, but back online the mirror does
+ * save covers, and a miss remembered for ever would hold a placeholder over
+ * one that is now there.
  */
 const MISS_TTL = 60_000;
+/** Room for a whole browse; only the ceiling has to hold, not the library. */
+const MEMO_CAP = 4096;
 const memo = new Map<string, { path?: string; at: number }>();
 
 async function cachedPath(url: string): Promise<string | undefined> {
@@ -116,7 +123,7 @@ async function cachedPath(url: string): Promise<string | undefined> {
     found = others.find(Boolean);
     bump(found ? 'cover cache · another size' : 'cover cache · missing');
   }
-  memo.set(url, { path: found, at: Date.now() });
+  cacheWrite(memo, url, { path: found, at: Date.now() }, MEMO_CAP);
   return found;
 }
 
