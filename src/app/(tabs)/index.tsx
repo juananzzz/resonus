@@ -32,8 +32,9 @@ import {
   getChannel,
   getStoredChannel,
   isFeedUrl,
-  podcastCover,
+  listNextEpisodes,
   listRecentEpisodes,
+  podcastCover,
   type RecentEpisode,
 } from '@/api/podcasts';
 import { AlbumCard } from '@/components/AlbumCard';
@@ -45,6 +46,7 @@ import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { PlaylistCard } from '@/components/PlaylistCard';
+import { NextEpisodeCard } from '@/components/NextEpisodeCard';
 import { PodcastEpisodeCard } from '@/components/PodcastEpisodeCard';
 import { RadioCard } from '@/components/RadioCard';
 import { TrackRow } from '@/components/TrackRow';
@@ -588,6 +590,78 @@ function PodcastEpisodesSection({ title }: { title: string }) {
   );
 }
 
+/** How many "next episode" cards the carousel shows at most. */
+const NEXT_EPISODE_CARDS = 10;
+
+/**
+ * "Next episode": two tiers of cards, laid out in that order. First each
+ *  show's head: its two newest episodes as long as they are not fully
+ *  listened yet, newest first, as blocks (`listNextEpisodes`); then a
+ *  random carry-on tail: at most two per show out of each show's episodes
+ *  that were started but not finished yet. Every episode once in the
+ *  carousel, the episode now in the player kept out throughout. Pulling
+ *  Home rolls the blocks and the carry-on draw again; hearts, feed reads
+ *  and play state invalidate the shortlist (see `lib/query`).
+ */
+function NextEpisodeSection({ title, reshuffleKey }: { title: string; reshuffleKey: number }) {
+  const currentId = usePlayerStore((s) => s.queue[s.index]?.id);
+  const { width } = useScreenSize();
+  // One card to a view: it reads the width it had on its own, and the next
+  // peeks from the side the way the shelves do.
+  const card = width - spacing.lg * 2;
+  const { data, isLoading } = useQuery({
+    queryKey: ['podcast', 'nextEpisode'],
+    queryFn: listNextEpisodes,
+  });
+  // A fresh draw when the candidates change or on pull-to-refresh
+  // (`reshuffleKey`), as the random shelves do. The head cards stay blocks
+  // per show (newest leads its second one); the carry-on cards pick up to
+  // two per show from its pool and roll into one random tail.
+  const picks = useMemo(() => {
+    const head = new Map<string, RecentEpisode[]>();
+    const carry = new Map<string, RecentEpisode[]>();
+    const put = (byShow: Map<string, RecentEpisode[]>, row: RecentEpisode): void => {
+      const group = byShow.get(row.channel.id);
+      if (group) group.push(row);
+      else byShow.set(row.channel.id, [row]);
+    };
+    for (const row of data?.head ?? []) if (row.episode.id !== currentId) put(head, row);
+    for (const row of data?.carry ?? []) if (row.episode.id !== currentId) put(carry, row);
+    const first = shuffled([...head.values()]).flat();
+    const second = shuffled(
+      shuffled([...carry.values()])
+        .map((group) => shuffled(group).slice(0, 2))
+        .flat(),
+    );
+    return [...first, ...second].slice(0, NEXT_EPISODE_CARDS);
+  }, [data, reshuffleKey, currentId]);
+
+  if (isLoading) {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <AlbumCardsSkeleton horizontal />
+      </View>
+    );
+  }
+  if (picks.length === 0) return null;
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <FlatList
+        {...listPerf}
+        horizontal
+        data={picks}
+        keyExtractor={(item: RecentEpisode) => item.episode.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.rowContent}
+        renderItem={({ item }) => <NextEpisodeCard item={item} width={card} />}
+      />
+    </View>
+  );
+}
+
 /** Pick one (Fisher-Yates); for the "random" sections. */
 function shuffled<T>(arr: T[]): T[] {
   const a = arr.slice();
@@ -921,8 +995,8 @@ function ScanningPanel() {
 }
 
 /** Title (i18n key) and list type for the sections that use AlbumSection.
- *  «discover», «randomArtists», «mostPlayedSongs», «randomSongs» and
- *  «podcasts» are drawn by components of their own. */
+ *  «discover», «randomArtists», «mostPlayedSongs», «randomSongs», «podcasts»
+ *  and «nextEpisode» are drawn by components of their own. */
 const HOME_ALBUM_CONFIG: Record<
   Exclude<
     HomeSectionKey,
@@ -933,6 +1007,7 @@ const HOME_ALBUM_CONFIG: Record<
     | 'mostPlayedSongs'
     | 'randomSongs'
     | 'podcasts'
+    | 'nextEpisode'
   >,
   { title: string; type: 'newest' | 'recent' | 'frequent' | 'random' | 'byYear' }
 > = {
@@ -1182,6 +1257,10 @@ export default function HomeScreen() {
               // Not gated on the server: the episodes are local.
               if (s.key === 'podcasts') {
                 return <PodcastEpisodesSection key={s.key} title={t('Recent episodes')} />;
+              }
+              // Not gated on the server either: the card is read from SQLite.
+              if (s.key === 'nextEpisode') {
+                return <NextEpisodeSection key={s.key} title={t('Next episode')} reshuffleKey={reshuffleKey} />;
               }
               if (s.key === 'mostPlayedSongs') {
                 return <MostPlayedSongsSection key={s.key} title={t('Most played songs')} />;

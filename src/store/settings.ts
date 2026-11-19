@@ -402,6 +402,7 @@ export type HomeSectionKey =
   | 'radios'
   | 'playlists'
   | 'podcasts'
+  | 'nextEpisode'
   | 'randomAlbums'
   | 'randomArtists';
 
@@ -422,6 +423,7 @@ const HOME_SECTION_KEYS: HomeSectionKey[] = [
   'radios',
   'playlists',
   'podcasts',
+  'nextEpisode',
   'randomAlbums',
   'randomArtists',
 ];
@@ -447,6 +449,10 @@ export const DEFAULT_HOME_SECTIONS: HomeSection[] = [
   { key: 'playlists', enabled: true },
   // Draws nothing without a subscription, so it costs nobody a row.
   { key: 'podcasts', enabled: true },
+  // A carousel of the shows you hearted: per show its two newest episodes
+  // and the ones to carry on with — draws nothing until a hearted show has
+  // something not fully listened, so it costs nobody a row either.
+  { key: 'nextEpisode', enabled: true },
   { key: 'recentlyAdded', enabled: true },
   { key: 'newReleases', enabled: true },
   { key: 'recentlyPlayed', enabled: true },

@@ -9,6 +9,10 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+### Added
+
+- Home: a "Next episode" row — a sideways carousel of at most ten cards. Per hearted podcast its two newest episodes lead, newest first, as long as they are not fully listened yet; behind them a random tail of that podcast's episodes started but not finished yet, at most two per podcast. Reorderable and hideable in Settings › Home sections.
+
 ## [0.8.8] - 2026-11-16
 
 ### Added

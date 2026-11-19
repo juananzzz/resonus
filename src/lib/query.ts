@@ -40,6 +40,15 @@ export function invalidatePodcastLists(): void {
   queryClient.invalidateQueries({ queryKey: ['podcastRecentEpisodes'] });
   queryClient.invalidateQueries({ queryKey: ['podcastFavoriteChannels'] });
   queryClient.invalidateQueries({ queryKey: ['podcastFavoriteEpisodes'] });
+  // Home's "next episode" card is built from the same rows: a read that
+  // lands an episode, keeps or drops a show, or hearts one changes it too.
+  invalidateNextEpisodeCard();
+}
+
+/** Home's "next episode" card: its shortlist moves with favorites, episodes
+ *  and play state, so every caller that touches one of those says so. */
+export function invalidateNextEpisodeCard(): void {
+  queryClient.invalidateQueries({ queryKey: ['podcast', 'nextEpisode'] });
 }
 
 /**

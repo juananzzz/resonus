@@ -17,7 +17,7 @@ import { useSettings } from '@/store/settings';
 
 import { episodePlayed } from '@/lib/episodeResume';
 import { hashKey } from '@/lib/localLibrary';
-import { invalidatePodcastFavorites, invalidatePodcastLists, queryClient } from '@/lib/query';
+import { invalidateNextEpisodeCard, invalidatePodcastFavorites, invalidatePodcastLists, queryClient } from '@/lib/query';
 import * as Db from '@/lib/podcastDb';
 import type { RecentEpisode } from '@/lib/podcastDb';
 import { parseFeed, sortEpisodes, type ParsedItem } from '@/lib/podcastFeed';
@@ -397,6 +397,60 @@ export async function listRecentEpisodes(limit = 20): Promise<RecentEpisode[]> {
   return Db.listRecentEpisodes(scope(), limit);
 }
 
+/**
+ * What Home's "Next episode" carousel may put up, split into the two tiers
+ *  it lays out in order:
+ *
+ * `head` — what just came over: the two NEWEST episodes of the show (the
+ *  head of its own list, newest first), as long as they are not fully
+ *  played yet — a half-listened one stays in, continuing it is what the
+ *  card offers. When both newest ones are already fully listened, the
+ *  show puts up nothing here.
+ *
+ * `carry` — only episodes that were started but not finished yet: the
+ *  ones to carry on with, most recently left first. A show without such
+ *  episodes puts up nothing here. Capped at `NEXT_EPISODE_CARRY` per
+ *  show, and it never repeats a `head` episode.
+ *
+ * Played is the show's own rule (progress at the end, the one its rows
+ *  light by). Episodes without a file (nothing to fetch) and ones the
+ *  publisher pulled never count.
+ */
+const NEXT_EPISODE_CARRY = 8;
+
+export async function listNextEpisodes(): Promise<{ head: RecentEpisode[]; carry: RecentEpisode[] }> {
+  const head: RecentEpisode[] = [];
+  const carry: RecentEpisode[] = [];
+  for (const channel of await listFavoriteChannels()) {
+    if (!channel.episodeCount) continue;
+    // Newest first, as the show's own list leads them.
+    const episodes = await listAllEpisodes(channel.id);
+    const progress = await Db.listEpisodeProgress(scope(), channel.id);
+    const playIds = new Set(
+      progress.filter((r) => episodePlayed(r.positionSec, r.durationSec)).map((r) => r.id),
+    );
+    const open = (episode: PodcastEpisode) => !!episode.url && !playIds.has(episode.id);
+    // The two newest absolute, newest first; both fully listened -> none.
+    const headPicks = episodes.slice(0, 2).filter(open);
+    for (const episode of headPicks) head.push({ episode, channel });
+    const taken = new Set(headPicks.map((episode) => episode.id));
+    // Started but not finished, most recently left first - nothing else.
+    const pool: PodcastEpisode[] = [];
+    const byId = new Map(episodes.map((e) => [e.id, e]));
+    for (const row of progress
+      .filter((r) => !playIds.has(r.id) && r.positionSec > 0)
+      .sort((a, b) => b.updatedAt - a.updatedAt)) {
+      const resumed = byId.get(row.id);
+      if (resumed?.url && !taken.has(resumed.id)) {
+        pool.push(resumed);
+        taken.add(resumed.id);
+      }
+    }
+    for (const episode of pool.slice(0, NEXT_EPISODE_CARRY)) carry.push({ episode, channel });
+  }
+  return { head, carry };
+}
+
 /** Hearts. The user's own, kept on the device like the shows themselves: one
  *  entry point that files the SQLite row and invalidates the hearted lists
  *  together, so no surface can forget the pairing. */
@@ -532,6 +586,8 @@ export async function setEpisodePlayed(song: Song, played: boolean): Promise<voi
     await Db.clearEpisodeProgress(scope(), song.id);
   }
   queryClient.invalidateQueries({ queryKey: ['podcastPlayed'] });
+  // Played or unplayed by hand is also what the next-episode card weighs.
+  invalidateNextEpisodeCard();
 }
 
 const SUFFIXES: Record<string, string> = {
