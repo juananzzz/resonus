@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 867 of them.
+Every string the app can show, under the screen it shows up on. 875 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -60,12 +60,14 @@ you are actually typing into, which is easier than reading it here.
 | `Comment` | The file's comment tag, where people keep notes about a recording |
 | `Content` | Label of the parental advisory row: whether the recording is explicit. Not the song's lyrics, not what it is about |
 | `Continue listening` | Shortcut on the app's launcher icon (long press): resumes the last queue. Short: launchers cut long labels |
+| `Continue queue` |  |
 | `Couldn't create the link` | The server would not make a share link |
 | `Couldn't find anything to mix with this song` | Toast: the server had nothing similar to carry on with |
 | `Couldn't refresh the radio` |  |
 | `Couldn't save the file` | Toast: writing to the chosen folder failed |
 | `Couldn't send the file` | Toast: handing it to another app failed |
 | `Cover art` | Three places, one word: a section header in Settings › Player, a line of the storage bar in Settings › Downloads, and what the screen reader calls the picture in the song information sheet |
+| `Delete queue` |  |
 | `Devices` | The audio output devices to cast to |
 | `Disc {n}` | Heading over the songs of one disc of a multi-disc album. `{n}` is its number |
 | `Don't remind me` | Its other button: never show this again |
@@ -95,12 +97,14 @@ you are actually typing into, which is easier than reading it here.
 | `Open settings` | Its confirm button: goes to Android's own settings, not the app's |
 | `Pick a date…` | Opens the calendar to choose the day the link stops working |
 | `Pin to top` | Keep this at the top of its list, above everything else. `Unpin` undoes it |
+| `Play queue from beginning` |  |
 | `Playback speed` |  |
 | `Playback stopped` | The mini player when there is nothing playing any more |
 | `Playlist created` | The toast after making one |
 | `Playlist exported` |  |
 | `Plays` | How many times the song has been played |
 | `Previous` | Player control: the previous track (accessibility label) |
+| `Queue removed` |  |
 | `Radio updated` |  |
 | `Rate` | Verb: give it stars. Used for a song and for an artist. Not "bitrate" |
 | `Rating` | The stars given to the song. Not a bitrate, not a review |
@@ -356,6 +360,7 @@ you are actually typing into, which is easier than reading it here.
 | --- | --- |
 | `another device` |  |
 | `Back online` | The toast shown when the server answers again and the app comes out of offline mode |
+| `Continue queue` |  |
 | `Couldn't reach the server. Check your connection.` | Error on Home when the server does not answer at all |
 | `Discover` | Home section: discovery suggestions |
 | `Good afternoon` | Home's greeting. The hours it changes at are part of the language too, see TRANSLATING.md |
@@ -377,6 +382,8 @@ you are actually typing into, which is easier than reading it here.
 | `Random artists` | A section of Home: artists picked at random |
 | `Random songs` | A section of Home: songs picked at random from the library |
 | `Recent episodes` | A section of Home, and its switch in settings: the newest episodes of the shows you keep, by the date the publisher gave them. Not episodes you listened to |
+| `Saved queue` |  |
+| `Saved queues` |  |
 | `Scanning your music…` | Going through the phone's own files |
 
 ## Library
@@ -586,6 +593,7 @@ you are actually typing into, which is easier than reading it here.
 | --- | --- |
 | `At the end of the queue` | Queue screen header: the songs 'Add to queue' put after everything else |
 | `Clear queue` | Menu action: empty the list of what is coming |
+| `Delete queue` |  |
 | `Explicit` | A value of `Content`: the recording carries a parental advisory (strong language). Also read out for the E badge next to a title |
 | `Get the server's queue` | Queue screen action: replace what is playing here with the queue the server has, which is the one left on another player |
 | `History` | The listening history: what was played and when |
@@ -597,7 +605,10 @@ you are actually typing into, which is easier than reading it here.
 | `Queue` | The list of songs waiting to play. Not a playlist |
 | `Queue brought over` | The toast that says it worked |
 | `Queue cleared` | Toast |
+| `Queue removed` |  |
+| `Queue saved` |  |
 | `Removed from queue` | Toast |
+| `Save queue` |  |
 | `Stop the mix` | Stop the app carrying on with similar songs when the queue runs out |
 | `The current song keeps playing.` | The line under the clear-queue dialog: only what is coming goes |
 | `The mix won't grow any further` | Toast after stopping the mix: what is in the queue stays, nothing new is added |

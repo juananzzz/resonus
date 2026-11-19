@@ -865,5 +865,13 @@
   "Search settings": "Search settings",
   "Last scan": "Last scan",
   "Export as M3U": "Export as M3U",
-  "Playlist exported": "Playlist exported"
+  "Playlist exported": "Playlist exported",
+  "Saved queues": "Saved queues",
+  "Saved queue": "Saved queue",
+  "Continue queue": "Continue queue",
+  "Play queue from beginning": "Play queue from beginning",
+  "Delete queue": "Delete queue",
+  "Queue saved": "Queue saved",
+  "Queue removed": "Queue removed",
+  "Save queue": "Save queue"
 }

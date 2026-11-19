@@ -61,6 +61,7 @@ import { usePlayCounts } from '@/store/playCounts';
 import { checkBackgroundDeath, initRemoteIntegration, usePlayerStore } from '@/store/player';
 import { usePlayHistory } from '@/store/playHistory';
 import { useRecentSearches } from '@/store/recentSearches';
+import { useSavedQueues } from '@/store/savedQueues';
 import { APP_FONT_FAMILY, useSettings } from '@/store/settings';
 import { useSongCache } from '@/store/songCache';
 import { useSortPrefs } from '@/store/sortPrefs';
@@ -257,6 +258,9 @@ export default function RootLayout() {
       void useLastPlayed.getState().hydrate();
       void usePins.getState().hydrate();
       void useAutoDownloads.getState().hydrate();
+      // The queues that were listened to: Home draws its shelf from these, so
+      // they are read with the rest of what belongs to the profile.
+      void useSavedQueues.getState().hydrate();
     });
     // After the session is restored, never before: the downloads store reads
     // the account's own catalog, and with no account yet it falls back to

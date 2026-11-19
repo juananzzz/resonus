@@ -47,6 +47,7 @@ import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { PodcastEpisodeCard } from '@/components/PodcastEpisodeCard';
 import { RadioCard } from '@/components/RadioCard';
+import { SavedQueueCard } from '@/components/SavedQueueCard';
 import { TrackRow } from '@/components/TrackRow';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { episodeUnavailable } from '@/hooks/useEpisodeUnavailable';
@@ -57,6 +58,7 @@ import { haptic } from '@/lib/haptics';
 import { listPerf } from '@/lib/listPerf';
 import { bump } from '@/lib/perfLog';
 import { playShuffle } from '@/lib/playShuffle';
+import { shelf, shelfStamp, type SavedQueueEntry } from '@/lib/savedQueues';
 import { refreshRadios } from '@/lib/radioBuild';
 import { requestSearchFocus } from '@/lib/tabOrigin';
 import { useAuthStore } from '@/store/auth';
@@ -65,6 +67,7 @@ import { useLastPlayed } from '@/store/lastPlayed';
 import { usePlayerStore } from '@/store/player';
 import { useDownloads } from '@/store/downloads';
 import { useRadios } from '@/store/radios';
+import { useSavedQueues } from '@/store/savedQueues';
 import { useScanProgress } from '@/store/scanProgress';
 import {
   useSettings,
@@ -544,6 +547,35 @@ function PlaylistsSection({ title }: { title: string }) {
   );
 }
 
+/** The queues that were listened to. Local, and empty until a queue has ended.
+ *  The newest of what the archive keeps, in the order it was updated. */
+function SavedQueuesSection({ title }: { title: string }) {
+  const card = useShelfCard();
+  // A stamp and not the list: the live entry is rewritten while its song plays
+  //  (the position in it moves), which hands the row a new array every time and
+  //  asks Home to redraw for as long as the shelf is open. The stamp is what
+  //  says a card would look different, and the entries are read at the moment
+  //  of that redraw, so the row never sees a value it cannot compare equal.
+  const drawn = useSavedQueues((s) => shelfStamp(s.entries));
+  if (drawn === '') return null;
+  const entries = shelf(useSavedQueues.getState().entries);
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <FlatList
+        {...listPerf}
+        horizontal
+        data={entries}
+        keyExtractor={(item: SavedQueueEntry) => item.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.rowContent}
+        renderItem={({ item }) => <SavedQueueCard entry={item} width={card} />}
+      />
+    </View>
+  );
+}
+
 /** The newest podcast episodes. Local, and nothing at all until a show is kept. */
 function PodcastEpisodesSection({ title }: { title: string }) {
   const card = useShelfCard();
@@ -921,8 +953,8 @@ function ScanningPanel() {
 }
 
 /** Title (i18n key) and list type for the sections that use AlbumSection.
- *  «discover», «randomArtists», «mostPlayedSongs», «randomSongs» and
- *  «podcasts» are drawn by components of their own. */
+ *  «discover», «randomArtists», «mostPlayedSongs», «randomSongs», «savedQueues»
+ *  and «podcasts» are drawn by components of their own. */
 const HOME_ALBUM_CONFIG: Record<
   Exclude<
     HomeSectionKey,
@@ -932,6 +964,7 @@ const HOME_ALBUM_CONFIG: Record<
     | 'playlists'
     | 'mostPlayedSongs'
     | 'randomSongs'
+    | 'savedQueues'
     | 'podcasts'
   >,
   { title: string; type: 'newest' | 'recent' | 'frequent' | 'random' | 'byYear' }
@@ -1178,6 +1211,11 @@ export default function HomeScreen() {
               }
               if (s.key === 'playlists') {
                 return <PlaylistsSection key={s.key} title={t('Playlists')} />;
+              }
+              // The queues listened to: on the device, so nothing to wait for,
+              // and nothing at all until a queue has ended or was saved by hand.
+              if (s.key === 'savedQueues') {
+                return <SavedQueuesSection key={s.key} title={t('Saved queues')} />;
               }
               // Not gated on the server: the episodes are local.
               if (s.key === 'podcasts') {

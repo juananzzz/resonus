@@ -390,7 +390,10 @@ export type SwipeAction = 'off' | 'queue' | 'next' | 'favorite' | 'menu';
 /** Home section row. `recentlyPlayed` and `discover` are server-only; `discover`
  *  rediscovers albums played long ago; `randomAlbums`/`randomArtists`
  *  are purely random. `newReleases` is by the year on the tags, which is a
- *  different list from `recentlyAdded`: that one is when the server got it. */
+ *  different list from `recentlyAdded`: that one is when the server got it.
+ *  `savedQueues` is the only one of these that is on the device and not on the
+ *  server: the queues that were listened to, which is also why it asks nothing.
+ */
 export type HomeSectionKey =
   | 'recentlyAdded'
   | 'newReleases'
@@ -401,6 +404,7 @@ export type HomeSectionKey =
   | 'discover'
   | 'radios'
   | 'playlists'
+  | 'savedQueues'
   | 'podcasts'
   | 'randomAlbums'
   | 'randomArtists';
@@ -421,6 +425,7 @@ const HOME_SECTION_KEYS: HomeSectionKey[] = [
   'discover',
   'radios',
   'playlists',
+  'savedQueues',
   'podcasts',
   'randomAlbums',
   'randomArtists',
@@ -445,6 +450,9 @@ export const DEFAULT_HOME_SECTIONS: HomeSection[] = [
   // The personalised artist radios, built from this server's play counts.
   { key: 'radios', enabled: true },
   { key: 'playlists', enabled: true },
+  // The queues that were listened to. Draws nothing until one has ended, so
+  // like the podcasts it costs nobody a row on a first run.
+  { key: 'savedQueues', enabled: true },
   // Draws nothing without a subscription, so it costs nobody a row.
   { key: 'podcasts', enabled: true },
   { key: 'recentlyAdded', enabled: true },

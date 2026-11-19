@@ -9,7 +9,7 @@ import { useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { COVER, coverArtUrl, getAlbum, getPlaylist, exportPlaylistFile, star, unstar, type Song } from '@/api/data';
+import { COVER, coverArtUrl, songCoverUrl, getAlbum, getPlaylist, exportPlaylistFile, star, unstar, type Song } from '@/api/data';
 import { SheetModal } from '@/components/SheetModal';
 import { useAlbumDownloads } from '@/hooks/useAlbumDownloads';
 import { useCanShare } from '@/hooks/useCanShare';
@@ -21,6 +21,7 @@ import { formatBytes } from '@/lib/format';
 import { pickFolder } from '@/lib/localLibrary';
 import { pushOrReplace } from '@/lib/pushOrReplace';
 import { queryClient } from '@/lib/query';
+import { heardAt, queueName } from '@/lib/savedQueues';
 import { useArtistPicker } from '@/store/artistPicker';
 import { useAuthStore } from '@/store/auth';
 import { anyDownloads, useDownloads } from '@/store/downloads';
@@ -28,6 +29,7 @@ import { useMediaMenu, type MediaMenuItem } from '@/store/mediaMenu';
 import { MAX_PINS, usePins } from '@/store/pins';
 import { usePlayerStore } from '@/store/player';
 import { usePlaylistPicker } from '@/store/playlistPicker';
+import { useSavedQueues } from '@/store/savedQueues';
 import { useSettings } from '@/store/settings';
 import { useSharePicker } from '@/store/sharePicker';
 import { useToast } from '@/store/toast';
@@ -56,8 +58,10 @@ function Action({
   );
 }
 
-/** Album/playlist songs, sharing cache with its screen. */
+/** Album/playlist songs, sharing cache with its screen. A queue is opened
+ *   here too and brings its own: nothing to fetch, the entry holds them. */
 async function fetchSongs(item: MediaMenuItem): Promise<Song[]> {
+  if (item.kind === 'queue') return item.entry.queue;
   if (item.kind === 'album') {
     const data = await queryClient.fetchQuery({
       queryKey: ['album', item.album.id],
@@ -84,6 +88,7 @@ export function MediaMenuSheet() {
   const togglePin = usePins((s) => s.toggle);
   const playQueue = usePlayerStore((s) => s.playQueue);
   const queueMany = usePlayerStore((s) => s.queueMany);
+  const resumeSavedQueue = usePlayerStore((s) => s.resumeSavedQueue);
   // What is on top decides whether detail screens push or replace the modal
   // (see `pushOrReplace`); read before the early return below.
   const top = useSegments()[0];
@@ -94,7 +99,14 @@ export function MediaMenuSheet() {
   // rating is set, not fired and dismissed. Every opening starts on the actions.
   const [mode, setMode] = useState<'actions' | 'rating'>('actions');
   // By what was opened, not the object: rating it rewrites the item.
-  const openedKey = item ? (item.kind === 'album' ? `a:${item.album.id}` : `p:${item.playlist.id}`) : null;
+  const openedKey =
+    item
+      ? item.kind === 'album'
+        ? `a:${item.album.id}`
+        : item.kind === 'queue'
+          ? `q:${item.entry.id}`
+          : `p:${item.playlist.id}`
+      : null;
   useEffect(() => setMode('actions'), [openedKey]);
   // Subsonic's `setRating`, which Jellyfin has no answer for. Offline it is
   // recorded and sent on reconnect; a local profile has no account.
@@ -129,11 +141,32 @@ export function MediaMenuSheet() {
 
   const album = item.kind === 'album' ? item.album : null;
   const playlist = item.kind === 'playlist' ? item.playlist : null;
-  const name = album ? album.name : playlist!.name;
-  const subtitle = album ? album.artist : songsLabel(playlist!.songCount ?? 0, lang);
-  const coverId = album ? (album.coverArt ?? album.id) : (playlist!.coverArt ?? playlist!.id);
-  const href = album ? `/album/${album.id}` : `/playlist/${playlist!.id}`;
-  const pinKey = album ? `album:${album.id}` : `playlist:${playlist!.id}`;
+  // A queue is the one thing opened here that brings its own songs: its name,
+  // its size and its picture are already on the entry, so nothing below asks
+  // the server for them.
+  const queue = item.kind === 'queue' ? item.entry : null;
+  const name = album ? album.name : playlist ? playlist.name : queueName(queue!);
+  const subtitle = album
+    ? album.artist
+    : playlist
+      ? songsLabel(playlist.songCount ?? 0, lang)
+      : songsLabel(queue!.queue.length, lang);
+  // The song the listening stopped at, so the sheet wears the picture the queue
+  // was left at rather than the one it was started as.
+  const stopped = queue && heardAt(queue);
+  const cover = queue
+    ? stopped
+      ? songCoverUrl(stopped, COVER.thumb)
+      : undefined
+    : coverArtUrl(
+        album ? album.coverArt ?? album.id : playlist!.coverArt ?? playlist!.id,
+        COVER.thumb,
+      );
+  // A queue is nobody's media: it has no screen to go to and no pin to keep, so
+  // the two read as nothing there, and only the album and playlist branches
+  // below look at them.
+  const href = album ? `/album/${album.id}` : playlist ? `/playlist/${playlist.id}` : '';
+  const pinKey = album ? `album:${album.id}` : playlist ? `playlist:${playlist.id}` : '';
   const pinned = !!pins[pinKey];
   const extraActions = item.kind === 'album' ? item.extraActions ?? [] : [];
 
@@ -298,7 +331,7 @@ export function MediaMenuSheet() {
       {(close) => (
         <>
           <View style={styles.headerRow}>
-            <Cover uri={coverArtUrl(coverId, COVER.thumb)} size={48} />
+            <Cover uri={cover} size={48} />
             <View style={{ flex: 1 }}>
               <Text style={styles.title} numberOfLines={1}>
                 {name}
@@ -342,6 +375,42 @@ export function MediaMenuSheet() {
                 />
               </View>
             </View>
+          ) : queue ? (
+            // The three things a queue on the shelf can be asked of: carry on,
+            // hear it again from the first song, or forget it. Both ways of
+            // playing it come back paused, like the card's tap and unlike the
+            // album sheet, where «Play» starts the music — a queue is a
+            // listening someone stopped on purpose, and starting it again at
+            // the moment it stopped would lose where they meant to come back to.
+            <>
+              <Action
+                icon="play-outline"
+                label={t('Continue queue')}
+                onPress={() => {
+                  close();
+                  void resumeSavedQueue(queue, 'continue');
+                }}
+              />
+              <Action
+                icon="play-skip-back"
+                label={t('Play queue from beginning')}
+                onPress={() => {
+                  close();
+                  void resumeSavedQueue(queue, 'start');
+                }}
+              />
+              {/* Nothing on the server is touched, so forgetting it goes ahead
+                                  optimistically and comes back with one tap. */}
+              <Action
+                icon="trash-outline"
+                label={t('Delete queue')}
+                onPress={() => {
+                  const undo = useSavedQueues.getState().remove(queue.id);
+                  close();
+                  if (undo) toast(t('Queue removed'), { label: t('Undo'), run: undo });
+                }}
+              />
+            </>
           ) : (
           <>
           <Action

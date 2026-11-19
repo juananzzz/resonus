@@ -41,6 +41,7 @@ import { reorderListPerf } from '@/lib/listPerf';
 import { useAuthStore } from '@/store/auth';
 import { mixSeedOf, SOURCE_FAVORITES, SOURCE_HISTORY, usePlayerStore } from '@/store/player';
 import { usePlaylistPicker } from '@/store/playlistPicker';
+import { useSavedQueues } from '@/store/savedQueues';
 import { useSettings } from '@/store/settings';
 import { useToast } from '@/store/toast';
 import { colors, fontSize, spacing, themed, useTheme, tracking } from '@/theme';
@@ -152,6 +153,11 @@ export default function QueueScreen() {
   const radioMode = usePlayerStore((s) => s.radioMode);
   const stopRadio = usePlayerStore((s) => s.stopRadio);
   const restoreFromServer = usePlayerStore((s) => s.restoreFromServer);
+  const saveQueueManually = usePlayerStore((s) => s.saveQueueManually);
+  // The queue on screen, in the shelf's own terms: what a hand-saved or a
+  // deleted queue acts on. Null until the file has been read.
+  const liveQueueId = useSavedQueues((s) => s.liveId);
+  const removeSavedQueue = useSavedQueues((s) => s.remove);
   // The server's copy is only there for an account with a connection: a local
   // profile has no server, and offline there is nobody to ask.
   const hasServerQueue = useAuthStore((s) => !!s.auth && !s.offline);
@@ -436,6 +442,38 @@ export default function QueueScreen() {
               >
                 <Icon name="cloud-download-outline" size={24} color={colors.text} />
                 <Text style={styles.actionText}>{t("Get the server's queue")}</Text>
+              </Pressable>
+            ) : null}
+            {/* Keeps the queue that is on screen by hand. The queues that were
+                listened to enter the shelf on their own and are swept away as
+                ten newer ones arrive; this one is not. */}
+            {queue.length > 0 ? (
+              <Pressable
+                style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+                onPress={() => {
+                  close();
+                  saveQueueManually();
+                  toast(t('Queue saved'));
+                }}
+              >
+                <Icon name="save-outline" size={24} color={colors.text} />
+                <Text style={styles.actionText}>{t('Save queue')}</Text>
+              </Pressable>
+            ) : null}
+            {/* Forgets the queue that is on screen from the shelf. The songs
+                keep playing and stay where they are; the row of them on Home is
+                what goes, and it comes back with one tap on «Undo». */}
+            {liveQueueId ? (
+              <Pressable
+                style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}
+                onPress={() => {
+                  const undo = removeSavedQueue(liveQueueId);
+                  close();
+                  if (undo) toast(t('Queue removed'), { label: t('Undo'), run: undo });
+                }}
+              >
+                <Icon name="trash-outline" size={24} color={colors.text} />
+                <Text style={styles.actionText}>{t('Delete queue')}</Text>
               </Pressable>
             ) : null}
           </>

@@ -1,8 +1,9 @@
-/** Album/playlist context menu state (long-press on cards). */
+/** Context menu state for a card long-pressed: album, playlist, saved queue. */
 import type Icon from '@/components/Icon';
 import { create } from 'zustand';
 
 import { type Album, type Playlist } from '@/api/subsonic';
+import { type SavedQueueEntry } from '@/lib/savedQueues';
 
 /** An entry a screen adds to the album sheet, above the stock ones. */
 export type MediaMenuExtraAction = {
@@ -11,9 +12,14 @@ export type MediaMenuExtraAction = {
   onPress: () => void | Promise<void>;
 };
 
+/**
+ * What the sheet is opened for. A queue is the one thing here that brings its
+ * own songs: it carries them already, so none of the sheet's fetches apply.
+ */
 export type MediaMenuItem =
   | { kind: 'album'; album: Album; extraActions?: MediaMenuExtraAction[] }
-  | { kind: 'playlist'; playlist: Playlist };
+  | { kind: 'playlist'; playlist: Playlist }
+  | { kind: 'queue'; entry: SavedQueueEntry };
 
 interface MediaMenuState {
   item: MediaMenuItem | null;

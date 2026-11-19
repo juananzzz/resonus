@@ -39,6 +39,7 @@ const LABEL: Record<HomeSectionKey, string> = {
   discover: 'Discover',
   radios: 'Radios',
   playlists: 'Playlists',
+  savedQueues: 'Saved queues',
   podcasts: 'Recent episodes',
   randomAlbums: 'Random albums',
   randomArtists: 'Random artists',
