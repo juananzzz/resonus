@@ -73,7 +73,7 @@ import { remapSong } from '@/lib/navidromeRemap';
 import { noteOwnReport } from '@/lib/ownReports';
 import { beat, bump, note, timed } from '@/lib/perfLog';
 import { captureSnapshot, restoreSnapshot, type PlayerSnapshot } from '@/lib/playerSnapshot';
-import { queryClient } from '@/lib/query';
+import { invalidateNextEpisodeCard, queryClient } from '@/lib/query';
 import {
   appendEnd,
   dealt,
@@ -1091,7 +1091,10 @@ function writeEpisodeProgress(sec: number) {
     durationSec,
   })
     .then(() => {
-      if (crossed) queryClient.invalidateQueries({ queryKey: ['podcastPlayed'] });
+      if (!crossed) return;
+      queryClient.invalidateQueries({ queryKey: ['podcastPlayed'] });
+      // The next-episode card weighs this episode's played state too.
+      invalidateNextEpisodeCard();
     })
     .catch(() => {});
 }

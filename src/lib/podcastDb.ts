@@ -487,13 +487,23 @@ export async function clearEpisodeProgress(scope: string, id: string): Promise<v
 export async function listEpisodeProgress(
   scope: string,
   channelId: string,
-): Promise<{ id: string; positionSec: number; durationSec: number }[]> {
+): Promise<{ id: string; positionSec: number; durationSec: number; updatedAt: number }[]> {
   const db = await podcastDb(scope);
-  const rows = await db.getAllAsync<{ episode_id: string; position_sec: number; duration_sec: number }>(
-    'SELECT episode_id, position_sec, duration_sec FROM podcast_progress WHERE channel_id = ?',
+  const rows = await db.getAllAsync<{
+    episode_id: string;
+    position_sec: number;
+    duration_sec: number;
+    updated_at: number;
+  }>(
+    'SELECT episode_id, position_sec, duration_sec, updated_at FROM podcast_progress WHERE channel_id = ?',
     [channelId],
   );
-  return rows.map((r) => ({ id: r.episode_id, positionSec: r.position_sec, durationSec: r.duration_sec }));
+  return rows.map((r) => ({
+    id: r.episode_id,
+    positionSec: r.position_sec,
+    durationSec: r.duration_sec,
+    updatedAt: r.updated_at,
+  }));
 }
 
 export async function getEpisodeProgress(

@@ -5,7 +5,7 @@
      `src/i18n/context.jsonc`, and where a string shows up is read off the
      code, so both are fixed at the source and this page follows. -->
 
-Every string the app can show, under the screen it shows up on. 867 of them.
+Every string the app can show, under the screen it shows up on. 868 of them.
 The second column is only filled in where the English is ambiguous on its own
 If one tripped you up and the column is empty, that is worth telling us, and
 the answer goes into `src/i18n/context.jsonc` where the next translator of the
@@ -369,6 +369,7 @@ you are actually typing into, which is easier than reading it here.
 | `Most played albums` | A section of Home: the records played most |
 | `Most played songs` | A section of Home: the songs played most, as songs |
 | `New releases` | Home shelf and album sort: albums by the year they came out, newest first. Not "Recently added", which is when the server got hold of them |
+| `Next episode` | A section of Home, and its switch in settings: a sideways carousel of the shows you hearted — per show its two newest episodes, not fully listened yet, and behind them its episodes started but not finished. Not the track up next in the queue |
 | `Paused on {player}` |  |
 | `Play here` |  |
 | `Playing on {player}` | Heading of the card at the top of Home: a song playing right now in another app or on another device of the same account. {player} is that app's name, like Feishin |

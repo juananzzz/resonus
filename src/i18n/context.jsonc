@@ -792,6 +792,7 @@
     "Add podcast": "The Explore chip, the add-a-show sheet's title and the button that opens it: keeps a show on this phone from its feed. Not adding a song to a list",
     "Find a podcast": "The placeholder in the search box on the shows you keep: searches the iTunes directory, which answers with a show's feed address",
     "Recent episodes": "A section of Home, and its switch in settings: the newest episodes of the shows you keep, by the date the publisher gave them. Not episodes you listened to",
+    "Next episode": "A section of Home, and its switch in settings: a sideways carousel of the shows you hearted — per show its two newest episodes, not fully listened yet, and behind them its episodes started but not finished. Not the track up next in the queue",
     "Couldn't refresh your library.": "Toast after a failed pull to refresh; the list on screen stays",
     "Couldn't load all of your library.": "Toast: playlists or favorites failed to load, the rest is shown",
     "No podcasts": "Nothing kept on this phone yet: no show subscribed",

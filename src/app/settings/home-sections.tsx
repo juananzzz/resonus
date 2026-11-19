@@ -40,6 +40,7 @@ const LABEL: Record<HomeSectionKey, string> = {
   radios: 'Radios',
   playlists: 'Playlists',
   podcasts: 'Recent episodes',
+  nextEpisode: 'Next episode',
   randomAlbums: 'Random albums',
   randomArtists: 'Random artists',
 };
