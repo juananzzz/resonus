@@ -88,6 +88,13 @@ import {
   unshuffled,
   type RepeatMode,
 } from '@/lib/queue';
+import {
+  fromBeginning,
+  listeningStamp,
+  payloadOf,
+  type SavedQueueEntry,
+  type StoredQueue,
+} from '@/lib/savedQueues';
 import { moreRadioTracks } from '@/lib/radioBuild';
 import { getItem, setItem } from '@/lib/storage';
 import { profileScopeId, useAuthStore } from './auth';
@@ -111,6 +118,7 @@ import { offLocalNetwork, useNetworkType } from './networkType';
 import { useOfflineQueue } from './offlineQueue';
 import { usePlayCounts } from './playCounts';
 import { usePlayHistory } from './playHistory';
+import { useSavedQueues } from './savedQueues';
 import { activeArtworkEndpoint, scrobbleThresholdSec, useSettings, type TranscodeFormat } from './settings';
 import { cachedUri, useSongCache } from './songCache';
 import { useToast } from './toast';
@@ -535,7 +543,7 @@ let transcodeOffsetSupported: boolean | null = null;
 let sourceHasLength: boolean | null = null;
 
 /** Where a queue with no list behind it came from, for the diagnostics report. */
-let queueOrigin: 'server queue' | 'saved queue' | null = null;
+let queueOrigin: 'server queue' | 'saved queue' | 'shelf' | null = null;
 
 /** Where the queue came from, as far as the state says, for the report. */
 function originOf(st: { radioMode: boolean; sourceHref: string | null; source: string | null }): string {
@@ -3331,43 +3339,9 @@ function queueStorageKey(): string | null {
   return queueKeyFor(auth, offline);
 }
 
-interface StoredQueue {
-  queue: Song[];
-  index: number;
-  positionSec: number;
-  /** The queue was a radio: when restoring it must keep extending itself. */
-  radioMode?: boolean;
-  /** Track the radio was started from, so it keeps extending from the same
-   *  place after a restart. Absent in queues saved by older versions: those
-   *  fall back to seeding off the tail. */
-  radioSeed?: Song | null;
-  /** Where the queue came from, for the player's "playing from" header. */
-  source?: string | null;
-  /** Route of that origin, so tapping the header still navigates there. */
-  sourceHref?: string | null;
-  /**
-   * Shuffle and repeat as they were left (#102). Both are how someone listens
-   * rather than something they set up once, and finding them off after every
-   * cold start meant turning them on again each morning. `originalQueue` is
-   * NOT saved: it would double what a queue weighs, and turning shuffle off
-   * without it keeps the order that is playing instead of restoring the
-   * album's, which is a fair price for a session that already ended.
-   */
-  shuffle?: boolean;
-  repeat?: RepeatMode;
-  /** Speed and varispeed as they were left (#325). */
-  speed?: number;
-  varispeed?: boolean;
-  /** The queue was dealt when it was started (see `queueDealt`). */
-  dealt?: boolean;
-  /**
-   * When this device last wrote it (ms). Only read to compare against the
-   * server's copy: what is newer decides which of the two is somebody's last
-   * word, and a phone that listened all afternoon with no connection must not
-   * be handed yesterday's queue from another player on reconnecting.
-   */
-  savedAt?: number;
-}
+// What a saved queue holds is `StoredQueue` in `@/lib/savedQueues`: the archive
+// in `./savedQueues` keeps ten of these, and this is the one queue the player
+// saves for itself, so the two have to agree about what a queue is.
 
 /** Guards what comes back from disk: the file is ours, but an older version's
  *  (or a hand-edited one's) is not worth trusting into the player. */
@@ -3400,6 +3374,16 @@ const BG_SAVE_MS = 120_000;
 let localSavedAt = 0;
 
 /**
+ * Set when the player takes a queue over rather than carrying on with the one
+ * it was already on: the entry that was live finishes at that moment, and the
+ * caller puts the new one up as the live entry. The store subscription below
+ * watches every change of the queue on screen, and this is how it tells the
+ * two apart — hooking the actions instead would leave whichever one was added
+ * last keeping the archive stale.
+ */
+let queueTakesOver = false;
+
+/**
  * Rewrites the ids in the queue, in memory and on disk.
  *
  * Without it, the first thing a migrated server does is a queue that will not
@@ -3425,42 +3409,15 @@ export function remapQueueIds(f: Remap) {
 function saveQueueLocal(force = false) {
   const key = queueStorageKey();
   if (!key) return;
-  const {
-    queue,
-    index,
-    positionSec,
-    radioMode,
-    radioSeed,
-    source,
-    sourceHref,
-    shuffle,
-    queueDealt,
-    repeat,
-    speed,
-    varispeed,
-  } = usePlayerStore.getState();
-  if (queue.length === 0) return;
+  const state = usePlayerStore.getState();
+  if (state.queue.length === 0) return;
   if (!force && !queueDirty && AppState.currentState === 'active') return;
   // Backgrounded with only the position moving: at most one write per couple
   // of minutes instead of every twenty seconds.
   if (!force && !queueDirty && Date.now() - localSavedAt < BG_SAVE_MS) return;
   queueDirty = false;
   // Size cap as a precaution for SecureStore; 500 songs is more than enough.
-  const payload: StoredQueue = {
-    queue: queue.slice(0, 500),
-    index: Math.min(index, 499),
-    positionSec,
-    radioMode,
-    radioSeed,
-    source,
-    sourceHref,
-    shuffle,
-    dealt: queueDealt,
-    repeat,
-    speed,
-    varispeed,
-    savedAt: Date.now(),
-  };
+  const payload = payloadOf(state, Date.now());
   localSavedAt = payload.savedAt ?? 0;
   void setItem(key, JSON.stringify(payload));
 }
@@ -4223,6 +4180,18 @@ export interface PlayerState {
   restoreFromStorage: () => Promise<boolean>;
   /** Resumes the last queue: first the local copy; if none, the server's. */
   restoreQueue: () => Promise<void>;
+  /**
+   * One of the saved queues, back in the player and paused: `from` says whether
+   * to carry on where the listening stopped or to hear it from its first song.
+   * False when the queue was empty, so nothing could be loaded.
+   */
+  resumeSavedQueue: (which: SavedQueueEntry, from?: 'continue' | 'start') => Promise<boolean>;
+  /**
+   * The queue that is on screen, kept by hand so the cap of the automatic ones
+   *  never sweeps it away. Does nothing with an empty queue in front of the
+   *  player, there being nothing to keep.
+   */
+  saveQueueManually: () => void;
   /** Reloads the current track against the active server URL, preserving
    *  position and playback state. Called on network URL switch (the old
    *  source stopped responding). Doesn't affect radio/local/downloaded. */
@@ -4288,6 +4257,81 @@ export function useLiveInfo(song: Song | null | undefined): StreamInfo | null {
   // A podcast episode (vod) is a file, not a broadcasting station: its own
   // title and artist are the whole story.
   return song?.url && !song.vod ? info : null;
+}
+
+/**
+ * A queue that was kept, put into the player: its songs, its cursor and how
+ * far the current song had got, paused, with its track loaded and left at that
+ * position. Reached by three, which differ only in what they keep of the queue
+ * around it:
+ *
+ *  · the queue this device saved last session, which knows about radios and
+ *    about how the listening was set up,
+ *  · the queue another player left on the server, which is pure Subsonic and
+ *    carries neither, and must not undo how somebody is listening here,
+ *  · one of the saved queues brought back from Home, which knows about the
+ *    mix it was but not about how you listen now — shuffle and repeat are
+ *    yours, not something a queue owns (#102).
+ */
+async function applySavedQueue(
+  payload: StoredQueue,
+  keepRadio: boolean,
+  keepListening: boolean,
+  yieldToPlaying = true,
+): Promise<boolean> {
+  const songs = payload.queue;
+  if (songs.length === 0) return false;
+  const index = Math.min(Math.max(0, payload.index ?? 0), songs.length - 1);
+  // An episode's own record is newer: the queue is rewritten far less often.
+  const positionSec =
+    (await storedEpisodeResume(songs[index])) ??
+    (typeof payload.positionSec === 'number' && Number.isFinite(payload.positionSec)
+      ? Math.max(0, payload.positionSec)
+      : 0);
+  // A queue that started during the lookup above owns the player now: what was
+  // being restored gives way to it. Not asked of a queue brought back by hand,
+  // where replacing what is playing is the whole request.
+  if (yieldToPlaying) {
+    const here = usePlayerStore.getState().queue;
+    if (here.length > 0 && here !== songs) return true;
+  }
+  attachAppState();
+  usePlayerStore.setState({
+    queue: songs,
+    index,
+    positionSec,
+    durationSec: songs[index]?.duration ?? 0,
+    isPlaying: false,
+    source: typeof payload.source === 'string' ? payload.source : null,
+    sourceHref: typeof payload.sourceHref === 'string' ? payload.sourceHref : null,
+    ...(keepRadio
+      ? {
+          // If it was a radio, it still is: closing the app should not leave it
+          // silent when reaching the end of what was already queued.
+          radioMode: payload.radioMode === true,
+          radioSeed: payload.radioSeed ?? null,
+          // The queue was saved already dealt, so this only restores the mark:
+          // nothing is reordered on the way back in.
+          queueDealt: payload.dealt === true,
+        }
+      : { radioMode: false, radioSeed: null, queueDealt: false }),
+    ...(keepListening
+      ? {
+          shuffle: payload.shuffle === true,
+          repeat: isRepeatMode(payload.repeat) ? payload.repeat : 'off',
+          ...savedSpeed(payload),
+        }
+      : {}),
+  });
+  // Load the track (without playing) and leave the position ready.
+  await loadIndex(index, false);
+  // A tap that landed while this was loading owns the player now. What is left
+  // here belongs to the queue being restored, and running it against another
+  // one would drop somebody else's song at the position this one was left at.
+  if (usePlayerStore.getState().queue !== songs) return true;
+  if (positionSec > 0) seekActive(positionSec);
+  usePlayerStore.setState({ positionSec, isPlaying: false });
+  return true;
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -4380,6 +4424,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     // what follows it at that same moment.
     const tapped = queued[at];
     const hold = tapped && !tapped.url && !localSourceFor(tapped) && !remoteKind() ? holdSpeculation() : undefined;
+    // A new queue takes the player over: the entry that was live finishes, and
+    // the one that comes up here is the live one from now on.
+    queueTakesOver = true;
     set({
       queue: queued,
       index: at,
@@ -4403,6 +4450,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (!ok) {
       if (hold !== undefined) releaseSpeculation(hold);
       if (before.queue.length > 0) set(restoreSnapshot(before));
+      // What is on screen again is the queue that was here, and its entry is
+      // still the live one, so the archive follows it from here on.
+      queueTakesOver = false;
+    } else {
+      // The queue that was here is kept and finished, and this one is what
+      // Home's shelf counts as current. Not done when the load failed: the
+      // queue that is back on screen is the old one, and its entry is still
+      // the live one.
+      useSavedQueues.getState().startNew(payloadOf(get(), Date.now()));
+      queueTakesOver = false;
     }
     return ok;
   },
@@ -4421,6 +4478,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       autoplayRound = null;
       artistFill = null;
       resetWarmed();
+      // The mix is a queue of its own around the song that is playing: the
+      // entry that was live finishes rather than following this change.
+      queueTakesOver = true;
       set({
         queue: [cur],
         index: 0,
@@ -4446,6 +4506,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       // `loadIndex` isn't running, so nothing else is going to persist this.
       scheduleSync();
       await maybeQueueAutoplay();
+      // The mix replaced whatever was on screen here, however much of it it
+      // found: the queue that was here is finished, and this one is what the
+      // shelf follows from now on.
+      useSavedQueues.getState().startNew(payloadOf(get(), Date.now()));
+      queueTakesOver = false;
       return get().queue.length > 1;
     }
     // Play the seed immediately and similar tracks are requested later: waiting
@@ -4931,39 +4996,29 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     // If something already started playing in the meantime, don't override the
     // queue — unless overriding it is the whole request.
     if (!replace && get().queue.length > 0) return false;
-    attachAppState();
     // This queue is the server's word and not this device's, so it is not
     // pushed back until something is actually played from it (see
     // `playedHere`). Otherwise adopting a queue and putting the phone away
     // wrote it straight back, stamped with our name.
     clearPlayedHere();
     queueOrigin = 'server queue';
-    set({
-      queue: songs,
-      index,
-      positionSec,
-      durationSec: songs[index]?.duration ?? 0,
-      isPlaying: false,
-      source: null,
-      sourceHref: null,
-      // The server queue is pure Subsonic: it has no place to carry this, so
-      // a radio recovered from there stops being one. The local copy does save
-      // it, and it's tried first (see `restoreQueue`). Same for a queue that
-      // was dealt: what comes back is an order, with nothing to say it was one.
-      radioMode: false,
-      radioSeed: null,
-      queueDealt: false,
-    });
-    // Load the track (without playing) and leave the position ready.
-    await loadIndex(index, false);
-    // A tap that landed while this was loading owns the player now (`loadToken`
-    // saw to that). What is left here belongs to the queue being restored, and
-    // running it against another one would drop somebody else's song at the
-    // position this one was left at, paused.
-    if (get().queue !== songs) return true;
-    if (positionSec > 0) seekActive(positionSec);
-    usePlayerStore.setState({ positionSec, isPlaying: false });
-    return true;
+    // Not yielding to what is playing here when overriding was the whole
+    // request — the hand-tapped «Get the server's queue».
+    // Not for the archive either: whatever is live now describes the listening
+    //  that this queue replaces, and its place is kept until the queue that
+    //  comes up takes over (see `queueTakesOver`).
+    queueTakesOver = true;
+    const applied = await applySavedQueue({ queue: songs, index, positionSec }, false, false, !replace);
+    queueTakesOver = false;
+    // The server's queue is this device's listening from now on, so an entry of
+    // the same queue that is already kept is adopted rather than copied: Home
+    // would otherwise grow a second card for one listening. Only once the queue
+    // actually came in — a tap that landed while it was loading kept the player
+    // busy with another one, and the shelf says what is on screen.
+    if (applied && usePlayerStore.getState().queue === songs) {
+      useSavedQueues.getState().adoptLive({ queue: songs, index, positionSec });
+    }
+    return applied;
   },
 
   restoreFromStorage: async () => {
@@ -4995,45 +5050,69 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
     // If something already started playing in the meantime, don't override the queue.
     if (get().queue.length > 0) return true;
-    const index = Math.min(Math.max(0, saved.index ?? 0), saved.queue.length - 1);
-    // An episode's own record is newer: the queue is rewritten far less often.
-    const positionSec =
-      (await storedEpisodeResume(saved.queue[index])) ??
-      (typeof saved.positionSec === 'number' && Number.isFinite(saved.positionSec)
-        ? Math.max(0, saved.positionSec)
-        : 0);
-    if (get().queue.length > 0) return true;
-    attachAppState();
     queueOrigin = 'saved queue';
-    set({
-      queue: saved.queue,
-      index,
-      positionSec,
-      durationSec: saved.queue[index]?.duration ?? 0,
-      isPlaying: false,
-      // Restored like `radioMode`: without this the "playing from" header
-      // vanished once Android killed the app in the background and the queue
-      // came back from disk.
-      source: typeof saved.source === 'string' ? saved.source : null,
-      sourceHref: typeof saved.sourceHref === 'string' ? saved.sourceHref : null,
-      // If it was a radio, it still is: closing the app should not leave it
-      // silent when reaching the end of what was already queued.
-      radioMode: saved.radioMode === true,
-      radioSeed: saved.radioSeed ?? null,
-      // The queue was saved already shuffled, so this only restores the button:
-      // nothing is reordered on the way back in. `originalQueue` stays null
-      // (see `StoredQueue`), which turning shuffle off handles on its own.
-      shuffle: saved.shuffle === true,
-      queueDealt: saved.dealt === true,
-      repeat: isRepeatMode(saved.repeat) ? saved.repeat : 'off',
-      ...savedSpeed(saved),
-    });
-    await loadIndex(index, false);
-    // Same as the server restore above: only if this queue is still the one.
-    if (get().queue !== saved.queue) return true;
-    if (positionSec > 0) seekActive(positionSec);
-    usePlayerStore.setState({ positionSec, isPlaying: false });
-    return true;
+    // Not for the archive either: whatever is live now describes the listening
+    //  that this queue replaces, and its place is kept until the queue that
+    //  comes up takes over (see `queueTakesOver`).
+    queueTakesOver = true;
+    const applied = await applySavedQueue(saved, true, true);
+    queueTakesOver = false;
+    // The queue is the archive's own, so an entry of the same listening that is
+    // already on file is adopted rather than added again: the shelf's newest is
+    // what is on screen, and the entry keeps following it as the listening goes
+    // on. Only once it came in — the archive keeps what the device really has.
+    if (applied && usePlayerStore.getState().queue === saved.queue) {
+      useSavedQueues.getState().adoptLive(saved);
+    }
+    return applied;
+  },
+
+  /**
+   * One of the saved queues, back in the player and paused. `from` says whether
+   * to carry on where the listening stopped or to hear it from its first song.
+   *
+   * The entry becomes the live one: the queue on screen is that queue, so the
+   * row keeps up with it, and the queue that was live before becomes a finished
+   * entry rather than losing its place.
+   */
+  resumeSavedQueue: async (which: SavedQueueEntry, from = 'continue') => {
+    // The queue on screen changes: whoever is live now describes the listening
+    //  that just ended, so the archive must not follow this queue onto that
+    //  entry while it is being loaded (see `queueTakesOver`).
+    queueTakesOver = true;
+    const payload = from === 'start' ? fromBeginning(which) : which;
+    const applied = await applySavedQueue(payload, true, false, false);
+    // Only while this queue is still the one on screen: a tap that landed
+    //  while the songs were loading owns the player, and the shelf says what
+    //  is on screen.
+    if (applied && usePlayerStore.getState().queue === payload.queue) {
+      const archive = useSavedQueues.getState();
+      // The queue on screen came off the shelf: entries carry the list they
+      //  were started as most of the time, but a queue that was started
+      //  without one (a jump into the middle of a song, a hand-made queue)
+      //  would otherwise be reported as a queue of no known origin.
+      queueOrigin = 'shelf';
+      // The entry becomes the live one, so the row keeps up with the listening
+      //  again. A queue that was forgotten first comes back as an entry of its
+      //  own: putting nothing up would leave the queue on screen without one,
+      //  and the entry that was live before would follow it instead.
+      if (archive.entries.some((e) => e.id === which.id)) archive.markLive(which.id);
+      else void archive.adoptLive(payload);
+    }
+    queueTakesOver = false;
+    return applied;
+  },
+
+  /**
+   * Keeps the queue that is on screen by hand, which is the one thing the cap
+   *  does not sweep away as newer listening arrives. The archive marks the entry
+   *  that is already live rather than adding a second card for one listening, so
+   *  tapping this twice on the same queue changes nothing but its date.
+   */
+  saveQueueManually: () => {
+    const st = get();
+    if (st.queue.length === 0) return;
+    void useSavedQueues.getState().saveManually(payloadOf(st, Date.now()));
   },
 
   restoreQueue: async () => {
@@ -5148,6 +5227,29 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 }));
 
+/**
+ * The queue that was kept follows the queue on screen, and it is told about it
+ * on a timer rather than where the change was noticed. The notice happens inside
+ * the React render that moved the queue, and rewriting the archive there asks
+ * every screen looking at it to redraw while that render is still being
+ * committed, which is a redraw that never settles. Handing the write to the
+ * next turn of the JS thread leaves the render alone, the way the queue's own
+ * save is scheduled (see `scheduleSync`); one timer is enough, since it reads
+ * the queue as it is when it runs rather than as it was when it was noticed.
+ */
+let liveTimer: ReturnType<typeof setTimeout> | null = null;
+function followQueue() {
+  if (liveTimer) return;
+  liveTimer = setTimeout(() => {
+    liveTimer = null;
+    const st = usePlayerStore.getState();
+    // Re-asked, because the queue may have taken over or emptied meanwhile.
+    if (!queueTakesOver && st.queue.length > 0) {
+      void useSavedQueues.getState().updateLive(payloadOf(st, Date.now()));
+    }
+  }, 0);
+}
+
 // Gapless: what comes next changes with the queue, the position in it, the
 // repeat mode and the "stop at end of song" timer. Watching the store beats
 // hooking every action that touches them (add to queue, reorder, remove,
@@ -5201,6 +5303,28 @@ usePlayerStore.subscribe((st, prev) => {
     st.varispeed !== prev.varispeed
   ) {
     queueDirty = true;
+  }
+  // The queue that was kept follows the queue on screen, so what Home shows is
+  // where the listening stopped rather than where it was a minute ago. Watching
+  // the store is what covers every way the queue moves — "Add to queue", a
+  // dragged row, a jump, a song ending — where hooking the actions would leave
+  // whichever one was added last keeping the archive behind.
+  //
+  // Not while a new queue is being loaded (`queueTakesOver`, see the actions
+  // that set it): then the entry that is live describes the queue that just
+  // ended, and the songs on screen are somebody else's listening. Rewriting the
+  // old entry with them would forget where that listening stopped, which is the
+  // whole thing a saved queue is kept for.
+  //
+  // The position is asked with a step of a second: it changes on every tick, and
+  // a queue is up to five hundred songs, so the songs themselves are compared by
+  // their array — every change to a queue makes a new one — and only the rest of
+  // what `payloadOf` keeps goes into the stamp. The store decides on its own
+  // whether a write is due, and the entry in memory follows the queue either way.
+  if (!queueTakesOver && st.queue.length > 0 && (
+    st.queue !== prev.queue || listeningStamp(st) !== listeningStamp(prev)
+  )) {
+    followQueue();
   }
 });
 

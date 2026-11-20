@@ -21,6 +21,7 @@ import { closeMirrorFor } from './mirrorDb';
 import { removeMirrorCovers } from './mirrorCovers';
 import { closePodcastDb, podcastDbDir } from './podcastDb';
 import { primaryUrl } from './serverUrls';
+import { fileName as savedQueuesFile } from './savedQueues';
 import { closeCacheDb } from './songCacheDb';
 import { deleteItem } from './storage';
 
@@ -92,6 +93,12 @@ export async function deleteProfileData(auth: SubsonicAuth): Promise<void> {
   // The covers kept for that mirror, which live in a folder of their own: one
   // file per cover plus the index that says which id each belongs to.
   await removeMirrorCovers(scope);
+
+  // The queues that were listened to. One JSON file, next to the mirror's own
+  // rather than in a folder of its own: a queue is a list of song ids, and an
+  // id means nothing to another account, so the queues of a deleted profile
+  // would come back as songs it cannot play.
+  await remove(`${FileSystem.documentDirectory}${savedQueuesFile(scope)}`);
 
   for (const key of SCOPED_KEYS) {
     await deleteItem(`${key}.${scope}`).catch(() => {});

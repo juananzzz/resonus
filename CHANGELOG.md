@@ -9,6 +9,11 @@ Releases before 0.2.1 are only listed on the
 
 ## [Unreleased]
 
+### Added
+
+- Home: a Saved queues shelf of the queues that were listened to — the ten newest, and the ones kept by hand always among them. Tapping a card carries on where the listening stopped, paused; long-pressing it offers playing it from its first song or forgetting it.
+- The queue's ⋯ menu: Save queue keeps the queue that is playing out of the reach of the cap, and Delete queue forgets it (both undo with one tap).
+
 ## [0.8.8] - 2026-11-16
 
 ### Added
